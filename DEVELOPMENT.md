@@ -16,11 +16,12 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added battle rewards for coins, XP, levels, winner bonus payouts, and progression display.
 - 2026-07-29: Replaced story-mode placeholder with a starter solo training run using the Block Blast board.
 - 2026-07-29: Added Leave Queue flow so queued players can cancel matchmaking from the hub UI.
+- 2026-07-29: Added persistent settings for theme, reduced motion, and UI size through versioned profile saves.
 
 ## Current Priorities
 
 - Improve first-time player onboarding.
-- Add persistent settings and customization.
+- Add deeper customization for piece skins, board skins, and cosmetics.
 - Split matchmaking into isolated match sessions with separate arenas.
 - Add sound settings and starter sound effects.
 - Expand story mode with missions, goals, dialogue, and rewards.
@@ -35,7 +36,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 ## Technical Debt
 
 - `BlockBlastClient.client.luau` is growing large and should be split into UI modules.
-- Profile save data covers best score, wins, coins, XP, and level; settings and customization still need persistence.
+- Profile save data covers best score, wins, coins, XP, level, and core settings; cosmetic customization still needs persistence.
 - Effects are client-side only and need sound/particle polish.
 - Queue system supports one active match; production needs per-match arena sessions.
 

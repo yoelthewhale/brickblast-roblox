@@ -16,6 +16,7 @@ local placeEvent = remotes:WaitForChild("Place")
 local queueEvent = remotes:WaitForChild("Queue")
 local hubEvent = remotes:WaitForChild("Hub")
 local effectsEvent = remotes:WaitForChild("Effects")
+local settingsEvent = remotes:WaitForChild("Settings")
 
 local selectedSlot = nil
 local hoverX = nil
@@ -47,6 +48,7 @@ local hubCloseButton = nil
 local hubStatusLabel = nil
 local battleQueueButton = nil
 local motionButton = nil
+local uiSizeButton = nil
 local customizeButton = nil
 local returnHubButton = nil
 local playAgainButton = nil
@@ -146,6 +148,34 @@ local function applyUiScale()
 	end
 	if bannerScale then
 		bannerScale.Scale = math.max(0.82, nextScale)
+	end
+end
+
+local function settingsPayload()
+	return {
+		themeIndex = themeIndex,
+		reducedMotion = reducedMotion,
+		uiScale = uiScale,
+	}
+end
+
+local function saveSettings()
+	settingsEvent:FireServer("Update", settingsPayload())
+end
+
+local function updateSettingsButtonText()
+	if motionButton then
+		motionButton.Text = reducedMotion and "Motion: Reduced" or "Motion: Full"
+	end
+
+	if uiSizeButton then
+		if uiScale == 1 then
+			uiSizeButton.Text = "UI Size: Auto"
+		elseif uiScale > 1 then
+			uiSizeButton.Text = "UI Size: Large"
+		else
+			uiSizeButton.Text = "UI Size: Compact"
+		end
 	end
 end
 
@@ -382,7 +412,7 @@ motionButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 motionButton.TextSize = 15
 motionButton.Parent = hubPanel
 
-local uiSizeButton = Instance.new("TextButton")
+uiSizeButton = Instance.new("TextButton")
 uiSizeButton.Position = UDim2.fromOffset(272, 162)
 uiSizeButton.Size = UDim2.fromOffset(226, 38)
 uiSizeButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
@@ -403,7 +433,8 @@ end)
 
 motionButton.MouseButton1Click:Connect(function()
 	reducedMotion = not reducedMotion
-	motionButton.Text = reducedMotion and "Motion: Reduced" or "Motion: Full"
+	updateSettingsButtonText()
+	saveSettings()
 	showBanner(motionButton.Text, customization.accentColor)
 end)
 
@@ -416,10 +447,11 @@ uiSizeButton.MouseButton1Click:Connect(function()
 		uiSizeButton.Text = "UI Size: Compact"
 	else
 		uiScale = 1
-		uiSizeButton.Text = "UI Size: Auto"
 	end
+	updateSettingsButtonText()
 	applyUiScale()
 	clampWindowToScreen()
+	saveSettings()
 end)
 
 customizeButton = Instance.new("TextButton")
@@ -490,6 +522,7 @@ customizeButton.MouseButton1Click:Connect(function()
 		themeIndex = 1
 	end
 	applyTheme()
+	saveSettings()
 end)
 
 local function setBattleBoardVisible(visible)
@@ -1274,6 +1307,29 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 	end
 end)
 
+settingsEvent.OnClientEvent:Connect(function(settings)
+	if typeof(settings) ~= "table" then
+		return
+	end
+
+	if typeof(settings.themeIndex) == "number" then
+		themeIndex = math.clamp(math.floor(settings.themeIndex), 1, #themePresets)
+	end
+
+	if typeof(settings.reducedMotion) == "boolean" then
+		reducedMotion = settings.reducedMotion
+	end
+
+	if typeof(settings.uiScale) == "number" then
+		uiScale = math.clamp(settings.uiScale, 0.92, 1.12)
+	end
+
+	updateSettingsButtonText()
+	applyTheme()
+	applyUiScale()
+	clampWindowToScreen()
+end)
+
 gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
 	applyUiScale()
 	clampWindowToScreen()
@@ -1282,3 +1338,4 @@ end)
 applyWindowLayout()
 applyTheme()
 applyUiScale()
+settingsEvent:FireServer("Request")

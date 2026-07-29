@@ -33,10 +33,15 @@ local effectsEvent = Instance.new("RemoteEvent")
 effectsEvent.Name = "Effects"
 effectsEvent.Parent = remotes
 
+local settingsEvent = Instance.new("RemoteEvent")
+settingsEvent.Name = "Settings"
+settingsEvent.Parent = remotes
+
 local hubParts = HubBuilder.build()
 local playerStates = {}
 local queuedPlayers = {}
 local playerModes = {}
+local playerSettings = {}
 local lastPlaceRequestAt = {}
 local queueStartedAt = nil
 local battleInProgress = false
@@ -58,6 +63,37 @@ local leaveBattle = nil
 local scheduleReturnIfEliminated = nil
 local resolveBattleIfFinished = nil
 local startStoryMode = nil
+
+local DEFAULT_SETTINGS = {
+	themeIndex = 1,
+	reducedMotion = false,
+	uiScale = 1,
+}
+
+local function sanitizeSettings(settings)
+	local clean = table.clone(DEFAULT_SETTINGS)
+	if typeof(settings) ~= "table" then
+		return clean
+	end
+
+	if typeof(settings.themeIndex) == "number" then
+		clean.themeIndex = math.clamp(math.floor(settings.themeIndex), 1, 3)
+	end
+
+	if typeof(settings.reducedMotion) == "boolean" then
+		clean.reducedMotion = settings.reducedMotion
+	end
+
+	if typeof(settings.uiScale) == "number" then
+		clean.uiScale = math.clamp(settings.uiScale, 0.92, 1.12)
+	end
+
+	return clean
+end
+
+local function sendSettings(player)
+	settingsEvent:FireClient(player, playerSettings[player] or DEFAULT_SETTINGS)
+end
 
 local function createLeaderstats(player)
 	local leaderstats = Instance.new("Folder")
@@ -126,6 +162,9 @@ local function createLeaderstats(player)
 		if typeof(profile.level) == "number" then
 			level.Value = math.max(1, math.floor(profile.level))
 		end
+
+		playerSettings[player] = sanitizeSettings(profile.settings)
+		sendSettings(player)
 	end)
 end
 
@@ -166,6 +205,7 @@ local function saveProfile(player)
 			coins = coins.Value,
 			xp = xp.Value,
 			level = level.Value,
+			settings = sanitizeSettings(playerSettings[player]),
 			updatedAt = os.time(),
 		})
 	end)
@@ -651,6 +691,23 @@ queueEvent.OnServerEvent:Connect(function(player, mode)
 	end
 end)
 
+settingsEvent.OnServerEvent:Connect(function(player, action, nextSettings)
+	if action == "Request" then
+		sendSettings(player)
+		return
+	end
+
+	if action ~= "Update" then
+		return
+	end
+
+	playerSettings[player] = sanitizeSettings(nextSettings)
+	sendSettings(player)
+	task.defer(function()
+		saveProfile(player)
+	end)
+end)
+
 hubParts.battlePrompt.Triggered:Connect(joinBattleQueue)
 
 hubParts.storyPrompt.Triggered:Connect(function(player)
@@ -669,6 +726,7 @@ if hubParts.arenaReturnPad then
 end
 
 Players.PlayerAdded:Connect(function(player)
+	playerSettings[player] = table.clone(DEFAULT_SETTINGS)
 	createLeaderstats(player)
 	playerModes[player] = "Hub"
 	player.CharacterAdded:Connect(function()
@@ -679,6 +737,7 @@ Players.PlayerAdded:Connect(function(player)
 	end)
 	stateEvent:FireClient(player, nil, {})
 	sendHubState(player, "Welcome to the hub")
+	sendSettings(player)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
@@ -686,6 +745,7 @@ Players.PlayerRemoving:Connect(function(player)
 	playerStates[player] = nil
 	queuedPlayers[player] = nil
 	playerModes[player] = nil
+	playerSettings[player] = nil
 	lastPlaceRequestAt[player] = nil
 	battleInProgress = next(playerStates) ~= nil
 	broadcast()
@@ -694,11 +754,13 @@ end)
 
 for _, player in Players:GetPlayers() do
 	if not player:FindFirstChild("leaderstats") then
+		playerSettings[player] = playerSettings[player] or table.clone(DEFAULT_SETTINGS)
 		createLeaderstats(player)
 	end
 	playerModes[player] = playerModes[player] or "Hub"
 	stateEvent:FireClient(player, nil, {})
 	sendHubState(player, "Welcome to the hub")
+	sendSettings(player)
 end
 
 task.spawn(function()
