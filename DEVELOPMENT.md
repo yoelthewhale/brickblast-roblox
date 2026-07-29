@@ -30,6 +30,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Expanded Story Training into rotating server-authored missions with visible objectives, completion rewards, and persistent Story Stars.
 - 2026-07-29: Added compact touch layout for the battle window with stacked board/piece controls and safer small-screen scaling.
 - 2026-07-29: Added progression-gated cosmetic unlock requirements for piece and board skins with server-side enforcement and hub hints.
+- 2026-07-29: Added hub story chapter preview showing the next mission title, objective, and Story Stars before starting Story Training.
 
 ## Current Priorities
 
@@ -37,7 +38,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
 - Add broader anti-exploit checks around progression, rewards, and session lifecycle edge cases.
 - Add richer original audio assets and mix testing.
-- Add story dialogue, chapter framing, and mission-select presentation.
+- Add story dialogue, richer chapter framing, and a full mission-select presentation.
 - Validate compact touch layout in Roblox Studio device emulation.
 
 ## Known Issues

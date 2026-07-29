@@ -29,6 +29,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Fix any Day 2 Studio errors from Output window | High | Ready | Codex | 2026-07-30 |
 | Add queue countdown and match-start banner | High | In Progress | Codex | 2026-07-30 |
 | Add story-mode mission flow with objectives and rewards | Medium | Playtest | Codex | 2026-07-31 |
+| Add hub story chapter preview and mission framing | Medium | Playtest | Codex | 2026-07-31 |
 | Add battle arenas per match instead of one shared arena | High | Playtest | Codex | 2026-08-01 |
 | Add player customization save data for UI theme and layout | Medium | Playtest | Codex | 2026-08-01 |
 | Add progression-gated piece and board skin customization | Medium | Playtest | Codex | 2026-08-02 |
@@ -69,6 +70,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Run a local multiplayer test with 4+ players and confirm separate two-player sessions get separate arena spawns and leaderboards.
 - Follow `docs/MULTIPLAYER_STRESS_TEST.md` and record failures with scenario letter, player count, arena, and match number.
 - Start Story Mode and confirm it opens a solo `Story Training` board.
+- Confirm the hub Story button shows the next mission title and objective before starting.
 - In Story Training, confirm the mission goal text updates while scoring and that completion grants Story Stars.
 - Confirm battle start and result banners animate in.
 - Confirm the battle window shows a round timer.
@@ -82,4 +84,4 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 ## Build Notes
 
-- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, loading splash, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, compact touch battle layout, persistent core settings, progression-gated piece styles and board skins, first-time onboarding, sound cues/settings, isolated match sessions with three arenas, hub arena availability UI, match diagnostics with a Studio-only session overlay, queue/settings remote hardening, anti-spam placement checks, and rotating story missions with Story Stars. Built `BlockBlastBattle-Day3.rbxl`.
+- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, loading splash, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, compact touch battle layout, persistent core settings, progression-gated piece styles and board skins, first-time onboarding, sound cues/settings, isolated match sessions with three arenas, hub arena availability UI, match diagnostics with a Studio-only session overlay, queue/settings remote hardening, anti-spam placement checks, rotating story missions with Story Stars, and hub story chapter previews. Built `BlockBlastBattle-Day3.rbxl`.

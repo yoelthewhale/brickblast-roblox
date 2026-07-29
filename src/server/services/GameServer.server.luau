@@ -514,6 +514,8 @@ local function sendHubState(player, message)
 			math.max(0, math.ceil(SOLO_TEST_SECONDS - (os.clock() - queueStartedAt)))
 	end
 	local totalArenas, openArenas = arenaCounts()
+	local storyMission = storyMissionForPlayer(player)
+	local progress = cosmeticProgress(player)
 
 	hubEvent:FireClient(player, {
 		mode = playerModes[player] or "Hub",
@@ -524,6 +526,8 @@ local function sendHubState(player, message)
 		openArenas = openArenas,
 		totalArenas = totalArenas,
 		sessions = sessionSummaries(),
+		storyMission = storyMission,
+		storyStars = progress.storyStars,
 		secondsToSoloStart = secondsToSoloStart,
 		message = message,
 	})

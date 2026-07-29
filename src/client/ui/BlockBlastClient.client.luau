@@ -58,6 +58,7 @@ local hubCloseButton = nil
 local hubStatusLabel = nil
 local hubMatchmakingLabel = nil
 local battleQueueButton = nil
+local storyPreviewLabel = nil
 local motionButton = nil
 local uiSizeButton = nil
 local pieceSkinButton = nil
@@ -271,7 +272,7 @@ local function applyUiScale()
 	end
 
 	local rootFitScale = math.min(1, (screenSize.X - 16) / math.max(1, root.Size.X.Offset))
-	local hubFitScale = math.min(1, (screenSize.X - 16) / 520, (screenSize.Y - 16) / 324)
+	local hubFitScale = math.min(1, (screenSize.X - 16) / 520, (screenSize.Y - 16) / 344)
 	local dockFitScale = math.min(1, (screenSize.X - 16) / 260)
 	local nextScale = automaticScale * uiScale
 	if rootScale then
@@ -529,7 +530,7 @@ dockReturnButton.Parent = battleDock
 hubPanel = Instance.new("Frame")
 hubPanel.AnchorPoint = Vector2.new(0.5, 0)
 hubPanel.Position = UDim2.fromScale(0.5, 0.06)
-hubPanel.Size = UDim2.fromOffset(520, 324)
+hubPanel.Size = UDim2.fromOffset(520, 344)
 hubPanel.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
 hubPanel.BackgroundTransparency = 0.08
 hubPanel.BorderSizePixel = 0
@@ -728,10 +729,24 @@ storyButton.Font = Enum.Font.GothamBold
 storyButton.Text = "Story Mode"
 storyButton.TextColor3 = Color3.fromRGB(13, 32, 24)
 storyButton.TextSize = 17
+storyButton.TextWrapped = true
 storyButton.Parent = hubPanel
 
+storyPreviewLabel = Instance.new("TextLabel")
+storyPreviewLabel.BackgroundTransparency = 1
+storyPreviewLabel.Position = UDim2.fromOffset(272, 152)
+storyPreviewLabel.Size = UDim2.fromOffset(226, 22)
+storyPreviewLabel.Font = Enum.Font.GothamBold
+storyPreviewLabel.Text = "Next chapter loading..."
+storyPreviewLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
+storyPreviewLabel.TextSize = 12
+storyPreviewLabel.TextWrapped = true
+storyPreviewLabel.TextXAlignment = Enum.TextXAlignment.Left
+storyPreviewLabel.TextYAlignment = Enum.TextYAlignment.Center
+storyPreviewLabel.Parent = hubPanel
+
 motionButton = Instance.new("TextButton")
-motionButton.Position = UDim2.fromOffset(22, 162)
+motionButton.Position = UDim2.fromOffset(22, 182)
 motionButton.Size = UDim2.fromOffset(226, 38)
 motionButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 motionButton.BorderSizePixel = 0
@@ -742,7 +757,7 @@ motionButton.TextSize = 15
 motionButton.Parent = hubPanel
 
 uiSizeButton = Instance.new("TextButton")
-uiSizeButton.Position = UDim2.fromOffset(272, 162)
+uiSizeButton.Position = UDim2.fromOffset(272, 182)
 uiSizeButton.Size = UDim2.fromOffset(226, 38)
 uiSizeButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 uiSizeButton.BorderSizePixel = 0
@@ -753,7 +768,7 @@ uiSizeButton.TextSize = 15
 uiSizeButton.Parent = hubPanel
 
 pieceSkinButton = Instance.new("TextButton")
-pieceSkinButton.Position = UDim2.fromOffset(22, 212)
+pieceSkinButton.Position = UDim2.fromOffset(22, 232)
 pieceSkinButton.Size = UDim2.fromOffset(226, 38)
 pieceSkinButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 pieceSkinButton.BorderSizePixel = 0
@@ -764,7 +779,7 @@ pieceSkinButton.TextSize = 15
 pieceSkinButton.Parent = hubPanel
 
 soundButton = Instance.new("TextButton")
-soundButton.Position = UDim2.fromOffset(272, 212)
+soundButton.Position = UDim2.fromOffset(272, 232)
 soundButton.Size = UDim2.fromOffset(226, 38)
 soundButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 soundButton.BorderSizePixel = 0
@@ -775,7 +790,7 @@ soundButton.TextSize = 15
 soundButton.Parent = hubPanel
 
 boardSkinButton = Instance.new("TextButton")
-boardSkinButton.Position = UDim2.fromOffset(22, 262)
+boardSkinButton.Position = UDim2.fromOffset(22, 282)
 boardSkinButton.Size = UDim2.fromOffset(226, 38)
 boardSkinButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 boardSkinButton.BorderSizePixel = 0
@@ -787,7 +802,7 @@ boardSkinButton.Parent = hubPanel
 
 cosmeticHintLabel = Instance.new("TextLabel")
 cosmeticHintLabel.BackgroundTransparency = 1
-cosmeticHintLabel.Position = UDim2.fromOffset(272, 262)
+cosmeticHintLabel.Position = UDim2.fromOffset(272, 282)
 cosmeticHintLabel.Size = UDim2.fromOffset(226, 38)
 cosmeticHintLabel.Font = Enum.Font.GothamBold
 cosmeticHintLabel.Text = "Cosmetics unlock through play"
@@ -1668,6 +1683,16 @@ local function storyGoalText(state)
 	return `{mission.name}: {currentScore}/{targetScore} score`
 end
 
+local function storyPreviewText(mission, storyStars)
+	if typeof(mission) ~= "table" then
+		return "Complete missions to unlock chapters"
+	end
+
+	local chapter = mission.chapter or 1
+	local stars = storyStars or 0
+	return `Chapter {chapter} | {mission.description or "Clear blocks and score"} | Stars {stars}`
+end
+
 renderHand = function()
 	for slot, button in handButtons do
 		local shape = currentState.hand[slot]
@@ -1849,6 +1874,14 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 	local queueText = `{queueCount}/{minPlayers} queued`
 	if hubState.secondsToSoloStart and hubState.secondsToSoloStart > 0 then
 		queueText ..= ` | solo test in {hubState.secondsToSoloStart}s`
+	end
+	if typeof(hubState.storyMission) == "table" then
+		storyButton.Text = `Story: {hubState.storyMission.name or "Mission"}`
+	else
+		storyButton.Text = "Story Mode"
+	end
+	if storyPreviewLabel then
+		storyPreviewLabel.Text = storyPreviewText(hubState.storyMission, hubState.storyStars)
 	end
 	local message = hubState.message or "Welcome to the hub"
 	hubStatusLabel.Text = message
