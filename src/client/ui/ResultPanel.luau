@@ -21,7 +21,7 @@ function ResultPanel.new(gui, queueEvent, options)
 	local panel = Instance.new("Frame")
 	panel.AnchorPoint = Vector2.new(0.5, 0)
 	panel.Position = UDim2.fromScale(0.5, 0.18)
-	panel.Size = UDim2.fromOffset(420, 190)
+	panel.Size = UDim2.fromOffset(420, 208)
 	panel.BackgroundColor3 = Color3.fromRGB(31, 38, 52)
 	panel.BackgroundTransparency = 0.04
 	panel.BorderSizePixel = 0
@@ -99,8 +99,23 @@ function ResultPanel.new(gui, queueEvent, options)
 	progressLabel.Parent = panel
 	self.progressLabel = progressLabel
 
+	local unlockLabel = Instance.new("TextLabel")
+	unlockLabel.BackgroundTransparency = 1
+	unlockLabel.Position = UDim2.fromOffset(18, 146)
+	unlockLabel.Size = UDim2.fromOffset(210, 42)
+	unlockLabel.Font = Enum.Font.GothamBold
+	unlockLabel.Text = "Next unlock: keep playing"
+	unlockLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
+	unlockLabel.TextSize = 13
+	unlockLabel.TextWrapped = true
+	unlockLabel.TextXAlignment = Enum.TextXAlignment.Left
+	unlockLabel.TextYAlignment = Enum.TextYAlignment.Top
+	unlockLabel.ZIndex = 36
+	unlockLabel.Parent = panel
+	self.unlockLabel = unlockLabel
+
 	local replayButton = Instance.new("TextButton")
-	replayButton.Position = UDim2.fromOffset(248, 148)
+	replayButton.Position = UDim2.fromOffset(248, 164)
 	replayButton.Size = UDim2.fromOffset(154, 30)
 	replayButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
 	replayButton.BorderSizePixel = 0
@@ -146,6 +161,7 @@ function ResultPanel:Show(result, message, won)
 	local storyStars = result.storyStars or 0
 	local bestScore = result.bestScore or score
 	local previousBestScore = result.previousBestScore or bestScore
+	local nextUnlockText = result.nextUnlockText or "Next unlock: keep playing"
 	local bestDelta = math.max(0, bestScore - previousBestScore)
 	local rewardText = `+{coins} coins   +{xp} XP`
 
@@ -158,6 +174,7 @@ function ResultPanel:Show(result, message, won)
 	self.rewardLabel.Text = rewardText
 	self.progressLabel.Text = bestDelta > 0 and `New best score: {bestScore} (+{bestDelta})`
 		or `Best score: {bestScore} | Lines cleared: {linesCleared}`
+	self.unlockLabel.Text = nextUnlockText
 	self.panel.BackgroundColor3 = won and Color3.fromRGB(13, 55, 39) or Color3.fromRGB(31, 38, 52)
 	self.panel.Visible = true
 

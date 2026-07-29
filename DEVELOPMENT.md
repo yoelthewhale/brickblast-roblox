@@ -39,6 +39,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Preserved each player's personal reward or forfeit summary when returning from a run to the hub.
 - 2026-07-29: Added a structured post-run results panel with score, lines, rewards, best-score progress, close, and quick battle queue actions.
 - 2026-07-29: Extracted the post-run results UI into a dedicated client module as the first step toward splitting the large client UI script.
+- 2026-07-29: Added server-authored next-cosmetic-unlock hints to the post-run results panel.
 
 ## Current Priorities
 
@@ -48,7 +49,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Add richer original audio assets and mix testing.
 - Add story dialogue, richer chapter framing, and a full mission-select presentation.
 - Validate compact touch layout in Roblox Studio device emulation.
-- Add next-unlock progress to the post-run results panel once the cosmetic inventory presentation is expanded.
+- Add richer cosmetic inventory presentation with visible locked/equipped states and preview grids.
 
 ## Known Issues
 

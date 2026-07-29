@@ -108,6 +108,24 @@ local function cosmeticProgress(player)
 	}
 end
 
+local function nextCosmeticUnlockText(progress)
+	for _, skinName in Blocks.PieceSkins do
+		local requirement = Config.PieceSkinUnlocks[skinName]
+		if not Config.meetsCosmeticRequirement(requirement, progress) then
+			return `Next pieces: {skinName} at {requirement and requirement.label or "keep playing"}`
+		end
+	end
+
+	for _, skin in Config.BoardSkins do
+		local requirement = Config.BoardSkinUnlocks[skin.name]
+		if not Config.meetsCosmeticRequirement(requirement, progress) then
+			return `Next board: {skin.name} at {requirement and requirement.label or "keep playing"}`
+		end
+	end
+
+	return "All current cosmetics unlocked"
+end
+
 local function sanitizeSettings(settings, progress)
 	local clean = table.clone(DEFAULT_SETTINGS)
 	if typeof(settings) ~= "table" then
@@ -453,6 +471,11 @@ local function grantBattleRewards(player, state, winner)
 	coins.Value += earnedCoins
 	xp.Value += earnedXp
 	level.Value = levelFromXp(xp.Value)
+	local nextUnlockText = nextCosmeticUnlockText({
+		coins = coins.Value,
+		level = level.Value,
+		storyStars = storyStars.Value,
+	})
 	state.resultSummary = {
 		mode = state.mode,
 		score = state.score,
@@ -464,6 +487,7 @@ local function grantBattleRewards(player, state, winner)
 		previousBestScore = oldBestScore,
 		storyCompleted = storyCompleted,
 		won = winner == true and state.mode == "Battle",
+		nextUnlockText = nextUnlockText,
 	}
 	if winner and state.mode == "Battle" then
 		state.message = `Victory! +{earnedCoins} coins +{earnedXp} XP`
@@ -949,6 +973,7 @@ leaveBattle = function(player)
 				previousBestScore = state.startingBestScore or state.bestScore,
 				storyCompleted = false,
 				won = false,
+				nextUnlockText = nextCosmeticUnlockText(cosmeticProgress(player)),
 			}
 			analytics.forfeits += 1
 			fireResult(player, state, false)
