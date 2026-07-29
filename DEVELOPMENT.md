@@ -24,11 +24,12 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added isolated match sessions with per-session timers, leaderboards, finish state, and three physical arena slots.
 - 2026-07-29: Added hub matchmaking status for open arenas, active matches, queue size, and full-arena feedback.
 - 2026-07-29: Added visible match/arena diagnostics and a multiplayer stress-test plan for Studio local server validation.
+- 2026-07-29: Added a Studio-only diagnostics overlay with current mode, arena, match, queue, and active session summaries.
 
 ## Current Priorities
 
 - Add deeper customization for board skins, cosmetics, and unlock requirements.
-- Execute Studio multiplayer stress tests and fix issues found.
+- Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
 - Add richer original audio assets and mix testing.
 - Expand story mode with missions, goals, dialogue, and rewards.
 
@@ -45,7 +46,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - `BlockBlastClient.client.luau` is growing large and should be split into UI modules.
 - Profile save data covers best score, wins, coins, XP, level, core settings, and piece skin; board/cosmetic customization still needs persistence.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
-- Match sessions now support multiple active arenas with hub availability UI and diagnostics; production still needs Studio stress execution and arena lifecycle tooling.
+- Match sessions now support multiple active arenas with hub availability UI and diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
 
 ## Release Readiness
 

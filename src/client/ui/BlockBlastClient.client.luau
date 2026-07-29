@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
@@ -24,6 +25,7 @@ local selectedSlot = nil
 local hoverX = nil
 local hoverY = nil
 local currentState = nil
+local currentHubState = nil
 local cells = {}
 local cellScales = {}
 local handButtons = {}
@@ -70,6 +72,8 @@ local dockStatusLabel = nil
 local openBoardButton = nil
 local dockReturnButton = nil
 local banner = nil
+local diagnosticsPanel = nil
+local diagnosticsLabel = nil
 local loadingScreen = nil
 local loadingDismissed = false
 local tutorialPanel = nil
@@ -83,6 +87,7 @@ local clampWindowToScreen = nil
 local applyWindowLayout = nil
 local renderBoard = nil
 local renderHand = nil
+local renderDiagnostics = nil
 
 local DEFAULT_WINDOW_POSITION = UDim2.new(0, 36, 0.5, 0)
 local DEFAULT_WINDOW_SIZE = Vector2.new(640, 438)
@@ -213,6 +218,32 @@ banner.Parent = gui
 bannerScale = Instance.new("UIScale")
 bannerScale.Scale = 1
 bannerScale.Parent = banner
+
+if RunService:IsStudio() then
+	diagnosticsPanel = Instance.new("Frame")
+	diagnosticsPanel.AnchorPoint = Vector2.new(1, 1)
+	diagnosticsPanel.Position = UDim2.new(1, -18, 1, -18)
+	diagnosticsPanel.Size = UDim2.fromOffset(330, 150)
+	diagnosticsPanel.BackgroundColor3 = Color3.fromRGB(8, 11, 18)
+	diagnosticsPanel.BackgroundTransparency = 0.08
+	diagnosticsPanel.BorderSizePixel = 0
+	diagnosticsPanel.ZIndex = 40
+	diagnosticsPanel.Parent = gui
+
+	diagnosticsLabel = Instance.new("TextLabel")
+	diagnosticsLabel.BackgroundTransparency = 1
+	diagnosticsLabel.Position = UDim2.fromOffset(12, 10)
+	diagnosticsLabel.Size = UDim2.fromOffset(306, 130)
+	diagnosticsLabel.Font = Enum.Font.Code
+	diagnosticsLabel.Text = "Studio diagnostics loading..."
+	diagnosticsLabel.TextColor3 = Color3.fromRGB(210, 224, 255)
+	diagnosticsLabel.TextSize = 13
+	diagnosticsLabel.TextXAlignment = Enum.TextXAlignment.Left
+	diagnosticsLabel.TextYAlignment = Enum.TextYAlignment.Top
+	diagnosticsLabel.TextWrapped = true
+	diagnosticsLabel.ZIndex = 41
+	diagnosticsLabel.Parent = diagnosticsPanel
+end
 
 local function applyUiScale()
 	local screenSize = gui.AbsoluteSize
@@ -1472,6 +1503,53 @@ local function renderProgression()
 		`Level {level and level.Value or 1} | {coins and coins.Value or 0} coins | {xp and xp.Value or 0} XP | {cleared} cleared`
 end
 
+renderDiagnostics = function()
+	if not diagnosticsLabel then
+		return
+	end
+
+	local lines = {
+		"STUDIO MATCH DIAGNOSTICS",
+		`Player: {player.Name}`,
+	}
+
+	if currentState then
+		table.insert(
+			lines,
+			`Mode: {currentState.mode or "?"} | Arena: {currentState.arenaIndex or "--"} | Match: {currentState.sessionId or "--"}`
+		)
+		table.insert(
+			lines,
+			`Score: {currentState.score or 0} | Alive: {tostring(currentState.alive)}`
+		)
+	elseif currentHubState then
+		table.insert(lines, "Mode: Hub")
+		table.insert(
+			lines,
+			`Arenas: {currentHubState.openArenas or 0}/{currentHubState.totalArenas or 0} | Matches: {currentHubState.activeSessions or 0}`
+		)
+		table.insert(
+			lines,
+			`Queue: {currentHubState.queueCount or 0}/{currentHubState.minPlayers or 2} | Queued: {tostring(
+				currentHubState.queued
+			)}`
+		)
+	else
+		table.insert(lines, "Waiting for state...")
+	end
+
+	if currentHubState and typeof(currentHubState.sessions) == "table" then
+		for _, session in currentHubState.sessions do
+			table.insert(
+				lines,
+				`#{session.id} {session.mode} A{session.arenaIndex or "?"} P{session.playerCount}/{session.startedWith} T{session.timeLeft}s`
+			)
+		end
+	end
+
+	diagnosticsLabel.Text = table.concat(lines, "\n")
+end
+
 stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	dismissLoading()
 	local oldBoard = previousBoard
@@ -1483,6 +1561,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		setHubPanelVisible(not hubManuallyClosed)
 		updateTutorialVisibility()
 		previousBoard = nil
+		renderDiagnostics()
 		return
 	end
 
@@ -1513,6 +1592,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	renderHand()
 	renderLeaderboard(leaderboard)
 	renderProgression()
+	renderDiagnostics()
 	previousBoard = cloneBoard(currentState.board)
 end)
 
@@ -1539,6 +1619,9 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 	if not hubState then
 		return
 	end
+
+	currentHubState = hubState
+	renderDiagnostics()
 
 	if hubState.mode == "Battle" or hubState.mode == "Story" then
 		updateTutorialVisibility()
@@ -1595,6 +1678,7 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 	end
 
 	lastQueued = hubState.queued
+	renderDiagnostics()
 end)
 
 effectsEvent.OnClientEvent:Connect(function(effect)

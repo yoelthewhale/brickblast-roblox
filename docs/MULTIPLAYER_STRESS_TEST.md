@@ -11,6 +11,7 @@ Use this checklist in Roblox Studio local server tests before treating matchmaki
 
 ## Diagnostics To Watch
 
+- Studio diagnostics overlay: current player, mode, arena, match, queue, and active session summaries.
 - Hub panel: `Arenas`, `Matches`, and queued player count.
 - Battle window: `Arena -- | Match --` line.
 - Battle dock: minimized players should still show arena and score.
@@ -106,5 +107,6 @@ Record each failure with:
 - Scenario letter.
 - Player count.
 - Match number and arena number from each affected client.
+- Studio diagnostics overlay text from each affected client.
 - Exact Output error text.
 - Repro steps.

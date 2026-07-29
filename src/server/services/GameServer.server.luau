@@ -152,6 +152,28 @@ local function arenaCounts()
 	return totalArenas, math.max(0, totalArenas - activeCount)
 end
 
+local function sessionSummaries()
+	local summaries = {}
+
+	for _, session in activeSessions do
+		table.insert(summaries, {
+			id = session.id,
+			mode = session.mode,
+			arenaIndex = session.arena and session.arena.index or nil,
+			playerCount = #session.players,
+			startedWith = session.startedWith,
+			timeLeft = math.max(0, math.ceil(session.endsAt - os.clock())),
+			finishScheduled = session.finishScheduled,
+		})
+	end
+
+	table.sort(summaries, function(a, b)
+		return a.id < b.id
+	end)
+
+	return summaries
+end
+
 local function createLeaderstats(player)
 	local leaderstats = Instance.new("Folder")
 	leaderstats.Name = "leaderstats"
@@ -387,6 +409,7 @@ local function sendHubState(player, message)
 		activeSessions = activeSessionCount(),
 		openArenas = openArenas,
 		totalArenas = totalArenas,
+		sessions = sessionSummaries(),
 		secondsToSoloStart = secondsToSoloStart,
 		message = message,
 	})
