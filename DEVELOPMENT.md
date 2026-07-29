@@ -47,6 +47,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added battle sudden death with server-owned pressure rows, warning banners, red timer state, and diagnostics counters.
 - 2026-07-29: Added a Story Missions panel with recent chapter browsing, replay access for completed chapters, locked upcoming chapter previews, and server-validated selected chapter starts.
 - 2026-07-29: Hardened Story Stars so replayed chapters can earn base rewards but cannot farm additional progression stars.
+- 2026-07-29: Hardened profile persistence by clamping loaded/saved leaderstat values, rejecting invalid numeric profile data, and surfacing sanitized-field counts in Studio diagnostics.
 
 ## Current Priorities
 
@@ -68,7 +69,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 ## Technical Debt
 
 - `BlockBlastClient.client.luau` is still large; `ResultPanel.luau`, `CosmeticPanel.luau`, and `SoundController.luau` are the first extractions, and battle board, hub panel, and settings controls should follow.
-- Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; unlocks are progression-derived, while broader cosmetic inventory still needs persistence.
+- Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; numeric profile values are sanitized on load/save, while broader cosmetic inventory still needs persistence.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
 - Match sessions now support multiple active arenas with hub availability UI, analytics, exploit diagnostics, and Studio diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
 
@@ -86,6 +87,8 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Updated `src/client/ui/BlockBlastClient.client.luau` to require `StoryPanel`, open it from the hub Story button, refresh it from hub state, and hide it when a run starts.
 - Updated `src/server/services/GameServer.server.luau` so story runs accept a requested chapter, validate that chapter on the server, expose `storyMissions` in hub state, and prevent replayed chapters from awarding extra Story Stars.
 - Preserved the existing tutorial `Try Story` shortcut as a quick-start path into the next unlocked story chapter.
+- Completed final persistence hardening: `GameServer.server.luau` now clamps profile integers to explicit bounds, rejects NaN/infinite/bad profile values, sanitizes outgoing save payloads, and reports sanitized-field counts through hub analytics.
+- Updated `BlockBlastClient.client.luau` Studio diagnostics to show `Profile L/S/Sanitized` so corrupt profile cleanup is visible during playtests.
 - Rebuilt `BlockBlastBattle-Day3.rbxl` after the changes.
 
 ### Current State
@@ -95,6 +98,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - The story mission list is intentionally compact: it shows a small rolling window around player progress instead of every possible repeated chapter.
 - Story replay currently grants normal score-based coins/XP but only awards the bonus Story Star and completion bonus for the next unbeaten chapter.
 - Studio/live validation is still required for the new modal UI interactions, ProximityPrompt story start path, and DataStore-backed Story Stars reload behavior.
+- No partially completed features remain from the final persistence-hardening task.
 
 ### Recommended Next Priorities
 
@@ -135,3 +139,14 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Biggest gameplay weaknesses: battle pacing still needs hands-on tuning, story content is short, and the board exists only as UI rather than a more embodied arena experience.
 - Biggest polish opportunities: hub visual identity, final sound design, transitions, particles, thumbnails/icons, and better first-session onboarding.
 - Biggest technical risks: server session lifecycle edge cases, DataStore behavior under failure, replay/reward duplication paths, and UI scaling across Roblox devices.
+
+### Final Task Files Modified
+
+- `src/server/services/GameServer.server.luau`
+- `src/client/ui/BlockBlastClient.client.luau`
+- `DEVELOPMENT.md`
+
+### Single Highest-Priority Next Task
+
+- Run the Roblox Studio local server stress-test checklist in `docs/MULTIPLAYER_STRESS_TEST.md`.
+  This should happen next because the code now has enough matchmaking, rewards, persistence, story selection, and sudden-death behavior that real multi-client validation is more valuable than another local-only feature.

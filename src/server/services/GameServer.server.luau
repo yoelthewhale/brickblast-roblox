@@ -66,6 +66,7 @@ local analytics = {
 	rejectedPlaceRequests = 0,
 	throttledPlaceRequests = 0,
 	suddenDeathPressureRows = 0,
+	profileFieldsSanitized = 0,
 	forfeits = 0,
 }
 
@@ -81,6 +82,14 @@ local PLACE_COOLDOWN_SECONDS = 0.08
 local QUEUE_ACTION_COOLDOWN_SECONDS = 0.35
 local SETTINGS_SAVE_DEBOUNCE_SECONDS = 1
 local PROFILE_SAVE_RETRY_COUNT = 3
+local PROFILE_LIMITS = {
+	bestScore = 1000000000,
+	wins = 1000000,
+	coins = 100000000,
+	xp = 100000000,
+	level = 1000,
+	storyStars = 100000,
+}
 local leaveBattle = nil
 local scheduleReturnIfEliminated = nil
 local resolveBattleIfFinished = nil
@@ -255,6 +264,34 @@ local function sessionSummaries()
 	return summaries
 end
 
+local function sanitizeProfileInteger(value, minimum, maximum, fallback)
+	if typeof(value) ~= "number" or value ~= value or value == math.huge or value == -math.huge then
+		return fallback, value ~= nil
+	end
+
+	local clean = math.clamp(math.floor(value), minimum, maximum)
+	return clean, clean ~= value
+end
+
+local function applyLoadedProfileStat(profile, stat, key, minimum, maximum, fallback)
+	local clean, sanitized = sanitizeProfileInteger(profile[key], minimum, maximum, fallback)
+	stat.Value = clean
+	return sanitized and 1 or 0
+end
+
+local function sanitizedStatValue(stat, minimum, maximum, fallback)
+	local clean, sanitized = sanitizeProfileInteger(stat and stat.Value, minimum, maximum, fallback)
+	if sanitized and stat then
+		stat.Value = clean
+	end
+
+	if sanitized then
+		analytics.profileFieldsSanitized += 1
+	end
+
+	return clean
+end
+
 local function createLeaderstats(player)
 	local leaderstats = Instance.new("Folder")
 	leaderstats.Name = "leaderstats"
@@ -314,29 +351,42 @@ local function createLeaderstats(player)
 			return
 		end
 
-		if typeof(profile.bestScore) == "number" then
-			bestScore.Value = math.max(0, math.floor(profile.bestScore))
-		end
-
-		if typeof(profile.wins) == "number" then
-			wins.Value = math.max(0, math.floor(profile.wins))
-		end
-
-		if typeof(profile.coins) == "number" then
-			coins.Value = math.max(0, math.floor(profile.coins))
-		end
-
-		if typeof(profile.xp) == "number" then
-			xp.Value = math.max(0, math.floor(profile.xp))
-		end
-
-		if typeof(profile.level) == "number" then
-			level.Value = math.max(1, math.floor(profile.level))
-		end
-
-		if typeof(profile.storyStars) == "number" then
-			storyStars.Value = math.max(0, math.floor(profile.storyStars))
-		end
+		local sanitizedFields = 0
+		sanitizedFields += applyLoadedProfileStat(
+			profile,
+			bestScore,
+			"bestScore",
+			0,
+			PROFILE_LIMITS.bestScore,
+			0
+		)
+		sanitizedFields += applyLoadedProfileStat(profile, wins, "wins", 0, PROFILE_LIMITS.wins, 0)
+		sanitizedFields += applyLoadedProfileStat(
+			profile,
+			coins,
+			"coins",
+			0,
+			PROFILE_LIMITS.coins,
+			0
+		)
+		sanitizedFields += applyLoadedProfileStat(profile, xp, "xp", 0, PROFILE_LIMITS.xp, 0)
+		sanitizedFields += applyLoadedProfileStat(
+			profile,
+			level,
+			"level",
+			1,
+			PROFILE_LIMITS.level,
+			1
+		)
+		sanitizedFields += applyLoadedProfileStat(
+			profile,
+			storyStars,
+			"storyStars",
+			0,
+			PROFILE_LIMITS.storyStars,
+			0
+		)
+		analytics.profileFieldsSanitized += sanitizedFields
 
 		playerSettings[player] = sanitizeSettings(profile.settings, cosmeticProgress(player))
 		sendSettings(player)
@@ -405,12 +455,12 @@ local function saveProfile(player)
 
 	setProfileWithRetry(player, {
 		version = 1,
-		bestScore = bestScore.Value,
-		wins = wins.Value,
-		coins = coins.Value,
-		xp = xp.Value,
-		level = level.Value,
-		storyStars = storyStars.Value,
+		bestScore = sanitizedStatValue(bestScore, 0, PROFILE_LIMITS.bestScore, 0),
+		wins = sanitizedStatValue(wins, 0, PROFILE_LIMITS.wins, 0),
+		coins = sanitizedStatValue(coins, 0, PROFILE_LIMITS.coins, 0),
+		xp = sanitizedStatValue(xp, 0, PROFILE_LIMITS.xp, 0),
+		level = sanitizedStatValue(level, 1, PROFILE_LIMITS.level, 1),
+		storyStars = sanitizedStatValue(storyStars, 0, PROFILE_LIMITS.storyStars, 0),
 		settings = sanitizeSettings(playerSettings[player], cosmeticProgress(player)),
 		updatedAt = os.time(),
 	})

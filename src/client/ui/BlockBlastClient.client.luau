@@ -1898,12 +1898,13 @@ renderDiagnostics = function()
 				currentHubState.queued
 			)}`
 		)
+		local stats = typeof(currentHubState.analytics) == "table" and currentHubState.analytics
+			or {}
 		table.insert(
 			lines,
-			`Profile fails L/S: {currentHubState.profileLoadFailures or 0}/{currentHubState.profileSaveFailures or 0}`
+			`Profile L/S/Sanitized: {currentHubState.profileLoadFailures or 0}/{currentHubState.profileSaveFailures or 0}/{stats.profileFieldsSanitized or 0}`
 		)
 		if typeof(currentHubState.analytics) == "table" then
-			local stats = currentHubState.analytics
 			table.insert(
 				lines,
 				`Analytics B/S/Q/P/C/I/F/R/T/D: {stats.battleSessionsStarted or 0}/{stats.storySessionsStarted or 0}/{stats.queueJoins or 0}/{stats.placements or 0}/{stats.linesCleared or 0}/{stats.invalidPlacements or 0}/{stats.forfeits or 0}/{stats.rejectedPlaceRequests or 0}/{stats.throttledPlaceRequests or 0}/{stats.suddenDeathPressureRows or 0}`
