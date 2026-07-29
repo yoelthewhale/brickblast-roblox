@@ -57,6 +57,7 @@ local PLACE_COOLDOWN_SECONDS = 0.08
 local leaveBattle = nil
 local scheduleReturnIfEliminated = nil
 local resolveBattleIfFinished = nil
+local startStoryMode = nil
 
 local function createLeaderstats(player)
 	local leaderstats = Instance.new("Folder")
@@ -197,7 +198,7 @@ local function grantBattleRewards(player, state, winner)
 	local earnedCoins = math.max(5, hundredScore * Config.CoinsPerHundredScore)
 	local earnedXp = math.max(10, hundredScore * Config.XpPerHundredScore)
 
-	if winner then
+	if winner and state.mode == "Battle" then
 		earnedCoins += Config.WinnerBonusCoins
 		earnedXp += Config.WinnerBonusXp
 		wins.Value += 1
@@ -206,7 +207,9 @@ local function grantBattleRewards(player, state, winner)
 	coins.Value += earnedCoins
 	xp.Value += earnedXp
 	level.Value = levelFromXp(xp.Value)
-	state.message = winner and `Victory! +{earnedCoins} coins +{earnedXp} XP`
+	state.message = winner
+			and state.mode == "Battle"
+			and `Victory! +{earnedCoins} coins +{earnedXp} XP`
 		or `Rewards: +{earnedCoins} coins +{earnedXp} XP`
 end
 
@@ -253,6 +256,7 @@ local function publicState(player)
 		alive = state.alive,
 		message = state.message,
 		linesCleared = state.linesCleared,
+		mode = state.mode,
 		timeLeft = battleEndsAt and math.max(0, math.ceil(battleEndsAt - os.clock())) or nil,
 	}
 end
@@ -349,12 +353,13 @@ local function pressureOpponents(attacker, linesCleared)
 	end
 end
 
-local function createPlayerState(player)
+local function createPlayerState(player, mode)
 	local randomizer = Random.new(os.clock() * 100000 + player.UserId)
 	local state = {
 		board = Grid.create(),
 		hand = {},
 		randomizer = randomizer,
+		mode = mode,
 		score = 0,
 		bestScore = player:FindFirstChild("leaderstats") and player.leaderstats.BestScore.Value
 			or 0,
@@ -369,25 +374,29 @@ local function createPlayerState(player)
 	updateLeaderstats(player, 0)
 end
 
-local function startBattle(players)
+local function startBattle(players, mode)
+	mode = mode or "Battle"
 	battleInProgress = true
 	battleStartedWith = #players
 	battleFinishScheduled = false
-	battleEndsAt = os.clock() + Config.RoundSeconds
+	battleEndsAt = os.clock()
+		+ (mode == "Story" and Config.StoryRoundSeconds or Config.RoundSeconds)
 	queueStartedAt = nil
 
 	for slot, player in players do
 		queuedPlayers[player] = nil
-		playerModes[player] = "Battle"
-		createPlayerState(player)
+		playerModes[player] = mode
+		createPlayerState(player, mode)
 		teleportToArenaSlot(player, slot)
 		effectsEvent:FireClient(player, {
 			kind = "BattleStart",
-			message = #players >= BATTLE_MIN_PLAYERS and "Battle started!" or "Solo test started!",
+			message = mode == "Story" and "Story training started!"
+				or #players >= BATTLE_MIN_PLAYERS and "Battle started!"
+				or "Solo test started!",
 		})
 	end
 
-	broadcastHub("Battle started")
+	broadcastHub(mode == "Story" and "Story training started" or "Battle started")
 	broadcast()
 end
 
@@ -418,18 +427,18 @@ local function tryStartBattle()
 	end
 
 	if #players >= BATTLE_MIN_PLAYERS then
-		startBattle(players)
+		startBattle(players, "Battle")
 		return
 	end
 
 	if #players == 1 and queueStartedAt and os.clock() - queueStartedAt >= SOLO_TEST_SECONDS then
-		startBattle(players)
+		startBattle(players, "Battle")
 	end
 end
 
 local function joinBattleQueue(player)
-	if playerModes[player] == "Battle" then
-		sendHubState(player, "You are already in a battle")
+	if playerModes[player] == "Battle" or playerModes[player] == "Story" then
+		sendHubState(player, "Finish your current run first")
 		return
 	end
 
@@ -442,6 +451,20 @@ local function joinBattleQueue(player)
 	queueStartedAt = queueStartedAt or os.clock()
 	broadcastHub(`{player.DisplayName} joined the battle queue`)
 	tryStartBattle()
+end
+
+startStoryMode = function(player)
+	if playerModes[player] == "Battle" or playerModes[player] == "Story" then
+		sendHubState(player, "Finish your current run first")
+		return
+	end
+
+	if battleInProgress then
+		sendHubState(player, "Arena is busy - try story again after this match")
+		return
+	end
+
+	startBattle({ player }, "Story")
 end
 
 local function finishBattle(winner)
@@ -608,14 +631,14 @@ queueEvent.OnServerEvent:Connect(function(player, mode)
 	elseif mode == "LeaveBattle" then
 		leaveBattle(player)
 	else
-		sendHubState(player, "Story mode is reserved for the next build")
+		startStoryMode(player)
 	end
 end)
 
 hubParts.battlePrompt.Triggered:Connect(joinBattleQueue)
 
 hubParts.storyPrompt.Triggered:Connect(function(player)
-	sendHubState(player, "Story mode is reserved for the next build")
+	startStoryMode(player)
 end)
 
 if hubParts.arenaReturnPad then
@@ -634,7 +657,7 @@ Players.PlayerAdded:Connect(function(player)
 	playerModes[player] = "Hub"
 	player.CharacterAdded:Connect(function()
 		task.wait(0.2)
-		if playerModes[player] ~= "Battle" then
+		if playerModes[player] ~= "Battle" and playerModes[player] ~= "Story" then
 			teleportTo(hubParts.spawn, player)
 		end
 	end)

@@ -1123,7 +1123,8 @@ renderHand = function()
 end
 
 local function renderLeaderboard(leaderboard)
-	local lines = { `Battle - Best: {currentState.bestScore or 0}` }
+	local modeName = currentState.mode == "Story" and "Story Training" or "Battle"
+	local lines = { `{modeName} - Best: {currentState.bestScore or 0}` }
 
 	for index, entry in leaderboard do
 		table.insert(lines, `{index}. {entry.name}: {entry.score} | Best {entry.bestScore or 0}`)
@@ -1160,6 +1161,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	end
 	setHubPanelVisible(false)
 	battleDock.Visible = not root.Visible
+	title.Text = currentState.mode == "Story" and "Story Training" or "Block Blast Battle"
 	scoreLabel.Text = `Score: {currentState.score}`
 	timerLabel.Text = currentState.timeLeft and `Time: {currentState.timeLeft}s` or "Time: --"
 	timerLabel.TextColor3 = currentState.timeLeft
@@ -1204,7 +1206,7 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 		return
 	end
 
-	if hubState.mode == "Battle" then
+	if hubState.mode == "Battle" or hubState.mode == "Story" then
 		return
 	end
 

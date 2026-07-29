@@ -14,13 +14,14 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Replaced one-off best-score saving with versioned profile data for best score and wins.
 - 2026-07-29: Added hub accessibility controls for reduced motion and Auto/Large/Compact UI size.
 - 2026-07-29: Added battle rewards for coins, XP, levels, winner bonus payouts, and progression display.
+- 2026-07-29: Replaced story-mode placeholder with a starter solo training run using the Block Blast board.
 
 ## Current Priorities
 
 - Improve first-time player onboarding.
 - Add persistent settings and customization.
 - Add sound settings and starter sound effects.
-- Build story-mode prototype and better match flow.
+- Expand story mode with missions, goals, dialogue, and rewards.
 
 ## Known Issues
 

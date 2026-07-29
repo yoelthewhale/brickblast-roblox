@@ -28,7 +28,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Test hover placement preview and blocked-placement feedback | High | Playtest | Bear / Codex | 2026-07-29 |
 | Fix any Day 2 Studio errors from Output window | High | Ready | Codex | 2026-07-30 |
 | Add queue countdown and match-start banner | High | In Progress | Codex | 2026-07-30 |
-| Add story-mode placeholder flow with a starter mission | Medium | Backlog | Codex | 2026-07-31 |
+| Add story-mode placeholder flow with a starter mission | Medium | Playtest | Codex | 2026-07-31 |
 | Add battle arenas per match instead of one shared arena | High | In Progress | Codex | 2026-08-01 |
 | Add player customization save data for UI theme and layout | Medium | Backlog | Codex | 2026-08-01 |
 | Add piece skin customization menu | Medium | Backlog | Codex | 2026-08-02 |
@@ -57,6 +57,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Walk from the hub bridge into the first battle arena and confirm the two player decks, glow pillars, and scoreboard render.
 - Join battle queue and wait for solo test battle.
 - Confirm queued players see the solo-test countdown.
+- Start Story Mode and confirm it opens a solo `Story Training` board.
 - Confirm battle start and result banners animate in.
 - Confirm the battle window shows a round timer.
 - Confirm the UI window can drag, resize, hide, reopen, and reset.
@@ -68,4 +69,4 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 ## Build Notes
 
-- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, closable hub UI, side-logo hub access, round timer, and basic wins stat. Built `BlockBlastBattle-Day3.rbxl`.
+- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, anti-spam remote checks, and starter story training. Built `BlockBlastBattle-Day3.rbxl`.

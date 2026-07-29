@@ -3,6 +3,7 @@ local Config = {}
 Config.BoardSize = 8
 Config.InventorySize = 3
 Config.RoundSeconds = 180
+Config.StoryRoundSeconds = 120
 Config.PointsPerCell = 10
 Config.PointsPerLine = 100
 Config.GarbagePerLineCleared = 1
