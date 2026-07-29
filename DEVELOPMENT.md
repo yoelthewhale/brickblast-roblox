@@ -29,10 +29,11 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Hardened queue/settings remotes with queue action cooldowns, explicit mode handling, and debounced settings saves.
 - 2026-07-29: Expanded Story Training into rotating server-authored missions with visible objectives, completion rewards, and persistent Story Stars.
 - 2026-07-29: Added compact touch layout for the battle window with stacked board/piece controls and safer small-screen scaling.
+- 2026-07-29: Added progression-gated cosmetic unlock requirements for piece and board skins with server-side enforcement and hub hints.
 
 ## Current Priorities
 
-- Add cosmetic unlock requirements, previews, and a proper shop/inventory flow.
+- Add a proper cosmetic shop/inventory presentation with richer previews.
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
 - Add broader anti-exploit checks around progression, rewards, and session lifecycle edge cases.
 - Add richer original audio assets and mix testing.
@@ -50,7 +51,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 ## Technical Debt
 
 - `BlockBlastClient.client.luau` is growing large and should be split into UI modules.
-- Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; broader cosmetic inventory still needs persistence.
+- Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; unlocks are progression-derived, while broader cosmetic inventory still needs persistence.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
 - Match sessions now support multiple active arenas with hub availability UI and diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
 

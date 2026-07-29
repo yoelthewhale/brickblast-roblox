@@ -62,6 +62,7 @@ local motionButton = nil
 local uiSizeButton = nil
 local pieceSkinButton = nil
 local boardSkinButton = nil
+local cosmeticHintLabel = nil
 local soundButton = nil
 local customizeButton = nil
 local returnHubButton = nil
@@ -328,6 +329,57 @@ local function saveSettings()
 	settingsEvent:FireServer("Update", settingsPayload())
 end
 
+local function localCosmeticProgress()
+	local leaderstats = player:FindFirstChild("leaderstats")
+	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
+	local level = leaderstats and leaderstats:FindFirstChild("Level")
+	local storyStars = leaderstats and leaderstats:FindFirstChild("StoryStars")
+
+	return {
+		coins = coins and coins.Value or 0,
+		level = level and level.Value or 1,
+		storyStars = storyStars and storyStars.Value or 0,
+	}
+end
+
+local function isPieceSkinUnlocked(index)
+	local skinName = Blocks.PieceSkins[index]
+	return Config.meetsCosmeticRequirement(
+		Config.PieceSkinUnlocks[skinName],
+		localCosmeticProgress()
+	)
+end
+
+local function isBoardSkinUnlocked(index)
+	local skin = Config.BoardSkins[index]
+	return Config.meetsCosmeticRequirement(
+		skin and Config.BoardSkinUnlocks[skin.name],
+		localCosmeticProgress()
+	)
+end
+
+local function lockedText(requirement)
+	return requirement and requirement.label or "Keep playing"
+end
+
+local function nextLockedCosmeticText()
+	for _, skinName in Blocks.PieceSkins do
+		local requirement = Config.PieceSkinUnlocks[skinName]
+		if not Config.meetsCosmeticRequirement(requirement, localCosmeticProgress()) then
+			return `Next pieces: {skinName} at {lockedText(requirement)}`
+		end
+	end
+
+	for _, skin in Config.BoardSkins do
+		local requirement = Config.BoardSkinUnlocks[skin.name]
+		if not Config.meetsCosmeticRequirement(requirement, localCosmeticProgress()) then
+			return `Next board: {skin.name} at {lockedText(requirement)}`
+		end
+	end
+
+	return "All current cosmetics unlocked"
+end
+
 local function updateSettingsButtonText()
 	if motionButton then
 		motionButton.Text = reducedMotion and "Motion: Reduced" or "Motion: Full"
@@ -350,6 +402,10 @@ local function updateSettingsButtonText()
 	if boardSkinButton then
 		local boardSkin = Config.BoardSkins[boardSkinIndex]
 		boardSkinButton.Text = `Board: {boardSkin and boardSkin.name or "Auto"}`
+	end
+
+	if cosmeticHintLabel then
+		cosmeticHintLabel.Text = nextLockedCosmeticText()
 	end
 
 	if soundButton then
@@ -729,6 +785,30 @@ boardSkinButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 boardSkinButton.TextSize = 15
 boardSkinButton.Parent = hubPanel
 
+cosmeticHintLabel = Instance.new("TextLabel")
+cosmeticHintLabel.BackgroundTransparency = 1
+cosmeticHintLabel.Position = UDim2.fromOffset(272, 262)
+cosmeticHintLabel.Size = UDim2.fromOffset(226, 38)
+cosmeticHintLabel.Font = Enum.Font.GothamBold
+cosmeticHintLabel.Text = "Cosmetics unlock through play"
+cosmeticHintLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
+cosmeticHintLabel.TextSize = 13
+cosmeticHintLabel.TextWrapped = true
+cosmeticHintLabel.TextXAlignment = Enum.TextXAlignment.Left
+cosmeticHintLabel.TextYAlignment = Enum.TextYAlignment.Center
+cosmeticHintLabel.Parent = hubPanel
+
+local function nextUnlockedIndex(currentIndex, itemCount, isUnlocked)
+	for offset = 1, itemCount do
+		local nextIndex = ((currentIndex + offset - 1) % itemCount) + 1
+		if isUnlocked(nextIndex) then
+			return nextIndex
+		end
+	end
+
+	return currentIndex
+end
+
 battleQueueButton.MouseButton1Click:Connect(function()
 	playSound(hubQueued and "Button" or "Queue")
 	queueEvent:FireServer(hubQueued and "LeaveQueue" or "Battle")
@@ -765,11 +845,14 @@ uiSizeButton.MouseButton1Click:Connect(function()
 end)
 
 pieceSkinButton.MouseButton1Click:Connect(function()
-	pieceSkinIndex += 1
-	if pieceSkinIndex > #Blocks.PieceSkins then
-		pieceSkinIndex = 1
+	local nextIndex = nextUnlockedIndex(pieceSkinIndex, #Blocks.PieceSkins, isPieceSkinUnlocked)
+	if nextIndex == pieceSkinIndex then
+		showBanner(nextLockedCosmeticText(), Color3.fromRGB(251, 146, 60))
+		playSound("Blocked")
+		return
 	end
 
+	pieceSkinIndex = nextIndex
 	updateSettingsButtonText()
 	playSound("Button")
 	saveSettings()
@@ -777,11 +860,14 @@ pieceSkinButton.MouseButton1Click:Connect(function()
 end)
 
 boardSkinButton.MouseButton1Click:Connect(function()
-	boardSkinIndex += 1
-	if boardSkinIndex > #Config.BoardSkins then
-		boardSkinIndex = 1
+	local nextIndex = nextUnlockedIndex(boardSkinIndex, #Config.BoardSkins, isBoardSkinUnlocked)
+	if nextIndex == boardSkinIndex then
+		showBanner(nextLockedCosmeticText(), Color3.fromRGB(251, 146, 60))
+		playSound("Blocked")
+		return
 	end
 
+	boardSkinIndex = nextIndex
 	updateSettingsButtonText()
 	applyBoardSkin()
 	if currentState then
@@ -1718,16 +1804,24 @@ task.spawn(function()
 	if leaderstats then
 		for _, stat in leaderstats:GetChildren() do
 			if stat:IsA("IntValue") then
-				stat.Changed:Connect(renderProgression)
+				stat.Changed:Connect(function()
+					renderProgression()
+					updateSettingsButtonText()
+				end)
 			end
 		end
 		leaderstats.ChildAdded:Connect(function(child)
 			if child:IsA("IntValue") then
-				child.Changed:Connect(renderProgression)
+				child.Changed:Connect(function()
+					renderProgression()
+					updateSettingsButtonText()
+				end)
 				renderProgression()
+				updateSettingsButtonText()
 			end
 		end)
 		renderProgression()
+		updateSettingsButtonText()
 	end
 end)
 

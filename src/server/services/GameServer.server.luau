@@ -78,7 +78,20 @@ local DEFAULT_SETTINGS = {
 	soundVolume = 0.65,
 }
 
-local function sanitizeSettings(settings)
+local function cosmeticProgress(player)
+	local leaderstats = player and player:FindFirstChild("leaderstats")
+	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
+	local level = leaderstats and leaderstats:FindFirstChild("Level")
+	local storyStars = leaderstats and leaderstats:FindFirstChild("StoryStars")
+
+	return {
+		coins = coins and coins.Value or 0,
+		level = level and level.Value or 1,
+		storyStars = storyStars and storyStars.Value or 0,
+	}
+end
+
+local function sanitizeSettings(settings, progress)
 	local clean = table.clone(DEFAULT_SETTINGS)
 	if typeof(settings) ~= "table" then
 		return clean
@@ -100,11 +113,19 @@ local function sanitizeSettings(settings)
 		clean.tutorialComplete = settings.tutorialComplete
 	end
 
-	if typeof(settings.pieceSkin) == "string" and Blocks.isValidPieceSkin(settings.pieceSkin) then
+	if
+		typeof(settings.pieceSkin) == "string"
+		and Blocks.isValidPieceSkin(settings.pieceSkin)
+		and Config.meetsCosmeticRequirement(Config.PieceSkinUnlocks[settings.pieceSkin], progress)
+	then
 		clean.pieceSkin = settings.pieceSkin
 	end
 
-	if typeof(settings.boardSkin) == "string" and Config.isValidBoardSkin(settings.boardSkin) then
+	if
+		typeof(settings.boardSkin) == "string"
+		and Config.isValidBoardSkin(settings.boardSkin)
+		and Config.meetsCosmeticRequirement(Config.BoardSkinUnlocks[settings.boardSkin], progress)
+	then
 		clean.boardSkin = settings.boardSkin
 	end
 
@@ -120,7 +141,10 @@ local function sanitizeSettings(settings)
 end
 
 local function sendSettings(player)
-	settingsEvent:FireClient(player, playerSettings[player] or DEFAULT_SETTINGS)
+	settingsEvent:FireClient(
+		player,
+		sanitizeSettings(playerSettings[player], cosmeticProgress(player))
+	)
 end
 
 local function findFreeArena()
@@ -260,7 +284,7 @@ local function createLeaderstats(player)
 			storyStars.Value = math.max(0, math.floor(profile.storyStars))
 		end
 
-		playerSettings[player] = sanitizeSettings(profile.settings)
+		playerSettings[player] = sanitizeSettings(profile.settings, cosmeticProgress(player))
 		sendSettings(player)
 	end)
 end
@@ -312,7 +336,7 @@ local function saveProfile(player)
 			xp = xp.Value,
 			level = level.Value,
 			storyStars = storyStars.Value,
-			settings = sanitizeSettings(playerSettings[player]),
+			settings = sanitizeSettings(playerSettings[player], cosmeticProgress(player)),
 			updatedAt = os.time(),
 		})
 	end)
@@ -957,7 +981,7 @@ settingsEvent.OnServerEvent:Connect(function(player, action, nextSettings)
 		return
 	end
 
-	playerSettings[player] = sanitizeSettings(nextSettings)
+	playerSettings[player] = sanitizeSettings(nextSettings, cosmeticProgress(player))
 	sendSettings(player)
 	scheduleSettingsSave(player)
 end)

@@ -37,6 +37,25 @@ Config.StoryMissions = {
 	},
 }
 
+Config.PieceSkinUnlocks = {
+	Rainbow = {
+		label = "Free",
+	},
+	Neon = {
+		level = 2,
+		label = "Level 2",
+	},
+	Pastel = {
+		storyStars = 1,
+		label = "1 Story Star",
+	},
+	Ice = {
+		level = 3,
+		storyStars = 2,
+		label = "Level 3 + 2 Story Stars",
+	},
+}
+
 Config.Colors = {
 	Empty = Color3.fromRGB(24, 28, 36),
 	Filled = Color3.fromRGB(64, 156, 255),
@@ -72,6 +91,40 @@ Config.BoardSkins = {
 		border = Color3.fromRGB(245, 247, 251),
 	},
 }
+
+Config.BoardSkinUnlocks = {
+	Auto = {
+		label = "Free",
+	},
+	Midnight = {
+		level = 2,
+		label = "Level 2",
+	},
+	Sugar = {
+		coins = 150,
+		label = "150 coins",
+	},
+	Garden = {
+		storyStars = 1,
+		label = "1 Story Star",
+	},
+	Contrast = {
+		level = 4,
+		storyStars = 3,
+		label = "Level 4 + 3 Story Stars",
+	},
+}
+
+function Config.meetsCosmeticRequirement(requirement, progress)
+	if not requirement then
+		return true
+	end
+
+	progress = progress or {}
+	return (progress.level or 1) >= (requirement.level or 1)
+		and (progress.coins or 0) >= (requirement.coins or 0)
+		and (progress.storyStars or 0) >= (requirement.storyStars or 0)
+end
 
 function Config.isValidBoardSkin(boardSkin)
 	for _, skin in Config.BoardSkins do
