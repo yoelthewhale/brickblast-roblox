@@ -64,6 +64,7 @@ local analytics = {
 	invalidPlacements = 0,
 	rejectedPlaceRequests = 0,
 	throttledPlaceRequests = 0,
+	suddenDeathPressureRows = 0,
 	forfeits = 0,
 }
 
@@ -220,6 +221,16 @@ local function arenaCounts()
 	return totalArenas, math.max(0, totalArenas - activeCount)
 end
 
+local function sessionSecondsLeft(session)
+	return session and session.endsAt and math.max(0, session.endsAt - os.clock()) or 0
+end
+
+local function isSuddenDeathActive(session)
+	return session
+		and session.mode == "Battle"
+		and sessionSecondsLeft(session) <= Config.SuddenDeathStartsAt
+end
+
 local function sessionSummaries()
 	local summaries = {}
 
@@ -230,7 +241,8 @@ local function sessionSummaries()
 			arenaIndex = session.arena and session.arena.index or nil,
 			playerCount = #session.players,
 			startedWith = session.startedWith,
-			timeLeft = math.max(0, math.ceil(session.endsAt - os.clock())),
+			timeLeft = math.ceil(sessionSecondsLeft(session)),
+			suddenDeath = isSuddenDeathActive(session),
 			finishScheduled = session.finishScheduled,
 		})
 	end
@@ -612,7 +624,8 @@ local function publicState(player)
 		resultSummary = state.resultSummary,
 		sessionId = session and session.id or nil,
 		arenaIndex = session and session.arena and session.arena.index or nil,
-		timeLeft = session and math.max(0, math.ceil(session.endsAt - os.clock())) or nil,
+		timeLeft = session and math.ceil(sessionSecondsLeft(session)) or nil,
+		suddenDeath = isSuddenDeathActive(session),
 	}
 end
 
@@ -739,6 +752,65 @@ local function pressureOpponents(attacker, linesCleared, session)
 	end
 end
 
+local function applySuddenDeathPressure(session)
+	if
+		not session
+		or session.mode ~= "Battle"
+		or session.finishScheduled
+		or sessionSecondsLeft(session) > Config.SuddenDeathStartsAt
+	then
+		return
+	end
+
+	local now = os.clock()
+	if not session.suddenDeathAnnounced then
+		session.suddenDeathAnnounced = true
+		session.nextSuddenDeathPressureAt = now
+		for _, player in session.players do
+			if player.Parent == Players then
+				effectsEvent:FireClient(player, {
+					kind = "SuddenDeath",
+					message = "Sudden death!",
+					detail = "Pressure rows are rising. Clear space fast.",
+				})
+			end
+		end
+	end
+
+	if session.nextSuddenDeathPressureAt and now < session.nextSuddenDeathPressureAt then
+		return
+	end
+	session.nextSuddenDeathPressureAt = now + Config.SuddenDeathPressureInterval
+
+	local rowsAdded = 0
+	for _, player in session.players do
+		local state = playerStates[player]
+		if state and state.alive then
+			Grid.addGarbage(state.board, Config.SuddenDeathGarbageRows)
+			rowsAdded += Config.SuddenDeathGarbageRows
+			state.message = "Sudden death pressure"
+			state.alive = Grid.hasAnyMove(state.board, state.hand)
+			if not state.alive then
+				state.message = "Sudden death locked your board"
+			end
+			if player.Parent == Players then
+				effectsEvent:FireClient(player, {
+					kind = "SuddenDeathPressure",
+					message = "Pressure row rising",
+				})
+			end
+			if scheduleReturnIfEliminated then
+				scheduleReturnIfEliminated(player, state)
+			end
+		end
+	end
+
+	analytics.suddenDeathPressureRows += rowsAdded
+	if resolveBattleIfFinished then
+		resolveBattleIfFinished(session)
+	end
+end
+
 local function createPlayerState(player, mode)
 	local randomizer = Random.new(os.clock() * 100000 + player.UserId)
 	local state = {
@@ -780,6 +852,8 @@ local function startBattle(players, mode)
 		startedWith = #players,
 		finishScheduled = false,
 		endsAt = os.clock() + (mode == "Story" and Config.StoryRoundSeconds or Config.RoundSeconds),
+		suddenDeathAnnounced = false,
+		nextSuddenDeathPressureAt = nil,
 		arena = arena,
 	}
 	activeSessions[session.id] = session
@@ -1270,7 +1344,10 @@ task.spawn(function()
 			if session.endsAt and os.clock() >= session.endsAt then
 				finishBattle(session, getHighestScoringAlivePlayer(session))
 			else
-				broadcast(session)
+				applySuddenDeathPressure(session)
+				if not session.finishScheduled then
+					broadcast(session)
+				end
 			end
 		end
 		if queueCount() > 0 then

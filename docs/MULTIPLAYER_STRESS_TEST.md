@@ -13,7 +13,7 @@ Use this checklist in Roblox Studio local server tests before treating matchmaki
 
 - Studio diagnostics overlay: current player, mode, arena, match, queue, active session summaries, and profile load/save failure counters.
 - Studio diagnostics overlay: profile load/save failure counters should stay at `0/0`.
-- Studio diagnostics overlay: analytics counters should move when queueing, starting battles/story, placing pieces, clearing lines, making invalid placements, forfeiting, sending malformed placement payloads, and hitting placement cooldown throttles.
+- Studio diagnostics overlay: analytics counters should move when queueing, starting battles/story, placing pieces, clearing lines, making invalid placements, forfeiting, sending malformed placement payloads, hitting placement cooldown throttles, and adding sudden-death pressure rows.
 - Hub panel: `Arenas`, `Matches`, and queued player count.
 - Battle window: `Arena -- | Match --` line.
 - Battle dock: minimized players should still show arena and score.
@@ -49,6 +49,7 @@ Pass criteria:
 - Both players show the same arena number.
 - Leaderboard contains only those two players.
 - Placement and clear counters increase as players act.
+- In the final 30 seconds, both players see sudden-death timer state and pressure rows rise every 10 seconds.
 - Winner result appears once.
 - Rewards are granted once per player.
 - Both players return to the hub after the result delay.

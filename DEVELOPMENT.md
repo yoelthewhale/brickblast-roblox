@@ -44,12 +44,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added story chapter intro, success, and failure copy to mission starts, in-run objectives, and post-run results.
 - 2026-07-29: Replaced delayed client-side replay sequencing with a server-authoritative `PlayAgain` queue action that only requeues from hub or finished runs.
 - 2026-07-29: Extracted client sound cue creation, volume, mute, and playback into a dedicated `SoundController` module.
+- 2026-07-29: Added battle sudden death with server-owned pressure rows, warning banners, red timer state, and diagnostics counters.
 
 ## Current Priorities
 
-- Expand cosmetic closet into a full shop/inventory flow with earnable inventory, featured items, and clearer purchase-free progression.
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
 - Continue anti-exploit hardening around server-authoritative economy events and abnormal session lifecycle edge cases.
+- Expand cosmetic closet into a full shop/inventory flow with earnable inventory, featured items, and clearer purchase-free progression.
 - Add richer original audio assets and mix testing.
 - Expand Story Training into a mission-select presentation with chapter browsing and replay choices.
 - Validate compact touch layout in Roblox Studio device emulation.

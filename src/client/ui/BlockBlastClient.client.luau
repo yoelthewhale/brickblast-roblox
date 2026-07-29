@@ -1892,7 +1892,7 @@ renderDiagnostics = function()
 			local stats = currentHubState.analytics
 			table.insert(
 				lines,
-				`Analytics B/S/Q/P/C/I/F/R/T: {stats.battleSessionsStarted or 0}/{stats.storySessionsStarted or 0}/{stats.queueJoins or 0}/{stats.placements or 0}/{stats.linesCleared or 0}/{stats.invalidPlacements or 0}/{stats.forfeits or 0}/{stats.rejectedPlaceRequests or 0}/{stats.throttledPlaceRequests or 0}`
+				`Analytics B/S/Q/P/C/I/F/R/T/D: {stats.battleSessionsStarted or 0}/{stats.storySessionsStarted or 0}/{stats.queueJoins or 0}/{stats.placements or 0}/{stats.linesCleared or 0}/{stats.invalidPlacements or 0}/{stats.forfeits or 0}/{stats.rejectedPlaceRequests or 0}/{stats.throttledPlaceRequests or 0}/{stats.suddenDeathPressureRows or 0}`
 			)
 		end
 	else
@@ -1903,7 +1903,7 @@ renderDiagnostics = function()
 		for _, session in currentHubState.sessions do
 			table.insert(
 				lines,
-				`#{session.id} {session.mode} A{session.arenaIndex or "?"} P{session.playerCount}/{session.startedWith} T{session.timeLeft}s`
+				`#{session.id} {session.mode} A{session.arenaIndex or "?"} P{session.playerCount}/{session.startedWith} T{session.timeLeft}s{session.suddenDeath and " SD" or ""}`
 			)
 		end
 	end
@@ -1941,13 +1941,17 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	matchInfoLabel.Text = currentState.mode == "Story"
 			and (storyGoalText(currentState) or "Story Mission")
 		or `Arena {currentState.arenaIndex or "--"} | Match {currentState.sessionId or "--"}`
-	timerLabel.Text = currentState.timeLeft and `Time: {currentState.timeLeft}s` or "Time: --"
-	timerLabel.TextColor3 = currentState.timeLeft
-			and currentState.timeLeft <= 15
-			and Color3.fromRGB(255, 207, 102)
+	timerLabel.Text = currentState.timeLeft
+			and currentState.suddenDeath
+			and `Sudden: {currentState.timeLeft}s`
+		or currentState.timeLeft and `Time: {currentState.timeLeft}s`
+		or "Time: --"
+	timerLabel.TextColor3 = currentState.suddenDeath and Color3.fromRGB(255, 110, 110)
+		or currentState.timeLeft and currentState.timeLeft <= 15 and Color3.fromRGB(255, 207, 102)
 		or Color3.fromRGB(193, 201, 215)
 	dockStatusLabel.Text = currentState.message
 		or currentState.mode == "Story" and storyGoalText(currentState)
+		or currentState.suddenDeath and `Sudden death | Score: {currentState.score} | {currentState.timeLeft or "--"}s`
 		or currentState.alive and `Arena {currentState.arenaIndex or "--"} | Score: {currentState.score} | {currentState.timeLeft or "--"}s`
 		or "Out of moves - returning"
 	playAgainButton.Visible = not currentState.alive
@@ -2088,6 +2092,15 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		playSound("Queue")
 		resultPanelController:Hide()
 		showBanner(effect.detail or effect.message or "Battle started!", customization.accentColor)
+	elseif effect.kind == "SuddenDeath" then
+		playSound("Blocked")
+		showBanner(
+			effect.detail or effect.message or "Sudden death!",
+			Color3.fromRGB(255, 110, 110)
+		)
+	elseif effect.kind == "SuddenDeathPressure" then
+		playSound("Blocked")
+		showBanner(effect.message or "Pressure row rising", Color3.fromRGB(251, 146, 60))
 	elseif effect.kind == "BattleResult" then
 		playSound("Result")
 		resultPanelController:Show(effect.result, effect.message, effect.won)
