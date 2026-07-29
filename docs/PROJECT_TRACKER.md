@@ -37,6 +37,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Add round timer and sudden-death pressure | High | In Progress | Codex | 2026-08-02 |
 | Add rewards after battles: coins, XP, wins, and Story Stars | High | Playtest | Codex | 2026-08-03 |
 | Add permanent leaderboard stats for wins, best score, and Story Stars | High | Playtest | Codex | 2026-08-03 |
+| Add post-run results panel | Medium | Ready | Codex | 2026-08-03 |
 | Improve hub visuals and signposting | Medium | In Progress | Codex | 2026-08-04 |
 | Add sound effects for placing, clearing, queueing, and winning | Medium | Playtest | Codex | 2026-08-04 |
 | Add mobile-friendly controls and scale testing | High | Playtest | Codex | 2026-08-05 |
@@ -67,6 +68,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Confirm Studio diagnostics analytics counters update for queueing, story starts, battle starts, placements, clears, invalid placements, and forfeits.
 - Confirm Studio diagnostics rejected/throttled placement counters move for malformed, stale-session, or rapid repeated placement remotes without changing score.
 - Leave an active battle/story run early and confirm no rewards are granted.
+- Return to the hub after a win, story run, out-of-moves run, and forfeit; confirm the hub status keeps that player's own result summary.
 - Cycle Sound setting and confirm UI/gameplay cues respect the selected volume or Off state.
 - Start a new run after changing piece style and confirm new pieces use the selected style; change board skin and confirm empty board cells update without recoloring placed pieces.
 - Confirm the hub piece and board skin buttons show swatches that update when cycling unlocked cosmetics.

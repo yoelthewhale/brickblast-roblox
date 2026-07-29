@@ -36,6 +36,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Prevented early-leave reward farming by treating active run exits as forfeits with no payout and tracking forfeits in diagnostics.
 - 2026-07-29: Added suspicious placement-request diagnostics for malformed, stale-session, and cooldown-throttled placement remotes.
 - 2026-07-29: Added visual cosmetic swatches to hub piece and board skin controls for quicker customization browsing.
+- 2026-07-29: Preserved each player's personal reward or forfeit summary when returning from a run to the hub.
 
 ## Current Priorities
 
@@ -45,6 +46,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Add richer original audio assets and mix testing.
 - Add story dialogue, richer chapter framing, and a full mission-select presentation.
 - Validate compact touch layout in Roblox Studio device emulation.
+- Add a post-run results panel with clearer rewards, best-score deltas, and next-unlock progress.
 
 ## Known Issues
 

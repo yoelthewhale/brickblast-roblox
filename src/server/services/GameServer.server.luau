@@ -580,9 +580,11 @@ local function sendHubState(player, message)
 	})
 end
 
-local function broadcastHub(message)
+local function broadcastHub(message, exceptPlayer)
 	for _, player in Players:GetPlayers() do
-		sendHubState(player, message)
+		if player ~= exceptPlayer then
+			sendHubState(player, message)
+		end
 	end
 end
 
@@ -898,6 +900,7 @@ end
 leaveBattle = function(player)
 	local state = playerStates[player]
 	local session = playerSessions[player]
+	local returnMessage = "Returned to hub"
 	if state then
 		if not state.alive or (session and session.finishScheduled) then
 			grantBattleRewards(player, state, false)
@@ -911,6 +914,7 @@ leaveBattle = function(player)
 				won = false,
 			})
 		end
+		returnMessage = state.message or returnMessage
 	end
 	saveProfile(player)
 	playerStates[player] = nil
@@ -932,7 +936,8 @@ leaveBattle = function(player)
 
 	teleportTo(hubParts.spawn, player)
 	stateEvent:FireClient(player, nil, {})
-	broadcastHub("Returned to hub")
+	sendHubState(player, returnMessage)
+	broadcastHub("Returned to hub", player)
 	if session and activeSessions[session.id] then
 		broadcast(session)
 	end
