@@ -37,6 +37,7 @@ local customization = {
 }
 local scoreLabel = nil
 local timerLabel = nil
+local progressionLabel = nil
 local statusLabel = nil
 local leaderboardLabel = nil
 local hubPanel = nil
@@ -542,6 +543,17 @@ timerLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
 timerLabel.TextSize = 18
 timerLabel.TextXAlignment = Enum.TextXAlignment.Right
 timerLabel.Parent = root
+
+progressionLabel = Instance.new("TextLabel")
+progressionLabel.BackgroundTransparency = 1
+progressionLabel.Position = UDim2.fromOffset(24, 78)
+progressionLabel.Size = UDim2.fromOffset(420, 20)
+progressionLabel.Font = Enum.Font.Gotham
+progressionLabel.Text = "Level 1 | 0 coins | 0 XP"
+progressionLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
+progressionLabel.TextSize = 14
+progressionLabel.TextXAlignment = Enum.TextXAlignment.Left
+progressionLabel.Parent = root
 
 local function getSelectedShape()
 	if not currentState or not selectedSlot then
@@ -1120,6 +1132,17 @@ local function renderLeaderboard(leaderboard)
 	leaderboardLabel.Text = table.concat(lines, "\n")
 end
 
+local function renderProgression()
+	local leaderstats = player:FindFirstChild("leaderstats")
+	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
+	local xp = leaderstats and leaderstats:FindFirstChild("XP")
+	local level = leaderstats and leaderstats:FindFirstChild("Level")
+	local cleared = currentState and currentState.linesCleared or 0
+
+	progressionLabel.Text =
+		`Level {level and level.Value or 1} | {coins and coins.Value or 0} coins | {xp and xp.Value or 0} XP | {cleared} cleared`
+end
+
 stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	local oldBoard = previousBoard
 	currentState = nextState
@@ -1154,7 +1177,26 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	playBoardDiff(oldBoard, currentState.board)
 	renderHand()
 	renderLeaderboard(leaderboard)
+	renderProgression()
 	previousBoard = cloneBoard(currentState.board)
+end)
+
+task.spawn(function()
+	local leaderstats = player:WaitForChild("leaderstats", 10)
+	if leaderstats then
+		for _, stat in leaderstats:GetChildren() do
+			if stat:IsA("IntValue") then
+				stat.Changed:Connect(renderProgression)
+			end
+		end
+		leaderstats.ChildAdded:Connect(function(child)
+			if child:IsA("IntValue") then
+				child.Changed:Connect(renderProgression)
+				renderProgression()
+			end
+		end)
+		renderProgression()
+	end
 end)
 
 hubEvent.OnClientEvent:Connect(function(hubState)

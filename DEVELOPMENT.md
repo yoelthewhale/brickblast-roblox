@@ -13,11 +13,12 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Hardened placement remotes with type/range checks and cooldown throttling.
 - 2026-07-29: Replaced one-off best-score saving with versioned profile data for best score and wins.
 - 2026-07-29: Added hub accessibility controls for reduced motion and Auto/Large/Compact UI size.
+- 2026-07-29: Added battle rewards for coins, XP, levels, winner bonus payouts, and progression display.
 
 ## Current Priorities
 
 - Improve first-time player onboarding.
-- Add persistent progression data for wins, coins, XP, settings, and customization.
+- Add persistent settings and customization.
 - Add sound settings and starter sound effects.
 - Build story-mode prototype and better match flow.
 
@@ -31,7 +32,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 ## Technical Debt
 
 - `BlockBlastClient.client.luau` is growing large and should be split into UI modules.
-- Profile save data covers best score and wins; progression still needs coins, XP, settings, and customization.
+- Profile save data covers best score, wins, coins, XP, and level; settings and customization still need persistence.
 - Effects are client-side only and need sound/particle polish.
 - Queue system supports one active match; production needs per-match arena sessions.
 

@@ -78,6 +78,21 @@ local function createLeaderstats(player)
 	wins.Value = 0
 	wins.Parent = leaderstats
 
+	local coins = Instance.new("IntValue")
+	coins.Name = "Coins"
+	coins.Value = 0
+	coins.Parent = leaderstats
+
+	local xp = Instance.new("IntValue")
+	xp.Name = "XP"
+	xp.Value = 0
+	xp.Parent = leaderstats
+
+	local level = Instance.new("IntValue")
+	level.Name = "Level"
+	level.Value = 1
+	level.Parent = leaderstats
+
 	task.spawn(function()
 		if not profileStore then
 			return
@@ -97,6 +112,18 @@ local function createLeaderstats(player)
 
 		if typeof(profile.wins) == "number" then
 			wins.Value = math.max(0, math.floor(profile.wins))
+		end
+
+		if typeof(profile.coins) == "number" then
+			coins.Value = math.max(0, math.floor(profile.coins))
+		end
+
+		if typeof(profile.xp) == "number" then
+			xp.Value = math.max(0, math.floor(profile.xp))
+		end
+
+		if typeof(profile.level) == "number" then
+			level.Value = math.max(1, math.floor(profile.level))
 		end
 	end)
 end
@@ -123,7 +150,10 @@ local function saveProfile(player)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	local bestScore = leaderstats and leaderstats:FindFirstChild("BestScore")
 	local wins = leaderstats and leaderstats:FindFirstChild("Wins")
-	if not bestScore or not wins or not profileStore then
+	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
+	local xp = leaderstats and leaderstats:FindFirstChild("XP")
+	local level = leaderstats and leaderstats:FindFirstChild("Level")
+	if not bestScore or not wins or not coins or not xp or not level or not profileStore then
 		return
 	end
 
@@ -132,9 +162,52 @@ local function saveProfile(player)
 			version = 1,
 			bestScore = bestScore.Value,
 			wins = wins.Value,
+			coins = coins.Value,
+			xp = xp.Value,
+			level = level.Value,
 			updatedAt = os.time(),
 		})
 	end)
+end
+
+local function levelFromXp(xp)
+	return math.max(1, math.floor(math.sqrt(xp / Config.LevelXpBase)) + 1)
+end
+
+local function grantBattleRewards(player, state, winner)
+	if state.rewardsGranted then
+		return
+	end
+
+	state.rewardsGranted = true
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if not leaderstats then
+		return
+	end
+
+	local coins = leaderstats:FindFirstChild("Coins")
+	local xp = leaderstats:FindFirstChild("XP")
+	local level = leaderstats:FindFirstChild("Level")
+	local wins = leaderstats:FindFirstChild("Wins")
+	if not coins or not xp or not level or not wins then
+		return
+	end
+
+	local hundredScore = math.floor(state.score / 100)
+	local earnedCoins = math.max(5, hundredScore * Config.CoinsPerHundredScore)
+	local earnedXp = math.max(10, hundredScore * Config.XpPerHundredScore)
+
+	if winner then
+		earnedCoins += Config.WinnerBonusCoins
+		earnedXp += Config.WinnerBonusXp
+		wins.Value += 1
+	end
+
+	coins.Value += earnedCoins
+	xp.Value += earnedXp
+	level.Value = levelFromXp(xp.Value)
+	state.message = winner and `Victory! +{earnedCoins} coins +{earnedXp} XP`
+		or `Rewards: +{earnedCoins} coins +{earnedXp} XP`
 end
 
 local function isWholeNumber(value)
@@ -179,6 +252,7 @@ local function publicState(player)
 		bestScore = state.bestScore,
 		alive = state.alive,
 		message = state.message,
+		linesCleared = state.linesCleared,
 		timeLeft = battleEndsAt and math.max(0, math.ceil(battleEndsAt - os.clock())) or nil,
 	}
 end
@@ -284,6 +358,8 @@ local function createPlayerState(player)
 		score = 0,
 		bestScore = player:FindFirstChild("leaderstats") and player.leaderstats.BestScore.Value
 			or 0,
+		linesCleared = 0,
+		rewardsGranted = false,
 		alive = true,
 		message = nil,
 	}
@@ -377,14 +453,9 @@ local function finishBattle(winner)
 	battleInProgress = false
 
 	for player, state in playerStates do
+		grantBattleRewards(player, state, player == winner)
 		saveProfile(player)
 		state.alive = false
-		state.message = player == winner and "You won the battle!" or "Battle complete"
-		local leaderstats = player:FindFirstChild("leaderstats")
-		local wins = leaderstats and leaderstats:FindFirstChild("Wins")
-		if player == winner and wins then
-			wins.Value += 1
-		end
 		effectsEvent:FireClient(player, {
 			kind = "BattleResult",
 			message = state.message,
@@ -429,6 +500,10 @@ resolveBattleIfFinished = function()
 end
 
 leaveBattle = function(player)
+	local state = playerStates[player]
+	if state then
+		grantBattleRewards(player, state, false)
+	end
 	saveProfile(player)
 	playerStates[player] = nil
 	queuedPlayers[player] = nil
@@ -500,6 +575,7 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 		linesCleared = linesCleared,
 	})
 	state.score += cellsPlaced * Config.PointsPerCell + linesCleared * Config.PointsPerLine
+	state.linesCleared += linesCleared
 	if state.score > state.bestScore then
 		state.bestScore = state.score
 	end

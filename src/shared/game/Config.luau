@@ -6,6 +6,11 @@ Config.RoundSeconds = 180
 Config.PointsPerCell = 10
 Config.PointsPerLine = 100
 Config.GarbagePerLineCleared = 1
+Config.CoinsPerHundredScore = 4
+Config.WinnerBonusCoins = 40
+Config.XpPerHundredScore = 8
+Config.WinnerBonusXp = 60
+Config.LevelXpBase = 120
 
 Config.Colors = {
 	Empty = Color3.fromRGB(24, 28, 36),
