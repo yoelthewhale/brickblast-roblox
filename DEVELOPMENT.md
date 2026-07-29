@@ -15,11 +15,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added hub accessibility controls for reduced motion and Auto/Large/Compact UI size.
 - 2026-07-29: Added battle rewards for coins, XP, levels, winner bonus payouts, and progression display.
 - 2026-07-29: Replaced story-mode placeholder with a starter solo training run using the Block Blast board.
+- 2026-07-29: Added Leave Queue flow so queued players can cancel matchmaking from the hub UI.
 
 ## Current Priorities
 
 - Improve first-time player onboarding.
 - Add persistent settings and customization.
+- Split matchmaking into isolated match sessions with separate arenas.
 - Add sound settings and starter sound effects.
 - Expand story mode with missions, goals, dialogue, and rewards.
 

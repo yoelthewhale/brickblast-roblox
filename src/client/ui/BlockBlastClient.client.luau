@@ -28,6 +28,7 @@ local handPreviews = {}
 local previousBoard = nil
 local queuedPulseTween = nil
 local lastQueued = false
+local hubQueued = false
 local reducedMotion = false
 local uiScale = 1
 local customization = {
@@ -393,7 +394,7 @@ uiSizeButton.TextSize = 15
 uiSizeButton.Parent = hubPanel
 
 battleQueueButton.MouseButton1Click:Connect(function()
-	queueEvent:FireServer("Battle")
+	queueEvent:FireServer(hubQueued and "LeaveQueue" or "Battle")
 end)
 
 storyButton.MouseButton1Click:Connect(function()
@@ -1217,7 +1218,8 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 	end
 	local message = hubState.message or "Welcome to the hub"
 	hubStatusLabel.Text = `{message} - {queueText}`
-	battleQueueButton.Text = hubState.queued and "Queued for Battle" or "Join Battle Queue"
+	hubQueued = hubState.queued == true
+	battleQueueButton.Text = hubQueued and "Queued - Leave Queue" or "Join Battle Queue"
 	battleQueueButton.BackgroundColor3 = hubState.queued and Color3.fromRGB(244, 114, 182)
 		or customization.accentColor
 

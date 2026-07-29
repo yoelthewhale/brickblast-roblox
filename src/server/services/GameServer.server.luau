@@ -453,6 +453,20 @@ local function joinBattleQueue(player)
 	tryStartBattle()
 end
 
+local function leaveBattleQueue(player)
+	if not queuedPlayers[player] then
+		sendHubState(player, "You are not queued")
+		return
+	end
+
+	queuedPlayers[player] = nil
+	if queueCount() == 0 then
+		queueStartedAt = nil
+	end
+
+	broadcastHub(`{player.DisplayName} left the battle queue`)
+end
+
 startStoryMode = function(player)
 	if playerModes[player] == "Battle" or playerModes[player] == "Story" then
 		sendHubState(player, "Finish your current run first")
@@ -628,6 +642,8 @@ end)
 queueEvent.OnServerEvent:Connect(function(player, mode)
 	if mode == "Battle" then
 		joinBattleQueue(player)
+	elseif mode == "LeaveQueue" then
+		leaveBattleQueue(player)
 	elseif mode == "LeaveBattle" then
 		leaveBattle(player)
 	else
