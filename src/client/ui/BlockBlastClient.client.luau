@@ -12,6 +12,7 @@ local GameShared = Shared:WaitForChild("game")
 local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
 local Grid = require(GameShared.Grid)
+local ResultPanel = require(script.Parent.ResultPanel)
 
 local remotes = ReplicatedStorage:WaitForChild("BlockBlastRemotes")
 local stateEvent = remotes:WaitForChild("State")
@@ -81,13 +82,7 @@ local banner = nil
 local diagnosticsPanel = nil
 local diagnosticsLabel = nil
 local loadingScreen = nil
-local resultPanel = nil
-local resultTitleLabel = nil
-local resultSummaryLabel = nil
-local resultRewardLabel = nil
-local resultProgressLabel = nil
-local resultCloseButton = nil
-local resultReplayButton = nil
+local resultPanelController = nil
 local loadingDismissed = false
 local tutorialPanel = nil
 local hubManuallyClosed = false
@@ -234,94 +229,6 @@ banner.Parent = gui
 bannerScale = Instance.new("UIScale")
 bannerScale.Scale = 1
 bannerScale.Parent = banner
-
-resultPanel = Instance.new("Frame")
-resultPanel.AnchorPoint = Vector2.new(0.5, 0)
-resultPanel.Position = UDim2.fromScale(0.5, 0.18)
-resultPanel.Size = UDim2.fromOffset(420, 190)
-resultPanel.BackgroundColor3 = Color3.fromRGB(31, 38, 52)
-resultPanel.BackgroundTransparency = 0.04
-resultPanel.BorderSizePixel = 0
-resultPanel.Visible = false
-resultPanel.ZIndex = 35
-resultPanel.Parent = gui
-
-resultTitleLabel = Instance.new("TextLabel")
-resultTitleLabel.BackgroundTransparency = 1
-resultTitleLabel.Position = UDim2.fromOffset(18, 14)
-resultTitleLabel.Size = UDim2.fromOffset(326, 30)
-resultTitleLabel.Font = Enum.Font.GothamBlack
-resultTitleLabel.Text = "Run Complete"
-resultTitleLabel.TextColor3 = Color3.fromRGB(245, 247, 251)
-resultTitleLabel.TextSize = 24
-resultTitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-resultTitleLabel.TextWrapped = true
-resultTitleLabel.ZIndex = 36
-resultTitleLabel.Parent = resultPanel
-
-resultCloseButton = Instance.new("TextButton")
-resultCloseButton.Position = UDim2.new(1, -46, 0, 12)
-resultCloseButton.Size = UDim2.fromOffset(32, 32)
-resultCloseButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
-resultCloseButton.BorderSizePixel = 0
-resultCloseButton.Font = Enum.Font.GothamBlack
-resultCloseButton.Text = "X"
-resultCloseButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-resultCloseButton.TextSize = 16
-resultCloseButton.ZIndex = 36
-resultCloseButton.Parent = resultPanel
-
-resultSummaryLabel = Instance.new("TextLabel")
-resultSummaryLabel.BackgroundTransparency = 1
-resultSummaryLabel.Position = UDim2.fromOffset(18, 52)
-resultSummaryLabel.Size = UDim2.fromOffset(384, 40)
-resultSummaryLabel.Font = Enum.Font.GothamBold
-resultSummaryLabel.Text = "Score 0 | 0 lines"
-resultSummaryLabel.TextColor3 = Color3.fromRGB(245, 247, 251)
-resultSummaryLabel.TextSize = 16
-resultSummaryLabel.TextWrapped = true
-resultSummaryLabel.TextXAlignment = Enum.TextXAlignment.Left
-resultSummaryLabel.TextYAlignment = Enum.TextYAlignment.Top
-resultSummaryLabel.ZIndex = 36
-resultSummaryLabel.Parent = resultPanel
-
-resultRewardLabel = Instance.new("TextLabel")
-resultRewardLabel.BackgroundTransparency = 1
-resultRewardLabel.Position = UDim2.fromOffset(18, 92)
-resultRewardLabel.Size = UDim2.fromOffset(384, 28)
-resultRewardLabel.Font = Enum.Font.GothamBlack
-resultRewardLabel.Text = "+0 coins   +0 XP"
-resultRewardLabel.TextColor3 = Color3.fromRGB(255, 233, 148)
-resultRewardLabel.TextSize = 18
-resultRewardLabel.TextWrapped = true
-resultRewardLabel.TextXAlignment = Enum.TextXAlignment.Left
-resultRewardLabel.ZIndex = 36
-resultRewardLabel.Parent = resultPanel
-
-resultProgressLabel = Instance.new("TextLabel")
-resultProgressLabel.BackgroundTransparency = 1
-resultProgressLabel.Position = UDim2.fromOffset(18, 122)
-resultProgressLabel.Size = UDim2.fromOffset(384, 24)
-resultProgressLabel.Font = Enum.Font.Gotham
-resultProgressLabel.Text = "Best score: 0"
-resultProgressLabel.TextColor3 = Color3.fromRGB(210, 224, 255)
-resultProgressLabel.TextSize = 14
-resultProgressLabel.TextWrapped = true
-resultProgressLabel.TextXAlignment = Enum.TextXAlignment.Left
-resultProgressLabel.ZIndex = 36
-resultProgressLabel.Parent = resultPanel
-
-resultReplayButton = Instance.new("TextButton")
-resultReplayButton.Position = UDim2.fromOffset(248, 148)
-resultReplayButton.Size = UDim2.fromOffset(154, 30)
-resultReplayButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
-resultReplayButton.BorderSizePixel = 0
-resultReplayButton.Font = Enum.Font.GothamBold
-resultReplayButton.Text = "Queue Battle"
-resultReplayButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-resultReplayButton.TextSize = 14
-resultReplayButton.ZIndex = 36
-resultReplayButton.Parent = resultPanel
 
 if RunService:IsStudio() then
 	diagnosticsPanel = Instance.new("Frame")
@@ -612,69 +519,15 @@ local function showBanner(message, color)
 	end)
 end
 
-local function hideResultPanel()
-	if resultPanel then
-		resultPanel.Visible = false
-	end
-end
-
-local function showResultPanel(result, message, won)
-	if not resultPanel then
-		return
-	end
-
-	result = typeof(result) == "table" and result or {}
-	local outcome = result.outcome or (won and "Victory" or "Run Complete")
-	local score = result.score or 0
-	local linesCleared = result.linesCleared or 0
-	local coins = result.coins or 0
-	local xp = result.xp or 0
-	local storyStars = result.storyStars or 0
-	local bestScore = result.bestScore or score
-	local previousBestScore = result.previousBestScore or bestScore
-	local bestDelta = math.max(0, bestScore - previousBestScore)
-	local rewardText = `+{coins} coins   +{xp} XP`
-
-	if storyStars > 0 then
-		rewardText ..= `   +{storyStars} star`
-	end
-
-	resultTitleLabel.Text = outcome
-	resultSummaryLabel.Text = message or `Score {score} | {linesCleared} lines`
-	resultRewardLabel.Text = rewardText
-	resultProgressLabel.Text = bestDelta > 0 and `New best score: {bestScore} (+{bestDelta})`
-		or `Best score: {bestScore} | Lines cleared: {linesCleared}`
-	resultPanel.BackgroundColor3 = won and Color3.fromRGB(13, 55, 39) or Color3.fromRGB(31, 38, 52)
-	resultPanel.Visible = true
-
-	if reducedMotion then
-		resultPanel.Position = UDim2.fromScale(0.5, 0.18)
-		return
-	end
-
-	resultPanel.Position = UDim2.fromScale(0.5, 0.14)
-	TweenService:Create(resultPanel, SOFT_TWEEN, {
-		Position = UDim2.fromScale(0.5, 0.18),
-	}):Play()
-end
-
-resultCloseButton.MouseButton1Click:Connect(function()
-	playSound("Button")
-	hideResultPanel()
-end)
-
-resultReplayButton.MouseButton1Click:Connect(function()
-	playSound("Queue")
-	hideResultPanel()
-	if currentState then
-		queueEvent:FireServer("LeaveBattle")
-		task.delay(0.2, function()
-			queueEvent:FireServer("Battle")
-		end)
-	else
-		queueEvent:FireServer("Battle")
-	end
-end)
+resultPanelController = ResultPanel.new(gui, queueEvent, {
+	playSound = playSound,
+	isReducedMotion = function()
+		return reducedMotion
+	end,
+	hasCurrentRun = function()
+		return currentState ~= nil
+	end,
+})
 
 root = Instance.new("Frame")
 root.AnchorPoint = Vector2.new(0, 0.5)
@@ -2055,7 +1908,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		root.Visible = true
 	end
 	if currentState.alive then
-		hideResultPanel()
+		resultPanelController:Hide()
 	end
 	setHubPanelVisible(false)
 	updateTutorialVisibility()
@@ -2210,11 +2063,11 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		end
 	elseif effect.kind == "BattleStart" then
 		playSound("Queue")
-		hideResultPanel()
+		resultPanelController:Hide()
 		showBanner(effect.message or "Battle started!", customization.accentColor)
 	elseif effect.kind == "BattleResult" then
 		playSound("Result")
-		showResultPanel(effect.result, effect.message, effect.won)
+		resultPanelController:Show(effect.result, effect.message, effect.won)
 		showBanner(
 			effect.message or "Battle complete",
 			effect.won and Color3.fromRGB(74, 222, 128) or Color3.fromRGB(251, 146, 60)

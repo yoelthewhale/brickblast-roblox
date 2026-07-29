@@ -38,6 +38,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added visual cosmetic swatches to hub piece and board skin controls for quicker customization browsing.
 - 2026-07-29: Preserved each player's personal reward or forfeit summary when returning from a run to the hub.
 - 2026-07-29: Added a structured post-run results panel with score, lines, rewards, best-score progress, close, and quick battle queue actions.
+- 2026-07-29: Extracted the post-run results UI into a dedicated client module as the first step toward splitting the large client UI script.
 
 ## Current Priorities
 
@@ -59,7 +60,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 ## Technical Debt
 
-- `BlockBlastClient.client.luau` is growing large and should be split into UI modules.
+- `BlockBlastClient.client.luau` is still large; `ResultPanel.luau` is the first extraction, and battle board, hub panel, and settings controls should follow.
 - Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; unlocks are progression-derived, while broader cosmetic inventory still needs persistence.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
 - Match sessions now support multiple active arenas with hub availability UI, analytics, exploit diagnostics, and Studio diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
