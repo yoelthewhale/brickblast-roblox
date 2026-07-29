@@ -60,7 +60,9 @@ local dockStatusLabel = nil
 local openBoardButton = nil
 local dockReturnButton = nil
 local banner = nil
+local tutorialPanel = nil
 local hubManuallyClosed = false
+local tutorialComplete = false
 local rootScale = nil
 local hubScale = nil
 local dockScale = nil
@@ -156,6 +158,7 @@ local function settingsPayload()
 		themeIndex = themeIndex,
 		reducedMotion = reducedMotion,
 		uiScale = uiScale,
+		tutorialComplete = tutorialComplete,
 	}
 end
 
@@ -177,6 +180,14 @@ local function updateSettingsButtonText()
 			uiSizeButton.Text = "UI Size: Compact"
 		end
 	end
+end
+
+local function updateTutorialVisibility()
+	if not tutorialPanel then
+		return
+	end
+
+	tutorialPanel.Visible = currentState == nil and not tutorialComplete
 end
 
 local function showBanner(message, color)
@@ -354,6 +365,76 @@ end)
 hubLogoButton.MouseButton1Click:Connect(function()
 	hubManuallyClosed = false
 	setHubPanelVisible(true)
+end)
+
+tutorialPanel = Instance.new("Frame")
+tutorialPanel.AnchorPoint = Vector2.new(1, 0)
+tutorialPanel.Position = UDim2.new(1, -28, 0, 88)
+tutorialPanel.Size = UDim2.fromOffset(320, 206)
+tutorialPanel.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
+tutorialPanel.BackgroundTransparency = 0.08
+tutorialPanel.BorderSizePixel = 0
+tutorialPanel.Visible = false
+tutorialPanel.Parent = gui
+
+local tutorialTitle = Instance.new("TextLabel")
+tutorialTitle.BackgroundTransparency = 1
+tutorialTitle.Position = UDim2.fromOffset(18, 14)
+tutorialTitle.Size = UDim2.fromOffset(284, 28)
+tutorialTitle.Font = Enum.Font.GothamBlack
+tutorialTitle.Text = "Start Strong"
+tutorialTitle.TextColor3 = Color3.fromRGB(245, 247, 251)
+tutorialTitle.TextSize = 22
+tutorialTitle.TextXAlignment = Enum.TextXAlignment.Left
+tutorialTitle.Parent = tutorialPanel
+
+local tutorialBody = Instance.new("TextLabel")
+tutorialBody.BackgroundTransparency = 1
+tutorialBody.Position = UDim2.fromOffset(18, 50)
+tutorialBody.Size = UDim2.fromOffset(284, 96)
+tutorialBody.Font = Enum.Font.Gotham
+tutorialBody.Text =
+	"1. Pick a piece on the right.\n2. Hover the board to preview it.\n3. Clear full rows or columns to score and pressure rivals."
+tutorialBody.TextColor3 = Color3.fromRGB(193, 201, 215)
+tutorialBody.TextSize = 15
+tutorialBody.TextWrapped = true
+tutorialBody.TextXAlignment = Enum.TextXAlignment.Left
+tutorialBody.TextYAlignment = Enum.TextYAlignment.Top
+tutorialBody.Parent = tutorialPanel
+
+local tutorialButton = Instance.new("TextButton")
+tutorialButton.Position = UDim2.fromOffset(18, 158)
+tutorialButton.Size = UDim2.fromOffset(132, 34)
+tutorialButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
+tutorialButton.BorderSizePixel = 0
+tutorialButton.Font = Enum.Font.GothamBold
+tutorialButton.Text = "Got It"
+tutorialButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+tutorialButton.TextSize = 15
+tutorialButton.Parent = tutorialPanel
+
+local tutorialStoryButton = Instance.new("TextButton")
+tutorialStoryButton.Position = UDim2.fromOffset(162, 158)
+tutorialStoryButton.Size = UDim2.fromOffset(140, 34)
+tutorialStoryButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+tutorialStoryButton.BorderSizePixel = 0
+tutorialStoryButton.Font = Enum.Font.GothamBold
+tutorialStoryButton.Text = "Try Story"
+tutorialStoryButton.TextColor3 = Color3.fromRGB(245, 247, 251)
+tutorialStoryButton.TextSize = 15
+tutorialStoryButton.Parent = tutorialPanel
+
+tutorialButton.MouseButton1Click:Connect(function()
+	tutorialComplete = true
+	updateTutorialVisibility()
+	saveSettings()
+end)
+
+tutorialStoryButton.MouseButton1Click:Connect(function()
+	tutorialComplete = true
+	updateTutorialVisibility()
+	saveSettings()
+	queueEvent:FireServer("Story")
 end)
 
 local hubTitle = Instance.new("TextLabel")
@@ -1186,6 +1267,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		root.Visible = false
 		battleDock.Visible = false
 		setHubPanelVisible(not hubManuallyClosed)
+		updateTutorialVisibility()
 		previousBoard = nil
 		return
 	end
@@ -1194,6 +1276,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		root.Visible = true
 	end
 	setHubPanelVisible(false)
+	updateTutorialVisibility()
 	battleDock.Visible = not root.Visible
 	title.Text = currentState.mode == "Story" and "Story Training" or "Block Blast Battle"
 	scoreLabel.Text = `Score: {currentState.score}`
@@ -1241,10 +1324,12 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 	end
 
 	if hubState.mode == "Battle" or hubState.mode == "Story" then
+		updateTutorialVisibility()
 		return
 	end
 
 	setHubPanelVisible(not hubManuallyClosed)
+	updateTutorialVisibility()
 	local queueText = `{hubState.queueCount}/{hubState.minPlayers} in battle queue`
 	if hubState.secondsToSoloStart and hubState.secondsToSoloStart > 0 then
 		queueText ..= ` - solo test in {hubState.secondsToSoloStart}s`
@@ -1324,10 +1409,15 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 		uiScale = math.clamp(settings.uiScale, 0.92, 1.12)
 	end
 
+	if typeof(settings.tutorialComplete) == "boolean" then
+		tutorialComplete = settings.tutorialComplete
+	end
+
 	updateSettingsButtonText()
 	applyTheme()
 	applyUiScale()
 	clampWindowToScreen()
+	updateTutorialVisibility()
 end)
 
 gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()

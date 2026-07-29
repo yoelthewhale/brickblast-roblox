@@ -68,6 +68,7 @@ local DEFAULT_SETTINGS = {
 	themeIndex = 1,
 	reducedMotion = false,
 	uiScale = 1,
+	tutorialComplete = false,
 }
 
 local function sanitizeSettings(settings)
@@ -86,6 +87,10 @@ local function sanitizeSettings(settings)
 
 	if typeof(settings.uiScale) == "number" then
 		clean.uiScale = math.clamp(settings.uiScale, 0.92, 1.12)
+	end
+
+	if typeof(settings.tutorialComplete) == "boolean" then
+		clean.tutorialComplete = settings.tutorialComplete
 	end
 
 	return clean

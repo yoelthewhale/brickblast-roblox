@@ -17,10 +17,10 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Replaced story-mode placeholder with a starter solo training run using the Block Blast board.
 - 2026-07-29: Added Leave Queue flow so queued players can cancel matchmaking from the hub UI.
 - 2026-07-29: Added persistent settings for theme, reduced motion, and UI size through versioned profile saves.
+- 2026-07-29: Added first-time onboarding panel with basic placement instructions and a saved completion flag.
 
 ## Current Priorities
 
-- Improve first-time player onboarding.
 - Add deeper customization for piece skins, board skins, and cosmetics.
 - Split matchmaking into isolated match sessions with separate arenas.
 - Add sound settings and starter sound effects.
@@ -31,6 +31,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - `BlockBlastBattle.rbxl` may be locked if Roblox Studio has it open; build to a day-specific place file instead.
 - Rojo plugin connection still needs a live Roblox Studio playtest.
 - Two-player battle flow needs Roblox Studio local server testing.
+- First-time onboarding needs Studio validation across desktop and mobile screen sizes.
 - Current battle board is UI-only; future versions should consider an optional 3D board representation in the arena.
 
 ## Technical Debt

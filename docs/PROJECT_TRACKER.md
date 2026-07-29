@@ -53,6 +53,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Open `BlockBlastBattle-Day3.rbxl` in Roblox Studio.
 - Connect the Rojo plugin to `localhost:34872`.
 - Press Play and confirm the hub appears.
+- Confirm first-time onboarding appears, `Got It` dismisses it, and `Try Story` starts Story Training.
 - Close the hub UI with `X`, then reopen it with the `BB` side logo.
 - Change theme, motion, and UI size, rejoin the session, and confirm those settings reload.
 - Walk from the hub bridge into the first battle arena and confirm the two player decks, glow pillars, and scoreboard render.
@@ -70,4 +71,4 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 ## Build Notes
 
-- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, persistent core settings, anti-spam remote checks, and starter story training. Built `BlockBlastBattle-Day3.rbxl`.
+- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, persistent core settings, first-time onboarding, anti-spam remote checks, and starter story training. Built `BlockBlastBattle-Day3.rbxl`.
