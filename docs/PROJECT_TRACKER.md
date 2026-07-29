@@ -29,7 +29,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Fix any Day 2 Studio errors from Output window | High | Ready | Codex | 2026-07-30 |
 | Add queue countdown and match-start banner | High | In Progress | Codex | 2026-07-30 |
 | Add story-mode placeholder flow with a starter mission | Medium | Playtest | Codex | 2026-07-31 |
-| Add battle arenas per match instead of one shared arena | High | In Progress | Codex | 2026-08-01 |
+| Add battle arenas per match instead of one shared arena | High | Playtest | Codex | 2026-08-01 |
 | Add player customization save data for UI theme and layout | Medium | In Progress | Codex | 2026-08-01 |
 | Add piece skin customization menu | Medium | In Progress | Codex | 2026-08-02 |
 | Add round timer and sudden-death pressure | High | In Progress | Codex | 2026-08-02 |
@@ -60,8 +60,10 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Cycle Sound setting and confirm UI/gameplay cues respect the selected volume or Off state.
 - Start a new run after changing piece style and confirm new pieces use the selected style.
 - Walk from the hub bridge into the first battle arena and confirm the two player decks, glow pillars, and scoreboard render.
+- Confirm three battle arenas render with separate scoreboard labels and return pads.
 - Join battle queue and wait for solo test battle.
 - Confirm queued players see the solo-test countdown.
+- Run a local multiplayer test with 4+ players and confirm separate two-player sessions get separate arena spawns and leaderboards.
 - Start Story Mode and confirm it opens a solo `Story Training` board.
 - Confirm battle start and result banners animate in.
 - Confirm the battle window shows a round timer.
@@ -74,4 +76,4 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 ## Build Notes
 
-- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, loading splash, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, persistent core settings and piece styles, first-time onboarding, sound cues/settings, anti-spam remote checks, and starter story training. Built `BlockBlastBattle-Day3.rbxl`.
+- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, loading splash, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, persistent core settings and piece styles, first-time onboarding, sound cues/settings, isolated match sessions with three arenas, anti-spam remote checks, and starter story training. Built `BlockBlastBattle-Day3.rbxl`.

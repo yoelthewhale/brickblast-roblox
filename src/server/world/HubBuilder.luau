@@ -1,7 +1,11 @@
 local HubBuilder = {}
 local Lighting = game:GetService("Lighting")
 
-local ARENA_CENTER = Vector3.new(0, 2.25, -82)
+local ARENA_CENTERS = {
+	Vector3.new(0, 2.25, -82),
+	Vector3.new(112, 2.25, -82),
+	Vector3.new(-112, 2.25, -82),
+}
 
 local function makePart(parent, name, size, position, color, material)
 	local part = Instance.new("Part")
@@ -93,16 +97,16 @@ local function addPrompt(part, actionText, objectText)
 	return prompt
 end
 
-local function buildArena(parent)
+local function buildArena(parent, arenaIndex, arenaCenter)
 	local arena = Instance.new("Folder")
-	arena.Name = "FirstBattleArena"
+	arena.Name = `BattleArena{arenaIndex}`
 	arena.Parent = parent
 
 	makePart(
 		arena,
 		"ArenaFloor",
 		Vector3.new(86, 2, 62),
-		ARENA_CENTER + Vector3.new(0, -0.25, 0),
+		arenaCenter + Vector3.new(0, -0.25, 0),
 		Color3.fromRGB(22, 24, 32),
 		Enum.Material.Metal
 	)
@@ -110,7 +114,7 @@ local function buildArena(parent)
 		arena,
 		"CenterLane",
 		Vector3.new(10, 0.4, 54),
-		ARENA_CENTER + Vector3.new(0, 1.05, 0),
+		arenaCenter + Vector3.new(0, 1.05, 0),
 		Color3.fromRGB(64, 156, 255),
 		Enum.Material.Neon
 	).Transparency =
@@ -119,7 +123,7 @@ local function buildArena(parent)
 		arena,
 		"LeftPlayerDeck",
 		Vector3.new(28, 1, 28),
-		ARENA_CENTER + Vector3.new(-25, 1.1, 0),
+		arenaCenter + Vector3.new(-25, 1.1, 0),
 		Color3.fromRGB(45, 58, 82),
 		Enum.Material.Slate
 	)
@@ -127,7 +131,7 @@ local function buildArena(parent)
 		arena,
 		"RightPlayerDeck",
 		Vector3.new(28, 1, 28),
-		ARENA_CENTER + Vector3.new(25, 1.1, 0),
+		arenaCenter + Vector3.new(25, 1.1, 0),
 		Color3.fromRGB(45, 58, 82),
 		Enum.Material.Slate
 	)
@@ -136,28 +140,28 @@ local function buildArena(parent)
 		arena,
 		"NorthWall",
 		Vector3.new(86, 12, 2),
-		ARENA_CENTER + Vector3.new(0, 6, -31),
+		arenaCenter + Vector3.new(0, 6, -31),
 		Color3.fromRGB(35, 42, 56)
 	)
 	makeWall(
 		arena,
 		"SouthWall",
 		Vector3.new(86, 8, 2),
-		ARENA_CENTER + Vector3.new(0, 4, 31),
+		arenaCenter + Vector3.new(0, 4, 31),
 		Color3.fromRGB(35, 42, 56)
 	)
 	makeWall(
 		arena,
 		"LeftWall",
 		Vector3.new(2, 10, 62),
-		ARENA_CENTER + Vector3.new(-43, 5, 0),
+		arenaCenter + Vector3.new(-43, 5, 0),
 		Color3.fromRGB(31, 38, 52)
 	)
 	makeWall(
 		arena,
 		"RightWall",
 		Vector3.new(2, 10, 62),
-		ARENA_CENTER + Vector3.new(43, 5, 0),
+		arenaCenter + Vector3.new(43, 5, 0),
 		Color3.fromRGB(31, 38, 52)
 	)
 
@@ -169,20 +173,20 @@ local function buildArena(parent)
 			Vector3.new(39, 10, 27),
 		}
 	do
-		makeBeam(arena, "ArenaGlowPillar", ARENA_CENTER + offset, Color3.fromRGB(244, 114, 182))
+		makeBeam(arena, "ArenaGlowPillar", arenaCenter + offset, Color3.fromRGB(244, 114, 182))
 	end
 
 	local scoreboard = makePart(
 		arena,
 		"Scoreboard",
 		Vector3.new(34, 8, 1),
-		ARENA_CENTER + Vector3.new(0, 9, -29.5),
+		arenaCenter + Vector3.new(0, 9, -29.5),
 		Color3.fromRGB(12, 16, 24),
 		Enum.Material.SmoothPlastic
 	)
 	addSurfaceText(
 		scoreboard,
-		"BLOCK BLAST BATTLE",
+		`BLOCK BLAST BATTLE - ARENA {arenaIndex}`,
 		Enum.NormalId.Front,
 		Color3.fromRGB(245, 247, 251)
 	)
@@ -191,7 +195,7 @@ local function buildArena(parent)
 		arena,
 		"PlayerSpawnA",
 		Vector3.new(8, 1, 8),
-		ARENA_CENTER + Vector3.new(-25, 2.25, 17),
+		arenaCenter + Vector3.new(-25, 2.25, 17),
 		Color3.fromRGB(64, 156, 255),
 		Enum.Material.Neon
 	)
@@ -201,7 +205,7 @@ local function buildArena(parent)
 		arena,
 		"PlayerSpawnB",
 		Vector3.new(8, 1, 8),
-		ARENA_CENTER + Vector3.new(25, 2.25, 17),
+		arenaCenter + Vector3.new(25, 2.25, 17),
 		Color3.fromRGB(244, 114, 182),
 		Enum.Material.Neon
 	)
@@ -211,7 +215,7 @@ local function buildArena(parent)
 		arena,
 		"ReturnHubPad",
 		Vector3.new(12, 1, 8),
-		ARENA_CENTER + Vector3.new(0, 2.25, 23),
+		arenaCenter + Vector3.new(0, 2.25, 23),
 		Color3.fromRGB(251, 146, 60),
 		Enum.Material.SmoothPlastic
 	)
@@ -219,6 +223,7 @@ local function buildArena(parent)
 
 	return {
 		folder = arena,
+		index = arenaIndex,
 		spawns = { leftSpawn, rightSpawn },
 		returnPad = returnPad,
 	}
@@ -297,8 +302,8 @@ function HubBuilder.build()
 		Enum.Material.SmoothPlastic
 	)
 	storyPad:SetAttribute("QueueMode", "Story")
-	addLabel(storyPad, "STORY MODE", "Coming soon")
-	local storyPrompt = addPrompt(storyPad, "Preview", "Story Mode")
+	addLabel(storyPad, "STORY MODE", "Solo training")
+	local storyPrompt = addPrompt(storyPad, "Start", "Story Training")
 
 	local battleSpawn = makePart(
 		hub,
@@ -321,7 +326,10 @@ function HubBuilder.build()
 	)
 	makeBeam(hub, "BattlePortalLeft", Vector3.new(-8, 10, -36), Color3.fromRGB(64, 156, 255))
 	makeBeam(hub, "BattlePortalRight", Vector3.new(8, 10, -36), Color3.fromRGB(244, 114, 182))
-	local arena = buildArena(hub)
+	local arenas = {}
+	for arenaIndex, arenaCenter in ARENA_CENTERS do
+		table.insert(arenas, buildArena(hub, arenaIndex, arenaCenter))
+	end
 
 	return {
 		hub = hub,
@@ -329,8 +337,9 @@ function HubBuilder.build()
 		battlePrompt = battlePrompt,
 		storyPrompt = storyPrompt,
 		battleSpawn = battleSpawn,
-		arenaSpawns = arena.spawns,
-		arenaReturnPad = arena.returnPad,
+		arenas = arenas,
+		arenaSpawns = arenas[1].spawns,
+		arenaReturnPad = arenas[1].returnPad,
 	}
 end
 

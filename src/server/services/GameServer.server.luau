@@ -39,15 +39,14 @@ settingsEvent.Parent = remotes
 
 local hubParts = HubBuilder.build()
 local playerStates = {}
+local playerSessions = {}
+local activeSessions = {}
 local queuedPlayers = {}
 local playerModes = {}
 local playerSettings = {}
 local lastPlaceRequestAt = {}
 local queueStartedAt = nil
-local battleInProgress = false
-local battleStartedWith = 0
-local battleFinishScheduled = false
-local battleEndsAt = nil
+local nextSessionId = 0
 local profileStore = nil
 
 pcall(function()
@@ -113,6 +112,37 @@ end
 
 local function sendSettings(player)
 	settingsEvent:FireClient(player, playerSettings[player] or DEFAULT_SETTINGS)
+end
+
+local function findFreeArena()
+	local arenas = hubParts.arenas or {}
+	if #arenas == 0 then
+		return nil
+	end
+
+	local usedArenaIndexes = {}
+	for _, session in activeSessions do
+		if session.arena then
+			usedArenaIndexes[session.arena.index] = true
+		end
+	end
+
+	for _, arena in arenas do
+		if not usedArenaIndexes[arena.index] then
+			return arena
+		end
+	end
+
+	return nil
+end
+
+local function activeSessionCount()
+	local count = 0
+	for _ in activeSessions do
+		count += 1
+	end
+
+	return count
 end
 
 local function createLeaderstats(player)
@@ -307,6 +337,7 @@ local function publicState(player)
 	if not state then
 		return nil
 	end
+	local session = playerSessions[player]
 
 	return {
 		board = state.board,
@@ -317,7 +348,7 @@ local function publicState(player)
 		message = state.message,
 		linesCleared = state.linesCleared,
 		mode = state.mode,
-		timeLeft = battleEndsAt and math.max(0, math.ceil(battleEndsAt - os.clock())) or nil,
+		timeLeft = session and math.max(0, math.ceil(session.endsAt - os.clock())) or nil,
 	}
 end
 
@@ -333,7 +364,7 @@ end
 
 local function sendHubState(player, message)
 	local secondsToSoloStart = nil
-	if queueStartedAt and queuedPlayers[player] and not battleInProgress then
+	if queueStartedAt and queuedPlayers[player] then
 		secondsToSoloStart =
 			math.max(0, math.ceil(SOLO_TEST_SECONDS - (os.clock() - queueStartedAt)))
 	end
@@ -343,6 +374,7 @@ local function sendHubState(player, message)
 		queued = queuedPlayers[player] == true,
 		queueCount = queueCount(),
 		minPlayers = BATTLE_MIN_PLAYERS,
+		activeSessions = activeSessionCount(),
 		secondsToSoloStart = secondsToSoloStart,
 		message = message,
 	})
@@ -354,10 +386,22 @@ local function broadcastHub(message)
 	end
 end
 
-local function broadcast()
+local function broadcast(session)
+	if not session then
+		for _, activeSession in activeSessions do
+			broadcast(activeSession)
+		end
+		return
+	end
+
 	local leaderboard = {}
 
-	for player, state in playerStates do
+	for _, player in session.players do
+		local state = playerStates[player]
+		if not state then
+			continue
+		end
+
 		table.insert(leaderboard, {
 			userId = player.UserId,
 			name = player.DisplayName,
@@ -372,8 +416,10 @@ local function broadcast()
 		return a.score > b.score
 	end)
 
-	for player in playerStates do
-		stateEvent:FireClient(player, publicState(player), leaderboard)
+	for _, player in session.players do
+		if player.Parent == Players and playerStates[player] then
+			stateEvent:FireClient(player, publicState(player), leaderboard)
+		end
 	end
 end
 
@@ -388,22 +434,25 @@ local function teleportTo(part, player)
 	end
 end
 
-local function teleportToArenaSlot(player, slot)
-	local arenaSpawns = hubParts.arenaSpawns or {}
+local function teleportToArenaSlot(player, slot, session)
+	local arenaSpawns = session and session.arena and session.arena.spawns
+		or hubParts.arenaSpawns
+		or {}
 	local spawnPart = arenaSpawns[((slot - 1) % math.max(1, #arenaSpawns)) + 1]
 		or hubParts.battleSpawn
 	teleportTo(spawnPart, player)
 end
 
-local function pressureOpponents(attacker, linesCleared)
+local function pressureOpponents(attacker, linesCleared, session)
 	if linesCleared <= 0 then
 		return
 	end
 
 	local garbageAmount = linesCleared * Config.GarbagePerLineCleared
 
-	for player, state in playerStates do
-		if player ~= attacker and state.alive then
+	for _, player in session.players do
+		local state = playerStates[player]
+		if player ~= attacker and state and state.alive then
 			Grid.addGarbage(state.board, garbageAmount)
 			state.alive = Grid.hasAnyMove(state.board, state.hand)
 			if scheduleReturnIfEliminated then
@@ -437,18 +486,30 @@ end
 
 local function startBattle(players, mode)
 	mode = mode or "Battle"
-	battleInProgress = true
-	battleStartedWith = #players
-	battleFinishScheduled = false
-	battleEndsAt = os.clock()
-		+ (mode == "Story" and Config.StoryRoundSeconds or Config.RoundSeconds)
-	queueStartedAt = nil
+	local arena = findFreeArena()
+	if not arena then
+		return nil
+	end
+
+	nextSessionId += 1
+	local session = {
+		id = nextSessionId,
+		mode = mode,
+		players = {},
+		startedWith = #players,
+		finishScheduled = false,
+		endsAt = os.clock() + (mode == "Story" and Config.StoryRoundSeconds or Config.RoundSeconds),
+		arena = arena,
+	}
+	activeSessions[session.id] = session
 
 	for slot, player in players do
 		queuedPlayers[player] = nil
 		playerModes[player] = mode
+		playerSessions[player] = session
+		table.insert(session.players, player)
 		createPlayerState(player, mode)
-		teleportToArenaSlot(player, slot)
+		teleportToArenaSlot(player, slot, session)
 		effectsEvent:FireClient(player, {
 			kind = "BattleStart",
 			message = mode == "Story" and "Story training started!"
@@ -457,16 +518,24 @@ local function startBattle(players, mode)
 		})
 	end
 
+	if queueCount() == 0 then
+		queueStartedAt = nil
+	else
+		queueStartedAt = os.clock()
+	end
+
 	broadcastHub(mode == "Story" and "Story training started" or "Battle started")
-	broadcast()
+	broadcast(session)
+	return session
 end
 
-local function getHighestScoringAlivePlayer()
+local function getHighestScoringAlivePlayer(session)
 	local winner = nil
 	local bestScore = -1
 
-	for player, state in playerStates do
-		if state.alive and state.score > bestScore then
+	for _, player in session.players do
+		local state = playerStates[player]
+		if state and state.alive and state.score > bestScore then
 			winner = player
 			bestScore = state.score
 		end
@@ -476,7 +545,10 @@ local function getHighestScoringAlivePlayer()
 end
 
 local function tryStartBattle()
-	if battleInProgress then
+	if not findFreeArena() then
+		if queueCount() > 0 then
+			broadcastHub("All arenas are busy")
+		end
 		return
 	end
 
@@ -487,13 +559,20 @@ local function tryStartBattle()
 		end
 	end
 
+	while #players >= BATTLE_MIN_PLAYERS and findFreeArena() do
+		local matchPlayers = {}
+		for _ = 1, BATTLE_MIN_PLAYERS do
+			table.insert(matchPlayers, table.remove(players, 1))
+		end
+		startBattle(matchPlayers, "Battle")
+	end
+
 	if #players >= BATTLE_MIN_PLAYERS then
-		startBattle(players, "Battle")
 		return
 	end
 
 	if #players == 1 and queueStartedAt and os.clock() - queueStartedAt >= SOLO_TEST_SECONDS then
-		startBattle(players, "Battle")
+		startBattle({ players[1] }, "Battle")
 	end
 end
 
@@ -534,7 +613,7 @@ startStoryMode = function(player)
 		return
 	end
 
-	if battleInProgress then
+	if not findFreeArena() then
 		sendHubState(player, "Arena is busy - try story again after this match")
 		return
 	end
@@ -542,15 +621,19 @@ startStoryMode = function(player)
 	startBattle({ player }, "Story")
 end
 
-local function finishBattle(winner)
-	if battleFinishScheduled then
+local function finishBattle(session, winner)
+	if session.finishScheduled then
 		return
 	end
 
-	battleFinishScheduled = true
-	battleInProgress = false
+	session.finishScheduled = true
 
-	for player, state in playerStates do
+	for _, player in session.players do
+		local state = playerStates[player]
+		if not state then
+			continue
+		end
+
 		grantBattleRewards(player, state, player == winner)
 		saveProfile(player)
 		state.alive = false
@@ -562,11 +645,11 @@ local function finishBattle(winner)
 	end
 
 	broadcastHub(winner and `{winner.DisplayName} won the battle` or "Battle complete")
-	broadcast()
+	broadcast(session)
 
 	task.delay(POST_BATTLE_RETURN_SECONDS, function()
 		local playersToReturn = {}
-		for player in playerStates do
+		for _, player in session.players do
 			table.insert(playersToReturn, player)
 		end
 
@@ -576,46 +659,58 @@ local function finishBattle(winner)
 			end
 		end
 	end)
-
-	battleEndsAt = nil
 end
 
-resolveBattleIfFinished = function()
-	if battleFinishScheduled or battleStartedWith < BATTLE_MIN_PLAYERS then
+resolveBattleIfFinished = function(session)
+	if session.finishScheduled or session.startedWith < BATTLE_MIN_PLAYERS then
 		return
 	end
 
 	local alivePlayers = {}
-	for player, state in playerStates do
-		if state.alive then
+	for _, player in session.players do
+		local state = playerStates[player]
+		if state and state.alive then
 			table.insert(alivePlayers, player)
 		end
 	end
 
 	if #alivePlayers <= 1 then
-		finishBattle(alivePlayers[1])
+		finishBattle(session, alivePlayers[1])
 	end
 end
 
 leaveBattle = function(player)
 	local state = playerStates[player]
+	local session = playerSessions[player]
 	if state then
 		grantBattleRewards(player, state, false)
 	end
 	saveProfile(player)
 	playerStates[player] = nil
+	playerSessions[player] = nil
 	queuedPlayers[player] = nil
 	playerModes[player] = "Hub"
-	battleInProgress = next(playerStates) ~= nil
-	if not battleInProgress then
-		battleEndsAt = nil
+
+	if session then
+		for index, sessionPlayer in session.players do
+			if sessionPlayer == player then
+				table.remove(session.players, index)
+				break
+			end
+		end
+		if #session.players == 0 then
+			activeSessions[session.id] = nil
+		end
 	end
+
 	teleportTo(hubParts.spawn, player)
 	stateEvent:FireClient(player, nil, {})
 	broadcastHub("Returned to hub")
-	broadcast()
-	if resolveBattleIfFinished then
-		resolveBattleIfFinished()
+	if session and activeSessions[session.id] then
+		broadcast(session)
+	end
+	if session and resolveBattleIfFinished then
+		resolveBattleIfFinished(session)
 	end
 end
 
@@ -624,9 +719,10 @@ scheduleReturnIfEliminated = function(player, state)
 		return
 	end
 
-	if battleStartedWith >= BATTLE_MIN_PLAYERS then
+	local session = playerSessions[player]
+	if session and session.startedWith >= BATTLE_MIN_PLAYERS then
 		if resolveBattleIfFinished then
-			resolveBattleIfFinished()
+			resolveBattleIfFinished(session)
 		end
 		return
 	end
@@ -646,6 +742,10 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 
 	local state = playerStates[player]
 	if not state or not state.alive then
+		return
+	end
+	local session = playerSessions[player]
+	if not session then
 		return
 	end
 
@@ -691,12 +791,12 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 		giveNewHand(state)
 	end
 
-	pressureOpponents(player, linesCleared)
+	pressureOpponents(player, linesCleared, session)
 	state.alive = Grid.hasAnyMove(state.board, state.hand)
 	scheduleReturnIfEliminated(player, state)
-	broadcast()
+	broadcast(session)
 	if resolveBattleIfFinished then
-		resolveBattleIfFinished()
+		resolveBattleIfFinished(session)
 	end
 end)
 
@@ -735,14 +835,14 @@ hubParts.storyPrompt.Triggered:Connect(function(player)
 	startStoryMode(player)
 end)
 
-if hubParts.arenaReturnPad then
+for _, arena in (hubParts.arenas or {}) do
 	local returnPrompt = Instance.new("ProximityPrompt")
 	returnPrompt.ActionText = "Return"
 	returnPrompt.ObjectText = "Hub"
 	returnPrompt.HoldDuration = 0.2
 	returnPrompt.MaxActivationDistance = 12
 	returnPrompt.RequiresLineOfSight = false
-	returnPrompt.Parent = hubParts.arenaReturnPad
+	returnPrompt.Parent = arena.returnPad
 	returnPrompt.Triggered:Connect(leaveBattle)
 end
 
@@ -763,13 +863,26 @@ end)
 
 Players.PlayerRemoving:Connect(function(player)
 	saveProfile(player)
+	local session = playerSessions[player]
 	playerStates[player] = nil
+	playerSessions[player] = nil
 	queuedPlayers[player] = nil
 	playerModes[player] = nil
 	playerSettings[player] = nil
 	lastPlaceRequestAt[player] = nil
-	battleInProgress = next(playerStates) ~= nil
-	broadcast()
+	if session then
+		for index, sessionPlayer in session.players do
+			if sessionPlayer == player then
+				table.remove(session.players, index)
+				break
+			end
+		end
+		if #session.players == 0 then
+			activeSessions[session.id] = nil
+		elseif resolveBattleIfFinished then
+			resolveBattleIfFinished(session)
+		end
+	end
 	broadcastHub()
 end)
 
@@ -788,12 +901,14 @@ task.spawn(function()
 	while true do
 		task.wait(1)
 		tryStartBattle()
-		if battleInProgress and battleEndsAt and os.clock() >= battleEndsAt then
-			finishBattle(getHighestScoringAlivePlayer())
-		elseif battleInProgress then
-			broadcast()
+		for _, session in activeSessions do
+			if session.endsAt and os.clock() >= session.endsAt then
+				finishBattle(session, getHighestScoringAlivePlayer(session))
+			else
+				broadcast(session)
+			end
 		end
-		if queueCount() > 0 and not battleInProgress then
+		if queueCount() > 0 then
 			broadcastHub("Waiting for players")
 		end
 	end
