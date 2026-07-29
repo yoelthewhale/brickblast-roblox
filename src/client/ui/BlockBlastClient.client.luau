@@ -60,6 +60,8 @@ local dockStatusLabel = nil
 local openBoardButton = nil
 local dockReturnButton = nil
 local banner = nil
+local loadingScreen = nil
+local loadingDismissed = false
 local tutorialPanel = nil
 local hubManuallyClosed = false
 local tutorialComplete = false
@@ -109,6 +111,70 @@ gui.Parent = player:WaitForChild("PlayerGui")
 pcall(function()
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 end)
+
+loadingScreen = Instance.new("Frame")
+loadingScreen.Size = UDim2.fromScale(1, 1)
+loadingScreen.BackgroundColor3 = Color3.fromRGB(8, 11, 18)
+loadingScreen.BorderSizePixel = 0
+loadingScreen.ZIndex = 50
+loadingScreen.Parent = gui
+
+local loadingTitle = Instance.new("TextLabel")
+loadingTitle.AnchorPoint = Vector2.new(0.5, 0.5)
+loadingTitle.BackgroundTransparency = 1
+loadingTitle.Position = UDim2.fromScale(0.5, 0.44)
+loadingTitle.Size = UDim2.fromOffset(520, 54)
+loadingTitle.Font = Enum.Font.GothamBlack
+loadingTitle.Text = "Block Blast Battle"
+loadingTitle.TextColor3 = Color3.fromRGB(245, 247, 251)
+loadingTitle.TextSize = 34
+loadingTitle.TextWrapped = true
+loadingTitle.ZIndex = 51
+loadingTitle.Parent = loadingScreen
+
+local loadingStatus = Instance.new("TextLabel")
+loadingStatus.AnchorPoint = Vector2.new(0.5, 0.5)
+loadingStatus.BackgroundTransparency = 1
+loadingStatus.Position = UDim2.fromScale(0.5, 0.5)
+loadingStatus.Size = UDim2.fromOffset(420, 28)
+loadingStatus.Font = Enum.Font.GothamBold
+loadingStatus.Text = "Preparing your board..."
+loadingStatus.TextColor3 = Color3.fromRGB(153, 163, 179)
+loadingStatus.TextSize = 17
+loadingStatus.ZIndex = 51
+loadingStatus.Parent = loadingScreen
+
+local loadingAccent = Instance.new("Frame")
+loadingAccent.AnchorPoint = Vector2.new(0.5, 0.5)
+loadingAccent.Position = UDim2.fromScale(0.5, 0.56)
+loadingAccent.Size = UDim2.fromOffset(220, 4)
+loadingAccent.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
+loadingAccent.BorderSizePixel = 0
+loadingAccent.ZIndex = 51
+loadingAccent.Parent = loadingScreen
+
+local function dismissLoading()
+	if loadingDismissed then
+		return
+	end
+
+	loadingDismissed = true
+	if reducedMotion then
+		loadingScreen.Visible = false
+		return
+	end
+
+	local tween = TweenService:Create(loadingScreen, TweenInfo.new(0.28), {
+		BackgroundTransparency = 1,
+	})
+	TweenService:Create(loadingTitle, TweenInfo.new(0.2), { TextTransparency = 1 }):Play()
+	TweenService:Create(loadingStatus, TweenInfo.new(0.2), { TextTransparency = 1 }):Play()
+	TweenService:Create(loadingAccent, TweenInfo.new(0.2), { BackgroundTransparency = 1 }):Play()
+	tween:Play()
+	tween.Completed:Once(function()
+		loadingScreen.Visible = false
+	end)
+end
 
 banner = Instance.new("TextLabel")
 banner.AnchorPoint = Vector2.new(0.5, 0)
@@ -1260,6 +1326,7 @@ local function renderProgression()
 end
 
 stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
+	dismissLoading()
 	local oldBoard = previousBoard
 	currentState = nextState
 
@@ -1319,6 +1386,7 @@ task.spawn(function()
 end)
 
 hubEvent.OnClientEvent:Connect(function(hubState)
+	dismissLoading()
 	if not hubState then
 		return
 	end
@@ -1393,6 +1461,7 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 end)
 
 settingsEvent.OnClientEvent:Connect(function(settings)
+	dismissLoading()
 	if typeof(settings) ~= "table" then
 		return
 	end
@@ -1429,3 +1498,4 @@ applyWindowLayout()
 applyTheme()
 applyUiScale()
 settingsEvent:FireServer("Request")
+task.delay(6, dismissLoading)

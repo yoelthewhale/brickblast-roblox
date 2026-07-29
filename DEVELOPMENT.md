@@ -18,6 +18,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added Leave Queue flow so queued players can cancel matchmaking from the hub UI.
 - 2026-07-29: Added persistent settings for theme, reduced motion, and UI size through versioned profile saves.
 - 2026-07-29: Added first-time onboarding panel with basic placement instructions and a saved completion flag.
+- 2026-07-29: Added loading splash with fade-out and fallback dismissal for smoother first join.
 
 ## Current Priorities
 
