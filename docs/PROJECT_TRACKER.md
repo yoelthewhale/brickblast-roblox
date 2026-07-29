@@ -33,6 +33,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Add battle arenas per match instead of one shared arena | High | Playtest | Codex | 2026-08-01 |
 | Add player customization save data for UI theme and layout | Medium | Playtest | Codex | 2026-08-01 |
 | Add progression-gated piece and board skin customization | Medium | Playtest | Codex | 2026-08-02 |
+| Add hub cosmetic preview swatches | Medium | Playtest | Codex | 2026-08-02 |
 | Add round timer and sudden-death pressure | High | In Progress | Codex | 2026-08-02 |
 | Add rewards after battles: coins, XP, wins, and Story Stars | High | Playtest | Codex | 2026-08-03 |
 | Add permanent leaderboard stats for wins, best score, and Story Stars | High | Playtest | Codex | 2026-08-03 |
@@ -68,6 +69,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Leave an active battle/story run early and confirm no rewards are granted.
 - Cycle Sound setting and confirm UI/gameplay cues respect the selected volume or Off state.
 - Start a new run after changing piece style and confirm new pieces use the selected style; change board skin and confirm empty board cells update without recoloring placed pieces.
+- Confirm the hub piece and board skin buttons show swatches that update when cycling unlocked cosmetics.
 - Confirm locked cosmetics show the next unlock requirement and cannot be selected before the required Level, Coins, or Story Stars.
 - Walk from the hub bridge into the first battle arena and confirm the two player decks, glow pillars, and scoreboard render.
 - Confirm three battle arenas render with separate scoreboard labels and return pads.
@@ -92,4 +94,4 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 ## Build Notes
 
-- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, loading splash, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, compact touch battle layout, persistent core settings, progression-gated piece styles and board skins, first-time onboarding, sound cues/settings, isolated match sessions with three arenas, hub arena availability UI, match diagnostics with a Studio-only session overlay, server playtest analytics, queue/settings remote hardening, profile save retries/diagnostics, anti-spam and suspicious placement diagnostics, early-leave forfeit protection, rotating story missions with Story Stars, and hub story chapter previews. Built `BlockBlastBattle-Day3.rbxl`.
+- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, loading splash, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, compact touch battle layout, persistent core settings, progression-gated piece styles and board skins with hub swatches, first-time onboarding, sound cues/settings, isolated match sessions with three arenas, hub arena availability UI, match diagnostics with a Studio-only session overlay, server playtest analytics, queue/settings remote hardening, profile save retries/diagnostics, anti-spam and suspicious placement diagnostics, early-leave forfeit protection, rotating story missions with Story Stars, and hub story chapter previews. Built `BlockBlastBattle-Day3.rbxl`.

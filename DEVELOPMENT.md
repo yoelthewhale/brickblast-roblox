@@ -35,10 +35,11 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added server playtest analytics counters for battle/story sessions, queue joins/leaves, placements, clears, invalid placements, and story completions.
 - 2026-07-29: Prevented early-leave reward farming by treating active run exits as forfeits with no payout and tracking forfeits in diagnostics.
 - 2026-07-29: Added suspicious placement-request diagnostics for malformed, stale-session, and cooldown-throttled placement remotes.
+- 2026-07-29: Added visual cosmetic swatches to hub piece and board skin controls for quicker customization browsing.
 
 ## Current Priorities
 
-- Add a proper cosmetic shop/inventory presentation with richer previews.
+- Expand cosmetic browsing into a proper shop/inventory panel with unlock previews and equipped-state clarity.
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
 - Continue anti-exploit hardening around queue/session lifecycle edge cases and server-authoritative economy events.
 - Add richer original audio assets and mix testing.

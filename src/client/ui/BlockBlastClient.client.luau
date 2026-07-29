@@ -64,6 +64,8 @@ local uiSizeButton = nil
 local pieceSkinButton = nil
 local boardSkinButton = nil
 local cosmeticHintLabel = nil
+local pieceSkinSwatches = {}
+local boardSkinPreviewCells = {}
 local soundButton = nil
 local customizeButton = nil
 local returnHubButton = nil
@@ -381,6 +383,53 @@ local function nextLockedCosmeticText()
 	return "All current cosmetics unlocked"
 end
 
+local function previewColorsForPieceSkin(skinName)
+	if skinName == "Neon" then
+		return {
+			Color3.fromRGB(0, 255, 234),
+			Color3.fromRGB(255, 44, 209),
+			Color3.fromRGB(255, 244, 42),
+			Color3.fromRGB(69, 255, 86),
+		}
+	elseif skinName == "Pastel" then
+		return {
+			Color3.fromRGB(255, 183, 213),
+			Color3.fromRGB(184, 219, 255),
+			Color3.fromRGB(197, 245, 190),
+			Color3.fromRGB(244, 221, 158),
+		}
+	elseif skinName == "Ice" then
+		return {
+			Color3.fromRGB(154, 224, 255),
+			Color3.fromRGB(185, 238, 255),
+			Color3.fromRGB(217, 248, 255),
+			Color3.fromRGB(128, 201, 242),
+		}
+	end
+
+	return {
+		Color3.fromRGB(255, 76, 76),
+		Color3.fromRGB(255, 204, 54),
+		Color3.fromRGB(76, 217, 100),
+		Color3.fromRGB(64, 156, 255),
+	}
+end
+
+local function updateCosmeticPreviews()
+	local skinName = Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"
+	local colors = previewColorsForPieceSkin(skinName)
+	for index, swatch in pieceSkinSwatches do
+		swatch.BackgroundColor3 = colors[index] or colors[#colors]
+	end
+
+	local boardSkin = Config.BoardSkins[boardSkinIndex]
+	local emptyColor = boardSkin and boardSkin.empty or customization.boardEmptyColor
+	local borderColor = boardSkin and boardSkin.border or customization.accentColor
+	for index, cell in boardSkinPreviewCells do
+		cell.BackgroundColor3 = index == 3 and borderColor or emptyColor
+	end
+end
+
 local function updateSettingsButtonText()
 	if motionButton then
 		motionButton.Text = reducedMotion and "Motion: Reduced" or "Motion: Full"
@@ -397,17 +446,19 @@ local function updateSettingsButtonText()
 	end
 
 	if pieceSkinButton then
-		pieceSkinButton.Text = `Pieces: {Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"}`
+		pieceSkinButton.Text = `  Pieces: {Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"}`
 	end
 
 	if boardSkinButton then
 		local boardSkin = Config.BoardSkins[boardSkinIndex]
-		boardSkinButton.Text = `Board: {boardSkin and boardSkin.name or "Auto"}`
+		boardSkinButton.Text = `  Board: {boardSkin and boardSkin.name or "Auto"}`
 	end
 
 	if cosmeticHintLabel then
 		cosmeticHintLabel.Text = nextLockedCosmeticText()
 	end
+
+	updateCosmeticPreviews()
 
 	if soundButton then
 		if not soundEnabled or soundVolume <= 0 then
@@ -773,10 +824,28 @@ pieceSkinButton.Size = UDim2.fromOffset(226, 38)
 pieceSkinButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 pieceSkinButton.BorderSizePixel = 0
 pieceSkinButton.Font = Enum.Font.GothamBold
-pieceSkinButton.Text = "Pieces: Rainbow"
+pieceSkinButton.Text = "  Pieces: Rainbow"
 pieceSkinButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 pieceSkinButton.TextSize = 15
+pieceSkinButton.TextXAlignment = Enum.TextXAlignment.Left
 pieceSkinButton.Parent = hubPanel
+
+local pieceSwatchFrame = Instance.new("Frame")
+pieceSwatchFrame.BackgroundTransparency = 1
+pieceSwatchFrame.Position = UDim2.new(1, -78, 0.5, -6)
+pieceSwatchFrame.Size = UDim2.fromOffset(58, 12)
+pieceSwatchFrame.ZIndex = 3
+pieceSwatchFrame.Parent = pieceSkinButton
+
+for index = 1, 4 do
+	local swatch = Instance.new("Frame")
+	swatch.Position = UDim2.fromOffset((index - 1) * 15, 0)
+	swatch.Size = UDim2.fromOffset(12, 12)
+	swatch.BorderSizePixel = 0
+	swatch.ZIndex = 4
+	swatch.Parent = pieceSwatchFrame
+	pieceSkinSwatches[index] = swatch
+end
 
 soundButton = Instance.new("TextButton")
 soundButton.Position = UDim2.fromOffset(272, 232)
@@ -795,10 +864,31 @@ boardSkinButton.Size = UDim2.fromOffset(226, 38)
 boardSkinButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 boardSkinButton.BorderSizePixel = 0
 boardSkinButton.Font = Enum.Font.GothamBold
-boardSkinButton.Text = "Board: Auto"
+boardSkinButton.Text = "  Board: Auto"
 boardSkinButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 boardSkinButton.TextSize = 15
+boardSkinButton.TextXAlignment = Enum.TextXAlignment.Left
 boardSkinButton.Parent = hubPanel
+
+local boardPreviewFrame = Instance.new("Frame")
+boardPreviewFrame.BackgroundTransparency = 1
+boardPreviewFrame.Position = UDim2.new(1, -72, 0.5, -14)
+boardPreviewFrame.Size = UDim2.fromOffset(48, 28)
+boardPreviewFrame.ZIndex = 3
+boardPreviewFrame.Parent = boardSkinButton
+
+for row = 1, 2 do
+	for column = 1, 3 do
+		local index = (row - 1) * 3 + column
+		local cell = Instance.new("Frame")
+		cell.Position = UDim2.fromOffset((column - 1) * 15, (row - 1) * 15)
+		cell.Size = UDim2.fromOffset(12, 12)
+		cell.BorderSizePixel = 0
+		cell.ZIndex = 4
+		cell.Parent = boardPreviewFrame
+		boardSkinPreviewCells[index] = cell
+	end
+end
 
 cosmeticHintLabel = Instance.new("TextLabel")
 cosmeticHintLabel.BackgroundTransparency = 1
