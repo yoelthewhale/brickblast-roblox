@@ -93,6 +93,7 @@ Pass criteria:
 - Leaving an active run increments the forfeit counter and does not grant rewards.
 - Remaining player gets proper finish behavior.
 - Arena frees when the session empties.
+- `Play Again` only requeues after a finished run and does not duplicate rewards.
 
 ## Scenario F: Client Settings Persistence
 

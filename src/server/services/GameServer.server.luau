@@ -917,6 +917,22 @@ startStoryMode = function(player)
 	startBattle({ player }, "Story")
 end
 
+local function playAgainBattle(player)
+	local state = playerStates[player]
+	local session = playerSessions[player]
+
+	if state and state.alive and not (session and session.finishScheduled) then
+		sendHubState(player, "Finish your current run first")
+		return
+	end
+
+	if state or session then
+		leaveBattle(player)
+	end
+
+	joinBattleQueue(player)
+end
+
 local function finishBattle(session, winner)
 	if session.finishScheduled then
 		return
@@ -1148,6 +1164,8 @@ queueEvent.OnServerEvent:Connect(function(player, mode)
 		leaveBattleQueue(player)
 	elseif mode == "LeaveBattle" then
 		leaveBattle(player)
+	elseif mode == "PlayAgain" then
+		playAgainBattle(player)
 	elseif mode == "Story" then
 		startStoryMode(player)
 	end

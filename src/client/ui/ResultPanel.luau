@@ -135,10 +135,7 @@ function ResultPanel.new(gui, queueEvent, options)
 		self.playSound("Queue")
 		self:Hide()
 		if self.hasCurrentRun() then
-			self.queueEvent:FireServer("LeaveBattle")
-			task.delay(0.2, function()
-				self.queueEvent:FireServer("Battle")
-			end)
+			self.queueEvent:FireServer("PlayAgain")
 		else
 			self.queueEvent:FireServer("Battle")
 		end

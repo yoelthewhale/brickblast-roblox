@@ -42,12 +42,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added server-authored next-cosmetic-unlock hints to the post-run results panel.
 - 2026-07-29: Added a cosmetic closet panel with piece/board preview grids, equipped states, locked requirements, and direct equip actions.
 - 2026-07-29: Added story chapter intro, success, and failure copy to mission starts, in-run objectives, and post-run results.
+- 2026-07-29: Replaced delayed client-side replay sequencing with a server-authoritative `PlayAgain` queue action that only requeues from hub or finished runs.
 
 ## Current Priorities
 
 - Expand cosmetic closet into a full shop/inventory flow with earnable inventory, featured items, and clearer purchase-free progression.
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
-- Continue anti-exploit hardening around queue/session lifecycle edge cases and server-authoritative economy events.
+- Continue anti-exploit hardening around server-authoritative economy events and abnormal session lifecycle edge cases.
 - Add richer original audio assets and mix testing.
 - Expand Story Training into a mission-select presentation with chapter browsing and replay choices.
 - Validate compact touch layout in Roblox Studio device emulation.

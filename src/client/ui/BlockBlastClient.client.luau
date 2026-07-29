@@ -1540,10 +1540,7 @@ end)
 
 playAgainButton.MouseButton1Click:Connect(function()
 	playSound("Queue")
-	queueEvent:FireServer("LeaveBattle")
-	task.delay(0.2, function()
-		queueEvent:FireServer("Battle")
-	end)
+	queueEvent:FireServer("PlayAgain")
 end)
 
 resetLayoutButton.MouseButton1Click:Connect(function()
