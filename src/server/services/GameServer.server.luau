@@ -45,6 +45,8 @@ local queuedPlayers = {}
 local playerModes = {}
 local playerSettings = {}
 local lastPlaceRequestAt = {}
+local lastQueueRequestAt = {}
+local settingsSaveScheduled = {}
 local queueStartedAt = nil
 local nextSessionId = 0
 local profileStore = nil
@@ -58,6 +60,8 @@ local SOLO_TEST_SECONDS = 8
 local OUT_OF_MOVES_RETURN_SECONDS = 4
 local POST_BATTLE_RETURN_SECONDS = 6
 local PLACE_COOLDOWN_SECONDS = 0.08
+local QUEUE_ACTION_COOLDOWN_SECONDS = 0.35
+local SETTINGS_SAVE_DEBOUNCE_SECONDS = 1
 local leaveBattle = nil
 local scheduleReturnIfEliminated = nil
 local resolveBattleIfFinished = nil
@@ -364,6 +368,31 @@ local function canAcceptPlaceRequest(player, slot, x, y)
 
 	lastPlaceRequestAt[player] = now
 	return true
+end
+
+local function canAcceptQueueAction(player)
+	local now = os.clock()
+	local lastRequestAt = lastQueueRequestAt[player] or 0
+	if now - lastRequestAt < QUEUE_ACTION_COOLDOWN_SECONDS then
+		return false
+	end
+
+	lastQueueRequestAt[player] = now
+	return true
+end
+
+local function scheduleSettingsSave(player)
+	if settingsSaveScheduled[player] then
+		return
+	end
+
+	settingsSaveScheduled[player] = true
+	task.delay(SETTINGS_SAVE_DEBOUNCE_SECONDS, function()
+		settingsSaveScheduled[player] = nil
+		if player.Parent == Players then
+			saveProfile(player)
+		end
+	end)
 end
 
 local function publicState(player)
@@ -846,13 +875,17 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 end)
 
 queueEvent.OnServerEvent:Connect(function(player, mode)
+	if not canAcceptQueueAction(player) then
+		return
+	end
+
 	if mode == "Battle" then
 		joinBattleQueue(player)
 	elseif mode == "LeaveQueue" then
 		leaveBattleQueue(player)
 	elseif mode == "LeaveBattle" then
 		leaveBattle(player)
-	else
+	elseif mode == "Story" then
 		startStoryMode(player)
 	end
 end)
@@ -869,9 +902,7 @@ settingsEvent.OnServerEvent:Connect(function(player, action, nextSettings)
 
 	playerSettings[player] = sanitizeSettings(nextSettings)
 	sendSettings(player)
-	task.defer(function()
-		saveProfile(player)
-	end)
+	scheduleSettingsSave(player)
 end)
 
 hubParts.battlePrompt.Triggered:Connect(joinBattleQueue)
@@ -915,6 +946,8 @@ Players.PlayerRemoving:Connect(function(player)
 	playerModes[player] = nil
 	playerSettings[player] = nil
 	lastPlaceRequestAt[player] = nil
+	lastQueueRequestAt[player] = nil
+	settingsSaveScheduled[player] = nil
 	if session then
 		for index, sessionPlayer in session.players do
 			if sessionPlayer == player then

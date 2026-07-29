@@ -26,11 +26,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added visible match/arena diagnostics and a multiplayer stress-test plan for Studio local server validation.
 - 2026-07-29: Added a Studio-only diagnostics overlay with current mode, arena, match, queue, and active session summaries.
 - 2026-07-29: Added persistent board skin customization with Auto, Midnight, Sugar, Garden, and Contrast skins.
+- 2026-07-29: Hardened queue/settings remotes with queue action cooldowns, explicit mode handling, and debounced settings saves.
 
 ## Current Priorities
 
 - Add cosmetic unlock requirements, previews, and a proper shop/inventory flow.
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
+- Add broader anti-exploit checks around progression, rewards, and session lifecycle edge cases.
 - Add richer original audio assets and mix testing.
 - Expand story mode with missions, goals, dialogue, and rewards.
 
