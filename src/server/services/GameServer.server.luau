@@ -69,6 +69,7 @@ local DEFAULT_SETTINGS = {
 	uiScale = 1,
 	tutorialComplete = false,
 	pieceSkin = "Rainbow",
+	boardSkin = "Auto",
 	soundEnabled = true,
 	soundVolume = 0.65,
 }
@@ -97,6 +98,10 @@ local function sanitizeSettings(settings)
 
 	if typeof(settings.pieceSkin) == "string" and Blocks.isValidPieceSkin(settings.pieceSkin) then
 		clean.pieceSkin = settings.pieceSkin
+	end
+
+	if typeof(settings.boardSkin) == "string" and Config.isValidBoardSkin(settings.boardSkin) then
+		clean.boardSkin = settings.boardSkin
 	end
 
 	if typeof(settings.soundEnabled) == "boolean" then

@@ -37,6 +37,7 @@ local hubQueued = false
 local reducedMotion = false
 local uiScale = 1
 local pieceSkinIndex = 1
+local boardSkinIndex = 1
 local soundEnabled = true
 local soundVolume = 0.65
 local sounds = {}
@@ -60,6 +61,7 @@ local battleQueueButton = nil
 local motionButton = nil
 local uiSizeButton = nil
 local pieceSkinButton = nil
+local boardSkinButton = nil
 local soundButton = nil
 local customizeButton = nil
 local returnHubButton = nil
@@ -85,6 +87,7 @@ local dockScale = nil
 local bannerScale = nil
 local clampWindowToScreen = nil
 local applyWindowLayout = nil
+local applyBoardSkin = nil
 local renderBoard = nil
 local renderHand = nil
 local renderDiagnostics = nil
@@ -276,6 +279,8 @@ local function settingsPayload()
 		uiScale = uiScale,
 		tutorialComplete = tutorialComplete,
 		pieceSkin = Blocks.PieceSkins[pieceSkinIndex] or "Rainbow",
+		boardSkin = Config.BoardSkins[boardSkinIndex] and Config.BoardSkins[boardSkinIndex].name
+			or "Auto",
 		soundEnabled = soundEnabled,
 		soundVolume = soundVolume,
 	}
@@ -325,6 +330,11 @@ local function updateSettingsButtonText()
 
 	if pieceSkinButton then
 		pieceSkinButton.Text = `Pieces: {Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"}`
+	end
+
+	if boardSkinButton then
+		local boardSkin = Config.BoardSkins[boardSkinIndex]
+		boardSkinButton.Text = `Board: {boardSkin and boardSkin.name or "Auto"}`
 	end
 
 	if soundButton then
@@ -448,7 +458,7 @@ dockReturnButton.Parent = battleDock
 hubPanel = Instance.new("Frame")
 hubPanel.AnchorPoint = Vector2.new(0.5, 0)
 hubPanel.Position = UDim2.fromScale(0.5, 0.06)
-hubPanel.Size = UDim2.fromOffset(520, 274)
+hubPanel.Size = UDim2.fromOffset(520, 324)
 hubPanel.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
 hubPanel.BackgroundTransparency = 0.08
 hubPanel.BorderSizePixel = 0
@@ -693,6 +703,17 @@ soundButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 soundButton.TextSize = 15
 soundButton.Parent = hubPanel
 
+boardSkinButton = Instance.new("TextButton")
+boardSkinButton.Position = UDim2.fromOffset(22, 262)
+boardSkinButton.Size = UDim2.fromOffset(226, 38)
+boardSkinButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+boardSkinButton.BorderSizePixel = 0
+boardSkinButton.Font = Enum.Font.GothamBold
+boardSkinButton.Text = "Board: Auto"
+boardSkinButton.TextColor3 = Color3.fromRGB(245, 247, 251)
+boardSkinButton.TextSize = 15
+boardSkinButton.Parent = hubPanel
+
 battleQueueButton.MouseButton1Click:Connect(function()
 	playSound(hubQueued and "Button" or "Queue")
 	queueEvent:FireServer(hubQueued and "LeaveQueue" or "Battle")
@@ -738,6 +759,22 @@ pieceSkinButton.MouseButton1Click:Connect(function()
 	playSound("Button")
 	saveSettings()
 	showBanner(pieceSkinButton.Text, customization.accentColor)
+end)
+
+boardSkinButton.MouseButton1Click:Connect(function()
+	boardSkinIndex += 1
+	if boardSkinIndex > #Config.BoardSkins then
+		boardSkinIndex = 1
+	end
+
+	updateSettingsButtonText()
+	applyBoardSkin()
+	if currentState then
+		renderBoard()
+	end
+	playSound("Button")
+	saveSettings()
+	showBanner(boardSkinButton.Text, customization.accentColor)
 end)
 
 soundButton.MouseButton1Click:Connect(function()
@@ -793,10 +830,33 @@ resetLayoutButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 resetLayoutButton.TextSize = 14
 resetLayoutButton.Parent = root
 
+applyBoardSkin = function()
+	local theme = themePresets[themeIndex]
+	local boardSkin = Config.BoardSkins[boardSkinIndex] or Config.BoardSkins[1]
+	local emptyColor = boardSkin.empty or theme.board
+	local borderColor = boardSkin.border or Color3.fromRGB(45, 55, 72)
+
+	customization.boardEmptyColor = emptyColor
+
+	for y = 1, Config.BoardSize do
+		for x = 1, Config.BoardSize do
+			local cell = cells[y] and cells[y][x]
+			if not cell then
+				continue
+			end
+
+			cell.BorderSizePixel = 1
+			cell.BorderColor3 = borderColor
+			if not currentState or currentState.board[y][x] == false then
+				cell.BackgroundColor3 = emptyColor
+			end
+		end
+	end
+end
+
 local function applyTheme()
 	local theme = themePresets[themeIndex]
 	customization.panelColor = theme.panel
-	customization.boardEmptyColor = theme.board
 	customization.accentColor = theme.accent
 	root.BackgroundColor3 = theme.panel
 	battleDock.BackgroundColor3 = theme.panel
@@ -807,16 +867,7 @@ local function applyTheme()
 	customizeButton.BackgroundColor3 = theme.accent
 	resetLayoutButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 	customizeButton.Text = `Theme: {theme.name}`
-
-	if currentState then
-		for y = 1, Config.BoardSize do
-			for x = 1, Config.BoardSize do
-				if currentState.board[y][x] == false then
-					cells[y][x].BackgroundColor3 = theme.board
-				end
-			end
-		end
-	end
+	applyBoardSkin()
 end
 
 customizeButton.MouseButton1Click:Connect(function()
@@ -1739,6 +1790,15 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 		for index, skin in Blocks.PieceSkins do
 			if skin == settings.pieceSkin then
 				pieceSkinIndex = index
+				break
+			end
+		end
+	end
+
+	if typeof(settings.boardSkin) == "string" then
+		for index, skin in Config.BoardSkins do
+			if skin.name == settings.boardSkin then
+				boardSkinIndex = index
 				break
 			end
 		end
