@@ -52,6 +52,17 @@ local nextSessionId = 0
 local profileStore = nil
 local profileLoadFailures = 0
 local profileSaveFailures = 0
+local analytics = {
+	battleSessionsStarted = 0,
+	storySessionsStarted = 0,
+	battleSessionsFinished = 0,
+	storyMissionsCompleted = 0,
+	queueJoins = 0,
+	queueLeaves = 0,
+	placements = 0,
+	linesCleared = 0,
+	invalidPlacements = 0,
+}
 
 pcall(function()
 	profileStore = DataStoreService:GetDataStore("BlockBlastProfilesV1")
@@ -432,6 +443,7 @@ local function grantBattleRewards(player, state, winner)
 		earnedCoins += Config.StoryCompletionCoins
 		earnedXp += Config.StoryCompletionXp
 		storyStars.Value += 1
+		analytics.storyMissionsCompleted += 1
 	end
 
 	coins.Value += earnedCoins
@@ -559,6 +571,7 @@ local function sendHubState(player, message)
 		storyStars = progress.storyStars,
 		profileLoadFailures = profileLoadFailures,
 		profileSaveFailures = profileSaveFailures,
+		analytics = table.clone(analytics),
 		secondsToSoloStart = secondsToSoloStart,
 		message = message,
 	})
@@ -687,6 +700,11 @@ local function startBattle(players, mode)
 		arena = arena,
 	}
 	activeSessions[session.id] = session
+	if mode == "Story" then
+		analytics.storySessionsStarted += 1
+	else
+		analytics.battleSessionsStarted += 1
+	end
 
 	for slot, player in players do
 		queuedPlayers[player] = nil
@@ -778,6 +796,7 @@ local function joinBattleQueue(player)
 	end
 
 	queuedPlayers[player] = true
+	analytics.queueJoins += 1
 	queueStartedAt = queueStartedAt or os.clock()
 	broadcastHub(`{player.DisplayName} joined the battle queue`)
 	tryStartBattle()
@@ -790,6 +809,7 @@ local function leaveBattleQueue(player)
 	end
 
 	queuedPlayers[player] = nil
+	analytics.queueLeaves += 1
 	if queueCount() == 0 then
 		queueStartedAt = nil
 	end
@@ -817,6 +837,9 @@ local function finishBattle(session, winner)
 	end
 
 	session.finishScheduled = true
+	if session.mode == "Battle" then
+		analytics.battleSessionsFinished += 1
+	end
 
 	for _, player in session.players do
 		local state = playerStates[player]
@@ -946,6 +969,7 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 
 	local placed, cellsPlaced = Grid.place(state.board, shape, x, y)
 	if not placed then
+		analytics.invalidPlacements += 1
 		effectsEvent:FireClient(player, {
 			kind = "InvalidPlace",
 			message = "That spot is blocked",
@@ -955,6 +979,8 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 
 	state.hand[slot] = nil
 	local linesCleared = Grid.clearLines(state.board)
+	analytics.placements += 1
+	analytics.linesCleared += linesCleared
 	effectsEvent:FireClient(player, {
 		kind = "Place",
 		originX = x,

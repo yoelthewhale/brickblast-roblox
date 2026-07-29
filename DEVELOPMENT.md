@@ -32,6 +32,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added progression-gated cosmetic unlock requirements for piece and board skins with server-side enforcement and hub hints.
 - 2026-07-29: Added hub story chapter preview showing the next mission title, objective, and Story Stars before starting Story Training.
 - 2026-07-29: Hardened profile persistence with bounded save retries, DataStore load/save warnings, shutdown save sweep, and Studio save-failure diagnostics.
+- 2026-07-29: Added server playtest analytics counters for battle/story sessions, queue joins/leaves, placements, clears, invalid placements, and story completions.
 
 ## Current Priorities
 
@@ -55,7 +56,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - `BlockBlastClient.client.luau` is growing large and should be split into UI modules.
 - Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; unlocks are progression-derived, while broader cosmetic inventory still needs persistence.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
-- Match sessions now support multiple active arenas with hub availability UI and diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
+- Match sessions now support multiple active arenas with hub availability UI, analytics, and diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
 
 ## Release Readiness
 
