@@ -50,6 +50,8 @@ local settingsSaveScheduled = {}
 local queueStartedAt = nil
 local nextSessionId = 0
 local profileStore = nil
+local profileLoadFailures = 0
+local profileSaveFailures = 0
 
 pcall(function()
 	profileStore = DataStoreService:GetDataStore("BlockBlastProfilesV1")
@@ -62,6 +64,7 @@ local POST_BATTLE_RETURN_SECONDS = 6
 local PLACE_COOLDOWN_SECONDS = 0.08
 local QUEUE_ACTION_COOLDOWN_SECONDS = 0.35
 local SETTINGS_SAVE_DEBOUNCE_SECONDS = 1
+local PROFILE_SAVE_RETRY_COUNT = 3
 local leaveBattle = nil
 local scheduleReturnIfEliminated = nil
 local resolveBattleIfFinished = nil
@@ -256,7 +259,13 @@ local function createLeaderstats(player)
 			return profileStore:GetAsync(`Player_{player.UserId}`)
 		end)
 
-		if not ok or typeof(profile) ~= "table" or player.Parent ~= Players then
+		if not ok then
+			profileLoadFailures += 1
+			warn(`[BlockBlast] Failed to load profile for {player.UserId}: {tostring(profile)}`)
+			return
+		end
+
+		if typeof(profile) ~= "table" or player.Parent ~= Players then
 			return
 		end
 
@@ -307,6 +316,28 @@ local function updateLeaderstats(player, score)
 	end
 end
 
+local function setProfileWithRetry(player, payload)
+	for attempt = 1, PROFILE_SAVE_RETRY_COUNT do
+		local ok, err = pcall(function()
+			profileStore:SetAsync(`Player_{player.UserId}`, payload)
+		end)
+
+		if ok then
+			return true
+		end
+
+		if attempt == PROFILE_SAVE_RETRY_COUNT then
+			profileSaveFailures += 1
+			warn(`[BlockBlast] Failed to save profile for {player.UserId}: {tostring(err)}`)
+			return false
+		end
+
+		task.wait(0.35 * attempt)
+	end
+
+	return false
+end
+
 local function saveProfile(player)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	local bestScore = leaderstats and leaderstats:FindFirstChild("BestScore")
@@ -327,19 +358,17 @@ local function saveProfile(player)
 		return
 	end
 
-	pcall(function()
-		profileStore:SetAsync(`Player_{player.UserId}`, {
-			version = 1,
-			bestScore = bestScore.Value,
-			wins = wins.Value,
-			coins = coins.Value,
-			xp = xp.Value,
-			level = level.Value,
-			storyStars = storyStars.Value,
-			settings = sanitizeSettings(playerSettings[player], cosmeticProgress(player)),
-			updatedAt = os.time(),
-		})
-	end)
+	setProfileWithRetry(player, {
+		version = 1,
+		bestScore = bestScore.Value,
+		wins = wins.Value,
+		coins = coins.Value,
+		xp = xp.Value,
+		level = level.Value,
+		storyStars = storyStars.Value,
+		settings = sanitizeSettings(playerSettings[player], cosmeticProgress(player)),
+		updatedAt = os.time(),
+	})
 end
 
 local function levelFromXp(xp)
@@ -528,6 +557,8 @@ local function sendHubState(player, message)
 		sessions = sessionSummaries(),
 		storyMission = storyMission,
 		storyStars = progress.storyStars,
+		profileLoadFailures = profileLoadFailures,
+		profileSaveFailures = profileSaveFailures,
 		secondsToSoloStart = secondsToSoloStart,
 		message = message,
 	})
@@ -1047,6 +1078,12 @@ Players.PlayerRemoving:Connect(function(player)
 		end
 	end
 	broadcastHub()
+end)
+
+game:BindToClose(function()
+	for _, player in Players:GetPlayers() do
+		saveProfile(player)
+	end
 end)
 
 for _, player in Players:GetPlayers() do

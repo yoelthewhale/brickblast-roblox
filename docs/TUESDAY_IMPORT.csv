@@ -15,6 +15,7 @@ Add permanent leaderboard stats for wins best score and Story Stars,High,Playtes
 Improve hub visuals and signposting,Medium,In Progress,Codex,2026-08-04
 Add sound effects for placing clearing queueing and winning,Medium,Playtest,Codex,2026-08-04
 Add mobile-friendly controls and scale testing,High,Playtest,Codex,2026-08-05
+Harden profile save reliability and diagnostics,High,Playtest,Codex,2026-08-05
 Original .rbxl file may stay locked while Studio has it open,Medium,Known,Bear / Codex,2026-07-29
 Need confirm Rojo plugin connects to Day 2 place,High,Playtest,Bear / Codex,2026-07-29
 Need test two-player battle end condition in Studio multiplayer test,High,Ready,Bear / Codex,2026-07-30

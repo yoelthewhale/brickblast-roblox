@@ -1760,6 +1760,10 @@ renderDiagnostics = function()
 				currentHubState.queued
 			)}`
 		)
+		table.insert(
+			lines,
+			`Profile fails L/S: {currentHubState.profileLoadFailures or 0}/{currentHubState.profileSaveFailures or 0}`
+		)
 	else
 		table.insert(lines, "Waiting for state...")
 	end

@@ -31,6 +31,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added compact touch layout for the battle window with stacked board/piece controls and safer small-screen scaling.
 - 2026-07-29: Added progression-gated cosmetic unlock requirements for piece and board skins with server-side enforcement and hub hints.
 - 2026-07-29: Added hub story chapter preview showing the next mission title, objective, and Story Stars before starting Story Training.
+- 2026-07-29: Hardened profile persistence with bounded save retries, DataStore load/save warnings, shutdown save sweep, and Studio save-failure diagnostics.
 
 ## Current Priorities
 
@@ -59,4 +60,4 @@ This file tracks production-readiness work, priorities, known issues, and techni
 ## Release Readiness
 
 - Status: Prototype.
-- Not ready for public release until multiplayer, saves, mobile UI, moderation/anti-exploit, onboarding, audio, and retention loops are tested.
+- Not ready for public release until multiplayer, save retries, mobile UI, moderation/anti-exploit, onboarding, audio, and retention loops are tested in Studio.

@@ -11,7 +11,8 @@ Use this checklist in Roblox Studio local server tests before treating matchmaki
 
 ## Diagnostics To Watch
 
-- Studio diagnostics overlay: current player, mode, arena, match, queue, and active session summaries.
+- Studio diagnostics overlay: current player, mode, arena, match, queue, active session summaries, and profile load/save failure counters.
+- Studio diagnostics overlay: profile load/save failure counters should stay at `0/0`.
 - Hub panel: `Arenas`, `Matches`, and queued player count.
 - Battle window: `Arena -- | Match --` line.
 - Battle dock: minimized players should still show arena and score.
@@ -99,6 +100,7 @@ Pass criteria:
 - Piece style affects newly generated hands.
 - Sound Off prevents client cues.
 - Reduced Motion disables pulsing/shaking.
+- Studio diagnostics profile failure counters remain at `0/0` after rejoin.
 
 ## Failure Notes
 
