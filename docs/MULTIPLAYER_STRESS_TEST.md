@@ -13,7 +13,7 @@ Use this checklist in Roblox Studio local server tests before treating matchmaki
 
 - Studio diagnostics overlay: current player, mode, arena, match, queue, active session summaries, and profile load/save failure counters.
 - Studio diagnostics overlay: profile load/save failure counters should stay at `0/0`.
-- Studio diagnostics overlay: analytics counters should move when queueing, starting battles/story, placing pieces, clearing lines, and making invalid placements.
+- Studio diagnostics overlay: analytics counters should move when queueing, starting battles/story, placing pieces, clearing lines, making invalid placements, and forfeiting.
 - Hub panel: `Arenas`, `Matches`, and queued player count.
 - Battle window: `Arena -- | Match --` line.
 - Battle dock: minimized players should still show arena and score.
@@ -89,6 +89,7 @@ Pass criteria:
 
 - Leaving queue decrements queue count.
 - Leaving battle removes only that player from the match.
+- Leaving an active run increments the forfeit counter and does not grant rewards.
 - Remaining player gets proper finish behavior.
 - Arena frees when the session empties.
 

@@ -62,6 +62,7 @@ local analytics = {
 	placements = 0,
 	linesCleared = 0,
 	invalidPlacements = 0,
+	forfeits = 0,
 }
 
 pcall(function()
@@ -896,7 +897,18 @@ leaveBattle = function(player)
 	local state = playerStates[player]
 	local session = playerSessions[player]
 	if state then
-		grantBattleRewards(player, state, false)
+		if not state.alive or (session and session.finishScheduled) then
+			grantBattleRewards(player, state, false)
+		else
+			state.rewardsGranted = true
+			state.message = "Run forfeited - no rewards"
+			analytics.forfeits += 1
+			effectsEvent:FireClient(player, {
+				kind = "BattleResult",
+				message = state.message,
+				won = false,
+			})
+		end
 	end
 	saveProfile(player)
 	playerStates[player] = nil

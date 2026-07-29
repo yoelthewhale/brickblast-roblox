@@ -1768,7 +1768,7 @@ renderDiagnostics = function()
 			local stats = currentHubState.analytics
 			table.insert(
 				lines,
-				`Analytics B/S/Q/P/C/I: {stats.battleSessionsStarted or 0}/{stats.storySessionsStarted or 0}/{stats.queueJoins or 0}/{stats.placements or 0}/{stats.linesCleared or 0}/{stats.invalidPlacements or 0}`
+				`Analytics B/S/Q/P/C/I/F: {stats.battleSessionsStarted or 0}/{stats.storySessionsStarted or 0}/{stats.queueJoins or 0}/{stats.placements or 0}/{stats.linesCleared or 0}/{stats.invalidPlacements or 0}/{stats.forfeits or 0}`
 			)
 		end
 	else

@@ -33,12 +33,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added hub story chapter preview showing the next mission title, objective, and Story Stars before starting Story Training.
 - 2026-07-29: Hardened profile persistence with bounded save retries, DataStore load/save warnings, shutdown save sweep, and Studio save-failure diagnostics.
 - 2026-07-29: Added server playtest analytics counters for battle/story sessions, queue joins/leaves, placements, clears, invalid placements, and story completions.
+- 2026-07-29: Prevented early-leave reward farming by treating active run exits as forfeits with no payout and tracking forfeits in diagnostics.
 
 ## Current Priorities
 
 - Add a proper cosmetic shop/inventory presentation with richer previews.
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
-- Add broader anti-exploit checks around progression, rewards, and session lifecycle edge cases.
+- Add broader anti-exploit checks around session lifecycle edge cases and suspicious placement patterns.
 - Add richer original audio assets and mix testing.
 - Add story dialogue, richer chapter framing, and a full mission-select presentation.
 - Validate compact touch layout in Roblox Studio device emulation.
