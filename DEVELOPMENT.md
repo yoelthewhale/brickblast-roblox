@@ -45,6 +45,8 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Replaced delayed client-side replay sequencing with a server-authoritative `PlayAgain` queue action that only requeues from hub or finished runs.
 - 2026-07-29: Extracted client sound cue creation, volume, mute, and playback into a dedicated `SoundController` module.
 - 2026-07-29: Added battle sudden death with server-owned pressure rows, warning banners, red timer state, and diagnostics counters.
+- 2026-07-29: Added a Story Missions panel with recent chapter browsing, replay access for completed chapters, locked upcoming chapter previews, and server-validated selected chapter starts.
+- 2026-07-29: Hardened Story Stars so replayed chapters can earn base rewards but cannot farm additional progression stars.
 
 ## Current Priorities
 
@@ -52,7 +54,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Continue anti-exploit hardening around server-authoritative economy events and abnormal session lifecycle edge cases.
 - Expand cosmetic closet into a full shop/inventory flow with earnable inventory, featured items, and clearer purchase-free progression.
 - Add richer original audio assets and mix testing.
-- Expand Story Training into a mission-select presentation with chapter browsing and replay choices.
+- Expand Story Training with more mission types, longer chapter arcs, and better hub-world story signposting.
 - Validate compact touch layout in Roblox Studio device emulation.
 
 ## Known Issues
@@ -74,3 +76,62 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 - Status: Prototype.
 - Not ready for public release until multiplayer, save retries, mobile UI, moderation/anti-exploit, onboarding, audio, and retention loops are tested in Studio.
+
+## Session Handoff - 2026-07-29
+
+### Completed
+
+- Finished the in-flight Story Missions feature and left it fully wired into the hub.
+- Added `src/client/ui/StoryPanel.luau`, a reusable client UI module that lists four nearby story chapters: recently completed replay options, the next playable chapter, and a locked upcoming preview.
+- Updated `src/client/ui/BlockBlastClient.client.luau` to require `StoryPanel`, open it from the hub Story button, refresh it from hub state, and hide it when a run starts.
+- Updated `src/server/services/GameServer.server.luau` so story runs accept a requested chapter, validate that chapter on the server, expose `storyMissions` in hub state, and prevent replayed chapters from awarding extra Story Stars.
+- Preserved the existing tutorial `Try Story` shortcut as a quick-start path into the next unlocked story chapter.
+- Rebuilt `BlockBlastBattle-Day3.rbxl` after the changes.
+
+### Current State
+
+- The project is stable at a clean stopping point after the Story Missions panel work.
+- No intentionally partial code remains from this session.
+- The story mission list is intentionally compact: it shows a small rolling window around player progress instead of every possible repeated chapter.
+- Story replay currently grants normal score-based coins/XP but only awards the bonus Story Star and completion bonus for the next unbeaten chapter.
+- Studio/live validation is still required for the new modal UI interactions, ProximityPrompt story start path, and DataStore-backed Story Stars reload behavior.
+
+### Recommended Next Priorities
+
+1. Run Roblox Studio local server playtests.
+   This is the biggest release blocker because matchmaking, arena isolation, rewards, replay, sudden death, and story selection all need proof in real multiplayer clients.
+2. Validate mobile and small-screen UI.
+   The game depends heavily on UI board interaction; mobile layout failures would immediately hurt first-time players.
+3. Continue server-authoritative economy hardening.
+   Rewards, cosmetics, replay, and story progression now have more paths, so abnormal lifecycle tests should come before adding monetization or inventory.
+4. Improve the hub environment and signposting.
+   Players need to understand battle queue, story missions, cosmetics, and settings within the first 60 seconds.
+5. Add original audio polish and mix controls.
+   Current cue IDs are placeholders suitable for prototype feedback, not final release polish.
+6. Expand story content and retention loops.
+   The mission framework works, but the campaign needs more objective variety and reasons to return.
+
+### Technical Debt
+
+- `BlockBlastClient.client.luau` remains large despite extracting `ResultPanel`, `CosmeticPanel`, `SoundController`, and `StoryPanel`.
+- Story missions are still static config data and repeat in a simple cycle after the current set.
+- Cosmetic unlocks are progression-derived; there is no true owned inventory, shop rotation, or purchase-free collection flow yet.
+- Client effects are still mostly UI tweens; particle/audio polish should be centralized before launch.
+- Analytics are in-memory Studio diagnostics only, not a production analytics pipeline.
+
+### Ideas
+
+- Add a mission map or chapter path in the hub instead of only a modal list.
+- Add daily/weekly non-monetized challenges that use the story objective system.
+- Add a practice sandbox where players can freely test block shapes without rewards.
+- Add arena visual themes tied to board skins or player level.
+- Add accessibility presets for color contrast, motion, and larger board cells.
+- Add post-match commendations such as `Most Lines Cleared`, `Clutch Finish`, or `Clean Board`.
+
+### Release Readiness
+
+- Estimate: early prototype, roughly 25-30% of the way to a public Roblox release.
+- Biggest blockers: Studio multiplayer validation, mobile playability, persistence confidence, moderation/anti-exploit coverage, and content depth.
+- Biggest gameplay weaknesses: battle pacing still needs hands-on tuning, story content is short, and the board exists only as UI rather than a more embodied arena experience.
+- Biggest polish opportunities: hub visual identity, final sound design, transitions, particles, thumbnails/icons, and better first-session onboarding.
+- Biggest technical risks: server session lifecycle edge cases, DataStore behavior under failure, replay/reward duplication paths, and UI scaling across Roblox devices.

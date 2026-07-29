@@ -109,7 +109,23 @@ Pass criteria:
 - Reduced Motion disables pulsing/shaking.
 - Studio diagnostics profile failure counters remain at `0/0` after rejoin.
 
-## Scenario G: Placement Remote Guardrails
+## Scenario G: Story Mission Selection
+
+1. Open the Story Missions panel from the hub.
+2. Start the next unlocked chapter.
+3. Complete the objective and return to hub.
+4. Reopen the panel and replay a completed chapter.
+5. Try selecting the locked upcoming chapter.
+
+Pass criteria:
+
+- The next unlocked chapter starts from the panel.
+- Completing the next chapter grants exactly one Story Star.
+- Replaying a completed chapter can finish normally but does not grant another Story Star.
+- Locked upcoming chapters show blocked feedback and do not start a run.
+- The ProximityPrompt story pad still starts the next unlocked chapter.
+
+## Scenario H: Placement Remote Guardrails
 
 1. During a local server run, rapidly click/tap placement targets faster than normal play speed.
 2. Attempt placement after returning to hub.

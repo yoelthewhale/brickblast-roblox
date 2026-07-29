@@ -14,6 +14,7 @@ local Grid = require(GameShared.Grid)
 local CosmeticPanel = require(script.Parent.CosmeticPanel)
 local ResultPanel = require(script.Parent.ResultPanel)
 local SoundController = require(script.Parent.SoundController)
+local StoryPanel = require(script.Parent.StoryPanel)
 
 local remotes = ReplicatedStorage:WaitForChild("BlockBlastRemotes")
 local stateEvent = remotes:WaitForChild("State")
@@ -85,6 +86,7 @@ local diagnosticsLabel = nil
 local loadingScreen = nil
 local cosmeticPanelController = nil
 local resultPanelController = nil
+local storyPanelController = nil
 local loadingDismissed = false
 local tutorialPanel = nil
 local hubManuallyClosed = false
@@ -545,6 +547,17 @@ cosmeticPanelController = CosmeticPanel.new(gui, Blocks, Config, {
 	end,
 })
 
+storyPanelController = StoryPanel.new(gui, {
+	playSound = playSound,
+	showMessage = showBanner,
+	getMissions = function()
+		return currentHubState and currentHubState.storyMissions or {}
+	end,
+	startMission = function(chapter)
+		queueEvent:FireServer("Story", chapter)
+	end,
+})
+
 root = Instance.new("Frame")
 root.AnchorPoint = Vector2.new(0, 0.5)
 root.Position = DEFAULT_WINDOW_POSITION
@@ -951,7 +964,8 @@ end)
 
 storyButton.MouseButton1Click:Connect(function()
 	playSound("Button")
-	queueEvent:FireServer("Story")
+	cosmeticPanelController:Hide()
+	storyPanelController:Show()
 end)
 
 motionButton.MouseButton1Click:Connect(function()
@@ -1933,6 +1947,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		resultPanelController:Hide()
 	end
 	cosmeticPanelController:Hide()
+	storyPanelController:Hide()
 	setHubPanelVisible(false)
 	updateTutorialVisibility()
 	battleDock.Visible = not root.Visible
@@ -2025,6 +2040,9 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 	end
 	if storyPreviewLabel then
 		storyPreviewLabel.Text = storyPreviewText(hubState.storyMission, hubState.storyStars)
+	end
+	if storyPanelController then
+		storyPanelController:Refresh()
 	end
 	local message = hubState.message or "Welcome to the hub"
 	hubStatusLabel.Text = message

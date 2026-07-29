@@ -44,6 +44,7 @@ local activeSessions = {}
 local queuedPlayers = {}
 local playerModes = {}
 local playerSettings = {}
+local selectedStoryChapters = {}
 local lastPlaceRequestAt = {}
 local lastQueueRequestAt = {}
 local settingsSaveScheduled = {}
@@ -419,18 +420,54 @@ local function levelFromXp(xp)
 	return math.max(1, math.floor(math.sqrt(xp / Config.LevelXpBase)) + 1)
 end
 
-local function storyMissionForPlayer(player)
+local function completedStoryChapters(player)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	local storyStars = leaderstats and leaderstats:FindFirstChild("StoryStars")
-	local completed = storyStars and storyStars.Value or 0
+	return storyStars and storyStars.Value or 0
+end
+
+local function storyMissionForChapter(chapter)
 	local missionCount = #Config.StoryMissions
 	if missionCount == 0 then
 		return nil
 	end
 
-	local mission = table.clone(Config.StoryMissions[(completed % missionCount) + 1])
-	mission.chapter = completed + 1
+	local mission = table.clone(Config.StoryMissions[((chapter - 1) % missionCount) + 1])
+	mission.chapter = chapter
 	return mission
+end
+
+local function validatedStoryChapter(player, requestedChapter)
+	local completed = completedStoryChapters(player)
+	local maxUnlockedChapter = completed + 1
+	if typeof(requestedChapter) ~= "number" or requestedChapter ~= math.floor(requestedChapter) then
+		return maxUnlockedChapter
+	end
+
+	return math.clamp(requestedChapter, 1, maxUnlockedChapter)
+end
+
+local function storyMissionForPlayer(player, requestedChapter)
+	return storyMissionForChapter(validatedStoryChapter(player, requestedChapter))
+end
+
+local function storyMissionListForPlayer(player)
+	local completed = completedStoryChapters(player)
+	local firstChapter = math.max(1, completed - 1)
+	local lastChapter = completed + 2
+	local missions = {}
+
+	for chapter = firstChapter, lastChapter do
+		local mission = storyMissionForChapter(chapter)
+		if mission then
+			mission.unlocked = chapter <= completed + 1
+			mission.completed = chapter <= completed
+			mission.next = chapter == completed + 1
+			table.insert(missions, mission)
+		end
+	end
+
+	return missions
 end
 
 local function isStoryMissionComplete(state)
@@ -486,17 +523,21 @@ local function grantBattleRewards(player, state, winner)
 	local hundredScore = math.floor(state.score / 100)
 	local earnedCoins = math.max(5, hundredScore * Config.CoinsPerHundredScore)
 	local earnedXp = math.max(10, hundredScore * Config.XpPerHundredScore)
-	local storyCompleted = state.mode == "Story" and isStoryMissionComplete(state)
+	local storyObjectiveMet = state.mode == "Story" and isStoryMissionComplete(state)
+	local storyProgressionCompleted = storyObjectiveMet
+		and state.storyMission
+		and state.storyMission.chapter == storyStars.Value + 1
 	local oldBestScore = state.startingBestScore or state.bestScore or 0
 
 	if winner and state.mode == "Battle" then
 		earnedCoins += Config.WinnerBonusCoins
 		earnedXp += Config.WinnerBonusXp
 		wins.Value += 1
-	elseif storyCompleted then
+	elseif storyProgressionCompleted then
 		earnedCoins += Config.StoryCompletionCoins
 		earnedXp += Config.StoryCompletionXp
 		storyStars.Value += 1
+		selectedStoryChapters[player] = storyStars.Value + 1
 		analytics.storyMissionsCompleted += 1
 	end
 
@@ -514,22 +555,25 @@ local function grantBattleRewards(player, state, winner)
 		linesCleared = state.linesCleared,
 		coins = earnedCoins,
 		xp = earnedXp,
-		storyStars = storyCompleted and 1 or 0,
+		storyStars = storyProgressionCompleted and 1 or 0,
 		bestScore = state.bestScore,
 		previousBestScore = oldBestScore,
-		storyCompleted = storyCompleted,
+		storyCompleted = storyObjectiveMet,
 		won = winner == true and state.mode == "Battle",
 		nextUnlockText = nextUnlockText,
 	}
 	if state.mode == "Story" then
-		state.resultSummary.storyText = storyFlavorText(state.storyMission, storyCompleted)
+		state.resultSummary.storyText = storyFlavorText(state.storyMission, storyObjectiveMet)
 	end
 	if winner and state.mode == "Battle" then
 		state.message = `Victory! +{earnedCoins} coins +{earnedXp} XP`
 		state.resultSummary.outcome = "Victory"
-	elseif storyCompleted then
+	elseif storyProgressionCompleted then
 		state.message = `Mission complete! +{earnedCoins} coins +{earnedXp} XP`
 		state.resultSummary.outcome = "Mission Complete"
+	elseif storyObjectiveMet then
+		state.message = `Replay complete! +{earnedCoins} coins +{earnedXp} XP`
+		state.resultSummary.outcome = "Replay Complete"
 	elseif state.mode == "Story" then
 		state.message = `Mission incomplete - rewards: +{earnedCoins} coins +{earnedXp} XP`
 		state.resultSummary.outcome = "Mission Incomplete"
@@ -646,7 +690,8 @@ local function sendHubState(player, message)
 			math.max(0, math.ceil(SOLO_TEST_SECONDS - (os.clock() - queueStartedAt)))
 	end
 	local totalArenas, openArenas = arenaCounts()
-	local storyMission = storyMissionForPlayer(player)
+	local selectedChapter = selectedStoryChapters[player]
+	local storyMission = storyMissionForPlayer(player, selectedChapter)
 	local progress = cosmeticProgress(player)
 
 	hubEvent:FireClient(player, {
@@ -659,6 +704,7 @@ local function sendHubState(player, message)
 		totalArenas = totalArenas,
 		sessions = sessionSummaries(),
 		storyMission = storyMission,
+		storyMissions = storyMissionListForPlayer(player),
 		storyStars = progress.storyStars,
 		profileLoadFailures = profileLoadFailures,
 		profileSaveFailures = profileSaveFailures,
@@ -811,7 +857,7 @@ local function applySuddenDeathPressure(session)
 	end
 end
 
-local function createPlayerState(player, mode)
+local function createPlayerState(player, mode, storyChapter)
 	local randomizer = Random.new(os.clock() * 100000 + player.UserId)
 	local state = {
 		board = Grid.create(),
@@ -827,7 +873,7 @@ local function createPlayerState(player, mode)
 			or 0,
 		linesCleared = 0,
 		rewardsGranted = false,
-		storyMission = mode == "Story" and storyMissionForPlayer(player) or nil,
+		storyMission = mode == "Story" and storyMissionForPlayer(player, storyChapter) or nil,
 		alive = true,
 		message = nil,
 	}
@@ -837,7 +883,7 @@ local function createPlayerState(player, mode)
 	updateLeaderstats(player, 0)
 end
 
-local function startBattle(players, mode)
+local function startBattle(players, mode, storyChapter)
 	mode = mode or "Battle"
 	local arena = findFreeArena()
 	if not arena then
@@ -868,7 +914,7 @@ local function startBattle(players, mode)
 		playerModes[player] = mode
 		playerSessions[player] = session
 		table.insert(session.players, player)
-		createPlayerState(player, mode)
+		createPlayerState(player, mode, storyChapter)
 		local state = playerStates[player]
 		local storyMission = state and state.storyMission
 		teleportToArenaSlot(player, slot, session)
@@ -977,7 +1023,7 @@ local function leaveBattleQueue(player)
 	broadcastHub(`{player.DisplayName} left the battle queue`)
 end
 
-startStoryMode = function(player)
+startStoryMode = function(player, requestedChapter)
 	if playerModes[player] == "Battle" or playerModes[player] == "Story" then
 		sendHubState(player, "Finish your current run first")
 		return
@@ -988,7 +1034,9 @@ startStoryMode = function(player)
 		return
 	end
 
-	startBattle({ player }, "Story")
+	local chapter = validatedStoryChapter(player, requestedChapter)
+	selectedStoryChapters[player] = chapter
+	startBattle({ player }, "Story", chapter)
 end
 
 local function playAgainBattle(player)
@@ -1103,6 +1151,7 @@ leaveBattle = function(player)
 	playerStates[player] = nil
 	playerSessions[player] = nil
 	queuedPlayers[player] = nil
+	selectedStoryChapters[player] = nil
 	playerModes[player] = "Hub"
 
 	if session then
@@ -1227,7 +1276,7 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 	end
 end)
 
-queueEvent.OnServerEvent:Connect(function(player, mode)
+queueEvent.OnServerEvent:Connect(function(player, mode, requestedChapter)
 	if not canAcceptQueueAction(player) then
 		return
 	end
@@ -1241,7 +1290,7 @@ queueEvent.OnServerEvent:Connect(function(player, mode)
 	elseif mode == "PlayAgain" then
 		playAgainBattle(player)
 	elseif mode == "Story" then
-		startStoryMode(player)
+		startStoryMode(player, requestedChapter)
 	end
 end)
 
@@ -1298,6 +1347,7 @@ Players.PlayerRemoving:Connect(function(player)
 	playerStates[player] = nil
 	playerSessions[player] = nil
 	queuedPlayers[player] = nil
+	selectedStoryChapters[player] = nil
 	playerModes[player] = nil
 	playerSettings[player] = nil
 	lastPlaceRequestAt[player] = nil
