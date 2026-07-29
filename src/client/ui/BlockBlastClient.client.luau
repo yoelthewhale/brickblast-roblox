@@ -81,6 +81,7 @@ local loadingDismissed = false
 local tutorialPanel = nil
 local hubManuallyClosed = false
 local tutorialComplete = false
+local root = nil
 local rootScale = nil
 local hubScale = nil
 local dockScale = nil
@@ -94,8 +95,9 @@ local renderDiagnostics = nil
 
 local DEFAULT_WINDOW_POSITION = UDim2.new(0, 36, 0.5, 0)
 local DEFAULT_WINDOW_SIZE = Vector2.new(640, 438)
-local MIN_WINDOW_SIZE = Vector2.new(620, 380)
+local MIN_WINDOW_SIZE = Vector2.new(360, 420)
 local MAX_WINDOW_SIZE = Vector2.new(860, 620)
+local COMPACT_WINDOW_WIDTH = 560
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
@@ -250,22 +252,35 @@ end
 
 local function applyUiScale()
 	local screenSize = gui.AbsoluteSize
+	if root and screenSize.X < 620 and root.Size.X.Offset > COMPACT_WINDOW_WIDTH then
+		local compactWidth =
+			math.clamp(screenSize.X - 24, MIN_WINDOW_SIZE.X, COMPACT_WINDOW_WIDTH - 1)
+		local compactHeight = math.clamp(screenSize.Y - 64, MIN_WINDOW_SIZE.Y, MAX_WINDOW_SIZE.Y)
+		root.Size = UDim2.fromOffset(compactWidth, compactHeight)
+		if applyWindowLayout then
+			applyWindowLayout()
+		end
+	end
+
 	local automaticScale = 1
 	if screenSize.X < 720 or screenSize.Y < 560 then
-		automaticScale = 0.78
+		automaticScale = 0.86
 	elseif screenSize.X < 980 then
 		automaticScale = 0.88
 	end
 
+	local rootFitScale = math.min(1, (screenSize.X - 16) / math.max(1, root.Size.X.Offset))
+	local hubFitScale = math.min(1, (screenSize.X - 16) / 520, (screenSize.Y - 16) / 324)
+	local dockFitScale = math.min(1, (screenSize.X - 16) / 260)
 	local nextScale = automaticScale * uiScale
 	if rootScale then
-		rootScale.Scale = nextScale
+		rootScale.Scale = math.clamp(math.min(nextScale, rootFitScale), 0.72, 1.12)
 	end
 	if hubScale then
-		hubScale.Scale = nextScale
+		hubScale.Scale = math.clamp(math.min(nextScale, hubFitScale), 0.72, 1.12)
 	end
 	if dockScale then
-		dockScale.Scale = nextScale
+		dockScale.Scale = math.clamp(math.min(nextScale, dockFitScale), 0.78, 1.12)
 	end
 	if bannerScale then
 		bannerScale.Scale = math.max(0.82, nextScale)
@@ -394,7 +409,7 @@ local function showBanner(message, color)
 	end)
 end
 
-local root = Instance.new("Frame")
+root = Instance.new("Frame")
 root.AnchorPoint = Vector2.new(0, 0.5)
 root.Position = DEFAULT_WINDOW_POSITION
 root.Size = UDim2.fromOffset(DEFAULT_WINDOW_SIZE.X, DEFAULT_WINDOW_SIZE.Y)
@@ -1190,53 +1205,80 @@ applyWindowLayout = function()
 	local windowSize = root.AbsoluteSize
 	local width = windowSize.X
 	local height = windowSize.Y
-	local leftPadding = 24
-	local topPadding = 96
-	local bottomPadding = 52
-	local gap = 24
-	local boardLimitByHeight = height - topPadding - bottomPadding
-	local boardLimitByWidth = math.floor(width * 0.48)
-	local boardPixels = clampNumber(math.min(boardLimitByHeight, boardLimitByWidth), 236, 384)
+	local compact = width < COMPACT_WINDOW_WIDTH
+	local leftPadding = compact and 16 or 24
+	local topPadding = compact and 92 or 96
+	local bottomPadding = compact and 54 or 52
+	local gap = compact and 10 or 24
+	local boardLimitByHeight = compact and (height - topPadding - bottomPadding - 126)
+		or (height - topPadding - bottomPadding)
+	local boardLimitByWidth = compact and (width - (leftPadding * 2)) or math.floor(width * 0.48)
+	local boardPixels =
+		clampNumber(math.min(boardLimitByHeight, boardLimitByWidth), 220, compact and 320 or 384)
 	local cellPixels = math.floor((boardPixels - ((Config.BoardSize - 1) * 3)) / Config.BoardSize)
 	boardPixels = (cellPixels * Config.BoardSize) + ((Config.BoardSize - 1) * 3)
 
-	boardFrame.Position = UDim2.fromOffset(leftPadding, topPadding)
+	boardFrame.Position = UDim2.fromOffset(
+		compact and math.floor((width - boardPixels) / 2) or leftPadding,
+		topPadding
+	)
 	boardFrame.Size = UDim2.fromOffset(boardPixels, boardPixels)
 	boardLayout.CellSize = UDim2.fromOffset(cellPixels, cellPixels)
 
-	local sideX = leftPadding + boardPixels + gap
-	local sideWidth = math.max(180, width - sideX - leftPadding)
-	side.Position = UDim2.fromOffset(sideX, topPadding)
-	side.Size = UDim2.fromOffset(sideWidth, boardPixels)
+	local sideX = compact and leftPadding or leftPadding + boardPixels + gap
+	local sideY = compact and topPadding + boardPixels + gap or topPadding
+	local sideWidth = compact and width - (leftPadding * 2)
+		or math.max(180, width - sideX - leftPadding)
+	side.Position = UDim2.fromOffset(sideX, sideY)
+	side.Size = UDim2.fromOffset(sideWidth, compact and 108 or boardPixels)
 	statusLabel.Size = UDim2.fromOffset(sideWidth, 28)
-	statusLabel.TextSize = sideWidth < 220 and 17 or 20
+	statusLabel.TextSize = compact and 16 or sideWidth < 220 and 17 or 20
 
-	local slotHeight = clampNumber(math.floor((boardPixels - 112) / Config.InventorySize), 52, 72)
+	local slotHeight = compact and 52
+		or clampNumber(math.floor((boardPixels - 112) / Config.InventorySize), 52, 72)
 	for slot, button in handButtons do
-		button.Position = UDim2.fromOffset(0, 38 + (slot - 1) * (slotHeight + 8))
-		button.Size = UDim2.fromOffset(sideWidth, slotHeight)
+		local buttonWidth = sideWidth
+		if compact then
+			buttonWidth =
+				math.floor((sideWidth - ((Config.InventorySize - 1) * 8)) / Config.InventorySize)
+			button.Position = UDim2.fromOffset((slot - 1) * (buttonWidth + 8), 34)
+		else
+			button.Position = UDim2.fromOffset(0, 38 + (slot - 1) * (slotHeight + 8))
+		end
+		button.Size = UDim2.fromOffset(buttonWidth, slotHeight)
 
 		local preview = handPreviews[slot]
-		preview.Position = UDim2.fromOffset(12, math.max(6, math.floor((slotHeight - 44) / 2)))
+		preview.Position = UDim2.fromOffset(
+			compact and math.max(6, math.floor((buttonWidth - 44) / 2)) or 12,
+			compact and 4 or math.max(6, math.floor((slotHeight - 44) / 2))
+		)
 
 		local label = button:FindFirstChild("Label")
 		if label and label:IsA("TextLabel") then
-			label.Position = UDim2.fromOffset(70, 0)
-			label.Size = UDim2.fromOffset(math.max(90, sideWidth - 82), slotHeight)
-			label.TextSize = sideWidth < 220 and 14 or 17
+			label.Position = UDim2.fromOffset(compact and 4 or 70, compact and 34 or 0)
+			label.Size = UDim2.fromOffset(
+				compact and math.max(60, buttonWidth - 8) or math.max(90, sideWidth - 82),
+				compact and 16 or slotHeight
+			)
+			label.TextSize = compact and 10 or sideWidth < 220 and 14 or 17
+			label.TextXAlignment = compact and Enum.TextXAlignment.Center
+				or Enum.TextXAlignment.Left
 		end
 	end
 
-	local leaderboardY = 38 + (Config.InventorySize * (slotHeight + 8)) + 2
+	local leaderboardY = compact and 92 or 38 + (Config.InventorySize * (slotHeight + 8)) + 2
 	leaderboardLabel.Position = UDim2.fromOffset(0, leaderboardY)
-	leaderboardLabel.Size = UDim2.fromOffset(sideWidth, math.max(50, boardPixels - leaderboardY))
-	leaderboardLabel.TextSize = sideWidth < 220 and 14 or 16
+	leaderboardLabel.Size =
+		UDim2.fromOffset(sideWidth, compact and 34 or math.max(50, boardPixels - leaderboardY))
+	leaderboardLabel.TextSize = compact and 12 or sideWidth < 220 and 14 or 16
 
 	local bottomY = height - 42
-	local actionWidth = math.floor((sideWidth - 8) / 2)
-	returnHubButton.Position = UDim2.fromOffset(sideX, bottomY)
+	local actionWidth = compact and math.floor((width - (leftPadding * 2) - 8) / 2)
+		or math.floor((sideWidth - 8) / 2)
+	returnHubButton.Position = UDim2.fromOffset(compact and leftPadding or sideX, bottomY)
 	returnHubButton.Size = UDim2.fromOffset(actionWidth, 32)
-	playAgainButton.Position = UDim2.fromOffset(sideX + actionWidth + 8, bottomY)
+	playAgainButton.Position =
+		UDim2.fromOffset((compact and leftPadding or sideX) + actionWidth + 8, bottomY)
 	playAgainButton.Size = UDim2.fromOffset(actionWidth, 32)
 	resizeHandle.Position = UDim2.new(1, -12, 1, -10)
 end
@@ -1258,6 +1300,7 @@ resetLayoutButton.MouseButton1Click:Connect(function()
 	playSound("Button")
 	root.Position = DEFAULT_WINDOW_POSITION
 	root.Size = UDim2.fromOffset(DEFAULT_WINDOW_SIZE.X, DEFAULT_WINDOW_SIZE.Y)
+	applyUiScale()
 	applyWindowLayout()
 end)
 

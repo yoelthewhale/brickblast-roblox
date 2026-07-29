@@ -37,7 +37,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Add permanent leaderboard stats for wins, best score, and Story Stars | High | Playtest | Codex | 2026-08-03 |
 | Improve hub visuals and signposting | Medium | In Progress | Codex | 2026-08-04 |
 | Add sound effects for placing, clearing, queueing, and winning | Medium | Playtest | Codex | 2026-08-04 |
-| Add mobile-friendly controls and scale testing | High | Backlog | Codex | 2026-08-05 |
+| Add mobile-friendly controls and scale testing | High | Playtest | Codex | 2026-08-05 |
 
 ## Bug Tracker
 
@@ -72,6 +72,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Confirm battle start and result banners animate in.
 - Confirm the battle window shows a round timer.
 - Confirm the UI window can drag, resize, hide, reopen, and reset.
+- Resize the battle window below desktop width or use device emulation and confirm the board stacks above touch-friendly piece controls.
 - Confirm pieces auto-select and board hover previews show placement.
 - Try an invalid placement and confirm the UI shakes and says `That spot is blocked`.
 - Place pieces and confirm blocks pop in; clear a row or column and confirm cleared cells flash.
@@ -80,4 +81,4 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 ## Build Notes
 
-- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, loading splash, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, persistent core settings, piece styles, board skins, first-time onboarding, sound cues/settings, isolated match sessions with three arenas, hub arena availability UI, match diagnostics with a Studio-only session overlay, queue/settings remote hardening, anti-spam placement checks, and rotating story missions with Story Stars. Built `BlockBlastBattle-Day3.rbxl`.
+- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, loading splash, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, compact touch battle layout, persistent core settings, piece styles, board skins, first-time onboarding, sound cues/settings, isolated match sessions with three arenas, hub arena availability UI, match diagnostics with a Studio-only session overlay, queue/settings remote hardening, anti-spam placement checks, and rotating story missions with Story Stars. Built `BlockBlastBattle-Day3.rbxl`.

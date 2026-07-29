@@ -28,6 +28,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added persistent board skin customization with Auto, Midnight, Sugar, Garden, and Contrast skins.
 - 2026-07-29: Hardened queue/settings remotes with queue action cooldowns, explicit mode handling, and debounced settings saves.
 - 2026-07-29: Expanded Story Training into rotating server-authored missions with visible objectives, completion rewards, and persistent Story Stars.
+- 2026-07-29: Added compact touch layout for the battle window with stacked board/piece controls and safer small-screen scaling.
 
 ## Current Priorities
 
@@ -36,13 +37,14 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Add broader anti-exploit checks around progression, rewards, and session lifecycle edge cases.
 - Add richer original audio assets and mix testing.
 - Add story dialogue, chapter framing, and mission-select presentation.
+- Validate compact touch layout in Roblox Studio device emulation.
 
 ## Known Issues
 
 - `BlockBlastBattle.rbxl` may be locked if Roblox Studio has it open; build to a day-specific place file instead.
 - Rojo plugin connection still needs a live Roblox Studio playtest.
 - Two-player battle flow needs Roblox Studio local server testing.
-- First-time onboarding needs Studio validation across desktop and mobile screen sizes.
+- First-time onboarding and compact battle layout need Studio validation across desktop and mobile screen sizes.
 - Current battle board is UI-only; future versions should consider an optional 3D board representation in the arena.
 
 ## Technical Debt

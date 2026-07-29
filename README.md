@@ -54,5 +54,6 @@ Useful VS Code tasks:
 - Incoming pressure fills cells from the bottom unless the player keeps clearing lines.
 - Story Training gives rotating solo missions with score and line-clear goals.
 - Players can customize UI theme, board skin, piece skin, sound, motion, and UI scale.
+- The battle window supports a compact touch layout for smaller screens.
 
 This is intentionally a small, readable prototype so you can start changing rules and adding visuals quickly.
