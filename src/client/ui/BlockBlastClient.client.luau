@@ -1822,14 +1822,15 @@ local function storyGoalText(state)
 	local targetScore = mission.targetScore or 0
 	local currentLines = math.min(state.linesCleared or 0, targetLines)
 	local currentScore = math.min(state.score or 0, targetScore)
+	local chapterName = `Chapter {mission.chapter or 1}: {mission.name}`
 
 	if targetLines > 0 and targetScore > 0 then
-		return `{mission.name}: {currentLines}/{targetLines} lines, {currentScore}/{targetScore} score`
+		return `{chapterName}: {currentLines}/{targetLines} lines, {currentScore}/{targetScore} score`
 	elseif targetLines > 0 then
-		return `{mission.name}: {currentLines}/{targetLines} lines`
+		return `{chapterName}: {currentLines}/{targetLines} lines`
 	end
 
-	return `{mission.name}: {currentScore}/{targetScore} score`
+	return `{chapterName}: {currentScore}/{targetScore} score`
 end
 
 local function storyPreviewText(mission, storyStars)
@@ -2112,7 +2113,7 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 	elseif effect.kind == "BattleStart" then
 		playSound("Queue")
 		resultPanelController:Hide()
-		showBanner(effect.message or "Battle started!", customization.accentColor)
+		showBanner(effect.detail or effect.message or "Battle started!", customization.accentColor)
 	elseif effect.kind == "BattleResult" then
 		playSound("Result")
 		resultPanelController:Show(effect.result, effect.message, effect.won)

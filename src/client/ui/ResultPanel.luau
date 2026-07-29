@@ -162,6 +162,7 @@ function ResultPanel:Show(result, message, won)
 	local bestScore = result.bestScore or score
 	local previousBestScore = result.previousBestScore or bestScore
 	local nextUnlockText = result.nextUnlockText or "Next unlock: keep playing"
+	local storyText = result.storyText
 	local bestDelta = math.max(0, bestScore - previousBestScore)
 	local rewardText = `+{coins} coins   +{xp} XP`
 
@@ -170,7 +171,7 @@ function ResultPanel:Show(result, message, won)
 	end
 
 	self.titleLabel.Text = outcome
-	self.summaryLabel.Text = message or `Score {score} | {linesCleared} lines`
+	self.summaryLabel.Text = storyText or message or `Score {score} | {linesCleared} lines`
 	self.rewardLabel.Text = rewardText
 	self.progressLabel.Text = bestDelta > 0 and `New best score: {bestScore} (+{bestDelta})`
 		or `Best score: {bestScore} | Lines cleared: {linesCleared}`

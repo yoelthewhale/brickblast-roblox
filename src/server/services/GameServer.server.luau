@@ -431,6 +431,26 @@ local function isStoryMissionComplete(state)
 		and state.linesCleared >= (mission.targetLines or 0)
 end
 
+local function storyChapterTitle(mission)
+	if not mission then
+		return "Story Training"
+	end
+
+	return `Chapter {mission.chapter or 1}: {mission.name or "Training"}`
+end
+
+local function storyFlavorText(mission, completed)
+	if not mission then
+		return nil
+	end
+
+	if completed then
+		return mission.success or "Mission complete."
+	end
+
+	return mission.failure or "Mission incomplete. Try the objective again."
+end
+
 local function grantBattleRewards(player, state, winner)
 	if state.rewardsGranted then
 		return
@@ -489,6 +509,9 @@ local function grantBattleRewards(player, state, winner)
 		won = winner == true and state.mode == "Battle",
 		nextUnlockText = nextUnlockText,
 	}
+	if state.mode == "Story" then
+		state.resultSummary.storyText = storyFlavorText(state.storyMission, storyCompleted)
+	end
 	if winner and state.mode == "Battle" then
 		state.message = `Victory! +{earnedCoins} coins +{earnedXp} XP`
 		state.resultSummary.outcome = "Victory"
@@ -772,12 +795,15 @@ local function startBattle(players, mode)
 		playerSessions[player] = session
 		table.insert(session.players, player)
 		createPlayerState(player, mode)
+		local state = playerStates[player]
+		local storyMission = state and state.storyMission
 		teleportToArenaSlot(player, slot, session)
 		effectsEvent:FireClient(player, {
 			kind = "BattleStart",
-			message = mode == "Story" and "Story training started!"
+			message = mode == "Story" and storyChapterTitle(storyMission)
 				or #players >= BATTLE_MIN_PLAYERS and "Battle started!"
 				or "Solo test started!",
+			detail = mode == "Story" and storyMission and storyMission.intro or nil,
 		})
 	end
 
@@ -974,6 +1000,9 @@ leaveBattle = function(player)
 				storyCompleted = false,
 				won = false,
 				nextUnlockText = nextCosmeticUnlockText(cosmeticProgress(player)),
+				storyText = state.mode == "Story"
+						and "Training abandoned. Restart when you are ready."
+					or nil,
 			}
 			analytics.forfeits += 1
 			fireResult(player, state, false)
