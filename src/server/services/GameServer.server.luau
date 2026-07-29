@@ -69,6 +69,7 @@ local DEFAULT_SETTINGS = {
 	reducedMotion = false,
 	uiScale = 1,
 	tutorialComplete = false,
+	pieceSkin = "Rainbow",
 }
 
 local function sanitizeSettings(settings)
@@ -91,6 +92,10 @@ local function sanitizeSettings(settings)
 
 	if typeof(settings.tutorialComplete) == "boolean" then
 		clean.tutorialComplete = settings.tutorialComplete
+	end
+
+	if typeof(settings.pieceSkin) == "string" and Blocks.isValidPieceSkin(settings.pieceSkin) then
+		clean.pieceSkin = settings.pieceSkin
 	end
 
 	return clean
@@ -363,7 +368,7 @@ local function broadcast()
 end
 
 local function giveNewHand(state)
-	state.hand = Blocks.createHand(state.randomizer, Config.InventorySize)
+	state.hand = Blocks.createHand(state.randomizer, Config.InventorySize, state.pieceSkin)
 end
 
 local function teleportTo(part, player)
@@ -405,6 +410,7 @@ local function createPlayerState(player, mode)
 		hand = {},
 		randomizer = randomizer,
 		mode = mode,
+		pieceSkin = (playerSettings[player] or DEFAULT_SETTINGS).pieceSkin,
 		score = 0,
 		bestScore = player:FindFirstChild("leaderstats") and player.leaderstats.BestScore.Value
 			or 0,

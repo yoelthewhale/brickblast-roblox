@@ -1,5 +1,12 @@
 local Blocks = {}
 
+Blocks.PieceSkins = {
+	"Rainbow",
+	"Neon",
+	"Pastel",
+	"Ice",
+}
+
 Blocks.Shapes = {
 	{
 		id = "single",
@@ -45,22 +52,48 @@ local function randomRainbowColor(randomizer)
 	return Color3.fromHSV(hue, saturation, value)
 end
 
-function Blocks.getRandomShape(randomizer)
+local function randomPieceColor(randomizer, pieceSkin)
+	if pieceSkin == "Neon" then
+		return Color3.fromHSV(randomizer:NextNumber(0, 1), 1, 1)
+	elseif pieceSkin == "Pastel" then
+		return Color3.fromHSV(randomizer:NextNumber(0, 1), 0.38, 1)
+	elseif pieceSkin == "Ice" then
+		return Color3.fromRGB(
+			randomizer:NextInteger(130, 180),
+			randomizer:NextInteger(210, 245),
+			randomizer:NextInteger(235, 255)
+		)
+	end
+
+	return randomRainbowColor(randomizer)
+end
+
+function Blocks.isValidPieceSkin(pieceSkin)
+	for _, skin in Blocks.PieceSkins do
+		if skin == pieceSkin then
+			return true
+		end
+	end
+
+	return false
+end
+
+function Blocks.getRandomShape(randomizer, pieceSkin)
 	local index = randomizer:NextInteger(1, #Blocks.Shapes)
 	local shape = Blocks.Shapes[index]
 
 	return {
 		id = shape.id,
 		cells = shape.cells,
-		color = randomRainbowColor(randomizer),
+		color = randomPieceColor(randomizer, pieceSkin),
 	}
 end
 
-function Blocks.createHand(randomizer, count)
+function Blocks.createHand(randomizer, count, pieceSkin)
 	local hand = {}
 
 	for slot = 1, count do
-		hand[slot] = Blocks.getRandomShape(randomizer)
+		hand[slot] = Blocks.getRandomShape(randomizer, pieceSkin)
 	end
 
 	return hand

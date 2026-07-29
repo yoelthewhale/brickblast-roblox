@@ -7,6 +7,7 @@ local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameShared = Shared:WaitForChild("game")
+local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
 local Grid = require(GameShared.Grid)
 
@@ -32,6 +33,7 @@ local lastQueued = false
 local hubQueued = false
 local reducedMotion = false
 local uiScale = 1
+local pieceSkinIndex = 1
 local customization = {
 	boardEmptyColor = Config.Colors.Empty,
 	panelColor = Color3.fromRGB(14, 18, 27),
@@ -49,6 +51,7 @@ local hubStatusLabel = nil
 local battleQueueButton = nil
 local motionButton = nil
 local uiSizeButton = nil
+local pieceSkinButton = nil
 local customizeButton = nil
 local returnHubButton = nil
 local playAgainButton = nil
@@ -225,6 +228,7 @@ local function settingsPayload()
 		reducedMotion = reducedMotion,
 		uiScale = uiScale,
 		tutorialComplete = tutorialComplete,
+		pieceSkin = Blocks.PieceSkins[pieceSkinIndex] or "Rainbow",
 	}
 end
 
@@ -245,6 +249,10 @@ local function updateSettingsButtonText()
 		else
 			uiSizeButton.Text = "UI Size: Compact"
 		end
+	end
+
+	if pieceSkinButton then
+		pieceSkinButton.Text = `Pieces: {Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"}`
 	end
 end
 
@@ -360,7 +368,7 @@ dockReturnButton.Parent = battleDock
 hubPanel = Instance.new("Frame")
 hubPanel.AnchorPoint = Vector2.new(0.5, 0)
 hubPanel.Position = UDim2.fromScale(0.5, 0.06)
-hubPanel.Size = UDim2.fromOffset(520, 224)
+hubPanel.Size = UDim2.fromOffset(520, 274)
 hubPanel.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
 hubPanel.BackgroundTransparency = 0.08
 hubPanel.BorderSizePixel = 0
@@ -570,6 +578,17 @@ uiSizeButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 uiSizeButton.TextSize = 15
 uiSizeButton.Parent = hubPanel
 
+pieceSkinButton = Instance.new("TextButton")
+pieceSkinButton.Position = UDim2.fromOffset(22, 212)
+pieceSkinButton.Size = UDim2.fromOffset(226, 38)
+pieceSkinButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+pieceSkinButton.BorderSizePixel = 0
+pieceSkinButton.Font = Enum.Font.GothamBold
+pieceSkinButton.Text = "Pieces: Rainbow"
+pieceSkinButton.TextColor3 = Color3.fromRGB(245, 247, 251)
+pieceSkinButton.TextSize = 15
+pieceSkinButton.Parent = hubPanel
+
 battleQueueButton.MouseButton1Click:Connect(function()
 	queueEvent:FireServer(hubQueued and "LeaveQueue" or "Battle")
 end)
@@ -599,6 +618,17 @@ uiSizeButton.MouseButton1Click:Connect(function()
 	applyUiScale()
 	clampWindowToScreen()
 	saveSettings()
+end)
+
+pieceSkinButton.MouseButton1Click:Connect(function()
+	pieceSkinIndex += 1
+	if pieceSkinIndex > #Blocks.PieceSkins then
+		pieceSkinIndex = 1
+	end
+
+	updateSettingsButtonText()
+	saveSettings()
+	showBanner(pieceSkinButton.Text, customization.accentColor)
 end)
 
 customizeButton = Instance.new("TextButton")
@@ -1480,6 +1510,15 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 
 	if typeof(settings.tutorialComplete) == "boolean" then
 		tutorialComplete = settings.tutorialComplete
+	end
+
+	if typeof(settings.pieceSkin) == "string" then
+		for index, skin in Blocks.PieceSkins do
+			if skin == settings.pieceSkin then
+				pieceSkinIndex = index
+				break
+			end
+		end
 	end
 
 	updateSettingsButtonText()
