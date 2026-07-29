@@ -1,0 +1,35 @@
+{
+  "name": "BlockBlastBattle",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$className": "Folder",
+        "game": {
+          "$path": "src/shared/game"
+        }
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$className": "Folder",
+        "services": {
+          "$path": "src/server/services"
+        },
+        "world": {
+          "$path": "src/server/world"
+        }
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$className": "Folder",
+          "ui": {
+            "$path": "src/client/ui"
+          }
+        }
+      }
+    }
+  }
+}

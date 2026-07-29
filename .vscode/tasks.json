@@ -1,0 +1,88 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Rojo: Serve",
+      "type": "shell",
+      "command": "${workspaceFolder}\\tools\\rojo.exe",
+      "args": [
+        "serve",
+        "default.project.json"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Tools: Install With Rokit",
+      "type": "shell",
+      "command": "${workspaceFolder}\\tools\\rokit.exe",
+      "args": [
+        "install",
+        "--no-trust-check"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Wally: Install Packages",
+      "type": "shell",
+      "command": "${workspaceFolder}\\tools\\wally.exe",
+      "args": [
+        "install"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Wally: Generate Package Types",
+      "type": "shell",
+      "command": "${workspaceFolder}\\tools\\wally-package-types.exe",
+      "args": [
+        "--sourcemap",
+        "sourcemap.json",
+        "Packages/"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Rojo: Generate Sourcemap",
+      "type": "shell",
+      "command": "${workspaceFolder}\\tools\\rojo.exe",
+      "args": [
+        "sourcemap",
+        "default.project.json",
+        "-o",
+        "sourcemap.json"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Luau: Format With StyLua",
+      "type": "shell",
+      "command": "${workspaceFolder}\\tools\\stylua.exe",
+      "args": [
+        "src"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Luau: Lint With Selene",
+      "type": "shell",
+      "command": "${workspaceFolder}\\tools\\selene.exe",
+      "args": [
+        "src"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Rojo: Build Place",
+      "type": "shell",
+      "command": "${workspaceFolder}\\tools\\rojo.exe",
+      "args": [
+        "build",
+        "default.project.json",
+        "-o",
+        "BlockBlastBattle.rbxl"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

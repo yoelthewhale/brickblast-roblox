@@ -1,0 +1,11 @@
+sourcemap.json
+wally.lock
+Packages/
+ServerPackages/
+*.rbxl
+*.rbxl.lock
+*.rbxlx
+*.rbxm
+*.rbxmx
+.vscode/settings.json
+.DS_Store

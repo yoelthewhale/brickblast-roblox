@@ -1,0 +1,19 @@
+Task,Priority,Status,Owner,Due Date
+Verify Day 2 place opens and Rojo connects,High,Playtest,Bear / Codex,2026-07-29
+Test adjustable battle UI in Roblox Studio,High,Playtest,Bear / Codex,2026-07-29
+Test hover placement preview and blocked-placement feedback,High,Playtest,Bear / Codex,2026-07-29
+Fix any Day 2 Studio errors from Output window,High,Ready,Codex,2026-07-30
+Add queue countdown and match-start banner,High,Backlog,Codex,2026-07-30
+Add story-mode placeholder flow with a starter mission,Medium,Backlog,Codex,2026-07-31
+Add battle arenas per match instead of one shared arena,High,Backlog,Codex,2026-08-01
+Add player customization save data for UI theme and layout,Medium,Backlog,Codex,2026-08-01
+Add piece skin customization menu,Medium,Backlog,Codex,2026-08-02
+Add round timer and sudden-death pressure,High,Backlog,Codex,2026-08-02
+Add rewards after battles: coins XP and wins,High,Backlog,Codex,2026-08-03
+Add permanent leaderboard stats for wins and best score,High,Backlog,Codex,2026-08-03
+Improve hub visuals and signposting,Medium,Backlog,Codex,2026-08-04
+Add sound effects for placing clearing queueing and winning,Medium,Backlog,Codex,2026-08-04
+Add mobile-friendly controls and scale testing,High,Backlog,Codex,2026-08-05
+Original .rbxl file may stay locked while Studio has it open,Medium,Known,Bear / Codex,2026-07-29
+Need confirm Rojo plugin connects to Day 2 place,High,Playtest,Bear / Codex,2026-07-29
+Need test two-player battle end condition in Studio multiplayer test,High,Ready,Bear / Codex,2026-07-30
