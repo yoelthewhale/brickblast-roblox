@@ -13,7 +13,7 @@ Use this checklist in Roblox Studio local server tests before treating matchmaki
 
 - Studio diagnostics overlay: current player, mode, arena, match, queue, active session summaries, and profile load/save failure counters.
 - Studio diagnostics overlay: profile load/save failure counters should stay at `0/0`.
-- Studio diagnostics overlay: analytics counters should move when queueing, starting battles/story, placing pieces, clearing lines, making invalid placements, and forfeiting.
+- Studio diagnostics overlay: analytics counters should move when queueing, starting battles/story, placing pieces, clearing lines, making invalid placements, forfeiting, sending malformed placement payloads, and hitting placement cooldown throttles.
 - Hub panel: `Arenas`, `Matches`, and queued player count.
 - Battle window: `Arena -- | Match --` line.
 - Battle dock: minimized players should still show arena and score.
@@ -34,6 +34,7 @@ Pass criteria:
 - Battle UI shows an arena number and match number.
 - Analytics battle-start and queue-join counters increase.
 - Returning to hub frees the arena count.
+- Repeated rapid clicks should move the throttled placement counter without producing Output errors.
 
 ## Scenario B: Two-Player Battle
 
@@ -105,6 +106,19 @@ Pass criteria:
 - Sound Off prevents client cues.
 - Reduced Motion disables pulsing/shaking.
 - Studio diagnostics profile failure counters remain at `0/0` after rejoin.
+
+## Scenario G: Placement Remote Guardrails
+
+1. During a local server run, rapidly click/tap placement targets faster than normal play speed.
+2. Attempt placement after returning to hub.
+3. Watch the Studio diagnostics overlay.
+
+Pass criteria:
+
+- Cooldown throttles increase during rapid repeat inputs.
+- Rejected placement requests increase for stale-session placement attempts.
+- Invalid placements only increase for valid gameplay attempts where the shape does not fit.
+- No rewards, score, or board state changes are granted from rejected or throttled requests.
 
 ## Failure Notes
 

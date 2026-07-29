@@ -230,7 +230,7 @@ if RunService:IsStudio() then
 	diagnosticsPanel = Instance.new("Frame")
 	diagnosticsPanel.AnchorPoint = Vector2.new(1, 1)
 	diagnosticsPanel.Position = UDim2.new(1, -18, 1, -18)
-	diagnosticsPanel.Size = UDim2.fromOffset(360, 178)
+	diagnosticsPanel.Size = UDim2.fromOffset(390, 190)
 	diagnosticsPanel.BackgroundColor3 = Color3.fromRGB(8, 11, 18)
 	diagnosticsPanel.BackgroundTransparency = 0.08
 	diagnosticsPanel.BorderSizePixel = 0
@@ -240,7 +240,7 @@ if RunService:IsStudio() then
 	diagnosticsLabel = Instance.new("TextLabel")
 	diagnosticsLabel.BackgroundTransparency = 1
 	diagnosticsLabel.Position = UDim2.fromOffset(12, 10)
-	diagnosticsLabel.Size = UDim2.fromOffset(336, 158)
+	diagnosticsLabel.Size = UDim2.fromOffset(366, 170)
 	diagnosticsLabel.Font = Enum.Font.Code
 	diagnosticsLabel.Text = "Studio diagnostics loading..."
 	diagnosticsLabel.TextColor3 = Color3.fromRGB(210, 224, 255)
@@ -1768,7 +1768,7 @@ renderDiagnostics = function()
 			local stats = currentHubState.analytics
 			table.insert(
 				lines,
-				`Analytics B/S/Q/P/C/I/F: {stats.battleSessionsStarted or 0}/{stats.storySessionsStarted or 0}/{stats.queueJoins or 0}/{stats.placements or 0}/{stats.linesCleared or 0}/{stats.invalidPlacements or 0}/{stats.forfeits or 0}`
+				`Analytics B/S/Q/P/C/I/F/R/T: {stats.battleSessionsStarted or 0}/{stats.storySessionsStarted or 0}/{stats.queueJoins or 0}/{stats.placements or 0}/{stats.linesCleared or 0}/{stats.invalidPlacements or 0}/{stats.forfeits or 0}/{stats.rejectedPlaceRequests or 0}/{stats.throttledPlaceRequests or 0}`
 			)
 		end
 	else

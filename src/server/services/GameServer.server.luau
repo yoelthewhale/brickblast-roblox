@@ -62,6 +62,8 @@ local analytics = {
 	placements = 0,
 	linesCleared = 0,
 	invalidPlacements = 0,
+	rejectedPlaceRequests = 0,
+	throttledPlaceRequests = 0,
 	forfeits = 0,
 }
 
@@ -477,17 +479,17 @@ local function canAcceptPlaceRequest(player, slot, x, y)
 		or y < 1
 		or y > Config.BoardSize
 	then
-		return false
+		return false, "InvalidPayload"
 	end
 
 	local now = os.clock()
 	local lastRequestAt = lastPlaceRequestAt[player] or 0
 	if now - lastRequestAt < PLACE_COOLDOWN_SECONDS then
-		return false
+		return false, "Cooldown"
 	end
 
 	lastPlaceRequestAt[player] = now
-	return true
+	return true, nil
 end
 
 local function canAcceptQueueAction(player)
@@ -961,21 +963,30 @@ scheduleReturnIfEliminated = function(player, state)
 end
 
 placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
-	if not canAcceptPlaceRequest(player, slot, x, y) then
+	local canPlaceRequest, rejectReason = canAcceptPlaceRequest(player, slot, x, y)
+	if not canPlaceRequest then
+		if rejectReason == "Cooldown" then
+			analytics.throttledPlaceRequests += 1
+		else
+			analytics.rejectedPlaceRequests += 1
+		end
 		return
 	end
 
 	local state = playerStates[player]
 	if not state or not state.alive then
+		analytics.rejectedPlaceRequests += 1
 		return
 	end
 	local session = playerSessions[player]
 	if not session then
+		analytics.rejectedPlaceRequests += 1
 		return
 	end
 
 	local shape = state.hand[slot]
 	if not shape then
+		analytics.rejectedPlaceRequests += 1
 		return
 	end
 

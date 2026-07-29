@@ -34,12 +34,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Hardened profile persistence with bounded save retries, DataStore load/save warnings, shutdown save sweep, and Studio save-failure diagnostics.
 - 2026-07-29: Added server playtest analytics counters for battle/story sessions, queue joins/leaves, placements, clears, invalid placements, and story completions.
 - 2026-07-29: Prevented early-leave reward farming by treating active run exits as forfeits with no payout and tracking forfeits in diagnostics.
+- 2026-07-29: Added suspicious placement-request diagnostics for malformed, stale-session, and cooldown-throttled placement remotes.
 
 ## Current Priorities
 
 - Add a proper cosmetic shop/inventory presentation with richer previews.
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
-- Add broader anti-exploit checks around session lifecycle edge cases and suspicious placement patterns.
+- Continue anti-exploit hardening around queue/session lifecycle edge cases and server-authoritative economy events.
 - Add richer original audio assets and mix testing.
 - Add story dialogue, richer chapter framing, and a full mission-select presentation.
 - Validate compact touch layout in Roblox Studio device emulation.
@@ -57,7 +58,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - `BlockBlastClient.client.luau` is growing large and should be split into UI modules.
 - Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; unlocks are progression-derived, while broader cosmetic inventory still needs persistence.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
-- Match sessions now support multiple active arenas with hub availability UI, analytics, and diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
+- Match sessions now support multiple active arenas with hub availability UI, analytics, exploit diagnostics, and Studio diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
 
 ## Release Readiness
 
