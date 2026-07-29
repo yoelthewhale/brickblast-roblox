@@ -12,6 +12,7 @@ local GameShared = Shared:WaitForChild("game")
 local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
 local Grid = require(GameShared.Grid)
+local CosmeticPanel = require(script.Parent.CosmeticPanel)
 local ResultPanel = require(script.Parent.ResultPanel)
 
 local remotes = ReplicatedStorage:WaitForChild("BlockBlastRemotes")
@@ -82,6 +83,7 @@ local banner = nil
 local diagnosticsPanel = nil
 local diagnosticsLabel = nil
 local loadingScreen = nil
+local cosmeticPanelController = nil
 local resultPanelController = nil
 local loadingDismissed = false
 local tutorialPanel = nil
@@ -461,6 +463,9 @@ local function updateSettingsButtonText()
 	end
 
 	updateCosmeticPreviews()
+	if cosmeticPanelController then
+		cosmeticPanelController:Refresh()
+	end
 
 	if soundButton then
 		if not soundEnabled or soundVolume <= 0 then
@@ -526,6 +531,41 @@ resultPanelController = ResultPanel.new(gui, queueEvent, {
 	end,
 	hasCurrentRun = function()
 		return currentState ~= nil
+	end,
+})
+
+cosmeticPanelController = CosmeticPanel.new(gui, Blocks, Config, {
+	playSound = playSound,
+	showMessage = showBanner,
+	getProgress = localCosmeticProgress,
+	getPieceSkin = function()
+		return Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"
+	end,
+	getBoardSkin = function()
+		local boardSkin = Config.BoardSkins[boardSkinIndex]
+		return boardSkin and boardSkin.name or "Auto"
+	end,
+	selectPieceSkin = function(index)
+		pieceSkinIndex = index
+		updateSettingsButtonText()
+		saveSettings()
+		showBanner(
+			`Pieces: {Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"}`,
+			customization.accentColor
+		)
+	end,
+	selectBoardSkin = function(index)
+		boardSkinIndex = index
+		updateSettingsButtonText()
+		if applyBoardSkin then
+			applyBoardSkin()
+		end
+		if currentState and renderBoard then
+			renderBoard()
+		end
+		saveSettings()
+		local boardSkin = Config.BoardSkins[boardSkinIndex]
+		showBanner(`Board: {boardSkin and boardSkin.name or "Auto"}`, customization.accentColor)
 	end,
 })
 
@@ -902,8 +942,9 @@ for row = 1, 2 do
 	end
 end
 
-cosmeticHintLabel = Instance.new("TextLabel")
-cosmeticHintLabel.BackgroundTransparency = 1
+cosmeticHintLabel = Instance.new("TextButton")
+cosmeticHintLabel.BackgroundColor3 = Color3.fromRGB(31, 38, 52)
+cosmeticHintLabel.BackgroundTransparency = 0.12
 cosmeticHintLabel.Position = UDim2.fromOffset(272, 282)
 cosmeticHintLabel.Size = UDim2.fromOffset(226, 38)
 cosmeticHintLabel.Font = Enum.Font.GothamBold
@@ -913,6 +954,7 @@ cosmeticHintLabel.TextSize = 13
 cosmeticHintLabel.TextWrapped = true
 cosmeticHintLabel.TextXAlignment = Enum.TextXAlignment.Left
 cosmeticHintLabel.TextYAlignment = Enum.TextYAlignment.Center
+cosmeticHintLabel.BorderSizePixel = 0
 cosmeticHintLabel.Parent = hubPanel
 
 local function nextUnlockedIndex(currentIndex, itemCount, isUnlocked)
@@ -993,6 +1035,11 @@ boardSkinButton.MouseButton1Click:Connect(function()
 	playSound("Button")
 	saveSettings()
 	showBanner(boardSkinButton.Text, customization.accentColor)
+end)
+
+cosmeticHintLabel.MouseButton1Click:Connect(function()
+	playSound("Button")
+	cosmeticPanelController:Show()
 end)
 
 soundButton.MouseButton1Click:Connect(function()
@@ -1910,6 +1957,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	if currentState.alive then
 		resultPanelController:Hide()
 	end
+	cosmeticPanelController:Hide()
 	setHubPanelVisible(false)
 	updateTutorialVisibility()
 	battleDock.Visible = not root.Visible
