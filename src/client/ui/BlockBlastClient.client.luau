@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -34,6 +35,9 @@ local hubQueued = false
 local reducedMotion = false
 local uiScale = 1
 local pieceSkinIndex = 1
+local soundEnabled = true
+local soundVolume = 0.65
+local sounds = {}
 local customization = {
 	boardEmptyColor = Config.Colors.Empty,
 	panelColor = Color3.fromRGB(14, 18, 27),
@@ -52,6 +56,7 @@ local battleQueueButton = nil
 local motionButton = nil
 local uiSizeButton = nil
 local pieceSkinButton = nil
+local soundButton = nil
 local customizeButton = nil
 local returnHubButton = nil
 local playAgainButton = nil
@@ -83,6 +88,15 @@ local MIN_WINDOW_SIZE = Vector2.new(620, 380)
 local MAX_WINDOW_SIZE = Vector2.new(860, 620)
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+local SOUND_ASSETS = {
+	Button = "rbxassetid://12221967",
+	Queue = "rbxassetid://12221990",
+	Place = "rbxassetid://12221976",
+	Blocked = "rbxassetid://12221984",
+	Clear = "rbxassetid://12222005",
+	Result = "rbxassetid://12221990",
+}
 
 local themePresets = {
 	{
@@ -229,7 +243,32 @@ local function settingsPayload()
 		uiScale = uiScale,
 		tutorialComplete = tutorialComplete,
 		pieceSkin = Blocks.PieceSkins[pieceSkinIndex] or "Rainbow",
+		soundEnabled = soundEnabled,
+		soundVolume = soundVolume,
 	}
+end
+
+local function createSounds()
+	for cueName, soundId in SOUND_ASSETS do
+		local sound = Instance.new("Sound")
+		sound.Name = `BlockBlast{cueName}`
+		sound.SoundId = soundId
+		sound.Volume = soundVolume
+		sound.RollOffMode = Enum.RollOffMode.InverseTapered
+		sound.Parent = SoundService
+		sounds[cueName] = sound
+	end
+end
+
+local function playSound(cueName)
+	local sound = sounds[cueName]
+	if not soundEnabled or soundVolume <= 0 or not sound then
+		return
+	end
+
+	sound.Volume = soundVolume
+	sound.TimePosition = 0
+	sound:Play()
 end
 
 local function saveSettings()
@@ -253,6 +292,14 @@ local function updateSettingsButtonText()
 
 	if pieceSkinButton then
 		pieceSkinButton.Text = `Pieces: {Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"}`
+	end
+
+	if soundButton then
+		if not soundEnabled or soundVolume <= 0 then
+			soundButton.Text = "Sound: Off"
+		else
+			soundButton.Text = `Sound: {math.floor(soundVolume * 100)}%`
+		end
 	end
 end
 
@@ -501,12 +548,14 @@ tutorialStoryButton.Parent = tutorialPanel
 tutorialButton.MouseButton1Click:Connect(function()
 	tutorialComplete = true
 	updateTutorialVisibility()
+	playSound("Button")
 	saveSettings()
 end)
 
 tutorialStoryButton.MouseButton1Click:Connect(function()
 	tutorialComplete = true
 	updateTutorialVisibility()
+	playSound("Button")
 	saveSettings()
 	queueEvent:FireServer("Story")
 end)
@@ -589,17 +638,31 @@ pieceSkinButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 pieceSkinButton.TextSize = 15
 pieceSkinButton.Parent = hubPanel
 
+soundButton = Instance.new("TextButton")
+soundButton.Position = UDim2.fromOffset(272, 212)
+soundButton.Size = UDim2.fromOffset(226, 38)
+soundButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+soundButton.BorderSizePixel = 0
+soundButton.Font = Enum.Font.GothamBold
+soundButton.Text = "Sound: 65%"
+soundButton.TextColor3 = Color3.fromRGB(245, 247, 251)
+soundButton.TextSize = 15
+soundButton.Parent = hubPanel
+
 battleQueueButton.MouseButton1Click:Connect(function()
+	playSound(hubQueued and "Button" or "Queue")
 	queueEvent:FireServer(hubQueued and "LeaveQueue" or "Battle")
 end)
 
 storyButton.MouseButton1Click:Connect(function()
+	playSound("Button")
 	queueEvent:FireServer("Story")
 end)
 
 motionButton.MouseButton1Click:Connect(function()
 	reducedMotion = not reducedMotion
 	updateSettingsButtonText()
+	playSound("Button")
 	saveSettings()
 	showBanner(motionButton.Text, customization.accentColor)
 end)
@@ -617,6 +680,7 @@ uiSizeButton.MouseButton1Click:Connect(function()
 	updateSettingsButtonText()
 	applyUiScale()
 	clampWindowToScreen()
+	playSound("Button")
 	saveSettings()
 end)
 
@@ -627,8 +691,26 @@ pieceSkinButton.MouseButton1Click:Connect(function()
 	end
 
 	updateSettingsButtonText()
+	playSound("Button")
 	saveSettings()
 	showBanner(pieceSkinButton.Text, customization.accentColor)
+end)
+
+soundButton.MouseButton1Click:Connect(function()
+	if soundVolume > 0.36 then
+		soundVolume = 0.35
+		soundEnabled = true
+	elseif soundVolume > 0 then
+		soundVolume = 0
+		soundEnabled = false
+	else
+		soundVolume = 0.65
+		soundEnabled = true
+	end
+
+	updateSettingsButtonText()
+	playSound("Button")
+	saveSettings()
 end)
 
 customizeButton = Instance.new("TextButton")
@@ -699,6 +781,7 @@ customizeButton.MouseButton1Click:Connect(function()
 		themeIndex = 1
 	end
 	applyTheme()
+	playSound("Button")
 	saveSettings()
 end)
 
@@ -709,14 +792,17 @@ local function setBattleBoardVisible(visible)
 end
 
 minimizeButton.MouseButton1Click:Connect(function()
+	playSound("Button")
 	setBattleBoardVisible(false)
 end)
 
 openBoardButton.MouseButton1Click:Connect(function()
+	playSound("Button")
 	setBattleBoardVisible(true)
 end)
 
 dockReturnButton.MouseButton1Click:Connect(function()
+	playSound("Button")
 	queueEvent:FireServer("LeaveBattle")
 end)
 
@@ -829,9 +915,11 @@ for y = 1, Config.BoardSize do
 			if currentState and selectedSlot then
 				local shape = currentState.hand[selectedSlot]
 				if shape and Grid.canPlace(currentState.board, shape, x, y) then
+					playSound("Place")
 					placeEvent:FireServer(selectedSlot, x, y)
 				elseif shape then
 					statusLabel.Text = "That spot is blocked"
+					playSound("Blocked")
 					showBanner("That spot is blocked", Color3.fromRGB(224, 74, 74))
 				end
 			end
@@ -921,6 +1009,7 @@ for slot = 1, Config.InventorySize do
 
 	button.MouseButton1Click:Connect(function()
 		selectedSlot = slot
+		playSound("Button")
 		updateStatusText()
 		if currentState then
 			renderBoard()
@@ -1046,10 +1135,12 @@ applyWindowLayout = function()
 end
 
 returnHubButton.MouseButton1Click:Connect(function()
+	playSound("Button")
 	queueEvent:FireServer("LeaveBattle")
 end)
 
 playAgainButton.MouseButton1Click:Connect(function()
+	playSound("Queue")
 	queueEvent:FireServer("LeaveBattle")
 	task.delay(0.2, function()
 		queueEvent:FireServer("Battle")
@@ -1057,6 +1148,7 @@ playAgainButton.MouseButton1Click:Connect(function()
 end)
 
 resetLayoutButton.MouseButton1Click:Connect(function()
+	playSound("Button")
 	root.Position = DEFAULT_WINDOW_POSITION
 	root.Size = UDim2.fromOffset(DEFAULT_WINDOW_SIZE.X, DEFAULT_WINDOW_SIZE.Y)
 	applyWindowLayout()
@@ -1469,20 +1561,25 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 	end
 
 	if effect.kind == "InvalidPlace" then
+		playSound("Blocked")
 		shakeWindow()
 		showBanner(effect.message or "That spot is blocked", Color3.fromRGB(224, 74, 74))
 	elseif effect.kind == "Place" then
+		playSound("Place")
 		if effect.shape then
 			for _, cell in effect.shape.cells do
 				playCellPop(effect.originX + cell.X, effect.originY + cell.Y)
 			end
 		end
 		if effect.linesCleared and effect.linesCleared > 0 then
+			playSound("Clear")
 			showBanner(`Cleared {effect.linesCleared} line(s)!`, Color3.fromRGB(74, 222, 128))
 		end
 	elseif effect.kind == "BattleStart" then
+		playSound("Queue")
 		showBanner(effect.message or "Battle started!", customization.accentColor)
 	elseif effect.kind == "BattleResult" then
+		playSound("Result")
 		showBanner(
 			effect.message or "Battle complete",
 			effect.won and Color3.fromRGB(74, 222, 128) or Color3.fromRGB(251, 146, 60)
@@ -1521,6 +1618,14 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 		end
 	end
 
+	if typeof(settings.soundEnabled) == "boolean" then
+		soundEnabled = settings.soundEnabled
+	end
+
+	if typeof(settings.soundVolume) == "number" then
+		soundVolume = math.clamp(settings.soundVolume, 0, 1)
+	end
+
 	updateSettingsButtonText()
 	applyTheme()
 	applyUiScale()
@@ -1536,5 +1641,6 @@ end)
 applyWindowLayout()
 applyTheme()
 applyUiScale()
+createSounds()
 settingsEvent:FireServer("Request")
 task.delay(6, dismissLoading)

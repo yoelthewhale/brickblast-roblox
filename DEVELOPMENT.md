@@ -20,12 +20,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added first-time onboarding panel with basic placement instructions and a saved completion flag.
 - 2026-07-29: Added loading splash with fade-out and fallback dismissal for smoother first join.
 - 2026-07-29: Added persistent piece skin customization with Rainbow, Neon, Pastel, and Ice generation styles.
+- 2026-07-29: Added persistent sound setting and client-side cues for UI clicks, queueing, placement, blocked moves, clears, and results.
 
 ## Current Priorities
 
 - Add deeper customization for board skins, cosmetics, and unlock requirements.
 - Split matchmaking into isolated match sessions with separate arenas.
-- Add sound settings and starter sound effects.
+- Add richer original audio assets and mix testing.
 - Expand story mode with missions, goals, dialogue, and rewards.
 
 ## Known Issues
@@ -40,7 +41,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 - `BlockBlastClient.client.luau` is growing large and should be split into UI modules.
 - Profile save data covers best score, wins, coins, XP, level, core settings, and piece skin; board/cosmetic customization still needs persistence.
-- Effects are client-side only and need sound/particle polish.
+- Effects are client-side only and need particle polish plus final audio asset replacement.
 - Queue system supports one active match; production needs per-match arena sessions.
 
 ## Release Readiness
