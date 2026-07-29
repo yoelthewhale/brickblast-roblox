@@ -52,6 +52,7 @@ local hubPanel = nil
 local hubLogoButton = nil
 local hubCloseButton = nil
 local hubStatusLabel = nil
+local hubMatchmakingLabel = nil
 local battleQueueButton = nil
 local motionButton = nil
 local uiSizeButton = nil
@@ -582,6 +583,17 @@ hubStatusLabel.TextSize = 16
 hubStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 hubStatusLabel.TextWrapped = true
 hubStatusLabel.Parent = hubPanel
+
+hubMatchmakingLabel = Instance.new("TextLabel")
+hubMatchmakingLabel.BackgroundTransparency = 1
+hubMatchmakingLabel.Position = UDim2.fromOffset(22, 84)
+hubMatchmakingLabel.Size = UDim2.fromOffset(476, 18)
+hubMatchmakingLabel.Font = Enum.Font.GothamBold
+hubMatchmakingLabel.Text = "Arenas: 3 open | Queue: 0"
+hubMatchmakingLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
+hubMatchmakingLabel.TextSize = 14
+hubMatchmakingLabel.TextXAlignment = Enum.TextXAlignment.Left
+hubMatchmakingLabel.Parent = hubPanel
 
 battleQueueButton = Instance.new("TextButton")
 battleQueueButton.Position = UDim2.fromOffset(22, 104)
@@ -1520,14 +1532,29 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 
 	setHubPanelVisible(not hubManuallyClosed)
 	updateTutorialVisibility()
-	local queueText = `{hubState.queueCount}/{hubState.minPlayers} in battle queue`
+	local queueCount = hubState.queueCount or 0
+	local minPlayers = hubState.minPlayers or 2
+	local openArenas = hubState.openArenas or 0
+	local totalArenas = hubState.totalArenas or 0
+	local activeSessions = hubState.activeSessions or 0
+	local queueText = `{queueCount}/{minPlayers} queued`
 	if hubState.secondsToSoloStart and hubState.secondsToSoloStart > 0 then
-		queueText ..= ` - solo test in {hubState.secondsToSoloStart}s`
+		queueText ..= ` | solo test in {hubState.secondsToSoloStart}s`
 	end
 	local message = hubState.message or "Welcome to the hub"
-	hubStatusLabel.Text = `{message} - {queueText}`
+	hubStatusLabel.Text = message
+	hubMatchmakingLabel.Text =
+		`Arenas: {openArenas}/{totalArenas} open | Matches: {activeSessions} | {queueText}`
+	hubMatchmakingLabel.TextColor3 = openArenas > 0 and Color3.fromRGB(153, 163, 179)
+		or Color3.fromRGB(255, 207, 102)
 	hubQueued = hubState.queued == true
-	battleQueueButton.Text = hubQueued and "Queued - Leave Queue" or "Join Battle Queue"
+	if hubQueued then
+		battleQueueButton.Text = "Queued - Leave Queue"
+	elseif openArenas <= 0 then
+		battleQueueButton.Text = "Arenas Full"
+	else
+		battleQueueButton.Text = "Join Battle Queue"
+	end
 	battleQueueButton.BackgroundColor3 = hubState.queued and Color3.fromRGB(244, 114, 182)
 		or customization.accentColor
 

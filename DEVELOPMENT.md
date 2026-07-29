@@ -22,11 +22,12 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added persistent piece skin customization with Rainbow, Neon, Pastel, and Ice generation styles.
 - 2026-07-29: Added persistent sound setting and client-side cues for UI clicks, queueing, placement, blocked moves, clears, and results.
 - 2026-07-29: Added isolated match sessions with per-session timers, leaderboards, finish state, and three physical arena slots.
+- 2026-07-29: Added hub matchmaking status for open arenas, active matches, queue size, and full-arena feedback.
 
 ## Current Priorities
 
 - Add deeper customization for board skins, cosmetics, and unlock requirements.
-- Improve matchmaking UI with arena availability, match count, and clearer queue feedback.
+- Add Studio multiplayer stress-test tooling and documented test scenarios.
 - Add richer original audio assets and mix testing.
 - Expand story mode with missions, goals, dialogue, and rewards.
 
@@ -43,7 +44,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - `BlockBlastClient.client.luau` is growing large and should be split into UI modules.
 - Profile save data covers best score, wins, coins, XP, level, core settings, and piece skin; board/cosmetic customization still needs persistence.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
-- Match sessions now support multiple active arenas; production still needs stress-tested matchmaking and better arena lifecycle tooling.
+- Match sessions now support multiple active arenas with hub availability UI; production still needs Studio stress testing and arena lifecycle tooling.
 
 ## Release Readiness
 

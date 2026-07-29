@@ -62,7 +62,9 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Walk from the hub bridge into the first battle arena and confirm the two player decks, glow pillars, and scoreboard render.
 - Confirm three battle arenas render with separate scoreboard labels and return pads.
 - Join battle queue and wait for solo test battle.
+- Confirm the hub shows open arenas, active matches, and queue size.
 - Confirm queued players see the solo-test countdown.
+- Fill all arenas in a local server test and confirm the hub shows full-arena feedback.
 - Run a local multiplayer test with 4+ players and confirm separate two-player sessions get separate arena spawns and leaderboards.
 - Start Story Mode and confirm it opens a solo `Story Training` board.
 - Confirm battle start and result banners animate in.
@@ -76,4 +78,4 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 ## Build Notes
 
-- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, loading splash, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, persistent core settings and piece styles, first-time onboarding, sound cues/settings, isolated match sessions with three arenas, anti-spam remote checks, and starter story training. Built `BlockBlastBattle-Day3.rbxl`.
+- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, loading splash, closable hub UI, side-logo hub access, round timer, basic wins stat, progression rewards, accessibility scaling, persistent core settings and piece styles, first-time onboarding, sound cues/settings, isolated match sessions with three arenas, hub arena availability UI, anti-spam remote checks, and starter story training. Built `BlockBlastBattle-Day3.rbxl`.

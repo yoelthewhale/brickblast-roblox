@@ -145,6 +145,13 @@ local function activeSessionCount()
 	return count
 end
 
+local function arenaCounts()
+	local totalArenas = #(hubParts.arenas or {})
+	local activeCount = activeSessionCount()
+
+	return totalArenas, math.max(0, totalArenas - activeCount)
+end
+
 local function createLeaderstats(player)
 	local leaderstats = Instance.new("Folder")
 	leaderstats.Name = "leaderstats"
@@ -368,6 +375,7 @@ local function sendHubState(player, message)
 		secondsToSoloStart =
 			math.max(0, math.ceil(SOLO_TEST_SECONDS - (os.clock() - queueStartedAt)))
 	end
+	local totalArenas, openArenas = arenaCounts()
 
 	hubEvent:FireClient(player, {
 		mode = playerModes[player] or "Hub",
@@ -375,6 +383,8 @@ local function sendHubState(player, message)
 		queueCount = queueCount(),
 		minPlayers = BATTLE_MIN_PLAYERS,
 		activeSessions = activeSessionCount(),
+		openArenas = openArenas,
+		totalArenas = totalArenas,
 		secondsToSoloStart = secondsToSoloStart,
 		message = message,
 	})
@@ -584,6 +594,11 @@ local function joinBattleQueue(player)
 
 	if queuedPlayers[player] then
 		sendHubState(player, "Already queued")
+		return
+	end
+
+	if not findFreeArena() then
+		sendHubState(player, "All arenas are busy")
 		return
 	end
 
