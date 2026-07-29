@@ -437,6 +437,7 @@ local function grantBattleRewards(player, state, winner)
 	local earnedCoins = math.max(5, hundredScore * Config.CoinsPerHundredScore)
 	local earnedXp = math.max(10, hundredScore * Config.XpPerHundredScore)
 	local storyCompleted = state.mode == "Story" and isStoryMissionComplete(state)
+	local oldBestScore = state.startingBestScore or state.bestScore or 0
 
 	if winner and state.mode == "Battle" then
 		earnedCoins += Config.WinnerBonusCoins
@@ -452,15 +453,41 @@ local function grantBattleRewards(player, state, winner)
 	coins.Value += earnedCoins
 	xp.Value += earnedXp
 	level.Value = levelFromXp(xp.Value)
+	state.resultSummary = {
+		mode = state.mode,
+		score = state.score,
+		linesCleared = state.linesCleared,
+		coins = earnedCoins,
+		xp = earnedXp,
+		storyStars = storyCompleted and 1 or 0,
+		bestScore = state.bestScore,
+		previousBestScore = oldBestScore,
+		storyCompleted = storyCompleted,
+		won = winner == true and state.mode == "Battle",
+	}
 	if winner and state.mode == "Battle" then
 		state.message = `Victory! +{earnedCoins} coins +{earnedXp} XP`
+		state.resultSummary.outcome = "Victory"
 	elseif storyCompleted then
 		state.message = `Mission complete! +{earnedCoins} coins +{earnedXp} XP`
+		state.resultSummary.outcome = "Mission Complete"
 	elseif state.mode == "Story" then
 		state.message = `Mission incomplete - rewards: +{earnedCoins} coins +{earnedXp} XP`
+		state.resultSummary.outcome = "Mission Incomplete"
 	else
 		state.message = `Rewards: +{earnedCoins} coins +{earnedXp} XP`
+		state.resultSummary.outcome = "Run Complete"
 	end
+end
+
+local function fireResult(player, state, won)
+	state.resultShown = true
+	effectsEvent:FireClient(player, {
+		kind = "BattleResult",
+		message = state.message,
+		won = won == true,
+		result = state.resultSummary,
+	})
 end
 
 local function isWholeNumber(value)
@@ -535,6 +562,7 @@ local function publicState(player)
 		mode = state.mode,
 		storyMission = state.storyMission,
 		storyComplete = state.mode == "Story" and isStoryMissionComplete(state) or false,
+		resultSummary = state.resultSummary,
 		sessionId = session and session.id or nil,
 		arenaIndex = session and session.arena and session.arena.index or nil,
 		timeLeft = session and math.max(0, math.ceil(session.endsAt - os.clock())) or nil,
@@ -674,6 +702,9 @@ local function createPlayerState(player, mode)
 		pieceSkin = (playerSettings[player] or DEFAULT_SETTINGS).pieceSkin,
 		score = 0,
 		bestScore = player:FindFirstChild("leaderstats") and player.leaderstats.BestScore.Value
+			or 0,
+		startingBestScore = player:FindFirstChild("leaderstats")
+				and player.leaderstats.BestScore.Value
 			or 0,
 		linesCleared = 0,
 		rewardsGranted = false,
@@ -855,11 +886,7 @@ local function finishBattle(session, winner)
 		grantBattleRewards(player, state, player == winner)
 		saveProfile(player)
 		state.alive = false
-		effectsEvent:FireClient(player, {
-			kind = "BattleResult",
-			message = state.message,
-			won = player == winner,
-		})
+		fireResult(player, state, player == winner)
 	end
 
 	broadcastHub(winner and `{winner.DisplayName} won the battle` or "Battle complete")
@@ -904,15 +931,27 @@ leaveBattle = function(player)
 	if state then
 		if not state.alive or (session and session.finishScheduled) then
 			grantBattleRewards(player, state, false)
+			if not state.resultShown then
+				fireResult(player, state, false)
+			end
 		else
 			state.rewardsGranted = true
 			state.message = "Run forfeited - no rewards"
-			analytics.forfeits += 1
-			effectsEvent:FireClient(player, {
-				kind = "BattleResult",
-				message = state.message,
+			state.resultSummary = {
+				mode = state.mode,
+				outcome = "Forfeit",
+				score = state.score,
+				linesCleared = state.linesCleared,
+				coins = 0,
+				xp = 0,
+				storyStars = 0,
+				bestScore = state.bestScore,
+				previousBestScore = state.startingBestScore or state.bestScore,
+				storyCompleted = false,
 				won = false,
-			})
+			}
+			analytics.forfeits += 1
+			fireResult(player, state, false)
 		end
 		returnMessage = state.message or returnMessage
 	end
