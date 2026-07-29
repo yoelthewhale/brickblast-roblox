@@ -13,6 +13,30 @@ Config.XpPerHundredScore = 8
 Config.WinnerBonusXp = 60
 Config.LevelXpBase = 120
 
+Config.StoryCompletionCoins = 30
+Config.StoryCompletionXp = 50
+
+Config.StoryMissions = {
+	{
+		name = "First Clear",
+		description = "Clear 2 lines before time runs out.",
+		targetScore = 250,
+		targetLines = 2,
+	},
+	{
+		name = "Score Sprint",
+		description = "Score 700 points before time runs out.",
+		targetScore = 700,
+		targetLines = 0,
+	},
+	{
+		name = "Combo Builder",
+		description = "Clear 5 lines and score 900 points.",
+		targetScore = 900,
+		targetLines = 5,
+	},
+}
+
 Config.Colors = {
 	Empty = Color3.fromRGB(24, 28, 36),
 	Filled = Color3.fromRGB(64, 156, 255),

@@ -52,6 +52,7 @@ Useful VS Code tasks:
 - Place pieces to fill rows or columns.
 - Clearing lines scores points and sends pressure to opponents.
 - Incoming pressure fills cells from the bottom unless the player keeps clearing lines.
+- Story Training gives rotating solo missions with score and line-clear goals.
 - Players can customize UI theme, board skin, piece skin, sound, motion, and UI scale.
 
 This is intentionally a small, readable prototype so you can start changing rules and adding visuals quickly.

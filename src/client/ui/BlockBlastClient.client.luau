@@ -1519,6 +1519,26 @@ local function shapeText(shape)
 	return `{shape.id} ({#shape.cells} blocks)`
 end
 
+local function storyGoalText(state)
+	local mission = state and state.storyMission
+	if not mission then
+		return nil
+	end
+
+	local targetLines = mission.targetLines or 0
+	local targetScore = mission.targetScore or 0
+	local currentLines = math.min(state.linesCleared or 0, targetLines)
+	local currentScore = math.min(state.score or 0, targetScore)
+
+	if targetLines > 0 and targetScore > 0 then
+		return `{mission.name}: {currentLines}/{targetLines} lines, {currentScore}/{targetScore} score`
+	elseif targetLines > 0 then
+		return `{mission.name}: {currentLines}/{targetLines} lines`
+	end
+
+	return `{mission.name}: {currentScore}/{targetScore} score`
+end
+
 renderHand = function()
 	for slot, button in handButtons do
 		local shape = currentState.hand[slot]
@@ -1548,10 +1568,11 @@ local function renderProgression()
 	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
 	local xp = leaderstats and leaderstats:FindFirstChild("XP")
 	local level = leaderstats and leaderstats:FindFirstChild("Level")
+	local storyStars = leaderstats and leaderstats:FindFirstChild("StoryStars")
 	local cleared = currentState and currentState.linesCleared or 0
 
 	progressionLabel.Text =
-		`Level {level and level.Value or 1} | {coins and coins.Value or 0} coins | {xp and xp.Value or 0} XP | {cleared} cleared`
+		`Level {level and level.Value or 1} | {coins and coins.Value or 0} coins | {xp and xp.Value or 0} XP | {storyStars and storyStars.Value or 0} stars | {cleared} cleared`
 end
 
 renderDiagnostics = function()
@@ -1624,14 +1645,16 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	battleDock.Visible = not root.Visible
 	title.Text = currentState.mode == "Story" and "Story Training" or "Block Blast Battle"
 	scoreLabel.Text = `Score: {currentState.score}`
-	matchInfoLabel.Text =
-		`Arena {currentState.arenaIndex or "--"} | Match {currentState.sessionId or "--"}`
+	matchInfoLabel.Text = currentState.mode == "Story"
+			and (storyGoalText(currentState) or "Story Mission")
+		or `Arena {currentState.arenaIndex or "--"} | Match {currentState.sessionId or "--"}`
 	timerLabel.Text = currentState.timeLeft and `Time: {currentState.timeLeft}s` or "Time: --"
 	timerLabel.TextColor3 = currentState.timeLeft
 			and currentState.timeLeft <= 15
 			and Color3.fromRGB(255, 207, 102)
 		or Color3.fromRGB(193, 201, 215)
 	dockStatusLabel.Text = currentState.message
+		or currentState.mode == "Story" and storyGoalText(currentState)
 		or currentState.alive and `Arena {currentState.arenaIndex or "--"} | Score: {currentState.score} | {currentState.timeLeft or "--"}s`
 		or "Out of moves - returning"
 	playAgainButton.Visible = not currentState.alive

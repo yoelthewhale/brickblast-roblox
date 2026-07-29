@@ -27,6 +27,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added a Studio-only diagnostics overlay with current mode, arena, match, queue, and active session summaries.
 - 2026-07-29: Added persistent board skin customization with Auto, Midnight, Sugar, Garden, and Contrast skins.
 - 2026-07-29: Hardened queue/settings remotes with queue action cooldowns, explicit mode handling, and debounced settings saves.
+- 2026-07-29: Expanded Story Training into rotating server-authored missions with visible objectives, completion rewards, and persistent Story Stars.
 
 ## Current Priorities
 
@@ -34,7 +35,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
 - Add broader anti-exploit checks around progression, rewards, and session lifecycle edge cases.
 - Add richer original audio assets and mix testing.
-- Expand story mode with missions, goals, dialogue, and rewards.
+- Add story dialogue, chapter framing, and mission-select presentation.
 
 ## Known Issues
 
@@ -47,7 +48,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 ## Technical Debt
 
 - `BlockBlastClient.client.luau` is growing large and should be split into UI modules.
-- Profile save data covers best score, wins, coins, XP, level, core settings, piece skin, and board skin; broader cosmetic inventory still needs persistence.
+- Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; broader cosmetic inventory still needs persistence.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
 - Match sessions now support multiple active arenas with hub availability UI and diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
 

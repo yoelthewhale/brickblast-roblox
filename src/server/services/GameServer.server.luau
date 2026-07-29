@@ -218,6 +218,11 @@ local function createLeaderstats(player)
 	level.Value = 1
 	level.Parent = leaderstats
 
+	local storyStars = Instance.new("IntValue")
+	storyStars.Name = "StoryStars"
+	storyStars.Value = 0
+	storyStars.Parent = leaderstats
+
 	task.spawn(function()
 		if not profileStore then
 			return
@@ -251,6 +256,10 @@ local function createLeaderstats(player)
 			level.Value = math.max(1, math.floor(profile.level))
 		end
 
+		if typeof(profile.storyStars) == "number" then
+			storyStars.Value = math.max(0, math.floor(profile.storyStars))
+		end
+
 		playerSettings[player] = sanitizeSettings(profile.settings)
 		sendSettings(player)
 	end)
@@ -281,7 +290,16 @@ local function saveProfile(player)
 	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
 	local xp = leaderstats and leaderstats:FindFirstChild("XP")
 	local level = leaderstats and leaderstats:FindFirstChild("Level")
-	if not bestScore or not wins or not coins or not xp or not level or not profileStore then
+	local storyStars = leaderstats and leaderstats:FindFirstChild("StoryStars")
+	if
+		not bestScore
+		or not wins
+		or not coins
+		or not xp
+		or not level
+		or not storyStars
+		or not profileStore
+	then
 		return
 	end
 
@@ -293,6 +311,7 @@ local function saveProfile(player)
 			coins = coins.Value,
 			xp = xp.Value,
 			level = level.Value,
+			storyStars = storyStars.Value,
 			settings = sanitizeSettings(playerSettings[player]),
 			updatedAt = os.time(),
 		})
@@ -301,6 +320,30 @@ end
 
 local function levelFromXp(xp)
 	return math.max(1, math.floor(math.sqrt(xp / Config.LevelXpBase)) + 1)
+end
+
+local function storyMissionForPlayer(player)
+	local leaderstats = player:FindFirstChild("leaderstats")
+	local storyStars = leaderstats and leaderstats:FindFirstChild("StoryStars")
+	local completed = storyStars and storyStars.Value or 0
+	local missionCount = #Config.StoryMissions
+	if missionCount == 0 then
+		return nil
+	end
+
+	local mission = table.clone(Config.StoryMissions[(completed % missionCount) + 1])
+	mission.chapter = completed + 1
+	return mission
+end
+
+local function isStoryMissionComplete(state)
+	local mission = state.storyMission
+	if not mission then
+		return false
+	end
+
+	return state.score >= (mission.targetScore or 0)
+		and state.linesCleared >= (mission.targetLines or 0)
 end
 
 local function grantBattleRewards(player, state, winner)
@@ -318,27 +361,38 @@ local function grantBattleRewards(player, state, winner)
 	local xp = leaderstats:FindFirstChild("XP")
 	local level = leaderstats:FindFirstChild("Level")
 	local wins = leaderstats:FindFirstChild("Wins")
-	if not coins or not xp or not level or not wins then
+	local storyStars = leaderstats:FindFirstChild("StoryStars")
+	if not coins or not xp or not level or not wins or not storyStars then
 		return
 	end
 
 	local hundredScore = math.floor(state.score / 100)
 	local earnedCoins = math.max(5, hundredScore * Config.CoinsPerHundredScore)
 	local earnedXp = math.max(10, hundredScore * Config.XpPerHundredScore)
+	local storyCompleted = state.mode == "Story" and isStoryMissionComplete(state)
 
 	if winner and state.mode == "Battle" then
 		earnedCoins += Config.WinnerBonusCoins
 		earnedXp += Config.WinnerBonusXp
 		wins.Value += 1
+	elseif storyCompleted then
+		earnedCoins += Config.StoryCompletionCoins
+		earnedXp += Config.StoryCompletionXp
+		storyStars.Value += 1
 	end
 
 	coins.Value += earnedCoins
 	xp.Value += earnedXp
 	level.Value = levelFromXp(xp.Value)
-	state.message = winner
-			and state.mode == "Battle"
-			and `Victory! +{earnedCoins} coins +{earnedXp} XP`
-		or `Rewards: +{earnedCoins} coins +{earnedXp} XP`
+	if winner and state.mode == "Battle" then
+		state.message = `Victory! +{earnedCoins} coins +{earnedXp} XP`
+	elseif storyCompleted then
+		state.message = `Mission complete! +{earnedCoins} coins +{earnedXp} XP`
+	elseif state.mode == "Story" then
+		state.message = `Mission incomplete - rewards: +{earnedCoins} coins +{earnedXp} XP`
+	else
+		state.message = `Rewards: +{earnedCoins} coins +{earnedXp} XP`
+	end
 end
 
 local function isWholeNumber(value)
@@ -411,6 +465,8 @@ local function publicState(player)
 		message = state.message,
 		linesCleared = state.linesCleared,
 		mode = state.mode,
+		storyMission = state.storyMission,
+		storyComplete = state.mode == "Story" and isStoryMissionComplete(state) or false,
 		sessionId = session and session.id or nil,
 		arenaIndex = session and session.arena and session.arena.index or nil,
 		timeLeft = session and math.max(0, math.ceil(session.endsAt - os.clock())) or nil,
@@ -544,6 +600,7 @@ local function createPlayerState(player, mode)
 			or 0,
 		linesCleared = 0,
 		rewardsGranted = false,
+		storyMission = mode == "Story" and storyMissionForPlayer(player) or nil,
 		alive = true,
 		message = nil,
 	}
