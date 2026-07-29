@@ -355,6 +355,8 @@ local function publicState(player)
 		message = state.message,
 		linesCleared = state.linesCleared,
 		mode = state.mode,
+		sessionId = session and session.id or nil,
+		arenaIndex = session and session.arena and session.arena.index or nil,
 		timeLeft = session and math.max(0, math.ceil(session.endsAt - os.clock())) or nil,
 	}
 end

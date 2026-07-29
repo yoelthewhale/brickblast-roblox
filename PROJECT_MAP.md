@@ -27,4 +27,5 @@ Use this as the first place to look when you want to change the game.
 - Piece definitions: `src/shared/game/Blocks.luau`
 - Hub generation: `src/server/world/HubBuilder.luau`
 - Tracker: `docs/PROJECT_TRACKER.md`
+- Multiplayer stress test plan: `docs/MULTIPLAYER_STRESS_TEST.md`
 - Tuesday import CSV: `docs/TUESDAY_IMPORT.csv`

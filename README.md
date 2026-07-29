@@ -7,6 +7,8 @@ See `PROJECT_MAP.md` for where each part of the game lives.
 Project management lives in `docs/PROJECT_TRACKER.md`, with a Tuesday.com-ready CSV at
 `docs/TUESDAY_IMPORT.csv`.
 
+Multiplayer validation steps live in `docs/MULTIPLAYER_STRESS_TEST.md`.
+
 ## Setup
 
 1. Open this folder in VS Code.

@@ -46,6 +46,7 @@ local customization = {
 local scoreLabel = nil
 local timerLabel = nil
 local progressionLabel = nil
+local matchInfoLabel = nil
 local statusLabel = nil
 local leaderboardLabel = nil
 local hubPanel = nil
@@ -864,6 +865,18 @@ progressionLabel.TextSize = 14
 progressionLabel.TextXAlignment = Enum.TextXAlignment.Left
 progressionLabel.Parent = root
 
+matchInfoLabel = Instance.new("TextLabel")
+matchInfoLabel.AnchorPoint = Vector2.new(1, 0)
+matchInfoLabel.BackgroundTransparency = 1
+matchInfoLabel.Position = UDim2.new(1, -22, 0, 80)
+matchInfoLabel.Size = UDim2.fromOffset(180, 20)
+matchInfoLabel.Font = Enum.Font.Gotham
+matchInfoLabel.Text = "Arena -- | Match --"
+matchInfoLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
+matchInfoLabel.TextSize = 14
+matchInfoLabel.TextXAlignment = Enum.TextXAlignment.Right
+matchInfoLabel.Parent = root
+
 local function getSelectedShape()
 	if not currentState or not selectedSlot then
 		return nil
@@ -1481,13 +1494,15 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	battleDock.Visible = not root.Visible
 	title.Text = currentState.mode == "Story" and "Story Training" or "Block Blast Battle"
 	scoreLabel.Text = `Score: {currentState.score}`
+	matchInfoLabel.Text =
+		`Arena {currentState.arenaIndex or "--"} | Match {currentState.sessionId or "--"}`
 	timerLabel.Text = currentState.timeLeft and `Time: {currentState.timeLeft}s` or "Time: --"
 	timerLabel.TextColor3 = currentState.timeLeft
 			and currentState.timeLeft <= 15
 			and Color3.fromRGB(255, 207, 102)
 		or Color3.fromRGB(193, 201, 215)
 	dockStatusLabel.Text = currentState.message
-		or currentState.alive and `Score: {currentState.score} | {currentState.timeLeft or "--"}s`
+		or currentState.alive and `Arena {currentState.arenaIndex or "--"} | Score: {currentState.score} | {currentState.timeLeft or "--"}s`
 		or "Out of moves - returning"
 	playAgainButton.Visible = not currentState.alive
 
