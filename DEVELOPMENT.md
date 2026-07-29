@@ -43,6 +43,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added a cosmetic closet panel with piece/board preview grids, equipped states, locked requirements, and direct equip actions.
 - 2026-07-29: Added story chapter intro, success, and failure copy to mission starts, in-run objectives, and post-run results.
 - 2026-07-29: Replaced delayed client-side replay sequencing with a server-authoritative `PlayAgain` queue action that only requeues from hub or finished runs.
+- 2026-07-29: Extracted client sound cue creation, volume, mute, and playback into a dedicated `SoundController` module.
 
 ## Current Priorities
 
@@ -63,7 +64,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 ## Technical Debt
 
-- `BlockBlastClient.client.luau` is still large; `ResultPanel.luau` is the first extraction, and battle board, hub panel, and settings controls should follow.
+- `BlockBlastClient.client.luau` is still large; `ResultPanel.luau`, `CosmeticPanel.luau`, and `SoundController.luau` are the first extractions, and battle board, hub panel, and settings controls should follow.
 - Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; unlocks are progression-derived, while broader cosmetic inventory still needs persistence.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
 - Match sessions now support multiple active arenas with hub availability UI, analytics, exploit diagnostics, and Studio diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.

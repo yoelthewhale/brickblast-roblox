@@ -1,7 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local SoundService = game:GetService("SoundService")
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -14,6 +13,7 @@ local Config = require(GameShared.Config)
 local Grid = require(GameShared.Grid)
 local CosmeticPanel = require(script.Parent.CosmeticPanel)
 local ResultPanel = require(script.Parent.ResultPanel)
+local SoundController = require(script.Parent.SoundController)
 
 local remotes = ReplicatedStorage:WaitForChild("BlockBlastRemotes")
 local stateEvent = remotes:WaitForChild("State")
@@ -42,7 +42,7 @@ local pieceSkinIndex = 1
 local boardSkinIndex = 1
 local soundEnabled = true
 local soundVolume = 0.65
-local sounds = {}
+local soundController = SoundController.new()
 local customization = {
 	boardEmptyColor = Config.Colors.Empty,
 	panelColor = Color3.fromRGB(14, 18, 27),
@@ -108,15 +108,6 @@ local MAX_WINDOW_SIZE = Vector2.new(860, 620)
 local COMPACT_WINDOW_WIDTH = 560
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
-local SOUND_ASSETS = {
-	Button = "rbxassetid://12221967",
-	Queue = "rbxassetid://12221990",
-	Place = "rbxassetid://12221976",
-	Blocked = "rbxassetid://12221984",
-	Clear = "rbxassetid://12222005",
-	Result = "rbxassetid://12221990",
-}
 
 local themePresets = {
 	{
@@ -309,27 +300,12 @@ local function settingsPayload()
 	}
 end
 
-local function createSounds()
-	for cueName, soundId in SOUND_ASSETS do
-		local sound = Instance.new("Sound")
-		sound.Name = `BlockBlast{cueName}`
-		sound.SoundId = soundId
-		sound.Volume = soundVolume
-		sound.RollOffMode = Enum.RollOffMode.InverseTapered
-		sound.Parent = SoundService
-		sounds[cueName] = sound
-	end
+local function applySoundSettings()
+	soundController:SetSettings(soundEnabled, soundVolume)
 end
 
 local function playSound(cueName)
-	local sound = sounds[cueName]
-	if not soundEnabled or soundVolume <= 0 or not sound then
-		return
-	end
-
-	sound.Volume = soundVolume
-	sound.TimePosition = 0
-	sound:Play()
+	soundController:Play(cueName)
 end
 
 local function saveSettings()
@@ -1055,6 +1031,7 @@ soundButton.MouseButton1Click:Connect(function()
 	end
 
 	updateSettingsButtonText()
+	applySoundSettings()
 	playSound("Button")
 	saveSettings()
 end)
@@ -2169,6 +2146,7 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 		soundVolume = math.clamp(settings.soundVolume, 0, 1)
 	end
 
+	applySoundSettings()
 	updateSettingsButtonText()
 	applyTheme()
 	applyUiScale()
@@ -2184,6 +2162,6 @@ end)
 applyWindowLayout()
 applyTheme()
 applyUiScale()
-createSounds()
+applySoundSettings()
 settingsEvent:FireServer("Request")
 task.delay(6, dismissLoading)
