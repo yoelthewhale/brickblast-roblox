@@ -52,6 +52,7 @@ local playerSettings = {}
 local playerDailyRewardDates = {}
 local playerEntitlements = {}
 local playerFulfilledPurchaseIds = {}
+local playerCosmeticInventories = {}
 local selectedStoryChapters = {}
 local lastPlaceRequestAt = {}
 local lastQueueRequestAt = {}
@@ -117,7 +118,12 @@ local leaveBattle = nil
 local scheduleReturnIfEliminated = nil
 local resolveBattleIfFinished = nil
 local sendHubState = nil
+local sendShopSnapshot = nil
 local startStoryMode = nil
+local ownsLegacyCosmetic = nil
+local sanitizeCosmeticInventory = nil
+local cosmeticInventory = nil
+local applyEquippedCosmeticsToSettings = nil
 
 local DEFAULT_SETTINGS = {
 	themeIndex = 1,
@@ -173,7 +179,7 @@ local function nextCosmeticUnlockText(progress)
 	return "All current cosmetics unlocked"
 end
 
-local function sanitizeSettings(settings, progress)
+local function sanitizeSettings(settings, progress, player)
 	local clean = table.clone(DEFAULT_SETTINGS)
 	if typeof(settings) ~= "table" then
 		return clean
@@ -198,7 +204,19 @@ local function sanitizeSettings(settings, progress)
 	if
 		typeof(settings.pieceSkin) == "string"
 		and Blocks.isValidPieceSkin(settings.pieceSkin)
-		and Config.meetsCosmeticRequirement(Config.PieceSkinUnlocks[settings.pieceSkin], progress)
+		and (
+			ownsLegacyCosmetic
+				and ownsLegacyCosmetic(
+					player,
+					settings.pieceSkin,
+					Config.CosmeticCategories.PieceSkin
+				)
+			or not ownsLegacyCosmetic
+				and Config.meetsCosmeticRequirement(
+					Config.PieceSkinUnlocks[settings.pieceSkin],
+					progress
+				)
+		)
 	then
 		clean.pieceSkin = settings.pieceSkin
 	end
@@ -206,7 +224,19 @@ local function sanitizeSettings(settings, progress)
 	if
 		typeof(settings.boardSkin) == "string"
 		and Config.isValidBoardSkin(settings.boardSkin)
-		and Config.meetsCosmeticRequirement(Config.BoardSkinUnlocks[settings.boardSkin], progress)
+		and (
+			ownsLegacyCosmetic
+				and ownsLegacyCosmetic(
+					player,
+					settings.boardSkin,
+					Config.CosmeticCategories.BoardSkin
+				)
+			or not ownsLegacyCosmetic
+				and Config.meetsCosmeticRequirement(
+					Config.BoardSkinUnlocks[settings.boardSkin],
+					progress
+				)
+		)
 	then
 		clean.boardSkin = settings.boardSkin
 	end
@@ -225,7 +255,7 @@ end
 local function sendSettings(player)
 	settingsEvent:FireClient(
 		player,
-		sanitizeSettings(playerSettings[player], cosmeticProgress(player))
+		sanitizeSettings(playerSettings[player], cosmeticProgress(player), player)
 	)
 end
 
@@ -424,17 +454,28 @@ local function createLeaderstats(player)
 		)
 		analytics.profileFieldsSanitized += sanitizedFields
 
-		playerSettings[player] = sanitizeSettings(profile.settings, cosmeticProgress(player))
 		if typeof(profile.dailyRewardDate) == "string" then
 			playerDailyRewardDates[player] = profile.dailyRewardDate
 		end
 		playerFulfilledPurchaseIds[player] = typeof(profile.fulfilledPurchaseIds) == "table"
 				and table.clone(profile.fulfilledPurchaseIds)
 			or {}
+		playerCosmeticInventories[player] = sanitizeCosmeticInventory(
+			player,
+			profile.cosmetics,
+			cosmeticProgress(player),
+			profile.settings
+		)
+		playerSettings[player] =
+			sanitizeSettings(profile.settings, cosmeticProgress(player), player)
+		applyEquippedCosmeticsToSettings(player)
 		if sendHubState and playerModes[player] == "Hub" then
 			sendHubState(player, "Welcome to the hub")
 		end
 		sendSettings(player)
+		if sendShopSnapshot then
+			sendShopSnapshot(player)
+		end
 	end)
 end
 
@@ -525,8 +566,9 @@ local function mergedProfilePayload(player, existingProfile, stats)
 		xp = sanitizedStatValue(stats.xp, 0, PROFILE_LIMITS.xp, 0),
 		level = sanitizedStatValue(stats.level, 1, PROFILE_LIMITS.level, 1),
 		storyStars = sanitizedStatValue(stats.storyStars, 0, PROFILE_LIMITS.storyStars, 0),
-		settings = sanitizeSettings(playerSettings[player], cosmeticProgress(player)),
+		settings = sanitizeSettings(playerSettings[player], cosmeticProgress(player), player),
 		dailyRewardDate = playerDailyRewardDates[player],
+		cosmetics = cosmeticInventory(player),
 		fulfilledPurchaseIds = fulfilledPurchaseIds,
 		updatedAt = os.time(),
 	}
@@ -535,10 +577,10 @@ end
 local function saveProfile(player)
 	local stats = profileStats(player)
 	if not stats then
-		return
+		return false
 	end
 
-	setProfileWithRetry(player, mergedProfilePayload(player, nil, stats))
+	return setProfileWithRetry(player, mergedProfilePayload(player, nil, stats))
 end
 
 local function productInfoForMarketplaceId(marketplaceId, infoType)
@@ -630,12 +672,252 @@ local function entitlementDailyBonusCoins(player)
 	return bonus
 end
 
+local function cosmeticIdForLegacyValue(category, legacyValue)
+	for _, cosmetic in Config.Cosmetics do
+		local preview = cosmetic.preview or {}
+		if
+			cosmetic.cosmeticCategory == category
+			and (
+				preview.pieceSkin == legacyValue
+				or preview.boardSkin == legacyValue
+				or preview.lineClearEffect == legacyValue
+				or preview.title == legacyValue
+			)
+		then
+			return cosmetic.id
+		end
+	end
+
+	return nil
+end
+
+local function defaultOwnedCosmetics(progress)
+	local owned = {}
+	for _, cosmetic in Config.Cosmetics do
+		if
+			cosmetic.defaultOwned
+			or (
+				cosmetic.requirement
+				and Config.meetsCosmeticRequirement(cosmetic.requirement, progress)
+			)
+		then
+			owned[cosmetic.id] = true
+		end
+	end
+
+	return owned
+end
+
+local function canOwnCosmetic(player, cosmetic, progress, owned)
+	if not cosmetic then
+		return false
+	end
+	if owned and owned[cosmetic.id] == true then
+		return true
+	end
+	if cosmetic.defaultOwned then
+		return true
+	end
+	if cosmetic.requiredGamePass then
+		return playerOwnsGamePass(player, cosmetic.requiredGamePass)
+	end
+	if cosmetic.requirement then
+		return Config.meetsCosmeticRequirement(cosmetic.requirement, progress)
+	end
+
+	return false
+end
+
+sanitizeCosmeticInventory = function(player, rawInventory, progress, legacySettings)
+	local owned = defaultOwnedCosmetics(progress)
+	rawInventory = typeof(rawInventory) == "table" and rawInventory or {}
+
+	if typeof(rawInventory.owned) == "table" then
+		for cosmeticId, value in rawInventory.owned do
+			if value == true and Config.getCosmeticDefinition(cosmeticId) then
+				owned[cosmeticId] = true
+			end
+		end
+	end
+
+	local equipped = {}
+	local rawEquipped = typeof(rawInventory.equipped) == "table" and rawInventory.equipped or {}
+	for category, defaultCosmeticId in Config.DefaultEquippedCosmetics do
+		local requestedId = rawEquipped[category]
+		if not requestedId and typeof(legacySettings) == "table" then
+			if category == Config.CosmeticCategories.PieceSkin then
+				requestedId = cosmeticIdForLegacyValue(category, legacySettings.pieceSkin)
+			elseif category == Config.CosmeticCategories.BoardSkin then
+				requestedId = cosmeticIdForLegacyValue(category, legacySettings.boardSkin)
+			end
+		end
+
+		local cosmetic = Config.getCosmeticDefinition(requestedId)
+		if
+			cosmetic
+			and cosmetic.cosmeticCategory == category
+			and canOwnCosmetic(player, cosmetic, progress, owned)
+		then
+			owned[cosmetic.id] = true
+			equipped[category] = cosmetic.id
+		else
+			owned[defaultCosmeticId] = true
+			equipped[category] = defaultCosmeticId
+		end
+	end
+
+	return {
+		owned = owned,
+		equipped = equipped,
+		presets = {},
+		activePreset = 1,
+	}
+end
+
+cosmeticInventory = function(player)
+	if not playerCosmeticInventories[player] then
+		playerCosmeticInventories[player] =
+			sanitizeCosmeticInventory(player, nil, cosmeticProgress(player), playerSettings[player])
+	end
+
+	return playerCosmeticInventories[player]
+end
+
+ownsLegacyCosmetic = function(player, legacyValue, category)
+	local cosmeticId = cosmeticIdForLegacyValue(category, legacyValue)
+	if not cosmeticId then
+		return false
+	end
+
+	local inventory = cosmeticInventory(player)
+	local cosmetic = Config.getCosmeticDefinition(cosmeticId)
+	return canOwnCosmetic(player, cosmetic, cosmeticProgress(player), inventory.owned)
+end
+
+applyEquippedCosmeticsToSettings = function(player)
+	local inventory = cosmeticInventory(player)
+	local settings = playerSettings[player] or table.clone(DEFAULT_SETTINGS)
+	local pieceCosmetic =
+		Config.getCosmeticDefinition(inventory.equipped[Config.CosmeticCategories.PieceSkin])
+	local boardCosmetic =
+		Config.getCosmeticDefinition(inventory.equipped[Config.CosmeticCategories.BoardSkin])
+	if pieceCosmetic and pieceCosmetic.preview and pieceCosmetic.preview.pieceSkin then
+		settings.pieceSkin = pieceCosmetic.preview.pieceSkin
+	end
+	if boardCosmetic and boardCosmetic.preview and boardCosmetic.preview.boardSkin then
+		settings.boardSkin = boardCosmetic.preview.boardSkin
+	end
+	playerSettings[player] = sanitizeSettings(settings, cosmeticProgress(player), player)
+end
+
+local function publicCosmeticCatalog(player)
+	local progress = cosmeticProgress(player)
+	local inventory = cosmeticInventory(player)
+	local leaderstats = player:FindFirstChild("leaderstats")
+	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
+	local coinBalance = coins and coins.Value or 0
+	local items = {}
+
+	for _, cosmetic in Config.Cosmetics do
+		local owned = canOwnCosmetic(player, cosmetic, progress, inventory.owned)
+		if owned then
+			inventory.owned[cosmetic.id] = true
+		end
+
+		local requiredPass = cosmetic.requiredGamePass
+		local passDefinition = requiredPass and Config.getGamePassDefinition(requiredPass) or nil
+		local passUnavailable = passDefinition
+			and passDefinition.gamePassId == Config.Monetization.PlaceholderId
+		local equipped = inventory.equipped[cosmetic.cosmeticCategory] == cosmetic.id
+		local hasCost = (cosmetic.costCoins or 0) > 0
+		local canAfford = not hasCost or coinBalance >= cosmetic.costCoins
+		local lockedReason = nil
+		local state = "Available"
+
+		if equipped then
+			state = "Equipped"
+		elseif owned then
+			state = "Owned"
+		elseif passUnavailable then
+			state = "Unavailable"
+			lockedReason = "Creator Dashboard ID required"
+		elseif requiredPass then
+			state = "PassRequired"
+			lockedReason = "Requires game pass"
+		elseif hasCost and not canAfford then
+			state = "Locked"
+			lockedReason = `Need {cosmetic.costCoins} coins`
+		elseif
+			cosmetic.requirement
+			and not Config.meetsCosmeticRequirement(cosmetic.requirement, progress)
+		then
+			state = "Locked"
+			lockedReason = cosmetic.requirement.label or "Keep playing"
+		elseif not hasCost then
+			state = "Locked"
+			lockedReason = "Locked"
+		end
+
+		table.insert(items, {
+			id = cosmetic.id,
+			itemType = "Cosmetic",
+			name = cosmetic.name,
+			description = cosmetic.description,
+			category = "Cosmetics",
+			cosmeticCategory = cosmetic.cosmeticCategory,
+			rarity = cosmetic.rarity,
+			unlockSource = cosmetic.unlockSource,
+			costCoins = cosmetic.costCoins,
+			requiredGamePass = cosmetic.requiredGamePass,
+			preview = cosmetic.preview,
+			owned = owned,
+			equipped = equipped,
+			available = state == "Available" or state == "Owned" or state == "Equipped",
+			state = state,
+			unavailableReason = lockedReason,
+		})
+	end
+
+	return items
+end
+
+local function equippedCosmeticPreview(player, category)
+	local inventory = cosmeticInventory(player)
+	local cosmetic = Config.getCosmeticDefinition(inventory.equipped[category])
+	return cosmetic and cosmetic.preview or {}
+end
+
+local function publicEquippedCosmetics(player)
+	return {
+		pieceSkin = equippedCosmeticPreview(player, Config.CosmeticCategories.PieceSkin).pieceSkin
+			or "Rainbow",
+		boardSkin = equippedCosmeticPreview(player, Config.CosmeticCategories.BoardSkin).boardSkin
+			or "Auto",
+		lineClearEffect = equippedCosmeticPreview(
+			player,
+			Config.CosmeticCategories.LineClearEffect
+		).lineClearEffect or "Spark",
+		title = equippedCosmeticPreview(player, Config.CosmeticCategories.PlayerTitle).title
+			or "Rookie",
+	}
+end
+
 local function publicShopSnapshot(player, message, pendingId)
+	local leaderstats = player:FindFirstChild("leaderstats")
+	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
+	local ownsExtraPresetSlots = playerOwnsGamePass(player, "EXTRA_PRESET_SLOTS_PASS")
 	local gamePasses = {}
 	for _, pass in Config.Monetization.GamePasses do
 		local owned, ownershipError = refreshGamePassOwnership(player, pass, false)
 		local info = productInfoForMarketplaceId(pass.gamePassId, Enum.InfoType.GamePass)
 		local price = info and info.PriceInRobux or pass.suggestedPriceRobux
+		local unavailableReason = ownershipError
+		if
+			pass.id == "EXTRA_PRESET_SLOTS_PASS"
+			and pass.gamePassId ~= Config.Monetization.PlaceholderId
+		then
+			unavailableReason = "Preset UI not implemented yet"
+		end
 		table.insert(gamePasses, {
 			id = pass.id,
 			itemType = "GamePass",
@@ -647,14 +929,15 @@ local function publicShopSnapshot(player, message, pendingId)
 			owned = owned == true,
 			equipped = owned == true and pass.id == "VIP_PASS",
 			available = pass.gamePassId ~= Config.Monetization.PlaceholderId
-				and ownershipError == nil,
+				and ownershipError == nil
+				and unavailableReason == nil,
 			marketplaceId = pass.gamePassId,
 			priceRobux = price,
 			state = owned and "Owned"
-				or ownershipError and "Unavailable"
+				or unavailableReason and "Unavailable"
 				or pendingId == pass.id and "Loading"
 				or "Available",
-			unavailableReason = ownershipError,
+			unavailableReason = unavailableReason,
 		})
 	end
 
@@ -683,6 +966,11 @@ local function publicShopSnapshot(player, message, pendingId)
 	return {
 		gamePasses = gamePasses,
 		developerProducts = developerProducts,
+		cosmetics = publicCosmeticCatalog(player),
+		coinBalance = coins and coins.Value or 0,
+		presetSlots = Config.FreePresetSlots
+			+ (ownsExtraPresetSlots and Config.ExtraPresetSlots or 0),
+		extraPresetSlotsAvailable = ownsExtraPresetSlots,
 		message = message,
 		pendingId = pendingId,
 		analytics = {
@@ -695,7 +983,7 @@ local function publicShopSnapshot(player, message, pendingId)
 	}
 end
 
-local function sendShopSnapshot(player, message, pendingId)
+sendShopSnapshot = function(player, message, pendingId)
 	shopEvent:FireClient(player, {
 		kind = "Snapshot",
 		shop = publicShopSnapshot(player, message, pendingId),
@@ -725,6 +1013,91 @@ local function findPurchasableDefinition(itemType, itemId)
 	end
 
 	return nil
+end
+
+local function sendShopError(player, message)
+	shopEvent:FireClient(player, {
+		kind = "Error",
+		message = message,
+	})
+end
+
+local function purchaseCosmetic(player, cosmeticId)
+	local cosmetic = Config.getCosmeticDefinition(cosmeticId)
+	if not cosmetic then
+		analytics.shopPromptRejected += 1
+		sendShopError(player, "That cosmetic is unavailable.")
+		return
+	end
+
+	local inventory = cosmeticInventory(player)
+	if canOwnCosmetic(player, cosmetic, cosmeticProgress(player), inventory.owned) then
+		sendShopSnapshot(player, "Already owned.")
+		return
+	end
+
+	if cosmetic.requiredGamePass then
+		sendShopError(player, "This cosmetic requires a game pass.")
+		return
+	end
+
+	if (cosmetic.costCoins or 0) <= 0 then
+		sendShopError(player, "This cosmetic cannot be bought with coins.")
+		return
+	end
+
+	local leaderstats = player:FindFirstChild("leaderstats")
+	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
+	if not coins or coins.Value < cosmetic.costCoins then
+		analytics.shopPromptRejected += 1
+		sendShopSnapshot(player, `Need {cosmetic.costCoins} coins.`)
+		return
+	end
+
+	coins.Value -= cosmetic.costCoins
+	inventory.owned[cosmetic.id] = true
+	if not saveProfile(player) then
+		inventory.owned[cosmetic.id] = nil
+		coins.Value += cosmetic.costCoins
+		sendShopError(player, "Purchase could not be saved. Try again.")
+		return
+	end
+
+	analytics.shopPromptCompleted += 1
+	sendSettings(player)
+	sendShopSnapshot(player, `{cosmetic.name} purchased.`)
+end
+
+local function equipCosmetic(player, cosmeticId)
+	local cosmetic = Config.getCosmeticDefinition(cosmeticId)
+	if not cosmetic then
+		analytics.shopPromptRejected += 1
+		sendShopError(player, "That cosmetic is unavailable.")
+		return
+	end
+
+	local inventory = cosmeticInventory(player)
+	if not canOwnCosmetic(player, cosmetic, cosmeticProgress(player), inventory.owned) then
+		analytics.shopPromptRejected += 1
+		sendShopSnapshot(player, "Unlock this cosmetic before equipping it.")
+		return
+	end
+
+	inventory.owned[cosmetic.id] = true
+	local previousEquipped = inventory.equipped[cosmetic.cosmeticCategory]
+	local previousSettings = table.clone(playerSettings[player] or DEFAULT_SETTINGS)
+	inventory.equipped[cosmetic.cosmeticCategory] = cosmetic.id
+	applyEquippedCosmeticsToSettings(player)
+	if not saveProfile(player) then
+		inventory.equipped[cosmetic.cosmeticCategory] = previousEquipped
+		playerSettings[player] = previousSettings
+		sendShopError(player, "Equip could not be saved. Try again.")
+		return
+	end
+
+	analytics.shopPromptCompleted += 1
+	sendSettings(player)
+	sendShopSnapshot(player, `{cosmetic.name} equipped.`)
 end
 
 local function grantDeveloperProductReceipt(player, product, receiptKey)
@@ -1043,6 +1416,7 @@ local function publicState(player)
 		storyMission = state.storyMission,
 		storyComplete = state.mode == "Story" and isStoryMissionComplete(state) or false,
 		resultSummary = state.resultSummary,
+		equippedCosmetics = publicEquippedCosmetics(player),
 		sessionId = session and session.id or nil,
 		arenaIndex = session and session.arena and session.arena.index or nil,
 		timeLeft = session and math.ceil(sessionSecondsLeft(session)) or nil,
@@ -1652,6 +2026,7 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 		originY = y,
 		shape = shape,
 		linesCleared = linesCleared,
+		lineClearEffect = publicEquippedCosmetics(player).lineClearEffect,
 		comboStreak = state.comboStreak,
 		comboBonus = comboBonus,
 	})
@@ -1710,6 +2085,16 @@ shopEvent.OnServerEvent:Connect(function(player, action, payload)
 	if action == "RequestSnapshot" then
 		analytics.shopSnapshotsRequested += 1
 		sendShopSnapshot(player)
+		return
+	end
+
+	if action == "PurchaseCosmetic" and typeof(payload) == "table" then
+		purchaseCosmetic(player, payload.id)
+		return
+	end
+
+	if action == "EquipCosmetic" and typeof(payload) == "table" then
+		equipCosmetic(player, payload.id)
 		return
 	end
 
@@ -1850,7 +2235,7 @@ settingsEvent.OnServerEvent:Connect(function(player, action, nextSettings)
 		return
 	end
 
-	playerSettings[player] = sanitizeSettings(nextSettings, cosmeticProgress(player))
+	playerSettings[player] = sanitizeSettings(nextSettings, cosmeticProgress(player), player)
 	sendSettings(player)
 	scheduleSettingsSave(player)
 end)
@@ -1877,6 +2262,9 @@ Players.PlayerAdded:Connect(function(player)
 	playerDailyRewardDates[player] = nil
 	playerFulfilledPurchaseIds[player] = {}
 	createLeaderstats(player)
+	playerCosmeticInventories[player] =
+		sanitizeCosmeticInventory(player, nil, cosmeticProgress(player), playerSettings[player])
+	applyEquippedCosmeticsToSettings(player)
 	playerModes[player] = "Hub"
 	player.CharacterAdded:Connect(function()
 		task.wait(0.2)
@@ -1902,6 +2290,7 @@ Players.PlayerRemoving:Connect(function(player)
 	playerDailyRewardDates[player] = nil
 	playerEntitlements[player] = nil
 	playerFulfilledPurchaseIds[player] = nil
+	playerCosmeticInventories[player] = nil
 	lastPlaceRequestAt[player] = nil
 	lastQueueRequestAt[player] = nil
 	lastShopRequestAt[player] = nil
@@ -1935,6 +2324,9 @@ for _, player in Players:GetPlayers() do
 		playerFulfilledPurchaseIds[player] = playerFulfilledPurchaseIds[player] or {}
 		createLeaderstats(player)
 	end
+	playerCosmeticInventories[player] = playerCosmeticInventories[player]
+		or sanitizeCosmeticInventory(player, nil, cosmeticProgress(player), playerSettings[player])
+	applyEquippedCosmeticsToSettings(player)
 	playerModes[player] = playerModes[player] or "Hub"
 	stateEvent:FireClient(player, nil, {})
 	sendHubState(player, "Welcome to the hub")

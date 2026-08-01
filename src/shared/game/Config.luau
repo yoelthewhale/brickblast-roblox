@@ -226,6 +226,182 @@ Config.BoardSkinUnlocks = {
 	},
 }
 
+Config.CosmeticCategories = {
+	PieceSkin = "PieceSkin",
+	BoardSkin = "BoardSkin",
+	LineClearEffect = "LineClearEffect",
+	PlayerTitle = "PlayerTitle",
+}
+
+Config.DefaultEquippedCosmetics = {
+	PieceSkin = "PIECE_RAINBOW",
+	BoardSkin = "BOARD_AUTO",
+	LineClearEffect = "CLEAR_SPARK",
+	PlayerTitle = "TITLE_ROOKIE",
+}
+
+Config.FreePresetSlots = 2
+Config.ExtraPresetSlots = 3
+
+Config.Cosmetics = {
+	{
+		id = "PIECE_RAINBOW",
+		name = "Rainbow Pieces",
+		description = "Bright randomized block colors.",
+		cosmeticCategory = Config.CosmeticCategories.PieceSkin,
+		rarity = "Common",
+		unlockSource = "Default",
+		defaultOwned = true,
+		preview = {
+			pieceSkin = "Rainbow",
+		},
+	},
+	{
+		id = "PIECE_NEON",
+		name = "Neon Pieces",
+		description = "High-saturation arcade blocks.",
+		cosmeticCategory = Config.CosmeticCategories.PieceSkin,
+		rarity = "Rare",
+		unlockSource = "Progression",
+		requirement = Config.PieceSkinUnlocks.Neon,
+		preview = {
+			pieceSkin = "Neon",
+		},
+	},
+	{
+		id = "PIECE_PASTEL",
+		name = "Pastel Pieces",
+		description = "Soft candy-colored block pieces.",
+		cosmeticCategory = Config.CosmeticCategories.PieceSkin,
+		rarity = "Uncommon",
+		unlockSource = "Story",
+		requirement = Config.PieceSkinUnlocks.Pastel,
+		preview = {
+			pieceSkin = "Pastel",
+		},
+	},
+	{
+		id = "PIECE_ICE",
+		name = "Ice Pieces",
+		description = "Cool-blue pieces for advanced players.",
+		cosmeticCategory = Config.CosmeticCategories.PieceSkin,
+		rarity = "Epic",
+		unlockSource = "Progression",
+		requirement = Config.PieceSkinUnlocks.Ice,
+		preview = {
+			pieceSkin = "Ice",
+		},
+	},
+	{
+		id = "BOARD_AUTO",
+		name = "Auto Board",
+		description = "Uses your current theme colors.",
+		cosmeticCategory = Config.CosmeticCategories.BoardSkin,
+		rarity = "Common",
+		unlockSource = "Default",
+		defaultOwned = true,
+		preview = {
+			boardSkin = "Auto",
+		},
+	},
+	{
+		id = "BOARD_MIDNIGHT",
+		name = "Midnight Board",
+		description = "A dark, focused board treatment.",
+		cosmeticCategory = Config.CosmeticCategories.BoardSkin,
+		rarity = "Uncommon",
+		unlockSource = "Progression",
+		requirement = Config.BoardSkinUnlocks.Midnight,
+		preview = {
+			boardSkin = "Midnight",
+		},
+	},
+	{
+		id = "BOARD_SUGAR",
+		name = "Sugar Board",
+		description = "A pink board skin purchasable with earned coins.",
+		cosmeticCategory = Config.CosmeticCategories.BoardSkin,
+		rarity = "Rare",
+		unlockSource = "Coins",
+		costCoins = 150,
+		preview = {
+			boardSkin = "Sugar",
+		},
+	},
+	{
+		id = "BOARD_GARDEN",
+		name = "Garden Board",
+		description = "Green board colors unlocked through story play.",
+		cosmeticCategory = Config.CosmeticCategories.BoardSkin,
+		rarity = "Uncommon",
+		unlockSource = "Story",
+		requirement = Config.BoardSkinUnlocks.Garden,
+		preview = {
+			boardSkin = "Garden",
+		},
+	},
+	{
+		id = "BOARD_CONTRAST",
+		name = "Contrast Board",
+		description = "High-contrast board colors for readability.",
+		cosmeticCategory = Config.CosmeticCategories.BoardSkin,
+		rarity = "Epic",
+		unlockSource = "Progression",
+		requirement = Config.BoardSkinUnlocks.Contrast,
+		preview = {
+			boardSkin = "Contrast",
+		},
+	},
+	{
+		id = "CLEAR_SPARK",
+		name = "Spark Clear",
+		description = "A clean default line-clear flash.",
+		cosmeticCategory = Config.CosmeticCategories.LineClearEffect,
+		rarity = "Common",
+		unlockSource = "Default",
+		defaultOwned = true,
+		preview = {
+			lineClearEffect = "Spark",
+		},
+	},
+	{
+		id = "CLEAR_RIPPLE",
+		name = "Ripple Clear",
+		description = "A smoother clear pulse bought with earned coins.",
+		cosmeticCategory = Config.CosmeticCategories.LineClearEffect,
+		rarity = "Rare",
+		unlockSource = "Coins",
+		costCoins = 100,
+		preview = {
+			lineClearEffect = "Ripple",
+		},
+	},
+	{
+		id = "TITLE_ROOKIE",
+		name = "Rookie Title",
+		description = "Default player title.",
+		cosmeticCategory = Config.CosmeticCategories.PlayerTitle,
+		rarity = "Common",
+		unlockSource = "Default",
+		defaultOwned = true,
+		preview = {
+			title = "Rookie",
+		},
+	},
+	{
+		id = "TITLE_VIP",
+		name = "VIP Title",
+		description = "Title unlocked by owning the VIP Pass.",
+		cosmeticCategory = Config.CosmeticCategories.PlayerTitle,
+		rarity = "Premium",
+		unlockSource = "GamePass",
+		requiredGamePass = "VIP_PASS",
+		preview = {
+			title = "VIP",
+		},
+	},
+}
+
 function Config.meetsCosmeticRequirement(requirement, progress)
 	if not requirement then
 		return true
@@ -245,6 +421,21 @@ function Config.isValidBoardSkin(boardSkin)
 	end
 
 	return false
+end
+
+function Config.getCosmeticDefinition(cosmeticId)
+	for _, cosmetic in Config.Cosmetics do
+		if cosmetic.id == cosmeticId then
+			return cosmetic
+		end
+	end
+
+	return nil
+end
+
+function Config.getDefaultCosmeticForCategory(category)
+	local defaultId = Config.DefaultEquippedCosmetics[category]
+	return defaultId and Config.getCosmeticDefinition(defaultId) or nil
 end
 
 function Config.getGamePassDefinition(passId)

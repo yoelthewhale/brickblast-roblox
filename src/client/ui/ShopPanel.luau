@@ -52,11 +52,15 @@ local function buttonText(item)
 	elseif item.equipped then
 		return "Equipped"
 	elseif item.owned then
-		return item.itemType == "Cosmetic" and "Open Closet" or "Owned"
+		return item.itemType == "Cosmetic" and "Equip" or "Owned"
 	elseif item.state == "Locked" then
 		return "Locked"
+	elseif item.state == "PassRequired" then
+		return "View Pass"
 	elseif item.state == "Unavailable" or item.available == false then
 		return "Unavailable"
+	elseif item.itemType == "Cosmetic" and item.costCoins then
+		return `Buy - {item.costCoins} coins`
 	end
 
 	return item.priceRobux and `Buy - R${item.priceRobux}` or "Buy"
@@ -70,6 +74,8 @@ function ShopPanel.new(gui, options)
 	self.playSound = options.playSound or function() end
 	self.showMessage = options.showMessage or function() end
 	self.openCloset = options.openCloset or function() end
+	self.previewCosmetic = options.previewCosmetic or function() end
+	self.stopPreview = options.stopPreview or function() end
 	self.getCosmetics = options.getCosmetics or function()
 		return {}
 	end
@@ -237,7 +243,7 @@ function ShopPanel:itemsForCurrentCategory()
 			table.insert(items, product)
 		end
 	end
-	for _, cosmetic in safeArray(self.getCosmetics()) do
+	for _, cosmetic in safeArray(self.shopState.cosmetics) do
 		if categoryMatches(cosmetic, self.category) then
 			table.insert(items, cosmetic)
 		end
@@ -321,20 +327,69 @@ function ShopPanel:createCard(item, index)
 		self:activateItem(item)
 	end)
 
+	if item.itemType == "Cosmetic" then
+		local preview = Instance.new("TextButton")
+		preview.AnchorPoint = Vector2.new(1, 1)
+		preview.Position = UDim2.new(1, -146, 1, -12)
+		preview.Size = UDim2.fromOffset(86, 40)
+		preview.BackgroundColor3 = THEME.buttonMuted
+		preview.BorderSizePixel = 0
+		preview.Font = Enum.Font.GothamBold
+		preview.Text = "Preview"
+		preview.TextColor3 = THEME.text
+		preview.TextSize = 13
+		preview.Selectable = true
+		preview.ZIndex = 48
+		preview.Parent = card
+		table.insert(self.cardButtons, preview)
+		preview.MouseButton1Click:Connect(function()
+			self.playSound("Button")
+			self.previewCosmetic(item)
+		end)
+	end
+
 	return card
 end
 
 function ShopPanel:activateItem(item)
 	if item.itemType == "Cosmetic" then
-		if item.state == "Locked" then
+		if item.equipped then
+			self.playSound("Button")
+			self.showMessage(`${item.name} is equipped.`, THEME.success)
+			return
+		elseif item.owned then
+			self.pendingPrompt = item.id
+			self.playSound("Button")
+			self.shopEvent:FireServer("EquipCosmetic", {
+				id = item.id,
+			})
+			self:Refresh()
+			return
+		elseif item.state == "Available" and item.costCoins then
+			self.pendingPrompt = item.id
+			self.playSound("Button")
+			self.shopEvent:FireServer("PurchaseCosmetic", {
+				id = item.id,
+			})
+			self:Refresh()
+			return
+		elseif item.state == "PassRequired" and item.requiredGamePass then
+			self.pendingPrompt = item.requiredGamePass
+			self.playSound("Button")
+			self.shopEvent:FireServer("RequestPrompt", {
+				itemType = "GamePass",
+				id = item.requiredGamePass,
+			})
+			self:Refresh()
+			return
+		elseif item.state == "Locked" then
 			self.playSound("Blocked")
-			self.showMessage(item.lockedText or "Cosmetic locked.", THEME.warn)
+			self.showMessage(item.unavailableReason or "Cosmetic locked.", THEME.warn)
 			return
 		end
 
-		self.playSound("Button")
-		self.openCloset()
-		self:Hide()
+		self.playSound("Blocked")
+		self.showMessage(item.unavailableReason or "Cosmetic unavailable.", THEME.warn)
 		return
 	end
 
@@ -429,6 +484,7 @@ function ShopPanel:HandleServerMessage(message)
 end
 
 function ShopPanel:Hide()
+	self.stopPreview()
 	self.panel.Visible = false
 end
 

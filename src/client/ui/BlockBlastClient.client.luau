@@ -96,6 +96,7 @@ local tutorialPanel = nil
 local hubManuallyClosed = false
 local tutorialComplete = false
 local tutorialManuallyOpened = false
+local cosmeticPreviewSnapshot = nil
 local root = nil
 local rootScale = nil
 local hubScale = nil
@@ -566,6 +567,63 @@ local function showBanner(message, color)
 	end)
 end
 
+local function restoreCosmeticPreview()
+	if not cosmeticPreviewSnapshot then
+		return
+	end
+
+	pieceSkinIndex = cosmeticPreviewSnapshot.pieceSkinIndex
+	boardSkinIndex = cosmeticPreviewSnapshot.boardSkinIndex
+	cosmeticPreviewSnapshot = nil
+	updateSettingsButtonText()
+	if applyBoardSkin then
+		applyBoardSkin()
+	end
+	if currentState and renderBoard then
+		renderBoard()
+	end
+end
+
+local function previewShopCosmetic(item)
+	if typeof(item) ~= "table" or typeof(item.preview) ~= "table" then
+		return
+	end
+
+	if not cosmeticPreviewSnapshot then
+		cosmeticPreviewSnapshot = {
+			pieceSkinIndex = pieceSkinIndex,
+			boardSkinIndex = boardSkinIndex,
+		}
+	end
+
+	if typeof(item.preview.pieceSkin) == "string" then
+		for index, skinName in Blocks.PieceSkins do
+			if skinName == item.preview.pieceSkin then
+				pieceSkinIndex = index
+				break
+			end
+		end
+	end
+
+	if typeof(item.preview.boardSkin) == "string" then
+		for index, skin in Config.BoardSkins do
+			if skin.name == item.preview.boardSkin then
+				boardSkinIndex = index
+				break
+			end
+		end
+	end
+
+	updateSettingsButtonText()
+	if applyBoardSkin then
+		applyBoardSkin()
+	end
+	if currentState and renderBoard then
+		renderBoard()
+	end
+	showBanner(`Previewing {item.name or "cosmetic"}`, customization.accentColor)
+end
+
 resultPanelController = ResultPanel.new(gui, queueEvent, {
 	playSound = playSound,
 	isReducedMotion = function()
@@ -616,6 +674,8 @@ shopPanelController = ShopPanel.new(gui, {
 	playSound = playSound,
 	showMessage = showBanner,
 	getCosmetics = shopCosmeticItems,
+	previewCosmetic = previewShopCosmetic,
+	stopPreview = restoreCosmeticPreview,
 	openCloset = function()
 		cosmeticPanelController:Show()
 	end,
@@ -1963,9 +2023,13 @@ local function renderProgression()
 	local level = leaderstats and leaderstats:FindFirstChild("Level")
 	local storyStars = leaderstats and leaderstats:FindFirstChild("StoryStars")
 	local cleared = currentState and currentState.linesCleared or 0
+	local titleName = currentState
+			and typeof(currentState.equippedCosmetics) == "table"
+			and currentState.equippedCosmetics.title
+		or "Rookie"
 
 	progressionLabel.Text =
-		`Level {level and level.Value or 1} | {coins and coins.Value or 0} coins | {xp and xp.Value or 0} XP | {storyStars and storyStars.Value or 0} stars | {cleared} cleared`
+		`{titleName} | Level {level and level.Value or 1} | {coins and coins.Value or 0} coins | {xp and xp.Value or 0} XP | {storyStars and storyStars.Value or 0} stars | {cleared} cleared`
 end
 
 renderDiagnostics = function()
@@ -2222,6 +2286,11 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 					`Combo x{effect.comboStreak}! +{effect.comboBonus or 0}`,
 					Color3.fromRGB(255, 207, 102)
 				)
+			elseif effect.lineClearEffect == "Ripple" then
+				showBanner(
+					`Ripple clear: {effect.linesCleared} line(s)!`,
+					Color3.fromRGB(64, 156, 255)
+				)
 			else
 				showBanner(`Cleared {effect.linesCleared} line(s)!`, Color3.fromRGB(74, 222, 128))
 			end
@@ -2254,6 +2323,8 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 	if typeof(settings) ~= "table" then
 		return
 	end
+
+	cosmeticPreviewSnapshot = nil
 
 	if isFiniteNumber(settings.themeIndex) then
 		themeIndex = math.clamp(math.floor(settings.themeIndex), 1, #themePresets)

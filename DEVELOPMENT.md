@@ -62,12 +62,17 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Evaluated React Luau for the shop slice and deferred it because the project has no React/Wally dependencies installed; the production slice instead uses a reusable, state-driven Luau panel architecture compatible with the existing Rojo app.
 - 2026-08-01: Built the next place artifact as `BlockBlastBattle-Day6.rbxl`.
 - 2026-08-01: Modernized the home hub layout with a wider first-screen panel, larger Battle/Story touch targets, dedicated Shop & Closet action, less cramped settings controls, theme-aware shop entry styling, and gamepad focus when the home panel opens.
+- 2026-08-01: Added a centralized server-authoritative cosmetic catalog for piece skins, board skins, line-clear effects, and player titles.
+- 2026-08-01: Added persistent cosmetic inventory schema `profile.cosmetics` with owned IDs, equipped IDs by category, default migration, and safe fallback for invalid saved entries.
+- 2026-08-01: Connected the shop Cosmetics tab to server-owned catalog snapshots with coin purchase, equip, pass-required, locked, unavailable, preview, owned, and equipped states.
+- 2026-08-01: Applied equipped cosmetics to gameplay for piece colors, board theme, line-clear feedback, and in-run player title presentation.
+- 2026-08-01: Added `docs/STUDIO_TEST_CHECKLIST.md` covering migration, shop, Marketplace, mobile/gamepad, reduced-motion, and two-player cosmetic validation.
 
 ## Current Priorities
 
 - Extract the modernized home/hub interface into a cohesive reusable module instead of continuing to grow `BlockBlastClient.client.luau`.
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
-- Add a true owned/equipped cosmetic inventory flow that can consume both progression unlocks and future pass entitlements.
+- Extract the modernized home/hub interface into a cohesive reusable module instead of continuing to grow `BlockBlastClient.client.luau`.
 - Continue anti-exploit hardening around server-authoritative economy events and abnormal session lifecycle edge cases.
 - Polish core game feel around line clears, incoming pressure, victory/defeat, and reward reveals.
 - Add quest or challenge presentation that builds on the first-win daily bonus without creating exploitable reward spam.
@@ -89,7 +94,8 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 - `BlockBlastClient.client.luau` is still large; `ResultPanel.luau`, `CosmeticPanel.luau`, `SoundController.luau`, `StoryPanel.luau`, and `ShopPanel.luau` are the first extractions, and battle board, hub panel, and settings controls should follow.
 - Profile save data covers best score, wins, coins, XP, level, Story Stars, first-win daily claim date, core settings, piece skin, and board skin; numeric profile and settings values are sanitized on both server and client, while broader cosmetic inventory still needs persistence.
-- Shop product definitions are centralized, but owned cosmetic inventory is still progression-derived rather than a fully persisted inventory table.
+- Shop product definitions and cosmetic ownership are centralized; cosmetic presets still need a real UI and server validation flow.
+- Extra Preset Slots Pass remains marked unavailable while its real preset UI/server save flow is unfinished.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
 - Match sessions now support multiple active arenas with hub availability UI, analytics, exploit diagnostics, and Studio diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
 
@@ -175,6 +181,37 @@ This file tracks production-readiness work, priorities, known issues, and techni
    Shop and closet are connected, but progression-derived cosmetics need a future-proof ownership layer.
 3. Studio-test mobile and gamepad flow.
    The code validates locally, but Roblox input behavior needs device validation.
+
+## Session Update - 2026-08-01 Cosmetic Inventory Slice
+
+### Completed
+
+- Added centralized cosmetic catalog definitions in `src/shared/game/Config.luau`.
+- Added `profile.cosmetics` persistence with `owned`, `equipped`, placeholder `presets`, and `activePreset` fields.
+- Migrated old saved piece/board settings into equipped cosmetic IDs when valid.
+- Added safe defaults for fresh players and invalid saved cosmetic recovery.
+- Made the shop Cosmetics tab use server snapshots instead of client-derived progression state.
+- Added server-validated `PurchaseCosmetic` and `EquipCosmetic` shop actions.
+- Added coin purchases for `BOARD_SUGAR` and `CLEAR_RIPPLE` with rollback on save failure.
+- Added preview callbacks that let the client inspect piece/board visuals without granting or saving ownership.
+- Applied equipped piece, board, line-clear, and title cosmetics to gameplay presentation.
+- Added `docs/STUDIO_TEST_CHECKLIST.md`.
+
+### Current State
+
+- Cosmetics are now server-authoritative for ownership and equip.
+- Existing quick piece/board buttons are still present, but server settings sanitization now checks inventory ownership and progression through the same catalog rules.
+- Presets are only schema placeholders. The Extra Preset Slots Pass is intentionally unavailable until a real preset UI and validation flow exists.
+- Studio validation has not been performed in this run.
+
+### Recommended Next Priorities
+
+1. Extract `HomePanel.luau`.
+   The home UI is still the largest unrelated responsibility inside the main client script.
+2. Complete cosmetic presets.
+   The profile schema has placeholders, but slots, save/select UI, and Extra Preset Slots validation are not done.
+3. Add a richer selected-item details area to the shop.
+   Cards now work, but a details pane would improve preview and purchase confidence.
 
 ## Session Handoff - 2026-07-29
 
