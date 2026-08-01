@@ -3,24 +3,14 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
+local UITheme = require(script.Parent.UITheme)
+
 local ShopPanel = {}
 ShopPanel.__index = ShopPanel
 
 local CATEGORIES = { "Featured", "Passes", "Cosmetics", "Currency" }
 
-local THEME = {
-	panel = Color3.fromRGB(12, 16, 24),
-	card = Color3.fromRGB(26, 32, 43),
-	cardMuted = Color3.fromRGB(19, 23, 31),
-	button = Color3.fromRGB(64, 156, 255),
-	buttonMuted = Color3.fromRGB(45, 58, 82),
-	success = Color3.fromRGB(74, 222, 128),
-	warn = Color3.fromRGB(251, 146, 60),
-	error = Color3.fromRGB(224, 74, 74),
-	text = Color3.fromRGB(245, 247, 251),
-	muted = Color3.fromRGB(193, 201, 215),
-	soft = Color3.fromRGB(153, 163, 179),
-}
+local THEME = UITheme.Color
 
 local function safeArray(value)
 	return typeof(value) == "table" and value or {}
@@ -99,6 +89,7 @@ function ShopPanel.new(gui, options)
 	panel.Visible = false
 	panel.ZIndex = 45
 	panel.Parent = gui
+	UITheme.panel(panel, { color = THEME.panel, bottomColor = Color3.fromRGB(7, 11, 20) })
 	self.panel = panel
 
 	local panelScale = Instance.new("UIScale")
@@ -116,6 +107,7 @@ function ShopPanel.new(gui, options)
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.ZIndex = 46
 	title.Parent = panel
+	UITheme.text(title, "title")
 
 	local closeButton = Instance.new("TextButton")
 	closeButton.Position = UDim2.new(1, -50, 0, 14)
@@ -128,6 +120,8 @@ function ShopPanel.new(gui, options)
 	closeButton.TextSize = 16
 	closeButton.ZIndex = 47
 	closeButton.Parent = panel
+	UITheme.closeButton(closeButton)
+	UITheme.attachButtonFeedback(closeButton)
 	self.closeButton = closeButton
 
 	local subtitle = Instance.new("TextLabel")
@@ -142,6 +136,7 @@ function ShopPanel.new(gui, options)
 	subtitle.TextXAlignment = Enum.TextXAlignment.Left
 	subtitle.ZIndex = 46
 	subtitle.Parent = panel
+	UITheme.text(subtitle, "muted")
 
 	local tabFrame = Instance.new("Frame")
 	tabFrame.BackgroundTransparency = 1
@@ -164,7 +159,9 @@ function ShopPanel.new(gui, options)
 		tab.TextSize = 14
 		tab.ZIndex = 47
 		tab.Parent = tabFrame
-		tab.MouseButton1Click:Connect(function()
+		UITheme.button(tab, category == self.category and "primary" or "secondary")
+		UITheme.attachButtonFeedback(tab)
+		tab.Activated:Connect(function()
 			self.playSound("Button")
 			self.category = category
 			self:Track("ShopTabSelected")
@@ -184,6 +181,7 @@ function ShopPanel.new(gui, options)
 	status.TextXAlignment = Enum.TextXAlignment.Left
 	status.ZIndex = 46
 	status.Parent = panel
+	UITheme.text(status, "soft")
 	self.status = status
 
 	local list = Instance.new("ScrollingFrame")
@@ -194,6 +192,7 @@ function ShopPanel.new(gui, options)
 	list.CanvasSize = UDim2.fromOffset(0, 0)
 	list.ScrollBarThickness = 6
 	list.ZIndex = 46
+	list.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	list.Parent = panel
 	self.list = list
 
@@ -224,7 +223,7 @@ function ShopPanel.new(gui, options)
 	gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(self.updateScale)
 	self.updateScale()
 
-	closeButton.MouseButton1Click:Connect(function()
+	closeButton.Activated:Connect(function()
 		self.playSound("Button")
 		self:Hide()
 	end)
@@ -261,6 +260,12 @@ function ShopPanel:createCard(item, index)
 	card.BorderSizePixel = 0
 	card.LayoutOrder = index
 	card.ZIndex = 47
+	UITheme.card(card, {
+		color = (item.state == "Locked" or item.state == "Unavailable") and THEME.cardMuted
+			or THEME.panelRaised,
+		strokeColor = statusColor(item.state),
+		strokeTransparency = item.equipped and 0.08 or 0.42,
+	})
 
 	local name = Instance.new("TextLabel")
 	name.BackgroundTransparency = 1
@@ -274,6 +279,7 @@ function ShopPanel:createCard(item, index)
 	name.TextXAlignment = Enum.TextXAlignment.Left
 	name.ZIndex = 48
 	name.Parent = card
+	UITheme.text(name, "heading")
 
 	local description = Instance.new("TextLabel")
 	description.BackgroundTransparency = 1
@@ -288,6 +294,7 @@ function ShopPanel:createCard(item, index)
 	description.TextYAlignment = Enum.TextYAlignment.Top
 	description.ZIndex = 48
 	description.Parent = card
+	UITheme.text(description, "muted")
 
 	local stateLabel = Instance.new("TextLabel")
 	stateLabel.BackgroundTransparency = 1
@@ -316,6 +323,8 @@ function ShopPanel:createCard(item, index)
 	action.Selectable = true
 	action.ZIndex = 48
 	action.Parent = card
+	UITheme.button(action, (item.owned or item.equipped) and "success" or "primary")
+	UITheme.attachButtonFeedback(action)
 	table.insert(self.cardButtons, action)
 
 	if item.owned or item.equipped then
@@ -324,7 +333,7 @@ function ShopPanel:createCard(item, index)
 		action.BackgroundColor3 = THEME.buttonMuted
 	end
 
-	action.MouseButton1Click:Connect(function()
+	action.Activated:Connect(function()
 		self:activateItem(item)
 	end)
 
@@ -342,8 +351,10 @@ function ShopPanel:createCard(item, index)
 		preview.Selectable = true
 		preview.ZIndex = 48
 		preview.Parent = card
+		UITheme.button(preview, "secondary")
+		UITheme.attachButtonFeedback(preview)
 		table.insert(self.cardButtons, preview)
-		preview.MouseButton1Click:Connect(function()
+		preview.Activated:Connect(function()
 			self.playSound("Button")
 			self:Track("CosmeticPreviewed")
 			self.previewCosmetic(item)
@@ -437,6 +448,10 @@ function ShopPanel:Refresh()
 
 	for category, tab in self.tabs do
 		tab.BackgroundColor3 = category == self.category and THEME.button or THEME.buttonMuted
+		local stroke = tab:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Transparency = category == self.category and 0.12 or 0.42
+		end
 	end
 
 	self.status.Text = self.shopState.message or "Choose an item."

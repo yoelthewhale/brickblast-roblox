@@ -17,6 +17,7 @@ local ResultPanel = require(script.Parent.ResultPanel)
 local ShopPanel = require(script.Parent.ShopPanel)
 local SoundController = require(script.Parent.SoundController)
 local StoryPanel = require(script.Parent.StoryPanel)
+local UITheme = require(script.Parent.UITheme)
 
 local remotes = ReplicatedStorage:WaitForChild("BlockBlastRemotes")
 local stateEvent = remotes:WaitForChild("State")
@@ -117,6 +118,16 @@ local HUB_SIZE = Vector2.new(620, 420)
 local COMPACT_WINDOW_WIDTH = 560
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+local function isUiReducedMotion()
+	return reducedMotion
+end
+
+local function styleButton(button, variant)
+	UITheme.button(button, variant)
+	UITheme.attachButtonFeedback(button, isUiReducedMotion)
+	return button
+end
 
 local themePresets = {
 	{
@@ -234,6 +245,14 @@ banner.TextSize = 24
 banner.TextWrapped = true
 banner.Visible = false
 banner.Parent = gui
+UITheme.card(
+	banner,
+	{
+		color = UITheme.Color.panelRaised,
+		strokeColor = UITheme.Color.primary,
+		strokeTransparency = 0.2,
+	}
+)
 
 bannerScale = Instance.new("UIScale")
 bannerScale.Scale = 1
@@ -701,6 +720,7 @@ root.BackgroundTransparency = 0.08
 root.BorderSizePixel = 0
 root.Visible = false
 root.Parent = gui
+UITheme.panel(root, { color = UITheme.Color.panel, bottomColor = Color3.fromRGB(8, 12, 20) })
 
 rootScale = Instance.new("UIScale")
 rootScale.Scale = 1
@@ -714,6 +734,7 @@ battleDock.BackgroundTransparency = 0.08
 battleDock.BorderSizePixel = 0
 battleDock.Visible = false
 battleDock.Parent = gui
+UITheme.panel(battleDock, { color = UITheme.Color.panel, bottomColor = UITheme.Color.background })
 
 dockScale = Instance.new("UIScale")
 dockScale.Scale = 1
@@ -741,6 +762,7 @@ openBoardButton.Text = "Open Board"
 openBoardButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 openBoardButton.TextSize = 14
 openBoardButton.Parent = battleDock
+styleButton(openBoardButton, "primary")
 
 dockReturnButton = Instance.new("TextButton")
 dockReturnButton.Position = UDim2.fromOffset(136, 58)
@@ -752,6 +774,7 @@ dockReturnButton.Text = "Return Hub"
 dockReturnButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 dockReturnButton.TextSize = 14
 dockReturnButton.Parent = battleDock
+styleButton(dockReturnButton, "secondary")
 
 hubPanel = Instance.new("Frame")
 hubPanel.AnchorPoint = Vector2.new(0.5, 0)
@@ -761,6 +784,7 @@ hubPanel.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
 hubPanel.BackgroundTransparency = 0.08
 hubPanel.BorderSizePixel = 0
 hubPanel.Parent = gui
+UITheme.panel(hubPanel, { color = UITheme.Color.panel, bottomColor = Color3.fromRGB(8, 12, 20) })
 
 hubScale = Instance.new("UIScale")
 hubScale.Scale = 1
@@ -778,6 +802,7 @@ hubLogoButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 hubLogoButton.TextSize = 20
 hubLogoButton.Visible = false
 hubLogoButton.Parent = gui
+styleButton(hubLogoButton, "primary")
 
 local hubLogoHint = Instance.new("TextLabel")
 hubLogoHint.AnchorPoint = Vector2.new(0, 0.5)
@@ -792,6 +817,7 @@ hubLogoHint.TextColor3 = Color3.fromRGB(245, 247, 251)
 hubLogoHint.TextSize = 14
 hubLogoHint.Visible = false
 hubLogoHint.Parent = hubLogoButton
+UITheme.card(hubLogoHint, { color = UITheme.Color.panelRaised, strokeTransparency = 0.32 })
 
 hubCloseButton = Instance.new("TextButton")
 hubCloseButton.AnchorPoint = Vector2.new(1, 0)
@@ -804,6 +830,8 @@ hubCloseButton.Text = "X"
 hubCloseButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 hubCloseButton.TextSize = 16
 hubCloseButton.Parent = hubPanel
+UITheme.closeButton(hubCloseButton)
+UITheme.attachButtonFeedback(hubCloseButton, isUiReducedMotion)
 
 local hubGuideButton = Instance.new("TextButton")
 hubGuideButton.AnchorPoint = Vector2.new(1, 0)
@@ -816,6 +844,7 @@ hubGuideButton.Text = "Guide"
 hubGuideButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 hubGuideButton.TextSize = 14
 hubGuideButton.Parent = hubPanel
+styleButton(hubGuideButton, "secondary")
 
 local function setHubPanelVisible(visible)
 	local shouldShowHub = visible and currentState == nil
@@ -834,17 +863,17 @@ local function setHubPanelVisible(visible)
 	end
 end
 
-hubCloseButton.MouseButton1Click:Connect(function()
+hubCloseButton.Activated:Connect(function()
 	hubManuallyClosed = true
 	setHubPanelVisible(false)
 end)
 
-hubLogoButton.MouseButton1Click:Connect(function()
+hubLogoButton.Activated:Connect(function()
 	hubManuallyClosed = false
 	setHubPanelVisible(true)
 end)
 
-hubGuideButton.MouseButton1Click:Connect(function()
+hubGuideButton.Activated:Connect(function()
 	tutorialManuallyOpened = true
 	playSound("Button")
 	updateTutorialVisibility()
@@ -859,6 +888,10 @@ tutorialPanel.BackgroundTransparency = 0.08
 tutorialPanel.BorderSizePixel = 0
 tutorialPanel.Visible = false
 tutorialPanel.Parent = gui
+UITheme.panel(
+	tutorialPanel,
+	{ color = UITheme.Color.panel, bottomColor = UITheme.Color.background }
+)
 
 local tutorialTitle = Instance.new("TextLabel")
 tutorialTitle.BackgroundTransparency = 1
@@ -870,6 +903,7 @@ tutorialTitle.TextColor3 = Color3.fromRGB(245, 247, 251)
 tutorialTitle.TextSize = 22
 tutorialTitle.TextXAlignment = Enum.TextXAlignment.Left
 tutorialTitle.Parent = tutorialPanel
+UITheme.text(tutorialTitle, "title")
 
 local tutorialBody = Instance.new("TextLabel")
 tutorialBody.BackgroundTransparency = 1
@@ -884,6 +918,7 @@ tutorialBody.TextWrapped = true
 tutorialBody.TextXAlignment = Enum.TextXAlignment.Left
 tutorialBody.TextYAlignment = Enum.TextYAlignment.Top
 tutorialBody.Parent = tutorialPanel
+UITheme.text(tutorialBody, "muted")
 
 local tutorialButton = Instance.new("TextButton")
 tutorialButton.Position = UDim2.fromOffset(18, 158)
@@ -895,6 +930,7 @@ tutorialButton.Text = "Got It"
 tutorialButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 tutorialButton.TextSize = 15
 tutorialButton.Parent = tutorialPanel
+styleButton(tutorialButton, "primary")
 
 local tutorialStoryButton = Instance.new("TextButton")
 tutorialStoryButton.Position = UDim2.fromOffset(162, 158)
@@ -906,8 +942,9 @@ tutorialStoryButton.Text = "Try Story"
 tutorialStoryButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 tutorialStoryButton.TextSize = 15
 tutorialStoryButton.Parent = tutorialPanel
+styleButton(tutorialStoryButton, "secondary")
 
-tutorialButton.MouseButton1Click:Connect(function()
+tutorialButton.Activated:Connect(function()
 	tutorialComplete = true
 	tutorialManuallyOpened = false
 	updateTutorialVisibility()
@@ -915,7 +952,7 @@ tutorialButton.MouseButton1Click:Connect(function()
 	saveSettings()
 end)
 
-tutorialStoryButton.MouseButton1Click:Connect(function()
+tutorialStoryButton.Activated:Connect(function()
 	tutorialComplete = true
 	tutorialManuallyOpened = false
 	updateTutorialVisibility()
@@ -934,6 +971,7 @@ hubTitle.TextColor3 = Color3.fromRGB(245, 247, 251)
 hubTitle.TextSize = 26
 hubTitle.TextXAlignment = Enum.TextXAlignment.Left
 hubTitle.Parent = hubPanel
+UITheme.text(hubTitle, "title")
 
 hubStatusLabel = Instance.new("TextLabel")
 hubStatusLabel.BackgroundTransparency = 1
@@ -946,6 +984,7 @@ hubStatusLabel.TextSize = 16
 hubStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
 hubStatusLabel.TextWrapped = true
 hubStatusLabel.Parent = hubPanel
+UITheme.text(hubStatusLabel, "muted")
 
 hubMatchmakingLabel = Instance.new("TextLabel")
 hubMatchmakingLabel.BackgroundTransparency = 1
@@ -957,6 +996,7 @@ hubMatchmakingLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
 hubMatchmakingLabel.TextSize = 14
 hubMatchmakingLabel.TextXAlignment = Enum.TextXAlignment.Left
 hubMatchmakingLabel.Parent = hubPanel
+UITheme.text(hubMatchmakingLabel, "soft")
 
 battleQueueButton = Instance.new("TextButton")
 battleQueueButton.Position = UDim2.fromOffset(22, 124)
@@ -968,6 +1008,7 @@ battleQueueButton.Text = "Join Battle Queue"
 battleQueueButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 battleQueueButton.TextSize = 18
 battleQueueButton.Parent = hubPanel
+styleButton(battleQueueButton, "primary")
 
 local storyButton = Instance.new("TextButton")
 storyButton.Position = UDim2.fromOffset(322, 124)
@@ -980,6 +1021,7 @@ storyButton.TextColor3 = Color3.fromRGB(13, 32, 24)
 storyButton.TextSize = 18
 storyButton.TextWrapped = true
 storyButton.Parent = hubPanel
+styleButton(storyButton, "success")
 
 storyPreviewLabel = Instance.new("TextLabel")
 storyPreviewLabel.BackgroundTransparency = 1
@@ -993,6 +1035,7 @@ storyPreviewLabel.TextWrapped = true
 storyPreviewLabel.TextXAlignment = Enum.TextXAlignment.Left
 storyPreviewLabel.TextYAlignment = Enum.TextYAlignment.Center
 storyPreviewLabel.Parent = hubPanel
+UITheme.text(storyPreviewLabel, "soft")
 
 motionButton = Instance.new("TextButton")
 motionButton.Position = UDim2.fromOffset(22, 224)
@@ -1004,6 +1047,7 @@ motionButton.Text = "Motion: Full"
 motionButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 motionButton.TextSize = 15
 motionButton.Parent = hubPanel
+styleButton(motionButton, "secondary")
 
 uiSizeButton = Instance.new("TextButton")
 uiSizeButton.Position = UDim2.fromOffset(322, 224)
@@ -1015,6 +1059,7 @@ uiSizeButton.Text = "UI Size: Auto"
 uiSizeButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 uiSizeButton.TextSize = 15
 uiSizeButton.Parent = hubPanel
+styleButton(uiSizeButton, "secondary")
 
 pieceSkinButton = Instance.new("TextButton")
 pieceSkinButton.Position = UDim2.fromOffset(22, 278)
@@ -1027,6 +1072,7 @@ pieceSkinButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 pieceSkinButton.TextSize = 15
 pieceSkinButton.TextXAlignment = Enum.TextXAlignment.Left
 pieceSkinButton.Parent = hubPanel
+styleButton(pieceSkinButton, "secondary")
 
 local pieceSwatchFrame = Instance.new("Frame")
 pieceSwatchFrame.BackgroundTransparency = 1
@@ -1055,6 +1101,7 @@ soundButton.Text = "Sound: 65%"
 soundButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 soundButton.TextSize = 15
 soundButton.Parent = hubPanel
+styleButton(soundButton, "secondary")
 
 boardSkinButton = Instance.new("TextButton")
 boardSkinButton.Position = UDim2.fromOffset(22, 332)
@@ -1067,6 +1114,7 @@ boardSkinButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 boardSkinButton.TextSize = 15
 boardSkinButton.TextXAlignment = Enum.TextXAlignment.Left
 boardSkinButton.Parent = hubPanel
+styleButton(boardSkinButton, "secondary")
 
 local boardPreviewFrame = Instance.new("Frame")
 boardPreviewFrame.BackgroundTransparency = 1
@@ -1102,6 +1150,7 @@ cosmeticHintLabel.TextXAlignment = Enum.TextXAlignment.Center
 cosmeticHintLabel.TextYAlignment = Enum.TextYAlignment.Center
 cosmeticHintLabel.BorderSizePixel = 0
 cosmeticHintLabel.Parent = hubPanel
+styleButton(cosmeticHintLabel, "primary")
 
 local function nextUnlockedIndex(currentIndex, itemCount, isUnlocked)
 	for offset = 1, itemCount do
@@ -1114,19 +1163,19 @@ local function nextUnlockedIndex(currentIndex, itemCount, isUnlocked)
 	return currentIndex
 end
 
-battleQueueButton.MouseButton1Click:Connect(function()
+battleQueueButton.Activated:Connect(function()
 	playSound(hubQueued and "Button" or "Queue")
 	queueEvent:FireServer(hubQueued and "LeaveQueue" or "Battle")
 end)
 
-storyButton.MouseButton1Click:Connect(function()
+storyButton.Activated:Connect(function()
 	playSound("Button")
 	cosmeticPanelController:Hide()
 	shopPanelController:Hide()
 	storyPanelController:Show()
 end)
 
-motionButton.MouseButton1Click:Connect(function()
+motionButton.Activated:Connect(function()
 	reducedMotion = not reducedMotion
 	updateSettingsButtonText()
 	playSound("Button")
@@ -1134,7 +1183,7 @@ motionButton.MouseButton1Click:Connect(function()
 	showBanner(motionButton.Text, customization.accentColor)
 end)
 
-uiSizeButton.MouseButton1Click:Connect(function()
+uiSizeButton.Activated:Connect(function()
 	if uiScale == 1 then
 		uiScale = 1.12
 		uiSizeButton.Text = "UI Size: Large"
@@ -1151,7 +1200,7 @@ uiSizeButton.MouseButton1Click:Connect(function()
 	saveSettings()
 end)
 
-pieceSkinButton.MouseButton1Click:Connect(function()
+pieceSkinButton.Activated:Connect(function()
 	local nextIndex = nextUnlockedIndex(pieceSkinIndex, #Blocks.PieceSkins, isPieceSkinUnlocked)
 	if nextIndex == pieceSkinIndex then
 		showBanner(nextLockedCosmeticText(), Color3.fromRGB(251, 146, 60))
@@ -1166,7 +1215,7 @@ pieceSkinButton.MouseButton1Click:Connect(function()
 	showBanner(pieceSkinButton.Text, customization.accentColor)
 end)
 
-boardSkinButton.MouseButton1Click:Connect(function()
+boardSkinButton.Activated:Connect(function()
 	local nextIndex = nextUnlockedIndex(boardSkinIndex, #Config.BoardSkins, isBoardSkinUnlocked)
 	if nextIndex == boardSkinIndex then
 		showBanner(nextLockedCosmeticText(), Color3.fromRGB(251, 146, 60))
@@ -1185,14 +1234,14 @@ boardSkinButton.MouseButton1Click:Connect(function()
 	showBanner(boardSkinButton.Text, customization.accentColor)
 end)
 
-cosmeticHintLabel.MouseButton1Click:Connect(function()
+cosmeticHintLabel.Activated:Connect(function()
 	playSound("Button")
 	cosmeticPanelController:Hide()
 	storyPanelController:Hide()
 	shopPanelController:Show()
 end)
 
-soundButton.MouseButton1Click:Connect(function()
+soundButton.Activated:Connect(function()
 	if soundVolume > 0.36 then
 		soundVolume = 0.35
 		soundEnabled = true
@@ -1221,6 +1270,7 @@ customizeButton.Text = "Theme: Ocean"
 customizeButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 customizeButton.TextSize = 14
 customizeButton.Parent = root
+styleButton(customizeButton, "primary")
 
 minimizeButton = Instance.new("TextButton")
 minimizeButton.AnchorPoint = Vector2.new(1, 0)
@@ -1233,6 +1283,7 @@ minimizeButton.Text = "Hide"
 minimizeButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 minimizeButton.TextSize = 14
 minimizeButton.Parent = root
+styleButton(minimizeButton, "secondary")
 
 resetLayoutButton = Instance.new("TextButton")
 resetLayoutButton.AnchorPoint = Vector2.new(1, 0)
@@ -1245,6 +1296,7 @@ resetLayoutButton.Text = "Reset"
 resetLayoutButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 resetLayoutButton.TextSize = 14
 resetLayoutButton.Parent = root
+styleButton(resetLayoutButton, "secondary")
 
 applyBoardSkin = function()
 	local theme = themePresets[themeIndex]
@@ -1287,7 +1339,7 @@ local function applyTheme()
 	applyBoardSkin()
 end
 
-customizeButton.MouseButton1Click:Connect(function()
+customizeButton.Activated:Connect(function()
 	themeIndex += 1
 	if themeIndex > #themePresets then
 		themeIndex = 1
@@ -1303,17 +1355,17 @@ local function setBattleBoardVisible(visible)
 	setHubPanelVisible(currentState == nil and not hubManuallyClosed)
 end
 
-minimizeButton.MouseButton1Click:Connect(function()
+minimizeButton.Activated:Connect(function()
 	playSound("Button")
 	setBattleBoardVisible(false)
 end)
 
-openBoardButton.MouseButton1Click:Connect(function()
+openBoardButton.Activated:Connect(function()
 	playSound("Button")
 	setBattleBoardVisible(true)
 end)
 
-dockReturnButton.MouseButton1Click:Connect(function()
+dockReturnButton.Activated:Connect(function()
 	playSound("Button")
 	queueEvent:FireServer("LeaveBattle")
 end)
@@ -1329,6 +1381,7 @@ title.TextColor3 = Color3.fromRGB(245, 247, 251)
 title.TextSize = 22
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = root
+UITheme.text(title, "title")
 
 scoreLabel = Instance.new("TextLabel")
 scoreLabel.BackgroundTransparency = 1
@@ -1340,6 +1393,7 @@ scoreLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
 scoreLabel.TextSize = 18
 scoreLabel.TextXAlignment = Enum.TextXAlignment.Left
 scoreLabel.Parent = root
+UITheme.text(scoreLabel, "muted")
 
 timerLabel = Instance.new("TextLabel")
 timerLabel.AnchorPoint = Vector2.new(1, 0)
@@ -1352,6 +1406,7 @@ timerLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
 timerLabel.TextSize = 18
 timerLabel.TextXAlignment = Enum.TextXAlignment.Right
 timerLabel.Parent = root
+UITheme.text(timerLabel, "muted")
 
 progressionLabel = Instance.new("TextLabel")
 progressionLabel.BackgroundTransparency = 1
@@ -1363,6 +1418,7 @@ progressionLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
 progressionLabel.TextSize = 14
 progressionLabel.TextXAlignment = Enum.TextXAlignment.Left
 progressionLabel.Parent = root
+UITheme.text(progressionLabel, "soft")
 
 matchInfoLabel = Instance.new("TextLabel")
 matchInfoLabel.AnchorPoint = Vector2.new(1, 0)
@@ -1375,6 +1431,7 @@ matchInfoLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
 matchInfoLabel.TextSize = 14
 matchInfoLabel.TextXAlignment = Enum.TextXAlignment.Right
 matchInfoLabel.Parent = root
+UITheme.text(matchInfoLabel, "soft")
 
 local function getSelectedShape()
 	if not currentState or not selectedSlot then
@@ -1435,7 +1492,7 @@ for y = 1, Config.BoardSize do
 		cellScales[y] = cellScales[y] or {}
 		cellScales[y][x] = scale
 
-		button.MouseButton1Click:Connect(function()
+		button.Activated:Connect(function()
 			if currentState and selectedSlot then
 				local shape = currentState.hand[selectedSlot]
 				if shape and Grid.canPlace(currentState.board, shape, x, y) then
@@ -1484,6 +1541,7 @@ statusLabel.TextColor3 = Color3.fromRGB(245, 247, 251)
 statusLabel.TextSize = 20
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 statusLabel.Parent = side
+UITheme.text(statusLabel, "heading")
 
 local function updateStatusText()
 	if currentState and currentState.message then
@@ -1508,6 +1566,7 @@ for slot = 1, Config.InventorySize do
 	button.TextSize = 18
 	button.Text = ""
 	button.Parent = side
+	styleButton(button, "secondary")
 	handButtons[slot] = button
 
 	local preview = Instance.new("Frame")
@@ -1530,8 +1589,9 @@ for slot = 1, Config.InventorySize do
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.TextWrapped = true
 	label.Parent = button
+	UITheme.text(label, "heading")
 
-	button.MouseButton1Click:Connect(function()
+	button.Activated:Connect(function()
 		selectedSlot = slot
 		playSound("Button")
 		updateStatusText()
@@ -1552,6 +1612,7 @@ leaderboardLabel.TextSize = 16
 leaderboardLabel.TextXAlignment = Enum.TextXAlignment.Left
 leaderboardLabel.TextYAlignment = Enum.TextYAlignment.Top
 leaderboardLabel.Parent = side
+UITheme.text(leaderboardLabel, "muted")
 
 returnHubButton = Instance.new("TextButton")
 returnHubButton.Position = UDim2.fromOffset(360, 390)
@@ -1563,6 +1624,7 @@ returnHubButton.Text = "Return Hub"
 returnHubButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 returnHubButton.TextSize = 14
 returnHubButton.Parent = root
+styleButton(returnHubButton, "secondary")
 
 playAgainButton = Instance.new("TextButton")
 playAgainButton.Position = UDim2.fromOffset(492, 390)
@@ -1575,6 +1637,7 @@ playAgainButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 playAgainButton.TextSize = 14
 playAgainButton.Visible = false
 playAgainButton.Parent = root
+styleButton(playAgainButton, "primary")
 
 resizeHandle = Instance.new("TextButton")
 resizeHandle.AnchorPoint = Vector2.new(1, 1)
@@ -1587,6 +1650,7 @@ resizeHandle.Text = "Resize"
 resizeHandle.TextColor3 = Color3.fromRGB(245, 247, 251)
 resizeHandle.TextSize = 12
 resizeHandle.Parent = root
+styleButton(resizeHandle, "secondary")
 
 local function clampNumber(value, minimum, maximum)
 	return math.max(minimum, math.min(maximum, value))
@@ -1685,17 +1749,17 @@ applyWindowLayout = function()
 	resizeHandle.Position = UDim2.new(1, -12, 1, -10)
 end
 
-returnHubButton.MouseButton1Click:Connect(function()
+returnHubButton.Activated:Connect(function()
 	playSound("Button")
 	queueEvent:FireServer("LeaveBattle")
 end)
 
-playAgainButton.MouseButton1Click:Connect(function()
+playAgainButton.Activated:Connect(function()
 	playSound("Queue")
 	queueEvent:FireServer("PlayAgain")
 end)
 
-resetLayoutButton.MouseButton1Click:Connect(function()
+resetLayoutButton.Activated:Connect(function()
 	playSound("Button")
 	root.Position = DEFAULT_WINDOW_POSITION
 	root.Size = UDim2.fromOffset(DEFAULT_WINDOW_SIZE.X, DEFAULT_WINDOW_SIZE.Y)

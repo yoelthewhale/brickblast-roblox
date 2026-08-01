@@ -68,6 +68,9 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Applied equipped cosmetics to gameplay for piece colors, board theme, line-clear feedback, and in-run player title presentation.
 - 2026-08-01: Added `docs/STUDIO_TEST_CHECKLIST.md` covering migration, shop, Marketplace, mobile/gamepad, reduced-motion, and two-player cosmetic validation.
 - 2026-08-01: Added centralized low-volume shop analytics for shop opens, tab selection, cosmetic previews, cosmetic purchase attempts/success/failure, cosmetic equips, and gamepass prompt openings.
+- 2026-08-01: Added shared `UITheme` design tokens/helpers for panels, cards, text, buttons, and reduced-motion-aware button feedback.
+- 2026-08-01: Modernized the shop, results panel, hub shell, battle window, minimized battle dock, tutorial panel, and toast banner with consistent rounded surfaces, strokes, gradients, and cross-input `Activated` controls.
+- 2026-08-01: Built the next place artifact as `BlockBlastBattle-Day8.rbxl`.
 
 ## Current Priorities
 
@@ -227,6 +230,32 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 - Analytics are still in-memory diagnostic counters exposed through the existing server analytics model.
 - Production analytics export is not connected yet.
+
+## Session Update - 2026-08-01 UI Foundation Slice
+
+### Completed
+
+- Added `src/client/ui/UITheme.luau` with reusable design tokens and helpers for panel/card/button/text styling.
+- Applied the shared visual system to `ShopPanel.luau`, including polished product cards, category tabs, modal shell, and button feedback.
+- Modernized `ResultPanel.luau` with clearer reward and summary cards, larger action targets, and shared styling.
+- Applied consistent styling to the hub shell, tutorial panel, toast banner, active battle window, minimized battle dock, and major home/gameplay buttons in `BlockBlastClient.client.luau`.
+- Converted the main UI and updated shop/results panels from mouse-only `MouseButton1Click` handlers to Roblox `Activated` handlers for better mouse, touch, keyboard, and gamepad support.
+- Formatted with Stylua, linted with Selene, and built `BlockBlastBattle-Day8.rbxl`.
+
+### Current State
+
+- The main UI is visibly more coherent and keeps the existing shop, cosmetics, gameplay, persistence, and monetization behavior intact.
+- `BlockBlastClient.client.luau` still owns too much UI construction, but the new theme module gives future extractions a shared styling foundation.
+- Roblox Studio device-emulation testing has not been performed in this run.
+
+### Recommended Next Priorities
+
+1. Extract the hub/home UI into `HomePanel.luau`.
+   The surface is now visually stable enough to move into a cohesive module.
+2. Apply the shared theme to `CosmeticPanel.luau` and `StoryPanel.luau`.
+   These are now the most visually inconsistent modal panels.
+3. Add more explicit gamepad focus paths between hub, shop, story, cosmetics, and battle controls.
+   `Activated` support is improved, but focus order still needs deliberate Studio validation.
 
 ## Session Handoff - 2026-07-29
 
