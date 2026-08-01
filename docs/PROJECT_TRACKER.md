@@ -47,7 +47,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Extract client sound controller module | Medium | Playtest | Codex | 2026-08-04 |
 | Add mobile-friendly controls and scale testing | High | Playtest | Codex | 2026-08-05 |
 | Harden profile save reliability and diagnostics | High | Playtest | Codex | 2026-08-05 |
-| Harden numeric settings sanitization | High | Playtest | Codex | 2026-08-05 |
+| Harden numeric settings sanitization on server and client | High | Playtest | Codex | 2026-08-05 |
 | Add server playtest analytics hooks | Medium | Playtest | Codex | 2026-08-05 |
 | Prevent early-leave reward farming | High | Playtest | Codex | 2026-08-06 |
 | Add suspicious placement remote diagnostics | High | Playtest | Codex | 2026-08-06 |

@@ -133,6 +133,13 @@ local themePresets = {
 }
 local themeIndex = 1
 
+local function isFiniteNumber(value)
+	return typeof(value) == "number"
+		and value == value
+		and value ~= math.huge
+		and value ~= -math.huge
+end
+
 local gui = Instance.new("ScreenGui")
 gui.Name = "BlockBlastBattleGui"
 gui.ResetOnSpawn = false
@@ -2136,7 +2143,7 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 		return
 	end
 
-	if typeof(settings.themeIndex) == "number" then
+	if isFiniteNumber(settings.themeIndex) then
 		themeIndex = math.clamp(math.floor(settings.themeIndex), 1, #themePresets)
 	end
 
@@ -2144,7 +2151,7 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 		reducedMotion = settings.reducedMotion
 	end
 
-	if typeof(settings.uiScale) == "number" then
+	if isFiniteNumber(settings.uiScale) then
 		uiScale = math.clamp(settings.uiScale, 0.92, 1.12)
 	end
 
@@ -2174,7 +2181,7 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 		soundEnabled = settings.soundEnabled
 	end
 
-	if typeof(settings.soundVolume) == "number" then
+	if isFiniteNumber(settings.soundVolume) then
 		soundVolume = math.clamp(settings.soundVolume, 0, 1)
 	end
 

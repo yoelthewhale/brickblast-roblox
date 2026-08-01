@@ -49,6 +49,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Hardened Story Stars so replayed chapters can earn base rewards but cannot farm additional progression stars.
 - 2026-07-29: Hardened profile persistence by clamping loaded/saved leaderstat values, rejecting invalid numeric profile data, and surfacing sanitized-field counts in Studio diagnostics.
 - 2026-08-01: Hardened server settings sanitization so numeric settings reject NaN/infinite values before clamp/floor handling.
+- 2026-08-01: Mirrored finite-number settings guards on the client before applying theme, UI scale, and sound volume updates.
 - 2026-08-01: Built `BlockBlastBattle-Day4.rbxl` after `BlockBlastBattle-Day3.rbxl` was locked by an open Studio session.
 
 ## Current Priorities
@@ -71,7 +72,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 ## Technical Debt
 
 - `BlockBlastClient.client.luau` is still large; `ResultPanel.luau`, `CosmeticPanel.luau`, and `SoundController.luau` are the first extractions, and battle board, hub panel, and settings controls should follow.
-- Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; numeric profile and settings values are sanitized, while broader cosmetic inventory still needs persistence.
+- Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; numeric profile and settings values are sanitized on both server and client, while broader cosmetic inventory still needs persistence.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
 - Match sessions now support multiple active arenas with hub availability UI, analytics, exploit diagnostics, and Studio diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
 
