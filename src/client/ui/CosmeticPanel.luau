@@ -1,3 +1,6 @@
+local GuiService = game:GetService("GuiService")
+local UserInputService = game:GetService("UserInputService")
+
 local UITheme = require(script.Parent.UITheme)
 
 local CosmeticPanel = {}
@@ -130,6 +133,7 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	closeButton.Parent = panel
 	UITheme.closeButton(closeButton)
 	UITheme.attachButtonFeedback(closeButton)
+	self.closeButton = closeButton
 
 	local piecesHeader = Instance.new("TextLabel")
 	piecesHeader.BackgroundTransparency = 1
@@ -168,6 +172,7 @@ function CosmeticPanel.new(gui, blocks, config, options)
 		card.Parent = panel
 		self.boardCards[index] = card
 	end
+	self:ConfigureFocus()
 
 	closeButton.Activated:Connect(function()
 		self.playSound("Button")
@@ -175,6 +180,27 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	end)
 
 	return self
+end
+
+function CosmeticPanel:ConfigureFocus()
+	local pieceCards = self.pieceCards
+	local boardCards = self.boardCards
+	if self.closeButton and pieceCards[1] then
+		self.closeButton.NextSelectionDown = pieceCards[1]
+	end
+
+	for index, card in pieceCards do
+		card.NextSelectionLeft = pieceCards[index - 1]
+		card.NextSelectionRight = pieceCards[index + 1]
+		card.NextSelectionUp = self.closeButton
+		card.NextSelectionDown = boardCards[math.min(index, #boardCards)]
+	end
+
+	for index, card in boardCards do
+		card.NextSelectionLeft = boardCards[index - 1]
+		card.NextSelectionRight = boardCards[index + 1]
+		card.NextSelectionUp = pieceCards[math.min(index, #pieceCards)]
+	end
 end
 
 function CosmeticPanel:createPieceCard(index, skinName)
@@ -323,6 +349,9 @@ function CosmeticPanel:Show()
 	self:Refresh()
 	self.updateScale()
 	self.panel.Visible = true
+	if UserInputService.GamepadEnabled then
+		GuiService.SelectedObject = self.pieceCards[1] or self.closeButton
+	end
 end
 
 function CosmeticPanel:Refresh()

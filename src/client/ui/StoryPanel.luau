@@ -1,3 +1,6 @@
+local GuiService = game:GetService("GuiService")
+local UserInputService = game:GetService("UserInputService")
+
 local UITheme = require(script.Parent.UITheme)
 
 local StoryPanel = {}
@@ -119,6 +122,7 @@ function StoryPanel.new(gui, options)
 	closeButton.Parent = panel
 	UITheme.closeButton(closeButton)
 	UITheme.attachButtonFeedback(closeButton)
+	self.closeButton = closeButton
 
 	local subtitle = Instance.new("TextLabel")
 	subtitle.BackgroundTransparency = 1
@@ -139,6 +143,7 @@ function StoryPanel.new(gui, options)
 		card.Parent = panel
 		self.cards[index] = card
 	end
+	self:ConfigureFocus()
 
 	closeButton.Activated:Connect(function()
 		self.playSound("Button")
@@ -146,6 +151,17 @@ function StoryPanel.new(gui, options)
 	end)
 
 	return self
+end
+
+function StoryPanel:ConfigureFocus()
+	if self.closeButton and self.cards[1] then
+		self.closeButton.NextSelectionDown = self.cards[1]
+	end
+
+	for index, card in self.cards do
+		card.NextSelectionUp = index == 1 and self.closeButton or self.cards[index - 1]
+		card.NextSelectionDown = self.cards[index + 1]
+	end
 end
 
 function StoryPanel:createMissionCard(index)
@@ -243,6 +259,16 @@ function StoryPanel:Show()
 	self:Refresh()
 	self.updateScale()
 	self.panel.Visible = true
+	if UserInputService.GamepadEnabled then
+		local selected = self.closeButton
+		for index, mission in self.cardMissions do
+			if mission and mission.unlocked then
+				selected = self.cards[index]
+				break
+			end
+		end
+		GuiService.SelectedObject = selected
+	end
 end
 
 function StoryPanel:Refresh()

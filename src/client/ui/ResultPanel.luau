@@ -1,4 +1,6 @@
+local GuiService = game:GetService("GuiService")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local UITheme = require(script.Parent.UITheme)
 
@@ -132,6 +134,10 @@ function ResultPanel.new(gui, queueEvent, options)
 	replayButton.Parent = panel
 	UITheme.button(replayButton, "primary")
 	UITheme.attachButtonFeedback(replayButton, self.isReducedMotion)
+	self.closeButton = closeButton
+	self.replayButton = replayButton
+	closeButton.NextSelectionDown = replayButton
+	replayButton.NextSelectionUp = closeButton
 
 	closeButton.Activated:Connect(function()
 		self.playSound("Button")
@@ -192,6 +198,9 @@ function ResultPanel:Show(result, message, won)
 	self.unlockLabel.Text = nextUnlockText
 	self.panel.BackgroundColor3 = won and Color3.fromRGB(13, 55, 39) or UITheme.Color.panelRaised
 	self.panel.Visible = true
+	if UserInputService.GamepadEnabled then
+		GuiService.SelectedObject = self.replayButton
+	end
 
 	if self.isReducedMotion() then
 		self.panel.Position = UDim2.fromScale(0.5, 0.18)

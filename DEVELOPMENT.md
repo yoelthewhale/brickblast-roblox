@@ -71,6 +71,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Added shared `UITheme` design tokens/helpers for panels, cards, text, buttons, and reduced-motion-aware button feedback.
 - 2026-08-01: Modernized the shop, results panel, hub shell, battle window, minimized battle dock, tutorial panel, and toast banner with consistent rounded surfaces, strokes, gradients, and cross-input `Activated` controls.
 - 2026-08-01: Brought Story Missions and Cosmetic Closet panels onto the shared UI theme with state-aware card strokes and cross-input activation.
+- 2026-08-01: Added default gamepad focus and directional focus paths to results, story missions, and cosmetic closet panels.
 - 2026-08-01: Built the next place artifact as `BlockBlastBattle-Day8.rbxl`.
 
 ## Current Priorities
@@ -280,6 +281,27 @@ This file tracks production-readiness work, priorities, known issues, and techni
    This is now the biggest architecture win because the visual language is centralized and the home surface is still embedded in the large client script.
 2. Add deliberate focus ordering/default selections to every modal panel.
    Buttons activate across inputs now, but gamepad/keyboard navigation should feel intentional.
+
+## Session Update - 2026-08-01 Modal Focus Slice
+
+### Completed
+
+- Added default gamepad focus to `ResultPanel.luau`, selecting the replay/queue action when the results panel opens.
+- Added directional focus paths in `StoryPanel.luau` so controller navigation moves between close and mission cards predictably.
+- Added directional focus paths in `CosmeticPanel.luau` so controller navigation moves across piece cards and down into board cards.
+- Formatted with Stylua, linted with Selene, and rebuilt `BlockBlastBattle-Day8.rbxl`.
+
+### Current State
+
+- Modal panels now have clearer controller entry points and navigation paths, but this still needs Roblox Studio controller/device validation.
+- No server-authoritative gameplay, shop, monetization, or persistence behavior was changed.
+
+### Recommended Next Priorities
+
+1. Extract `HomePanel.luau`.
+   This remains the highest-value architecture task because the home UI is visually improved but still embedded in the oversized main client script.
+2. Studio-test UI navigation on mobile and gamepad.
+   Repository validation passes, but actual Roblox focus movement should be checked with real input.
 
 ## Session Handoff - 2026-07-29
 
