@@ -30,6 +30,63 @@
           }
         }
       }
+    },
+    "Workspace": {
+      "BootstrapHubSafetyFloor": {
+        "$className": "Part",
+        "$properties": {
+          "Anchored": true,
+          "CanCollide": true,
+          "CanQuery": true,
+          "CanTouch": false,
+          "Color": [
+            0.08627451211214066,
+            0.12156862765550612,
+            0.20392157137393951
+          ],
+          "Material": "Slate",
+          "Position": [
+            0.0,
+            0.0,
+            22.0
+          ],
+          "Size": [
+            72.0,
+            1.0,
+            72.0
+          ],
+          "Transparency": 0.15
+        }
+      },
+      "BootstrapHubSpawn": {
+        "$className": "SpawnLocation",
+        "$properties": {
+          "Anchored": true,
+          "CanCollide": true,
+          "CanQuery": true,
+          "CanTouch": false,
+          "Color": [
+            0.250980406999588,
+            0.6117647290229797,
+            1.0
+          ],
+          "Duration": 0.0,
+          "Enabled": true,
+          "Material": "Neon",
+          "Neutral": true,
+          "Position": [
+            0.0,
+            2.25,
+            22.0
+          ],
+          "Size": [
+            15.0,
+            1.0,
+            15.0
+          ],
+          "Transparency": 0.0
+        }
+      }
     }
   }
 }
