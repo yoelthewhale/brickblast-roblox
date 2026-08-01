@@ -4,7 +4,7 @@ Use this checklist in Roblox Studio local server tests before treating matchmaki
 
 ## Setup
 
-- Open `BlockBlastBattle-Day3.rbxl` in Roblox Studio.
+- Open `BlockBlastBattle-Day4.rbxl` in Roblox Studio.
 - Start a local server from the Test tab.
 - Use the latest Rojo sync if editing scripts live.
 - Keep the Output window open and clear before each scenario.

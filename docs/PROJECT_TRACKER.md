@@ -47,6 +47,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Extract client sound controller module | Medium | Playtest | Codex | 2026-08-04 |
 | Add mobile-friendly controls and scale testing | High | Playtest | Codex | 2026-08-05 |
 | Harden profile save reliability and diagnostics | High | Playtest | Codex | 2026-08-05 |
+| Harden numeric settings sanitization | High | Playtest | Codex | 2026-08-05 |
 | Add server playtest analytics hooks | Medium | Playtest | Codex | 2026-08-05 |
 | Prevent early-leave reward farming | High | Playtest | Codex | 2026-08-06 |
 | Add suspicious placement remote diagnostics | High | Playtest | Codex | 2026-08-06 |
@@ -63,7 +64,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 ## Playtest Checklist
 
 - Start Rojo server from VS Code or `start-rojo.ps1`.
-- Open `BlockBlastBattle-Day3.rbxl` in Roblox Studio.
+- Open `BlockBlastBattle-Day4.rbxl` in Roblox Studio.
 - Connect the Rojo plugin to `localhost:34872`.
 - Confirm the loading splash appears briefly and fades after game state arrives.
 - Press Play and confirm the hub appears.
@@ -109,4 +110,4 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 ## Build Notes
 
-- 2026-07-29 Day 3: Added the first battle arena map, side-specific arena spawns, client effect banners, queue pulse, placement pops, clear flashes, invalid-placement shake, loading splash, closable hub UI, side-logo hub access, round timer with sudden-death pressure rows, basic wins stat, progression rewards, post-run results panel with next-unlock hints, accessibility scaling, compact touch battle layout, persistent core settings, progression-gated piece styles and board skins with hub swatches and a cosmetic closet, first-time onboarding, sound cues/settings with a dedicated sound controller module, isolated match sessions with three arenas, hub arena availability UI, match diagnostics with a Studio-only session overlay, server playtest analytics, queue/settings remote hardening, profile save retries/diagnostics, anti-spam and suspicious placement diagnostics, server-authoritative replay queueing, early-leave forfeit protection, rotating story missions with Story Stars, story intro/result copy, hub story chapter previews, and a replay-safe Story Missions panel. Built `BlockBlastBattle-Day3.rbxl`.
+- 2026-08-01 Day 4: Added finite-number settings hardening and built `BlockBlastBattle-Day4.rbxl` because Day 3 was locked by Studio.

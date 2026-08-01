@@ -106,6 +106,13 @@ local DEFAULT_SETTINGS = {
 	soundVolume = 0.65,
 }
 
+local function isFiniteNumber(value)
+	return typeof(value) == "number"
+		and value == value
+		and value ~= math.huge
+		and value ~= -math.huge
+end
+
 local function cosmeticProgress(player)
 	local leaderstats = player and player:FindFirstChild("leaderstats")
 	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
@@ -143,7 +150,7 @@ local function sanitizeSettings(settings, progress)
 		return clean
 	end
 
-	if typeof(settings.themeIndex) == "number" then
+	if isFiniteNumber(settings.themeIndex) then
 		clean.themeIndex = math.clamp(math.floor(settings.themeIndex), 1, 3)
 	end
 
@@ -151,7 +158,7 @@ local function sanitizeSettings(settings, progress)
 		clean.reducedMotion = settings.reducedMotion
 	end
 
-	if typeof(settings.uiScale) == "number" then
+	if isFiniteNumber(settings.uiScale) then
 		clean.uiScale = math.clamp(settings.uiScale, 0.92, 1.12)
 	end
 
@@ -179,7 +186,7 @@ local function sanitizeSettings(settings, progress)
 		clean.soundEnabled = settings.soundEnabled
 	end
 
-	if typeof(settings.soundVolume) == "number" then
+	if isFiniteNumber(settings.soundVolume) then
 		clean.soundVolume = math.clamp(settings.soundVolume, 0, 1)
 	end
 
@@ -265,7 +272,7 @@ local function sessionSummaries()
 end
 
 local function sanitizeProfileInteger(value, minimum, maximum, fallback)
-	if typeof(value) ~= "number" or value ~= value or value == math.huge or value == -math.huge then
+	if not isFiniteNumber(value) then
 		return fallback, value ~= nil
 	end
 

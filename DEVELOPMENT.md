@@ -48,6 +48,8 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-07-29: Added a Story Missions panel with recent chapter browsing, replay access for completed chapters, locked upcoming chapter previews, and server-validated selected chapter starts.
 - 2026-07-29: Hardened Story Stars so replayed chapters can earn base rewards but cannot farm additional progression stars.
 - 2026-07-29: Hardened profile persistence by clamping loaded/saved leaderstat values, rejecting invalid numeric profile data, and surfacing sanitized-field counts in Studio diagnostics.
+- 2026-08-01: Hardened server settings sanitization so numeric settings reject NaN/infinite values before clamp/floor handling.
+- 2026-08-01: Built `BlockBlastBattle-Day4.rbxl` after `BlockBlastBattle-Day3.rbxl` was locked by an open Studio session.
 
 ## Current Priorities
 
@@ -69,7 +71,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 ## Technical Debt
 
 - `BlockBlastClient.client.luau` is still large; `ResultPanel.luau`, `CosmeticPanel.luau`, and `SoundController.luau` are the first extractions, and battle board, hub panel, and settings controls should follow.
-- Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; numeric profile values are sanitized on load/save, while broader cosmetic inventory still needs persistence.
+- Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; numeric profile and settings values are sanitized, while broader cosmetic inventory still needs persistence.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
 - Match sessions now support multiple active arenas with hub availability UI, analytics, exploit diagnostics, and Studio diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
 
@@ -89,7 +91,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Preserved the existing tutorial `Try Story` shortcut as a quick-start path into the next unlocked story chapter.
 - Completed final persistence hardening: `GameServer.server.luau` now clamps profile integers to explicit bounds, rejects NaN/infinite/bad profile values, sanitizes outgoing save payloads, and reports sanitized-field counts through hub analytics.
 - Updated `BlockBlastClient.client.luau` Studio diagnostics to show `Profile L/S/Sanitized` so corrupt profile cleanup is visible during playtests.
-- Rebuilt `BlockBlastBattle-Day3.rbxl` after the changes.
+- Latest clean build is `BlockBlastBattle-Day4.rbxl`; Day 3 may remain locked if Studio has it open.
 
 ### Current State
 
