@@ -1,4 +1,5 @@
 local Players = game:GetService("Players")
+local GuiService = game:GetService("GuiService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
@@ -111,6 +112,7 @@ local DEFAULT_WINDOW_POSITION = UDim2.new(0, 36, 0.5, 0)
 local DEFAULT_WINDOW_SIZE = Vector2.new(640, 438)
 local MIN_WINDOW_SIZE = Vector2.new(360, 420)
 local MAX_WINDOW_SIZE = Vector2.new(860, 620)
+local HUB_SIZE = Vector2.new(620, 420)
 local COMPACT_WINDOW_WIDTH = 560
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -282,7 +284,8 @@ local function applyUiScale()
 	end
 
 	local rootFitScale = math.min(1, (screenSize.X - 16) / math.max(1, root.Size.X.Offset))
-	local hubFitScale = math.min(1, (screenSize.X - 16) / 520, (screenSize.Y - 16) / 344)
+	local hubFitScale =
+		math.min(1, (screenSize.X - 16) / HUB_SIZE.X, (screenSize.Y - 16) / HUB_SIZE.Y)
 	local dockFitScale = math.min(1, (screenSize.X - 16) / 260)
 	local nextScale = automaticScale * uiScale
 	if rootScale then
@@ -495,7 +498,7 @@ local function updateSettingsButtonText()
 	end
 
 	if cosmeticHintLabel then
-		cosmeticHintLabel.Text = `Shop & Closet: {nextLockedCosmeticText()}`
+		cosmeticHintLabel.Text = "Shop & Closet"
 	end
 
 	updateCosmeticPreviews()
@@ -693,7 +696,7 @@ dockReturnButton.Parent = battleDock
 hubPanel = Instance.new("Frame")
 hubPanel.AnchorPoint = Vector2.new(0.5, 0)
 hubPanel.Position = UDim2.fromScale(0.5, 0.06)
-hubPanel.Size = UDim2.fromOffset(520, 344)
+hubPanel.Size = UDim2.fromOffset(HUB_SIZE.X, HUB_SIZE.Y)
 hubPanel.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
 hubPanel.BackgroundTransparency = 0.08
 hubPanel.BorderSizePixel = 0
@@ -744,8 +747,8 @@ hubCloseButton.Parent = hubPanel
 
 local hubGuideButton = Instance.new("TextButton")
 hubGuideButton.AnchorPoint = Vector2.new(1, 0)
-hubGuideButton.Position = UDim2.new(1, -56, 0, 14)
-hubGuideButton.Size = UDim2.fromOffset(74, 34)
+hubGuideButton.Position = UDim2.new(1, -58, 0, 14)
+hubGuideButton.Size = UDim2.fromOffset(86, 34)
 hubGuideButton.BackgroundColor3 = Color3.fromRGB(31, 38, 52)
 hubGuideButton.BorderSizePixel = 0
 hubGuideButton.Font = Enum.Font.GothamBold
@@ -765,6 +768,9 @@ local function setHubPanelVisible(visible)
 		TweenService:Create(hubPanel, SOFT_TWEEN, {
 			Position = UDim2.fromScale(0.5, 0.06),
 		}):Play()
+		if UserInputService.GamepadEnabled and battleQueueButton then
+			GuiService.SelectedObject = battleQueueButton
+		end
 	end
 end
 
@@ -861,9 +867,9 @@ end)
 local hubTitle = Instance.new("TextLabel")
 hubTitle.BackgroundTransparency = 1
 hubTitle.Position = UDim2.fromOffset(22, 16)
-hubTitle.Size = UDim2.fromOffset(420, 32)
+hubTitle.Size = UDim2.fromOffset(460, 32)
 hubTitle.Font = Enum.Font.GothamBlack
-hubTitle.Text = "Block Blast Hub"
+hubTitle.Text = "Block Blast Home"
 hubTitle.TextColor3 = Color3.fromRGB(245, 247, 251)
 hubTitle.TextSize = 26
 hubTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -872,7 +878,7 @@ hubTitle.Parent = hubPanel
 hubStatusLabel = Instance.new("TextLabel")
 hubStatusLabel.BackgroundTransparency = 1
 hubStatusLabel.Position = UDim2.fromOffset(22, 52)
-hubStatusLabel.Size = UDim2.fromOffset(476, 34)
+hubStatusLabel.Size = UDim2.fromOffset(576, 36)
 hubStatusLabel.Font = Enum.Font.Gotham
 hubStatusLabel.Text = "Walk to a queue pad or use the buttons below."
 hubStatusLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
@@ -883,8 +889,8 @@ hubStatusLabel.Parent = hubPanel
 
 hubMatchmakingLabel = Instance.new("TextLabel")
 hubMatchmakingLabel.BackgroundTransparency = 1
-hubMatchmakingLabel.Position = UDim2.fromOffset(22, 84)
-hubMatchmakingLabel.Size = UDim2.fromOffset(476, 18)
+hubMatchmakingLabel.Position = UDim2.fromOffset(22, 90)
+hubMatchmakingLabel.Size = UDim2.fromOffset(576, 20)
 hubMatchmakingLabel.Font = Enum.Font.GothamBold
 hubMatchmakingLabel.Text = "Arenas: 3 open | Queue: 0"
 hubMatchmakingLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
@@ -893,32 +899,32 @@ hubMatchmakingLabel.TextXAlignment = Enum.TextXAlignment.Left
 hubMatchmakingLabel.Parent = hubPanel
 
 battleQueueButton = Instance.new("TextButton")
-battleQueueButton.Position = UDim2.fromOffset(22, 104)
-battleQueueButton.Size = UDim2.fromOffset(226, 46)
+battleQueueButton.Position = UDim2.fromOffset(22, 124)
+battleQueueButton.Size = UDim2.fromOffset(276, 58)
 battleQueueButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
 battleQueueButton.BorderSizePixel = 0
 battleQueueButton.Font = Enum.Font.GothamBold
 battleQueueButton.Text = "Join Battle Queue"
 battleQueueButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-battleQueueButton.TextSize = 17
+battleQueueButton.TextSize = 18
 battleQueueButton.Parent = hubPanel
 
 local storyButton = Instance.new("TextButton")
-storyButton.Position = UDim2.fromOffset(272, 104)
-storyButton.Size = UDim2.fromOffset(226, 46)
+storyButton.Position = UDim2.fromOffset(322, 124)
+storyButton.Size = UDim2.fromOffset(276, 58)
 storyButton.BackgroundColor3 = Color3.fromRGB(74, 222, 128)
 storyButton.BorderSizePixel = 0
 storyButton.Font = Enum.Font.GothamBold
 storyButton.Text = "Story Mode"
 storyButton.TextColor3 = Color3.fromRGB(13, 32, 24)
-storyButton.TextSize = 17
+storyButton.TextSize = 18
 storyButton.TextWrapped = true
 storyButton.Parent = hubPanel
 
 storyPreviewLabel = Instance.new("TextLabel")
 storyPreviewLabel.BackgroundTransparency = 1
-storyPreviewLabel.Position = UDim2.fromOffset(272, 152)
-storyPreviewLabel.Size = UDim2.fromOffset(226, 22)
+storyPreviewLabel.Position = UDim2.fromOffset(322, 188)
+storyPreviewLabel.Size = UDim2.fromOffset(276, 22)
 storyPreviewLabel.Font = Enum.Font.GothamBold
 storyPreviewLabel.Text = "Next chapter loading..."
 storyPreviewLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
@@ -929,8 +935,8 @@ storyPreviewLabel.TextYAlignment = Enum.TextYAlignment.Center
 storyPreviewLabel.Parent = hubPanel
 
 motionButton = Instance.new("TextButton")
-motionButton.Position = UDim2.fromOffset(22, 182)
-motionButton.Size = UDim2.fromOffset(226, 38)
+motionButton.Position = UDim2.fromOffset(22, 224)
+motionButton.Size = UDim2.fromOffset(276, 42)
 motionButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 motionButton.BorderSizePixel = 0
 motionButton.Font = Enum.Font.GothamBold
@@ -940,8 +946,8 @@ motionButton.TextSize = 15
 motionButton.Parent = hubPanel
 
 uiSizeButton = Instance.new("TextButton")
-uiSizeButton.Position = UDim2.fromOffset(272, 182)
-uiSizeButton.Size = UDim2.fromOffset(226, 38)
+uiSizeButton.Position = UDim2.fromOffset(322, 224)
+uiSizeButton.Size = UDim2.fromOffset(276, 42)
 uiSizeButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 uiSizeButton.BorderSizePixel = 0
 uiSizeButton.Font = Enum.Font.GothamBold
@@ -951,8 +957,8 @@ uiSizeButton.TextSize = 15
 uiSizeButton.Parent = hubPanel
 
 pieceSkinButton = Instance.new("TextButton")
-pieceSkinButton.Position = UDim2.fromOffset(22, 232)
-pieceSkinButton.Size = UDim2.fromOffset(226, 38)
+pieceSkinButton.Position = UDim2.fromOffset(22, 278)
+pieceSkinButton.Size = UDim2.fromOffset(276, 42)
 pieceSkinButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 pieceSkinButton.BorderSizePixel = 0
 pieceSkinButton.Font = Enum.Font.GothamBold
@@ -980,8 +986,8 @@ for index = 1, 4 do
 end
 
 soundButton = Instance.new("TextButton")
-soundButton.Position = UDim2.fromOffset(272, 232)
-soundButton.Size = UDim2.fromOffset(226, 38)
+soundButton.Position = UDim2.fromOffset(322, 278)
+soundButton.Size = UDim2.fromOffset(276, 42)
 soundButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 soundButton.BorderSizePixel = 0
 soundButton.Font = Enum.Font.GothamBold
@@ -991,8 +997,8 @@ soundButton.TextSize = 15
 soundButton.Parent = hubPanel
 
 boardSkinButton = Instance.new("TextButton")
-boardSkinButton.Position = UDim2.fromOffset(22, 282)
-boardSkinButton.Size = UDim2.fromOffset(226, 38)
+boardSkinButton.Position = UDim2.fromOffset(22, 332)
+boardSkinButton.Size = UDim2.fromOffset(276, 42)
 boardSkinButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 boardSkinButton.BorderSizePixel = 0
 boardSkinButton.Font = Enum.Font.GothamBold
@@ -1023,16 +1029,16 @@ for row = 1, 2 do
 end
 
 cosmeticHintLabel = Instance.new("TextButton")
-cosmeticHintLabel.BackgroundColor3 = Color3.fromRGB(31, 38, 52)
-cosmeticHintLabel.BackgroundTransparency = 0.12
-cosmeticHintLabel.Position = UDim2.fromOffset(272, 282)
-cosmeticHintLabel.Size = UDim2.fromOffset(226, 38)
+cosmeticHintLabel.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
+cosmeticHintLabel.BackgroundTransparency = 0
+cosmeticHintLabel.Position = UDim2.fromOffset(322, 332)
+cosmeticHintLabel.Size = UDim2.fromOffset(276, 42)
 cosmeticHintLabel.Font = Enum.Font.GothamBold
 cosmeticHintLabel.Text = "Shop & Closet"
-cosmeticHintLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
-cosmeticHintLabel.TextSize = 13
+cosmeticHintLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+cosmeticHintLabel.TextSize = 15
 cosmeticHintLabel.TextWrapped = true
-cosmeticHintLabel.TextXAlignment = Enum.TextXAlignment.Left
+cosmeticHintLabel.TextXAlignment = Enum.TextXAlignment.Center
 cosmeticHintLabel.TextYAlignment = Enum.TextYAlignment.Center
 cosmeticHintLabel.BorderSizePixel = 0
 cosmeticHintLabel.Parent = hubPanel
@@ -1215,6 +1221,7 @@ local function applyTheme()
 	hubLogoButton.BackgroundColor3 = theme.accent
 	openBoardButton.BackgroundColor3 = theme.accent
 	customizeButton.BackgroundColor3 = theme.accent
+	cosmeticHintLabel.BackgroundColor3 = theme.accent
 	resetLayoutButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 	customizeButton.Text = `Theme: {theme.name}`
 	applyBoardSkin()

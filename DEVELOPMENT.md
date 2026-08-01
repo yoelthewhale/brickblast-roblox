@@ -60,10 +60,11 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Documented Creator Dashboard monetization setup in `docs/MONETIZATION_SETUP.md` and kept placeholder IDs at `0` until real Roblox assets exist.
 - 2026-08-01: Evaluated React Luau for the shop slice and deferred it because the project has no React/Wally dependencies installed; the production slice instead uses a reusable, state-driven Luau panel architecture compatible with the existing Rojo app.
 - 2026-08-01: Built the next place artifact as `BlockBlastBattle-Day6.rbxl`.
+- 2026-08-01: Modernized the home hub layout with a wider first-screen panel, larger Battle/Story touch targets, dedicated Shop & Closet action, less cramped settings controls, theme-aware shop entry styling, and gamepad focus when the home panel opens.
 
 ## Current Priorities
 
-- Modernize the home/hub interface into a cohesive reusable module instead of continuing to grow `BlockBlastClient.client.luau`.
+- Extract the modernized home/hub interface into a cohesive reusable module instead of continuing to grow `BlockBlastClient.client.luau`.
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
 - Add a true owned/equipped cosmetic inventory flow that can consume both progression unlocks and future pass entitlements.
 - Continue anti-exploit hardening around server-authoritative economy events and abnormal session lifecycle edge cases.
@@ -147,6 +148,32 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Biggest gameplay weakness: the core battle loop still needs more tactile arena feedback and pacing tests.
 - Biggest polish opportunity: a modern home screen that clearly routes players into Battle, Story, Shop, Closet, and Settings.
 - Biggest technical risk: Marketplace receipt and entitlement behavior must be tested with real Roblox services before any paid products are enabled.
+
+## Session Update - 2026-08-01 Home Slice
+
+### Completed
+
+- Expanded the hub panel into a clearer home screen in `src/client/ui/BlockBlastClient.client.luau`.
+- Enlarged Battle and Story actions for mouse/touch use and moved secondary settings into a cleaner two-column layout.
+- Made Shop & Closet a dedicated primary home action instead of hiding shop access behind cosmetic hint copy.
+- Added gamepad focus to the Battle queue button when the home panel opens.
+- Updated home scaling to use one `HUB_SIZE` constant so future extraction has a cleaner boundary.
+- Rebuilt `BlockBlastBattle-Day6.rbxl` after the home UI changes.
+
+### Current State
+
+- Home is visibly cleaner and easier to scan, but its implementation still lives inside the oversized main client script.
+- The next clean architectural step is to extract this home surface into a `HomePanel` module similar to `ShopPanel`, `StoryPanel`, and `CosmeticPanel`.
+- Roblox Studio device emulation is still needed to confirm safe-area behavior on phones and tablets.
+
+### Recommended Next Priorities
+
+1. Extract `HomePanel.luau`.
+   The layout is now stable enough to move without redesigning it at the same time.
+2. Add a true cosmetic inventory/equip model.
+   Shop and closet are connected, but progression-derived cosmetics need a future-proof ownership layer.
+3. Studio-test mobile and gamepad flow.
+   The code validates locally, but Roblox input behavior needs device validation.
 
 ## Session Handoff - 2026-07-29
 
