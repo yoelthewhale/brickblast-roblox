@@ -75,6 +75,9 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Extracted the modernized home hub interface into `src/client/ui/HomePanel.luau`, moving home-owned instances, activation connections, focus paths, responsive scale, show tween, cosmetic swatches, matchmaking labels, and queued pulse ownership out of the main client script.
 - 2026-08-01: Added `docs/STUDIO_MCP_VALIDATION.md` with official Roblox Studio MCP Quick Connect steps and an unexecuted Studio test matrix for Day9.
 - 2026-08-01: Built the next place artifact as `BlockBlastBattle-Day8.rbxl`.
+- 2026-08-01: Rebuilt the generated hub and arenas into a floating competitive puzzle world with a Block Core landmark, Battle/Story portals, block-market area, richer battle arenas, distant scenery, lighting, atmosphere, and restrained decorative animation/VFX.
+- 2026-08-01: Added `docs/ENVIRONMENT_VISUAL_AUDIT.md` and `docs/ASSET_AUDIT.md` documenting the visual problems found, implementation choices, imported-asset status, safety checks, and remaining Studio testing needs.
+- 2026-08-01: Built the next place artifact as `BlockBlastBattle-Day10.rbxl`.
 
 ## Current Priorities
 
@@ -97,6 +100,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Current battle board is UI-only; future versions should consider an optional 3D board representation in the arena.
 - Monetization IDs are intentionally `0`; real purchase prompt testing is blocked until Creator Dashboard game passes and developer products exist.
 - Developer product receipt persistence now uses profile `fulfilledPurchaseIds`; it still needs live DataStore failure testing before any real currency products are enabled.
+- Roblox Studio MCP still is not connected to Codex for direct Studio control. The local Studio MCP executable initializes, but tool listing/Studio control did not become available, so Day10 visual testing remains manual.
 
 ## Technical Debt
 
@@ -106,11 +110,63 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Extra Preset Slots Pass remains marked unavailable while its real preset UI/server save flow is unfinished.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
 - Match sessions now support multiple active arenas with hub availability UI, analytics, exploit diagnostics, and Studio diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
+- The Day10 world is still generated from one large `HubBuilder.luau` module; future map iterations may benefit from splitting hub landmarks, scenery, lighting, and arena generation into focused builder modules.
 
 ## Release Readiness
 
 - Status: Prototype.
 - Not ready for public release until multiplayer, save retries, mobile UI, monetization IDs/purchase flows, moderation/anti-exploit, onboarding, audio, and retention loops are tested in Studio.
+- Day10 improves the first visual read of the world, but it still requires in-Studio camera, collision, mobile readability, and performance validation before being treated as release art.
+
+## Session Update - 2026-08-01 Day10 Environment Pass
+
+### Completed
+
+- Replaced the plain generated hub in `src/server/world/HubBuilder.luau` with a substantial original Parts-only floating puzzle world.
+- Added a dramatic central Block Core, glowing path guides, a dominant Battle portal, distinct Story portal, Shop/Closet block-market area, Guide corner, leaderboard monolith, distant floating islands, and puzzle-block silhouettes.
+- Expanded the three battle arenas with stronger staging, deck frames, energy lanes, attack channels, scoreboard crowns, spectator block stacks, conveyor tiles, rails, glow pillars, and clean return pads.
+- Added controlled lighting and atmosphere through Future lighting, named Atmosphere/Bloom/ColorCorrection effects, local PointLights, low-rate ParticleEmitters, and slow decorative TweenService rotation loops.
+- Preserved gameplay-critical names, attributes, prompt behavior, spawn parts, arena return values, collision on player surfaces, and server-owned gameplay/networking/security behavior.
+- Added `docs/ENVIRONMENT_VISUAL_AUDIT.md` and `docs/ASSET_AUDIT.md`.
+
+### Current State
+
+- The world is much more visually readable from the spawn path and has clear landmarks for Battle, Story, Shop/Closet, Guide, and arena destinations.
+- No Creator Store models, third-party assets, imported scripts, meshes, textures, sounds, packages, or plugins were used.
+- Roblox Studio MCP is still not controllable from this Codex session. The Studio MCP executable responded to `initialize`, but `tools/list` never exposed usable Studio tools, so no Studio playtest, Output inspection, screenshots, or device emulation was executed.
+- The build artifact for this checkpoint is `BlockBlastBattle-Day10.rbxl`.
+
+### Recommended Next Priorities
+
+1. Manually test `BlockBlastBattle-Day10.rbxl` in Roblox Studio.
+   This should happen first because camera framing, collision, Output errors, UI overlay readability, and mobile/gamepad behavior can only be trusted after a real Studio run.
+2. Fix any Studio-discovered environment issues.
+   The most likely risks are decorative collision, spawn sightline, portal prompt placement, lighting brightness, or arena readability from the player camera.
+3. Split `HubBuilder.luau` into focused world modules.
+   The generated world now has enough content that separating lighting, hub landmarks, scenery, and arena generation would make future art passes easier.
+4. Continue the next player-facing visual slice.
+   After the world is verified, the best follow-up is matching the results/rewards presentation and tutorial guide polish to the stronger hub identity.
+
+### Technical Debt
+
+- `HubBuilder.luau` is now large and should eventually be split into smaller world-generation modules.
+- Decorative animation is server-authored. It is low-volume, but future heavier animation should move client-side or become static if performance testing shows cost.
+- The world still uses simple primitives only; this is safe and performant, but future custom meshes could improve silhouettes after a proper asset safety review.
+
+### Ideas
+
+- Add subtle portal arrival effects when players enter Battle or Story.
+- Add animated shop display pedestals that preview owned/equipped cosmetics.
+- Add match-state arena lights that change during sudden death, victory, and defeat.
+- Add a short camera fly-in or spawn orientation cue once Studio testing confirms comfort on mobile.
+
+### Release Readiness
+
+- Estimate: prototype moving toward alpha, roughly 42% of the way to a public Roblox release.
+- Biggest remaining blockers: Studio MCP/manual Studio validation, multiplayer stress testing, real monetization IDs and purchase testing, mobile UI/gamepad validation, and production DataStore confidence.
+- Biggest gameplay weakness: battle readability and pacing still need real two-player playtests.
+- Biggest polish opportunity: connect the improved 3D hub identity with stronger transitions, audio, and reward reveals.
+- Biggest technical risk: untested Studio behavior for generated decorative geometry, focus paths, and local-server match lifecycle.
 
 ## Session Update - 2026-08-01 Shop Slice
 
