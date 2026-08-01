@@ -9,6 +9,7 @@ Config.SuddenDeathPressureInterval = 10
 Config.SuddenDeathGarbageRows = 1
 Config.PointsPerCell = 10
 Config.PointsPerLine = 100
+Config.ComboBonusPoints = 25
 Config.GarbagePerLineCleared = 1
 Config.CoinsPerHundredScore = 4
 Config.WinnerBonusCoins = 40

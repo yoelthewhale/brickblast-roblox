@@ -1914,7 +1914,7 @@ renderDiagnostics = function()
 		if typeof(currentHubState.analytics) == "table" then
 			table.insert(
 				lines,
-				`Analytics B/S/Q/P/C/I/F/R/T/D: {stats.battleSessionsStarted or 0}/{stats.storySessionsStarted or 0}/{stats.queueJoins or 0}/{stats.placements or 0}/{stats.linesCleared or 0}/{stats.invalidPlacements or 0}/{stats.forfeits or 0}/{stats.rejectedPlaceRequests or 0}/{stats.throttledPlaceRequests or 0}/{stats.suddenDeathPressureRows or 0}`
+				`Analytics B/S/Q/P/C/K/I/F/R/T/D: {stats.battleSessionsStarted or 0}/{stats.storySessionsStarted or 0}/{stats.queueJoins or 0}/{stats.placements or 0}/{stats.linesCleared or 0}/{stats.combosTriggered or 0}/{stats.invalidPlacements or 0}/{stats.forfeits or 0}/{stats.rejectedPlaceRequests or 0}/{stats.throttledPlaceRequests or 0}/{stats.suddenDeathPressureRows or 0}`
 			)
 		end
 	else
@@ -1974,6 +1974,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		or Color3.fromRGB(193, 201, 215)
 	dockStatusLabel.Text = currentState.message
 		or currentState.mode == "Story" and storyGoalText(currentState)
+		or currentState.comboStreak and currentState.comboStreak > 1 and `Combo x{currentState.comboStreak} | Score: {currentState.score}`
 		or currentState.suddenDeath and `Sudden death | Score: {currentState.score} | {currentState.timeLeft or "--"}s`
 		or currentState.alive and `Arena {currentState.arenaIndex or "--"} | Score: {currentState.score} | {currentState.timeLeft or "--"}s`
 		or "Out of moves - returning"
@@ -2112,7 +2113,14 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		end
 		if effect.linesCleared and effect.linesCleared > 0 then
 			playSound("Clear")
-			showBanner(`Cleared {effect.linesCleared} line(s)!`, Color3.fromRGB(74, 222, 128))
+			if effect.comboStreak and effect.comboStreak > 1 then
+				showBanner(
+					`Combo x{effect.comboStreak}! +{effect.comboBonus or 0}`,
+					Color3.fromRGB(255, 207, 102)
+				)
+			else
+				showBanner(`Cleared {effect.linesCleared} line(s)!`, Color3.fromRGB(74, 222, 128))
+			end
 		end
 	elseif effect.kind == "BattleStart" then
 		playSound("Queue")

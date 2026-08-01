@@ -51,11 +51,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Hardened server settings sanitization so numeric settings reject NaN/infinite values before clamp/floor handling.
 - 2026-08-01: Mirrored finite-number settings guards on the client before applying theme, UI scale, and sound volume updates.
 - 2026-08-01: Built `BlockBlastBattle-Day4.rbxl` after `BlockBlastBattle-Day3.rbxl` was locked by an open Studio session.
+- 2026-08-01: Added server-authoritative combo streaks, combo score bonuses, live combo banners, best-combo tracking, and match duration/best-combo result stats.
 
 ## Current Priorities
 
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
 - Continue anti-exploit hardening around server-authoritative economy events and abnormal session lifecycle edge cases.
+- Polish core game feel around line clears, incoming pressure, victory/defeat, and reward reveals.
 - Expand cosmetic closet into a full shop/inventory flow with earnable inventory, featured items, and clearer purchase-free progression.
 - Add richer original audio assets and mix testing.
 - Expand Story Training with more mission types, longer chapter arcs, and better hub-world story signposting.

@@ -63,6 +63,7 @@ local analytics = {
 	placements = 0,
 	linesCleared = 0,
 	invalidPlacements = 0,
+	combosTriggered = 0,
 	rejectedPlaceRequests = 0,
 	throttledPlaceRequests = 0,
 	suddenDeathPressureRows = 0,
@@ -610,6 +611,11 @@ local function grantBattleRewards(player, state, winner)
 		mode = state.mode,
 		score = state.score,
 		linesCleared = state.linesCleared,
+		highestCombo = state.highestCombo,
+		duration = state.finishedAt and state.startedAt and math.max(
+			0,
+			math.floor(state.finishedAt - state.startedAt)
+		) or nil,
 		coins = earnedCoins,
 		xp = earnedXp,
 		storyStars = storyProgressionCompleted and 1 or 0,
@@ -719,6 +725,8 @@ local function publicState(player)
 		alive = state.alive,
 		message = state.message,
 		linesCleared = state.linesCleared,
+		comboStreak = state.comboStreak,
+		highestCombo = state.highestCombo,
 		mode = state.mode,
 		storyMission = state.storyMission,
 		storyComplete = state.mode == "Story" and isStoryMissionComplete(state) or false,
@@ -929,6 +937,8 @@ local function createPlayerState(player, mode, storyChapter)
 				and player.leaderstats.BestScore.Value
 			or 0,
 		linesCleared = 0,
+		comboStreak = 0,
+		highestCombo = 0,
 		rewardsGranted = false,
 		storyMission = mode == "Story" and storyMissionForPlayer(player, storyChapter) or nil,
 		alive = true,
@@ -954,6 +964,7 @@ local function startBattle(players, mode, storyChapter)
 		players = {},
 		startedWith = #players,
 		finishScheduled = false,
+		startedAt = os.clock(),
 		endsAt = os.clock() + (mode == "Story" and Config.StoryRoundSeconds or Config.RoundSeconds),
 		suddenDeathAnnounced = false,
 		nextSuddenDeathPressureAt = nil,
@@ -973,6 +984,9 @@ local function startBattle(players, mode, storyChapter)
 		table.insert(session.players, player)
 		createPlayerState(player, mode, storyChapter)
 		local state = playerStates[player]
+		if state then
+			state.startedAt = session.startedAt
+		end
 		local storyMission = state and state.storyMission
 		teleportToArenaSlot(player, slot, session)
 		effectsEvent:FireClient(player, {
@@ -1128,6 +1142,7 @@ local function finishBattle(session, winner)
 			continue
 		end
 
+		state.finishedAt = os.clock()
 		grantBattleRewards(player, state, player == winner)
 		saveProfile(player)
 		state.alive = false
@@ -1175,6 +1190,7 @@ leaveBattle = function(player)
 	local returnMessage = "Returned to hub"
 	if state then
 		if not state.alive or (session and session.finishScheduled) then
+			state.finishedAt = state.finishedAt or os.clock()
 			grantBattleRewards(player, state, false)
 			if not state.resultShown then
 				fireResult(player, state, false)
@@ -1182,11 +1198,16 @@ leaveBattle = function(player)
 		else
 			state.rewardsGranted = true
 			state.message = "Run forfeited - no rewards"
+			state.finishedAt = os.clock()
 			state.resultSummary = {
 				mode = state.mode,
 				outcome = "Forfeit",
 				score = state.score,
 				linesCleared = state.linesCleared,
+				highestCombo = state.highestCombo,
+				duration = state.startedAt
+						and math.max(0, math.floor(state.finishedAt - state.startedAt))
+					or nil,
 				coins = 0,
 				xp = 0,
 				storyStars = 0,
@@ -1296,6 +1317,16 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 
 	state.hand[slot] = nil
 	local linesCleared = Grid.clearLines(state.board)
+	if linesCleared > 0 then
+		state.comboStreak += 1
+		state.highestCombo = math.max(state.highestCombo, state.comboStreak)
+		if state.comboStreak > 1 then
+			analytics.combosTriggered += 1
+		end
+	else
+		state.comboStreak = 0
+	end
+	local comboBonus = math.max(0, state.comboStreak - 1) * Config.ComboBonusPoints
 	analytics.placements += 1
 	analytics.linesCleared += linesCleared
 	effectsEvent:FireClient(player, {
@@ -1304,8 +1335,10 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 		originY = y,
 		shape = shape,
 		linesCleared = linesCleared,
+		comboStreak = state.comboStreak,
+		comboBonus = comboBonus,
 	})
-	state.score += cellsPlaced * Config.PointsPerCell + linesCleared * Config.PointsPerLine
+	state.score += cellsPlaced * Config.PointsPerCell + linesCleared * Config.PointsPerLine + comboBonus
 	state.linesCleared += linesCleared
 	if state.score > state.bestScore then
 		state.bestScore = state.score

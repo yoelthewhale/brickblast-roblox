@@ -38,6 +38,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Add hub cosmetic preview swatches | Medium | Playtest | Codex | 2026-08-02 |
 | Add cosmetic closet panel | Medium | Playtest | Codex | 2026-08-02 |
 | Add round timer and sudden-death pressure | High | Playtest | Codex | 2026-08-02 |
+| Add combo streak scoring and result stats | High | Playtest | Codex | 2026-08-02 |
 | Add rewards after battles: coins, XP, wins, and Story Stars | High | Playtest | Codex | 2026-08-03 |
 | Add permanent leaderboard stats for wins, best score, and Story Stars | High | Playtest | Codex | 2026-08-03 |
 | Add post-run results panel | Medium | Playtest | Codex | 2026-08-03 |
@@ -105,6 +106,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Confirm pieces auto-select and board hover previews show placement.
 - Try an invalid placement and confirm the UI shakes and says `That spot is blocked`.
 - Place pieces and confirm blocks pop in; clear a row or column and confirm cleared cells flash.
+- Clear lines on consecutive placements and confirm combo banners, bonus score, and best combo result stats appear.
 - Fill the board until out of moves and confirm it returns to hub.
 - Run a two-player local server test and confirm a winner message appears.
 

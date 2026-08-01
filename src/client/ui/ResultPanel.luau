@@ -153,6 +153,8 @@ function ResultPanel:Show(result, message, won)
 	local outcome = result.outcome or (won and "Victory" or "Run Complete")
 	local score = result.score or 0
 	local linesCleared = result.linesCleared or 0
+	local highestCombo = result.highestCombo or 0
+	local duration = result.duration
 	local coins = result.coins or 0
 	local xp = result.xp or 0
 	local storyStars = result.storyStars or 0
@@ -168,10 +170,13 @@ function ResultPanel:Show(result, message, won)
 	end
 
 	self.titleLabel.Text = outcome
-	self.summaryLabel.Text = storyText or message or `Score {score} | {linesCleared} lines`
+	self.summaryLabel.Text = storyText
+		or message
+		or `Score {score} | {linesCleared} lines | Best combo x{math.max(1, highestCombo)}`
 	self.rewardLabel.Text = rewardText
 	self.progressLabel.Text = bestDelta > 0 and `New best score: {bestScore} (+{bestDelta})`
-		or `Best score: {bestScore} | Lines cleared: {linesCleared}`
+		or duration and `Best score: {bestScore} | Combo x{math.max(1, highestCombo)} | {duration}s`
+		or `Best score: {bestScore} | Combo x{math.max(1, highestCombo)}`
 	self.unlockLabel.Text = nextUnlockText
 	self.panel.BackgroundColor3 = won and Color3.fromRGB(13, 55, 39) or Color3.fromRGB(31, 38, 52)
 	self.panel.Visible = true
