@@ -245,14 +245,11 @@ banner.TextSize = 24
 banner.TextWrapped = true
 banner.Visible = false
 banner.Parent = gui
-UITheme.card(
-	banner,
-	{
-		color = UITheme.Color.panelRaised,
-		strokeColor = UITheme.Color.primary,
-		strokeTransparency = 0.2,
-	}
-)
+UITheme.card(banner, {
+	color = UITheme.Color.panelRaised,
+	strokeColor = UITheme.Color.primary,
+	strokeTransparency = 0.2,
+})
 
 bannerScale = Instance.new("UIScale")
 bannerScale.Scale = 1

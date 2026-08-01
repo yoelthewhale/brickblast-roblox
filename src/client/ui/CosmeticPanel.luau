@@ -1,3 +1,5 @@
+local UITheme = require(script.Parent.UITheme)
+
 local CosmeticPanel = {}
 CosmeticPanel.__index = CosmeticPanel
 
@@ -39,11 +41,19 @@ end
 
 local function setCardState(card, unlocked, equipped)
 	if equipped then
-		card.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
+		card.BackgroundColor3 = UITheme.Color.primary
 	elseif unlocked then
-		card.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+		card.BackgroundColor3 = UITheme.Color.panelSoft
 	else
-		card.BackgroundColor3 = Color3.fromRGB(31, 38, 52)
+		card.BackgroundColor3 = UITheme.Color.cardMuted
+	end
+
+	local stroke = card:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Color = equipped and Color3.fromRGB(156, 211, 255)
+			or unlocked and UITheme.Color.strokeSoft
+			or UITheme.Color.warning
+		stroke.Transparency = equipped and 0.08 or unlocked and 0.38 or 0.52
 	end
 end
 
@@ -79,6 +89,7 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	panel.Visible = false
 	panel.ZIndex = 38
 	panel.Parent = gui
+	UITheme.panel(panel, { color = UITheme.Color.panel, bottomColor = UITheme.Color.background })
 	self.panel = panel
 
 	local panelScale = Instance.new("UIScale")
@@ -104,6 +115,7 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.ZIndex = 39
 	title.Parent = panel
+	UITheme.text(title, "title")
 
 	local closeButton = Instance.new("TextButton")
 	closeButton.Position = UDim2.new(1, -48, 0, 14)
@@ -116,6 +128,8 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	closeButton.TextSize = 16
 	closeButton.ZIndex = 39
 	closeButton.Parent = panel
+	UITheme.closeButton(closeButton)
+	UITheme.attachButtonFeedback(closeButton)
 
 	local piecesHeader = Instance.new("TextLabel")
 	piecesHeader.BackgroundTransparency = 1
@@ -128,6 +142,7 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	piecesHeader.TextXAlignment = Enum.TextXAlignment.Left
 	piecesHeader.ZIndex = 39
 	piecesHeader.Parent = panel
+	UITheme.text(piecesHeader, "muted")
 
 	local boardsHeader = Instance.new("TextLabel")
 	boardsHeader.BackgroundTransparency = 1
@@ -140,6 +155,7 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	boardsHeader.TextXAlignment = Enum.TextXAlignment.Left
 	boardsHeader.ZIndex = 39
 	boardsHeader.Parent = panel
+	UITheme.text(boardsHeader, "muted")
 
 	for index, skinName in blocks.PieceSkins do
 		local card = self:createPieceCard(index, skinName)
@@ -153,7 +169,7 @@ function CosmeticPanel.new(gui, blocks, config, options)
 		self.boardCards[index] = card
 	end
 
-	closeButton.MouseButton1Click:Connect(function()
+	closeButton.Activated:Connect(function()
 		self.playSound("Button")
 		self:Hide()
 	end)
@@ -169,6 +185,8 @@ function CosmeticPanel:createPieceCard(index, skinName)
 	card.Font = Enum.Font.GothamBold
 	card.Text = ""
 	card.ZIndex = 39
+	UITheme.button(card, "secondary")
+	UITheme.attachButtonFeedback(card)
 
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Name = "Name"
@@ -182,6 +200,7 @@ function CosmeticPanel:createPieceCard(index, skinName)
 	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 	nameLabel.ZIndex = 40
 	nameLabel.Parent = card
+	UITheme.text(nameLabel, "heading")
 
 	local statusLabel = Instance.new("TextLabel")
 	statusLabel.Name = "Status"
@@ -195,6 +214,7 @@ function CosmeticPanel:createPieceCard(index, skinName)
 	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 	statusLabel.ZIndex = 40
 	statusLabel.Parent = card
+	UITheme.text(statusLabel, "soft")
 
 	local colors = previewColorsForPieceSkin(skinName)
 	for swatchIndex = 1, 4 do
@@ -207,7 +227,7 @@ function CosmeticPanel:createPieceCard(index, skinName)
 		swatch.Parent = card
 	end
 
-	card.MouseButton1Click:Connect(function()
+	card.Activated:Connect(function()
 		local requirement = self.config.PieceSkinUnlocks[skinName]
 		local unlocked = self.config.meetsCosmeticRequirement(requirement, self.getProgress())
 		if not unlocked then
@@ -232,6 +252,8 @@ function CosmeticPanel:createBoardCard(index, skin)
 	card.Font = Enum.Font.GothamBold
 	card.Text = ""
 	card.ZIndex = 39
+	UITheme.button(card, "secondary")
+	UITheme.attachButtonFeedback(card)
 
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Name = "Name"
@@ -246,6 +268,7 @@ function CosmeticPanel:createBoardCard(index, skin)
 	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 	nameLabel.ZIndex = 40
 	nameLabel.Parent = card
+	UITheme.text(nameLabel, "heading")
 
 	local statusLabel = Instance.new("TextLabel")
 	statusLabel.Name = "Status"
@@ -259,6 +282,7 @@ function CosmeticPanel:createBoardCard(index, skin)
 	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 	statusLabel.ZIndex = 40
 	statusLabel.Parent = card
+	UITheme.text(statusLabel, "soft")
 
 	local emptyColor = skin.empty or Color3.fromRGB(24, 28, 36)
 	local borderColor = skin.border or Color3.fromRGB(64, 156, 255)
@@ -274,7 +298,7 @@ function CosmeticPanel:createBoardCard(index, skin)
 		end
 	end
 
-	card.MouseButton1Click:Connect(function()
+	card.Activated:Connect(function()
 		local requirement = self.config.BoardSkinUnlocks[skin.name]
 		local unlocked = self.config.meetsCosmeticRequirement(requirement, self.getProgress())
 		if not unlocked then

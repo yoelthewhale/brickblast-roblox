@@ -77,14 +77,11 @@ function ResultPanel.new(gui, queueEvent, options)
 	rewardCard.Size = UDim2.fromOffset(464, 46)
 	rewardCard.ZIndex = 36
 	rewardCard.Parent = panel
-	UITheme.card(
-		rewardCard,
-		{
-			color = Color3.fromRGB(43, 35, 23),
-			strokeColor = UITheme.Color.reward,
-			strokeTransparency = 0.18,
-		}
-	)
+	UITheme.card(rewardCard, {
+		color = Color3.fromRGB(43, 35, 23),
+		strokeColor = UITheme.Color.reward,
+		strokeTransparency = 0.18,
+	})
 
 	local rewardLabel = Instance.new("TextLabel")
 	rewardLabel.BackgroundTransparency = 1

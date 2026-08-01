@@ -1,3 +1,5 @@
+local UITheme = require(script.Parent.UITheme)
+
 local StoryPanel = {}
 StoryPanel.__index = StoryPanel
 
@@ -29,21 +31,28 @@ end
 
 local function setCardState(card, mission)
 	if mission.next then
-		card.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
+		card.BackgroundColor3 = UITheme.Color.primary
 	elseif mission.completed then
-		card.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+		card.BackgroundColor3 = UITheme.Color.panelSoft
 	elseif mission.unlocked then
-		card.BackgroundColor3 = Color3.fromRGB(31, 38, 52)
+		card.BackgroundColor3 = UITheme.Color.panelRaised
 	else
-		card.BackgroundColor3 = Color3.fromRGB(23, 27, 36)
+		card.BackgroundColor3 = UITheme.Color.cardMuted
+	end
+
+	local stroke = card:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Color = mission.next and Color3.fromRGB(156, 211, 255)
+			or mission.unlocked and UITheme.Color.strokeSoft
+			or UITheme.Color.warning
+		stroke.Transparency = mission.next and 0.1 or mission.unlocked and 0.38 or 0.58
 	end
 
 	card.Chapter.Text = `Chapter {mission.chapter or "?"}`
 	card.Title.Text = mission.name or "Training"
 	card.Goal.Text = mission.description or missionGoalText(mission)
 	card.Status.Text = missionStatusText(mission)
-	card.Status.TextColor3 = mission.unlocked and Color3.fromRGB(210, 224, 255)
-		or Color3.fromRGB(153, 163, 179)
+	card.Status.TextColor3 = mission.unlocked and UITheme.Color.textMuted or UITheme.Color.textSoft
 end
 
 function StoryPanel.new(gui, options)
@@ -69,6 +78,7 @@ function StoryPanel.new(gui, options)
 	panel.Visible = false
 	panel.ZIndex = 42
 	panel.Parent = gui
+	UITheme.panel(panel, { color = UITheme.Color.panel, bottomColor = UITheme.Color.background })
 	self.panel = panel
 
 	local panelScale = Instance.new("UIScale")
@@ -94,6 +104,7 @@ function StoryPanel.new(gui, options)
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.ZIndex = 43
 	title.Parent = panel
+	UITheme.text(title, "title")
 
 	local closeButton = Instance.new("TextButton")
 	closeButton.Position = UDim2.new(1, -48, 0, 14)
@@ -106,6 +117,8 @@ function StoryPanel.new(gui, options)
 	closeButton.TextSize = 16
 	closeButton.ZIndex = 43
 	closeButton.Parent = panel
+	UITheme.closeButton(closeButton)
+	UITheme.attachButtonFeedback(closeButton)
 
 	local subtitle = Instance.new("TextLabel")
 	subtitle.BackgroundTransparency = 1
@@ -119,6 +132,7 @@ function StoryPanel.new(gui, options)
 	subtitle.TextXAlignment = Enum.TextXAlignment.Left
 	subtitle.ZIndex = 43
 	subtitle.Parent = panel
+	UITheme.text(subtitle, "muted")
 
 	for index = 1, 4 do
 		local card = self:createMissionCard(index)
@@ -126,7 +140,7 @@ function StoryPanel.new(gui, options)
 		self.cards[index] = card
 	end
 
-	closeButton.MouseButton1Click:Connect(function()
+	closeButton.Activated:Connect(function()
 		self.playSound("Button")
 		self:Hide()
 	end)
@@ -142,6 +156,8 @@ function StoryPanel:createMissionCard(index)
 	card.Font = Enum.Font.GothamBold
 	card.Text = ""
 	card.ZIndex = 43
+	UITheme.button(card, "secondary")
+	UITheme.attachButtonFeedback(card)
 
 	local chapter = Instance.new("TextLabel")
 	chapter.Name = "Chapter"
@@ -154,6 +170,7 @@ function StoryPanel:createMissionCard(index)
 	chapter.TextXAlignment = Enum.TextXAlignment.Left
 	chapter.ZIndex = 44
 	chapter.Parent = card
+	UITheme.text(chapter, "muted")
 
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
@@ -166,6 +183,7 @@ function StoryPanel:createMissionCard(index)
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.ZIndex = 44
 	title.Parent = card
+	UITheme.text(title, "heading")
 
 	local status = Instance.new("TextLabel")
 	status.Name = "Status"
@@ -178,6 +196,7 @@ function StoryPanel:createMissionCard(index)
 	status.TextXAlignment = Enum.TextXAlignment.Right
 	status.ZIndex = 44
 	status.Parent = card
+	UITheme.text(status, "muted")
 
 	local goal = Instance.new("TextLabel")
 	goal.Name = "Goal"
@@ -191,8 +210,9 @@ function StoryPanel:createMissionCard(index)
 	goal.TextXAlignment = Enum.TextXAlignment.Left
 	goal.ZIndex = 44
 	goal.Parent = card
+	UITheme.text(goal, "muted")
 
-	card.MouseButton1Click:Connect(function()
+	card.Activated:Connect(function()
 		local mission = self.cardMissions[index]
 		if typeof(mission) ~= "table" then
 			return

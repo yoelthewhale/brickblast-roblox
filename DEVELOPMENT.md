@@ -70,6 +70,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Added centralized low-volume shop analytics for shop opens, tab selection, cosmetic previews, cosmetic purchase attempts/success/failure, cosmetic equips, and gamepass prompt openings.
 - 2026-08-01: Added shared `UITheme` design tokens/helpers for panels, cards, text, buttons, and reduced-motion-aware button feedback.
 - 2026-08-01: Modernized the shop, results panel, hub shell, battle window, minimized battle dock, tutorial panel, and toast banner with consistent rounded surfaces, strokes, gradients, and cross-input `Activated` controls.
+- 2026-08-01: Brought Story Missions and Cosmetic Closet panels onto the shared UI theme with state-aware card strokes and cross-input activation.
 - 2026-08-01: Built the next place artifact as `BlockBlastBattle-Day8.rbxl`.
 
 ## Current Priorities
@@ -256,6 +257,29 @@ This file tracks production-readiness work, priorities, known issues, and techni
    These are now the most visually inconsistent modal panels.
 3. Add more explicit gamepad focus paths between hub, shop, story, cosmetics, and battle controls.
    `Activated` support is improved, but focus order still needs deliberate Studio validation.
+
+## Session Update - 2026-08-01 Modal Consistency Slice
+
+### Completed
+
+- Updated `src/client/ui/CosmeticPanel.luau` to use the shared `UITheme` panel, text, button, and feedback helpers.
+- Added state-aware cosmetic card strokes so equipped, unlocked, and locked cards read more clearly without changing unlock logic.
+- Updated `src/client/ui/StoryPanel.luau` to use the shared modal shell, text styles, button feedback, and state-aware mission card strokes.
+- Converted Story and Cosmetic panel actions from `MouseButton1Click` to `Activated` for broader input support.
+- Formatted with Stylua, linted with Selene, and rebuilt `BlockBlastBattle-Day8.rbxl`.
+
+### Current State
+
+- All major player-facing modal panels now share one visual system.
+- Gameplay, shop, story, cosmetics, persistence, and monetization behavior remain unchanged aside from UI activation compatibility.
+- Studio device-emulation and live gamepad focus-order testing are still needed.
+
+### Recommended Next Priorities
+
+1. Extract `HomePanel.luau`.
+   This is now the biggest architecture win because the visual language is centralized and the home surface is still embedded in the large client script.
+2. Add deliberate focus ordering/default selections to every modal panel.
+   Buttons activate across inputs now, but gamepad/keyboard navigation should feel intentional.
 
 ## Session Handoff - 2026-07-29
 
