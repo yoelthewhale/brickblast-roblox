@@ -47,10 +47,10 @@ Current placeholders:
 - The server validates the item identifier and marketplace ID before allowing a prompt.
 - Game pass ownership uses `UserOwnsGamePassAsync` with short-lived cache and post-purchase refresh.
 - Developer products are fulfilled only inside `MarketplaceService.ProcessReceipt`.
-- Receipt IDs are tracked in memory and persisted through `BlockBlastReceiptsV1` when DataStore is available.
+- Receipt IDs are recorded in the player profile as `fulfilledPurchaseIds` in the same durable update that applies the developer-product reward.
 - Keep every ID at `0` until the Creator Dashboard item exists.
 - Do not add production test overrides.
 
 ## Current Limitation
 
-Real purchase prompts cannot be fully tested until valid Creator Dashboard IDs are added and the place is tested through Roblox Studio or a published test experience.
+Real purchase prompts cannot be fully tested until valid Creator Dashboard IDs are added and the place is tested through Roblox Studio or a published test experience. Developer-product receipt testing should verify that replayed `ProcessReceipt` calls do not grant coins twice after server restart or cross-server retry.

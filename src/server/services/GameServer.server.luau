@@ -51,6 +51,7 @@ local playerModes = {}
 local playerSettings = {}
 local playerDailyRewardDates = {}
 local playerEntitlements = {}
+local playerFulfilledPurchaseIds = {}
 local selectedStoryChapters = {}
 local lastPlaceRequestAt = {}
 local lastQueueRequestAt = {}
@@ -93,11 +94,6 @@ pcall(function()
 	profileStore = DataStoreService:GetDataStore("BlockBlastProfilesV1")
 end)
 
-local receiptStore = nil
-pcall(function()
-	receiptStore = DataStoreService:GetDataStore("BlockBlastReceiptsV1")
-end)
-
 local BATTLE_MIN_PLAYERS = 2
 local SOLO_TEST_SECONDS = 8
 local OUT_OF_MOVES_RETURN_SECONDS = 4
@@ -116,6 +112,7 @@ local PROFILE_LIMITS = {
 	level = 1000,
 	storyStars = 100000,
 }
+local PROFILE_VERSION = 2
 local leaveBattle = nil
 local scheduleReturnIfEliminated = nil
 local resolveBattleIfFinished = nil
@@ -431,6 +428,9 @@ local function createLeaderstats(player)
 		if typeof(profile.dailyRewardDate) == "string" then
 			playerDailyRewardDates[player] = profile.dailyRewardDate
 		end
+		playerFulfilledPurchaseIds[player] = typeof(profile.fulfilledPurchaseIds) == "table"
+				and table.clone(profile.fulfilledPurchaseIds)
+			or {}
 		if sendHubState and playerModes[player] == "Hub" then
 			sendHubState(player, "Welcome to the hub")
 		end
@@ -478,7 +478,7 @@ local function setProfileWithRetry(player, payload)
 	return false
 end
 
-local function saveProfile(player)
+local function profileStats(player)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	local bestScore = leaderstats and leaderstats:FindFirstChild("BestScore")
 	local wins = leaderstats and leaderstats:FindFirstChild("Wins")
@@ -495,21 +495,50 @@ local function saveProfile(player)
 		or not storyStars
 		or not profileStore
 	then
+		return nil
+	end
+
+	return {
+		bestScore = bestScore,
+		wins = wins,
+		coins = coins,
+		xp = xp,
+		level = level,
+		storyStars = storyStars,
+	}
+end
+
+local function mergedProfilePayload(player, existingProfile, stats)
+	existingProfile = typeof(existingProfile) == "table" and existingProfile or {}
+	local fulfilledPurchaseIds = typeof(playerFulfilledPurchaseIds[player]) == "table"
+			and table.clone(playerFulfilledPurchaseIds[player])
+		or typeof(existingProfile.fulfilledPurchaseIds) == "table" and table.clone(
+			existingProfile.fulfilledPurchaseIds
+		)
+		or {}
+
+	return {
+		version = PROFILE_VERSION,
+		bestScore = sanitizedStatValue(stats.bestScore, 0, PROFILE_LIMITS.bestScore, 0),
+		wins = sanitizedStatValue(stats.wins, 0, PROFILE_LIMITS.wins, 0),
+		coins = sanitizedStatValue(stats.coins, 0, PROFILE_LIMITS.coins, 0),
+		xp = sanitizedStatValue(stats.xp, 0, PROFILE_LIMITS.xp, 0),
+		level = sanitizedStatValue(stats.level, 1, PROFILE_LIMITS.level, 1),
+		storyStars = sanitizedStatValue(stats.storyStars, 0, PROFILE_LIMITS.storyStars, 0),
+		settings = sanitizeSettings(playerSettings[player], cosmeticProgress(player)),
+		dailyRewardDate = playerDailyRewardDates[player],
+		fulfilledPurchaseIds = fulfilledPurchaseIds,
+		updatedAt = os.time(),
+	}
+end
+
+local function saveProfile(player)
+	local stats = profileStats(player)
+	if not stats then
 		return
 	end
 
-	setProfileWithRetry(player, {
-		version = 1,
-		bestScore = sanitizedStatValue(bestScore, 0, PROFILE_LIMITS.bestScore, 0),
-		wins = sanitizedStatValue(wins, 0, PROFILE_LIMITS.wins, 0),
-		coins = sanitizedStatValue(coins, 0, PROFILE_LIMITS.coins, 0),
-		xp = sanitizedStatValue(xp, 0, PROFILE_LIMITS.xp, 0),
-		level = sanitizedStatValue(level, 1, PROFILE_LIMITS.level, 1),
-		storyStars = sanitizedStatValue(storyStars, 0, PROFILE_LIMITS.storyStars, 0),
-		settings = sanitizeSettings(playerSettings[player], cosmeticProgress(player)),
-		dailyRewardDate = playerDailyRewardDates[player],
-		updatedAt = os.time(),
-	})
+	setProfileWithRetry(player, mergedProfilePayload(player, nil, stats))
 end
 
 local function productInfoForMarketplaceId(marketplaceId, infoType)
@@ -698,16 +727,45 @@ local function findPurchasableDefinition(itemType, itemId)
 	return nil
 end
 
-local function grantDeveloperProduct(player, product)
-	local leaderstats = player:FindFirstChild("leaderstats")
-	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
-	if not coins then
+local function grantDeveloperProductReceipt(player, product, receiptKey)
+	local stats = profileStats(player)
+	if not stats or not profileStore then
 		return false
 	end
 
-	coins.Value += product.coins or 0
-	saveProfile(player)
-	return true
+	local alreadyFulfilled = false
+	local nextCoins = nil
+	local ok, err = pcall(function()
+		profileStore:UpdateAsync(`Player_{player.UserId}`, function(existingProfile)
+			local payload = mergedProfilePayload(player, existingProfile, stats)
+			if payload.fulfilledPurchaseIds[receiptKey] == true then
+				alreadyFulfilled = true
+				nextCoins = payload.coins
+				return payload
+			end
+
+			payload.coins =
+				math.clamp(payload.coins + (product.coins or 0), 0, PROFILE_LIMITS.coins)
+			payload.fulfilledPurchaseIds[receiptKey] = true
+			nextCoins = payload.coins
+			return payload
+		end)
+	end)
+
+	if not ok then
+		profileSaveFailures += 1
+		warn(`[BlockBlast] Failed to fulfill receipt for {player.UserId}: {tostring(err)}`)
+		return false
+	end
+
+	playerFulfilledPurchaseIds[player] = playerFulfilledPurchaseIds[player] or {}
+	playerFulfilledPurchaseIds[player][receiptKey] = true
+	processedReceipts[receiptKey] = true
+	if nextCoins then
+		stats.coins.Value = nextCoins
+	end
+
+	return true, alreadyFulfilled
 end
 
 local function levelFromXp(xp)
@@ -1766,35 +1824,19 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
 
-	if receiptStore then
-		local ok, existing = pcall(function()
-			return receiptStore:GetAsync(receiptKey)
-		end)
-		if ok and existing == true then
-			processedReceipts[receiptKey] = true
-			return Enum.ProductPurchaseDecision.PurchaseGranted
-		end
-	end
-
-	if not grantDeveloperProduct(player, product) then
+	local granted, alreadyFulfilled = grantDeveloperProductReceipt(player, product, receiptKey)
+	if not granted then
 		analytics.developerProductReceiptsRetried += 1
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 
-	processedReceipts[receiptKey] = true
-	if receiptStore then
-		local ok = pcall(function()
-			receiptStore:SetAsync(receiptKey, true)
-		end)
-		if not ok then
-			analytics.developerProductReceiptsRetried += 1
-			return Enum.ProductPurchaseDecision.NotProcessedYet
-		end
-	end
-
 	analytics.shopPromptCompleted += 1
-	analytics.developerProductReceiptsGranted += 1
-	sendShopSnapshot(player, `{product.name} added.`)
+	if not alreadyFulfilled then
+		analytics.developerProductReceiptsGranted += 1
+		sendShopSnapshot(player, `{product.name} added.`)
+	else
+		sendShopSnapshot(player, `{product.name} already fulfilled.`)
+	end
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
 
@@ -1833,6 +1875,7 @@ end
 Players.PlayerAdded:Connect(function(player)
 	playerSettings[player] = table.clone(DEFAULT_SETTINGS)
 	playerDailyRewardDates[player] = nil
+	playerFulfilledPurchaseIds[player] = {}
 	createLeaderstats(player)
 	playerModes[player] = "Hub"
 	player.CharacterAdded:Connect(function()
@@ -1858,6 +1901,7 @@ Players.PlayerRemoving:Connect(function(player)
 	playerSettings[player] = nil
 	playerDailyRewardDates[player] = nil
 	playerEntitlements[player] = nil
+	playerFulfilledPurchaseIds[player] = nil
 	lastPlaceRequestAt[player] = nil
 	lastQueueRequestAt[player] = nil
 	lastShopRequestAt[player] = nil
@@ -1888,6 +1932,7 @@ end)
 for _, player in Players:GetPlayers() do
 	if not player:FindFirstChild("leaderstats") then
 		playerSettings[player] = playerSettings[player] or table.clone(DEFAULT_SETTINGS)
+		playerFulfilledPurchaseIds[player] = playerFulfilledPurchaseIds[player] or {}
 		createLeaderstats(player)
 	end
 	playerModes[player] = playerModes[player] or "Hub"

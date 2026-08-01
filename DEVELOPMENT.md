@@ -56,6 +56,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Added a replayable hub Guide button that reopens the tutorial without resetting saved tutorial completion.
 - 2026-08-01: Added a complete first shop vertical slice with Featured, Passes, Cosmetics, and Currency categories, responsive reusable product cards, server-fed item state, loading/owned/equipped/locked/unavailable/error feedback, touch-sized controls, and gamepad focus entry.
 - 2026-08-01: Added secure monetization scaffolding with centralized placeholder game pass/developer product IDs, server-validated prompt requests, prompt locks, cached game pass ownership refreshes, post-purchase game pass refresh, and server-only developer product receipt fulfillment.
+- 2026-08-01: Hardened developer-product receipts so fulfilled purchase IDs persist inside the player profile in the same durable update that applies currency, avoiding duplicate grants across receipt retries and server restarts.
 - 2026-08-01: Added low-volume shop analytics counters for snapshot requests, prompt requests, rejected prompts, completed/cancelled prompts, ownership refreshes, and developer product receipt outcomes.
 - 2026-08-01: Documented Creator Dashboard monetization setup in `docs/MONETIZATION_SETUP.md` and kept placeholder IDs at `0` until real Roblox assets exist.
 - 2026-08-01: Evaluated React Luau for the shop slice and deferred it because the project has no React/Wally dependencies installed; the production slice instead uses a reusable, state-driven Luau panel architecture compatible with the existing Rojo app.
@@ -82,7 +83,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - First-time onboarding and compact battle layout need Studio validation across desktop and mobile screen sizes.
 - Current battle board is UI-only; future versions should consider an optional 3D board representation in the arena.
 - Monetization IDs are intentionally `0`; real purchase prompt testing is blocked until Creator Dashboard game passes and developer products exist.
-- Developer product receipt persistence uses `BlockBlastReceiptsV1`; it still needs live DataStore failure testing before any real currency products are enabled.
+- Developer product receipt persistence now uses profile `fulfilledPurchaseIds`; it still needs live DataStore failure testing before any real currency products are enabled.
 
 ## Technical Debt
 
