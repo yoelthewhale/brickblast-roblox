@@ -167,6 +167,7 @@ function ShopPanel.new(gui, options)
 		tab.MouseButton1Click:Connect(function()
 			self.playSound("Button")
 			self.category = category
+			self:Track("ShopTabSelected")
 			self:Refresh()
 		end)
 		self.tabs[category] = tab
@@ -344,6 +345,7 @@ function ShopPanel:createCard(item, index)
 		table.insert(self.cardButtons, preview)
 		preview.MouseButton1Click:Connect(function()
 			self.playSound("Button")
+			self:Track("CosmeticPreviewed")
 			self.previewCosmetic(item)
 		end)
 	end
@@ -368,6 +370,7 @@ function ShopPanel:activateItem(item)
 		elseif item.state == "Available" and item.costCoins then
 			self.pendingPrompt = item.id
 			self.playSound("Button")
+			self:Track("CosmeticPurchaseAttempted")
 			self.shopEvent:FireServer("PurchaseCosmetic", {
 				id = item.id,
 			})
@@ -376,6 +379,7 @@ function ShopPanel:activateItem(item)
 		elseif item.state == "PassRequired" and item.requiredGamePass then
 			self.pendingPrompt = item.requiredGamePass
 			self.playSound("Button")
+			self:Track("GamePassPromptOpened")
 			self.shopEvent:FireServer("RequestPrompt", {
 				itemType = "GamePass",
 				id = item.requiredGamePass,
@@ -413,6 +417,9 @@ function ShopPanel:activateItem(item)
 
 	self.pendingPrompt = item.id
 	self.playSound("Button")
+	if item.itemType == "GamePass" then
+		self:Track("GamePassPromptOpened")
+	end
 	self.shopEvent:FireServer("RequestPrompt", {
 		itemType = item.itemType,
 		id = item.id,
@@ -483,6 +490,12 @@ function ShopPanel:HandleServerMessage(message)
 	end
 end
 
+function ShopPanel:Track(eventName)
+	self.shopEvent:FireServer("Track", {
+		event = eventName,
+	})
+end
+
 function ShopPanel:Hide()
 	self.stopPreview()
 	self.panel.Visible = false
@@ -494,6 +507,7 @@ function ShopPanel:Show(category)
 	self:Refresh()
 	self.updateScale()
 	self.panel.Visible = true
+	self:Track("ShopOpened")
 	self.shopEvent:FireServer("RequestSnapshot")
 
 	if UserInputService.GamepadEnabled and self.closeButton then

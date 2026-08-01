@@ -67,6 +67,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Connected the shop Cosmetics tab to server-owned catalog snapshots with coin purchase, equip, pass-required, locked, unavailable, preview, owned, and equipped states.
 - 2026-08-01: Applied equipped cosmetics to gameplay for piece colors, board theme, line-clear feedback, and in-run player title presentation.
 - 2026-08-01: Added `docs/STUDIO_TEST_CHECKLIST.md` covering migration, shop, Marketplace, mobile/gamepad, reduced-motion, and two-player cosmetic validation.
+- 2026-08-01: Added centralized low-volume shop analytics for shop opens, tab selection, cosmetic previews, cosmetic purchase attempts/success/failure, cosmetic equips, and gamepass prompt openings.
 
 ## Current Priorities
 
@@ -212,6 +213,20 @@ This file tracks production-readiness work, priorities, known issues, and techni
    The profile schema has placeholders, but slots, save/select UI, and Extra Preset Slots validation are not done.
 3. Add a richer selected-item details area to the shop.
    Cards now work, but a details pane would improve preview and purchase confidence.
+
+## Session Update - 2026-08-01 Shop Analytics Slice
+
+### Completed
+
+- Added validated `Shop` remote analytics tracking for a fixed allowlist of low-volume event names.
+- Added counters for shop opens, tab selections, cosmetic previews, cosmetic purchase attempts/success/failure, cosmetic equips, and gamepass prompt openings.
+- Emitted analytics from `ShopPanel.luau` without logging hover activity, personal information, or sensitive purchase data.
+- Kept analytics outside the shop action cooldown so tracking cannot throttle snapshot, purchase, or equip requests.
+
+### Current State
+
+- Analytics are still in-memory diagnostic counters exposed through the existing server analytics model.
+- Production analytics export is not connected yet.
 
 ## Session Handoff - 2026-07-29
 

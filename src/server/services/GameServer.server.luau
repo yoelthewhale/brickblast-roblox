@@ -89,6 +89,14 @@ local analytics = {
 	shopOwnershipRefreshes = 0,
 	developerProductReceiptsGranted = 0,
 	developerProductReceiptsRetried = 0,
+	shopOpened = 0,
+	shopTabsSelected = 0,
+	cosmeticsPreviewed = 0,
+	cosmeticPurchaseAttempts = 0,
+	cosmeticPurchaseSucceeded = 0,
+	cosmeticPurchaseFailed = 0,
+	cosmeticEquips = 0,
+	gamePassPromptOpened = 0,
 }
 
 pcall(function()
@@ -1022,10 +1030,29 @@ local function sendShopError(player, message)
 	})
 end
 
+local SHOP_ANALYTICS_EVENTS = {
+	ShopOpened = "shopOpened",
+	ShopTabSelected = "shopTabsSelected",
+	CosmeticPreviewed = "cosmeticsPreviewed",
+	CosmeticPurchaseAttempted = "cosmeticPurchaseAttempts",
+	GamePassPromptOpened = "gamePassPromptOpened",
+}
+
+local function trackShopAnalytics(eventName)
+	local counter = SHOP_ANALYTICS_EVENTS[eventName]
+	if not counter then
+		return false
+	end
+
+	analytics[counter] += 1
+	return true
+end
+
 local function purchaseCosmetic(player, cosmeticId)
 	local cosmetic = Config.getCosmeticDefinition(cosmeticId)
 	if not cosmetic then
 		analytics.shopPromptRejected += 1
+		analytics.cosmeticPurchaseFailed += 1
 		sendShopError(player, "That cosmetic is unavailable.")
 		return
 	end
@@ -1037,11 +1064,13 @@ local function purchaseCosmetic(player, cosmeticId)
 	end
 
 	if cosmetic.requiredGamePass then
+		analytics.cosmeticPurchaseFailed += 1
 		sendShopError(player, "This cosmetic requires a game pass.")
 		return
 	end
 
 	if (cosmetic.costCoins or 0) <= 0 then
+		analytics.cosmeticPurchaseFailed += 1
 		sendShopError(player, "This cosmetic cannot be bought with coins.")
 		return
 	end
@@ -1050,6 +1079,7 @@ local function purchaseCosmetic(player, cosmeticId)
 	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
 	if not coins or coins.Value < cosmetic.costCoins then
 		analytics.shopPromptRejected += 1
+		analytics.cosmeticPurchaseFailed += 1
 		sendShopSnapshot(player, `Need {cosmetic.costCoins} coins.`)
 		return
 	end
@@ -1059,11 +1089,13 @@ local function purchaseCosmetic(player, cosmeticId)
 	if not saveProfile(player) then
 		inventory.owned[cosmetic.id] = nil
 		coins.Value += cosmetic.costCoins
+		analytics.cosmeticPurchaseFailed += 1
 		sendShopError(player, "Purchase could not be saved. Try again.")
 		return
 	end
 
 	analytics.shopPromptCompleted += 1
+	analytics.cosmeticPurchaseSucceeded += 1
 	sendSettings(player)
 	sendShopSnapshot(player, `{cosmetic.name} purchased.`)
 end
@@ -1096,6 +1128,7 @@ local function equipCosmetic(player, cosmeticId)
 	end
 
 	analytics.shopPromptCompleted += 1
+	analytics.cosmeticEquips += 1
 	sendSettings(player)
 	sendShopSnapshot(player, `{cosmetic.name} equipped.`)
 end
@@ -2077,6 +2110,11 @@ queueEvent.OnServerEvent:Connect(function(player, mode, requestedChapter)
 end)
 
 shopEvent.OnServerEvent:Connect(function(player, action, payload)
+	if action == "Track" and typeof(payload) == "table" then
+		trackShopAnalytics(payload.event)
+		return
+	end
+
 	if not canAcceptShopAction(player) then
 		analytics.shopPromptRejected += 1
 		return
@@ -2089,6 +2127,7 @@ shopEvent.OnServerEvent:Connect(function(player, action, payload)
 	end
 
 	if action == "PurchaseCosmetic" and typeof(payload) == "table" then
+		analytics.cosmeticPurchaseAttempts += 1
 		purchaseCosmetic(player, payload.id)
 		return
 	end
@@ -2140,6 +2179,9 @@ shopEvent.OnServerEvent:Connect(function(player, action, payload)
 	end
 
 	analytics.shopPromptRequests += 1
+	if itemType == "GamePass" then
+		analytics.gamePassPromptOpened += 1
+	end
 	purchasePromptLocks[player] = {
 		itemType = itemType,
 		id = itemId,
