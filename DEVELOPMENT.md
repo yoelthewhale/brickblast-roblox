@@ -72,6 +72,8 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Modernized the shop, results panel, hub shell, battle window, minimized battle dock, tutorial panel, and toast banner with consistent rounded surfaces, strokes, gradients, and cross-input `Activated` controls.
 - 2026-08-01: Brought Story Missions and Cosmetic Closet panels onto the shared UI theme with state-aware card strokes and cross-input activation.
 - 2026-08-01: Added default gamepad focus and directional focus paths to results, story missions, and cosmetic closet panels.
+- 2026-08-01: Extracted the modernized home hub interface into `src/client/ui/HomePanel.luau`, moving home-owned instances, activation connections, focus paths, responsive scale, show tween, cosmetic swatches, matchmaking labels, and queued pulse ownership out of the main client script.
+- 2026-08-01: Added `docs/STUDIO_MCP_VALIDATION.md` with official Roblox Studio MCP Quick Connect steps and an unexecuted Studio test matrix for Day9.
 - 2026-08-01: Built the next place artifact as `BlockBlastBattle-Day8.rbxl`.
 
 ## Current Priorities
@@ -302,6 +304,35 @@ This file tracks production-readiness work, priorities, known issues, and techni
    This remains the highest-value architecture task because the home UI is visually improved but still embedded in the oversized main client script.
 2. Studio-test UI navigation on mobile and gamepad.
    Repository validation passes, but actual Roblox focus movement should be checked with real input.
+
+## Session Update - 2026-08-01 HomePanel Extraction
+
+### Completed
+
+- Added `src/client/ui/HomePanel.luau` as the owner of the modernized home/hub visual subtree.
+- Moved the hub panel, side logo reopen control, status and matchmaking labels, story preview, Battle/Story/Shop/Guide/Settings buttons, cosmetic swatches, board preview cells, home responsive scale, home show tween, queued pulse tween, and home focus paths out of `BlockBlastClient.client.luau`.
+- Kept networking, matchmaking authority, tutorial state, settings values, shop/story/cosmetic modal orchestration, gameplay state, and save calls in `BlockBlastClient.client.luau`.
+- Preserved the previous Day8 home appearance and cross-input `Activated` behavior.
+- Preserved the existing "Arenas Full" battle activation path so the server remains the source of truth for queue rejection.
+- Reduced `BlockBlastClient.client.luau` from 2450 lines to 2078 lines at the first clean validation point.
+- Added `docs/STUDIO_MCP_VALIDATION.md` with official Studio MCP setup steps, safe local place opening instructions, and the full unexecuted validation matrix.
+- Formatted with Stylua, linted with Selene, and built `BlockBlastBattle-Day9.rbxl`.
+
+### Current State
+
+- Repository validation passes locally.
+- Official Roblox Studio MCP is not connected in this Codex session, so Studio playtesting and screenshots remain unexecuted.
+- `HomePanel` owns its connections and tweens and exposes an idempotent `Destroy` method.
+- `BlockBlastClient.client.luau` still owns the gameplay HUD and tutorial panel; those are intentionally outside this extraction.
+
+### Recommended Next Priorities
+
+1. Connect Roblox Studio MCP through Studio Assistant Quick Connect and execute `docs/STUDIO_MCP_VALIDATION.md`.
+   The extraction builds, but actual focus/device behavior needs Studio proof.
+2. Fix any Studio-discovered UI regressions from the HomePanel extraction.
+   Focus order, hidden-element focus, and mobile safe-area layout are the likeliest places for real-device issues.
+3. Consider extracting the tutorial panel after Studio validation.
+   It is adjacent to the home flow but was left in the client to keep this extraction focused.
 
 ## Session Handoff - 2026-07-29
 
