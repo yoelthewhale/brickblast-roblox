@@ -24,6 +24,7 @@ Improve hub visuals and signposting,Medium,In Progress,Codex,2026-08-04
 Add sound effects for placing clearing queueing and winning,Medium,Playtest,Codex,2026-08-04
 Extract client sound controller module,Medium,Playtest,Codex,2026-08-04
 Add mobile-friendly controls and scale testing,High,Playtest,Codex,2026-08-05
+Add replayable hub guide button,Medium,Playtest,Codex,2026-08-05
 Harden profile save reliability and diagnostics,High,Playtest,Codex,2026-08-05
 Harden numeric settings sanitization on server and client,High,Playtest,Codex,2026-08-05
 Add server playtest analytics hooks,Medium,Playtest,Codex,2026-08-05

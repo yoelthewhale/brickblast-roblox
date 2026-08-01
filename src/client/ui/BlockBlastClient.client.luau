@@ -91,6 +91,7 @@ local loadingDismissed = false
 local tutorialPanel = nil
 local hubManuallyClosed = false
 local tutorialComplete = false
+local tutorialManuallyOpened = false
 local root = nil
 local rootScale = nil
 local hubScale = nil
@@ -466,7 +467,7 @@ local function updateTutorialVisibility()
 		return
 	end
 
-	tutorialPanel.Visible = currentState == nil and not tutorialComplete
+	tutorialPanel.Visible = currentState == nil and (not tutorialComplete or tutorialManuallyOpened)
 end
 
 local function showBanner(message, color)
@@ -678,6 +679,18 @@ hubCloseButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 hubCloseButton.TextSize = 16
 hubCloseButton.Parent = hubPanel
 
+local hubGuideButton = Instance.new("TextButton")
+hubGuideButton.AnchorPoint = Vector2.new(1, 0)
+hubGuideButton.Position = UDim2.new(1, -56, 0, 14)
+hubGuideButton.Size = UDim2.fromOffset(74, 34)
+hubGuideButton.BackgroundColor3 = Color3.fromRGB(31, 38, 52)
+hubGuideButton.BorderSizePixel = 0
+hubGuideButton.Font = Enum.Font.GothamBold
+hubGuideButton.Text = "Guide"
+hubGuideButton.TextColor3 = Color3.fromRGB(245, 247, 251)
+hubGuideButton.TextSize = 14
+hubGuideButton.Parent = hubPanel
+
 local function setHubPanelVisible(visible)
 	local shouldShowHub = visible and currentState == nil
 	hubPanel.Visible = shouldShowHub
@@ -700,6 +713,12 @@ end)
 hubLogoButton.MouseButton1Click:Connect(function()
 	hubManuallyClosed = false
 	setHubPanelVisible(true)
+end)
+
+hubGuideButton.MouseButton1Click:Connect(function()
+	tutorialManuallyOpened = true
+	playSound("Button")
+	updateTutorialVisibility()
 end)
 
 tutorialPanel = Instance.new("Frame")
@@ -761,6 +780,7 @@ tutorialStoryButton.Parent = tutorialPanel
 
 tutorialButton.MouseButton1Click:Connect(function()
 	tutorialComplete = true
+	tutorialManuallyOpened = false
 	updateTutorialVisibility()
 	playSound("Button")
 	saveSettings()
@@ -768,6 +788,7 @@ end)
 
 tutorialStoryButton.MouseButton1Click:Connect(function()
 	tutorialComplete = true
+	tutorialManuallyOpened = false
 	updateTutorialVisibility()
 	playSound("Button")
 	saveSettings()

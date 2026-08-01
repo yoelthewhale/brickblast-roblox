@@ -53,6 +53,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Built `BlockBlastBattle-Day4.rbxl` after `BlockBlastBattle-Day3.rbxl` was locked by an open Studio session.
 - 2026-08-01: Added server-authoritative combo streaks, combo score bonuses, live combo banners, best-combo tracking, and match duration/best-combo result stats.
 - 2026-08-01: Added a server-authoritative first-win daily bonus for battle victories or next-chapter story completions, persisted claim dates, hub reminder text, and result-panel bonus feedback.
+- 2026-08-01: Added a replayable hub Guide button that reopens the tutorial without resetting saved tutorial completion.
 
 ## Current Priorities
 
@@ -60,6 +61,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Continue anti-exploit hardening around server-authoritative economy events and abnormal session lifecycle edge cases.
 - Polish core game feel around line clears, incoming pressure, victory/defeat, and reward reveals.
 - Add quest or challenge presentation that builds on the first-win daily bonus without creating exploitable reward spam.
+- Improve the guide into a more interactive first-match tutorial with step tracking for first placement and first line clear.
 - Expand cosmetic closet into a full shop/inventory flow with earnable inventory, featured items, and clearer purchase-free progression.
 - Add richer original audio assets and mix testing.
 - Expand Story Training with more mission types, longer chapter arcs, and better hub-world story signposting.

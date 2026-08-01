@@ -48,6 +48,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Add sound effects for placing, clearing, queueing, and winning | Medium | Playtest | Codex | 2026-08-04 |
 | Extract client sound controller module | Medium | Playtest | Codex | 2026-08-04 |
 | Add mobile-friendly controls and scale testing | High | Playtest | Codex | 2026-08-05 |
+| Add replayable hub guide button | Medium | Playtest | Codex | 2026-08-05 |
 | Harden profile save reliability and diagnostics | High | Playtest | Codex | 2026-08-05 |
 | Harden numeric settings sanitization on server and client | High | Playtest | Codex | 2026-08-05 |
 | Add server playtest analytics hooks | Medium | Playtest | Codex | 2026-08-05 |
@@ -71,6 +72,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Confirm the loading splash appears briefly and fades after game state arrives.
 - Press Play and confirm the hub appears.
 - Confirm first-time onboarding appears, `Got It` dismisses it, and `Try Story` starts Story Training.
+- Press the hub `Guide` button after dismissing onboarding and confirm the tutorial can be replayed without losing saved completion.
 - Close the hub UI with `X`, then reopen it with the `BB` side logo.
 - Change theme, board skin, motion, UI size, and piece style, rejoin the session, and confirm those settings reload.
 - Confirm Studio diagnostics profile failure counters stay at `0/0` after settings changes, rewards, and rejoin.
