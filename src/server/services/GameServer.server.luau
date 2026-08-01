@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local DataStoreService = game:GetService("DataStoreService")
+local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -37,6 +38,10 @@ local settingsEvent = Instance.new("RemoteEvent")
 settingsEvent.Name = "Settings"
 settingsEvent.Parent = remotes
 
+local shopEvent = Instance.new("RemoteEvent")
+shopEvent.Name = "Shop"
+shopEvent.Parent = remotes
+
 local hubParts = HubBuilder.build()
 local playerStates = {}
 local playerSessions = {}
@@ -45,9 +50,13 @@ local queuedPlayers = {}
 local playerModes = {}
 local playerSettings = {}
 local playerDailyRewardDates = {}
+local playerEntitlements = {}
 local selectedStoryChapters = {}
 local lastPlaceRequestAt = {}
 local lastQueueRequestAt = {}
+local lastShopRequestAt = {}
+local purchasePromptLocks = {}
+local processedReceipts = {}
 local settingsSaveScheduled = {}
 local queueStartedAt = nil
 local nextSessionId = 0
@@ -70,10 +79,23 @@ local analytics = {
 	suddenDeathPressureRows = 0,
 	profileFieldsSanitized = 0,
 	forfeits = 0,
+	shopSnapshotsRequested = 0,
+	shopPromptRequests = 0,
+	shopPromptRejected = 0,
+	shopPromptCompleted = 0,
+	shopPromptCancelled = 0,
+	shopOwnershipRefreshes = 0,
+	developerProductReceiptsGranted = 0,
+	developerProductReceiptsRetried = 0,
 }
 
 pcall(function()
 	profileStore = DataStoreService:GetDataStore("BlockBlastProfilesV1")
+end)
+
+local receiptStore = nil
+pcall(function()
+	receiptStore = DataStoreService:GetDataStore("BlockBlastReceiptsV1")
 end)
 
 local BATTLE_MIN_PLAYERS = 2
@@ -82,6 +104,8 @@ local OUT_OF_MOVES_RETURN_SECONDS = 4
 local POST_BATTLE_RETURN_SECONDS = 6
 local PLACE_COOLDOWN_SECONDS = 0.08
 local QUEUE_ACTION_COOLDOWN_SECONDS = 0.35
+local SHOP_ACTION_COOLDOWN_SECONDS = 0.35
+local ENTITLEMENT_CACHE_SECONDS = 120
 local SETTINGS_SAVE_DEBOUNCE_SECONDS = 1
 local PROFILE_SAVE_RETRY_COUNT = 3
 local PROFILE_LIMITS = {
@@ -488,6 +512,204 @@ local function saveProfile(player)
 	})
 end
 
+local function productInfoForMarketplaceId(marketplaceId, infoType)
+	if marketplaceId == Config.Monetization.PlaceholderId then
+		return nil
+	end
+
+	local ok, info = pcall(function()
+		return MarketplaceService:GetProductInfo(marketplaceId, infoType)
+	end)
+	if ok and typeof(info) == "table" then
+		return info
+	end
+
+	return nil
+end
+
+local function entitlementState(player)
+	playerEntitlements[player] = playerEntitlements[player]
+		or {
+			gamePasses = {},
+			lastCheckedAt = {},
+			errors = {},
+		}
+
+	return playerEntitlements[player]
+end
+
+local function refreshGamePassOwnership(player, pass, force)
+	local entitlements = entitlementState(player)
+	if pass.gamePassId == Config.Monetization.PlaceholderId then
+		entitlements.gamePasses[pass.id] = false
+		entitlements.errors[pass.id] = "Creator Dashboard ID required"
+		return false, "Creator Dashboard ID required"
+	end
+
+	local lastCheckedAt = entitlements.lastCheckedAt[pass.id] or 0
+	if not force and os.clock() - lastCheckedAt < ENTITLEMENT_CACHE_SECONDS then
+		return entitlements.gamePasses[pass.id] == true, entitlements.errors[pass.id]
+	end
+
+	local ok, owns = pcall(function()
+		return MarketplaceService:UserOwnsGamePassAsync(player.UserId, pass.gamePassId)
+	end)
+
+	entitlements.lastCheckedAt[pass.id] = os.clock()
+	analytics.shopOwnershipRefreshes += 1
+	if not ok then
+		entitlements.errors[pass.id] = "Ownership check failed"
+		return entitlements.gamePasses[pass.id] == true, entitlements.errors[pass.id]
+	end
+
+	entitlements.gamePasses[pass.id] = owns == true
+	entitlements.errors[pass.id] = nil
+	return entitlements.gamePasses[pass.id], nil
+end
+
+local function playerOwnsGamePass(player, passId)
+	local pass = Config.getGamePassDefinition(passId)
+	if not pass then
+		return false
+	end
+
+	local owned = refreshGamePassOwnership(player, pass, false)
+	return owned == true
+end
+
+local function entitlementRewardMultipliers(player)
+	local coinMultiplier = 1
+	local xpMultiplier = 1
+	for _, pass in Config.Monetization.GamePasses do
+		if playerOwnsGamePass(player, pass.id) and typeof(pass.rewardMultipliers) == "table" then
+			coinMultiplier *= pass.rewardMultipliers.coins or 1
+			xpMultiplier *= pass.rewardMultipliers.xp or 1
+		end
+	end
+
+	return coinMultiplier, xpMultiplier
+end
+
+local function entitlementDailyBonusCoins(player)
+	local bonus = 0
+	for _, pass in Config.Monetization.GamePasses do
+		if pass.dailyBonusCoins and playerOwnsGamePass(player, pass.id) then
+			bonus += pass.dailyBonusCoins
+		end
+	end
+
+	return bonus
+end
+
+local function publicShopSnapshot(player, message, pendingId)
+	local gamePasses = {}
+	for _, pass in Config.Monetization.GamePasses do
+		local owned, ownershipError = refreshGamePassOwnership(player, pass, false)
+		local info = productInfoForMarketplaceId(pass.gamePassId, Enum.InfoType.GamePass)
+		local price = info and info.PriceInRobux or pass.suggestedPriceRobux
+		table.insert(gamePasses, {
+			id = pass.id,
+			itemType = "GamePass",
+			name = (info and info.Name) or pass.name,
+			description = (info and info.Description) or pass.description,
+			category = pass.category,
+			featured = pass.featured == true,
+			benefits = pass.benefits,
+			owned = owned == true,
+			equipped = owned == true and pass.id == "VIP_PASS",
+			available = pass.gamePassId ~= Config.Monetization.PlaceholderId
+				and ownershipError == nil,
+			marketplaceId = pass.gamePassId,
+			priceRobux = price,
+			state = owned and "Owned"
+				or ownershipError and "Unavailable"
+				or pendingId == pass.id and "Loading"
+				or "Available",
+			unavailableReason = ownershipError,
+		})
+	end
+
+	local developerProducts = {}
+	for _, product in Config.Monetization.DeveloperProducts do
+		local info = productInfoForMarketplaceId(product.productId, Enum.InfoType.Product)
+		local unavailable = product.productId == Config.Monetization.PlaceholderId
+		table.insert(developerProducts, {
+			id = product.id,
+			itemType = "DeveloperProduct",
+			name = (info and info.Name) or product.name,
+			description = (info and info.Description) or product.description,
+			category = product.category,
+			featured = product.featured == true,
+			coins = product.coins,
+			available = not unavailable,
+			marketplaceId = product.productId,
+			priceRobux = (info and info.PriceInRobux) or product.suggestedPriceRobux,
+			state = unavailable and "Unavailable"
+				or pendingId == product.id and "Loading"
+				or "Available",
+			unavailableReason = unavailable and "Creator Dashboard ID required" or nil,
+		})
+	end
+
+	return {
+		gamePasses = gamePasses,
+		developerProducts = developerProducts,
+		message = message,
+		pendingId = pendingId,
+		analytics = {
+			snapshots = analytics.shopSnapshotsRequested,
+			prompts = analytics.shopPromptRequests,
+			rejected = analytics.shopPromptRejected,
+			completed = analytics.shopPromptCompleted,
+			cancelled = analytics.shopPromptCancelled,
+		},
+	}
+end
+
+local function sendShopSnapshot(player, message, pendingId)
+	shopEvent:FireClient(player, {
+		kind = "Snapshot",
+		shop = publicShopSnapshot(player, message, pendingId),
+	})
+end
+
+local function canAcceptShopAction(player)
+	local now = os.clock()
+	local lastRequestAt = lastShopRequestAt[player] or 0
+	if now - lastRequestAt < SHOP_ACTION_COOLDOWN_SECONDS then
+		return false
+	end
+
+	lastShopRequestAt[player] = now
+	return true
+end
+
+local function findPurchasableDefinition(itemType, itemId)
+	if typeof(itemId) ~= "string" then
+		return nil
+	end
+
+	if itemType == "GamePass" then
+		return Config.getGamePassDefinition(itemId)
+	elseif itemType == "DeveloperProduct" then
+		return Config.getDeveloperProductDefinition(itemId)
+	end
+
+	return nil
+end
+
+local function grantDeveloperProduct(player, product)
+	local leaderstats = player:FindFirstChild("leaderstats")
+	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
+	if not coins then
+		return false
+	end
+
+	coins.Value += product.coins or 0
+	saveProfile(player)
+	return true
+end
+
 local function levelFromXp(xp)
 	return math.max(1, math.floor(math.sqrt(xp / Config.LevelXpBase)) + 1)
 end
@@ -618,12 +840,16 @@ local function grantBattleRewards(player, state, winner)
 	local dailyBonusCoins = 0
 	local dailyBonusXp = 0
 	if dailyEligible and playerDailyRewardDates[player] ~= today then
-		dailyBonusCoins = Config.DailyBonusCoins
+		dailyBonusCoins = Config.DailyBonusCoins + entitlementDailyBonusCoins(player)
 		dailyBonusXp = Config.DailyBonusXp
 		earnedCoins += dailyBonusCoins
 		earnedXp += dailyBonusXp
 		playerDailyRewardDates[player] = today
 	end
+
+	local coinMultiplier, xpMultiplier = entitlementRewardMultipliers(player)
+	earnedCoins = math.max(0, math.floor(earnedCoins * coinMultiplier))
+	earnedXp = math.max(0, math.floor(earnedXp * xpMultiplier))
 
 	coins.Value += earnedCoins
 	xp.Value += earnedXp
@@ -1417,6 +1643,161 @@ queueEvent.OnServerEvent:Connect(function(player, mode, requestedChapter)
 	end
 end)
 
+shopEvent.OnServerEvent:Connect(function(player, action, payload)
+	if not canAcceptShopAction(player) then
+		analytics.shopPromptRejected += 1
+		return
+	end
+
+	if action == "RequestSnapshot" then
+		analytics.shopSnapshotsRequested += 1
+		sendShopSnapshot(player)
+		return
+	end
+
+	if action ~= "RequestPrompt" or typeof(payload) ~= "table" then
+		analytics.shopPromptRejected += 1
+		return
+	end
+
+	local itemType = payload.itemType
+	local itemId = payload.id
+	local definition = findPurchasableDefinition(itemType, itemId)
+	if not definition then
+		analytics.shopPromptRejected += 1
+		shopEvent:FireClient(player, {
+			kind = "Error",
+			message = "That shop item is unavailable.",
+		})
+		return
+	end
+
+	local marketplaceId = itemType == "GamePass" and definition.gamePassId or definition.productId
+	if marketplaceId == Config.Monetization.PlaceholderId then
+		analytics.shopPromptRejected += 1
+		sendShopSnapshot(player, "Creator Dashboard ID required before this can be purchased.")
+		return
+	end
+
+	if purchasePromptLocks[player] then
+		analytics.shopPromptRejected += 1
+		shopEvent:FireClient(player, {
+			kind = "Error",
+			message = "Finish the current purchase prompt first.",
+		})
+		return
+	end
+
+	if itemType == "GamePass" then
+		local owned = refreshGamePassOwnership(player, definition, true)
+		if owned then
+			sendShopSnapshot(player, "Already owned.")
+			return
+		end
+	end
+
+	analytics.shopPromptRequests += 1
+	purchasePromptLocks[player] = {
+		itemType = itemType,
+		id = itemId,
+		marketplaceId = marketplaceId,
+	}
+	shopEvent:FireClient(player, {
+		kind = "PromptApproved",
+		itemType = itemType,
+		id = itemId,
+		marketplaceId = marketplaceId,
+	})
+	sendShopSnapshot(player, "Opening purchase prompt...", itemId)
+end)
+
+MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, gamePassId, wasPurchased)
+	local lock = purchasePromptLocks[player]
+	if lock and lock.itemType == "GamePass" and lock.marketplaceId == gamePassId then
+		purchasePromptLocks[player] = nil
+	end
+
+	local pass = Config.getGamePassByMarketplaceId(gamePassId)
+	if not pass then
+		return
+	end
+
+	if wasPurchased then
+		analytics.shopPromptCompleted += 1
+		refreshGamePassOwnership(player, pass, true)
+		sendShopSnapshot(player, `{pass.name} unlocked.`)
+	else
+		analytics.shopPromptCancelled += 1
+		sendShopSnapshot(player, "Purchase cancelled.")
+	end
+end)
+
+MarketplaceService.PromptProductPurchaseFinished:Connect(function(userId, productId, wasPurchased)
+	local player = Players:GetPlayerByUserId(userId)
+	if not player then
+		return
+	end
+
+	local lock = purchasePromptLocks[player]
+	if lock and lock.itemType == "DeveloperProduct" and lock.marketplaceId == productId then
+		purchasePromptLocks[player] = nil
+	end
+
+	if not wasPurchased then
+		analytics.shopPromptCancelled += 1
+		sendShopSnapshot(player, "Purchase cancelled.")
+	end
+end)
+
+MarketplaceService.ProcessReceipt = function(receiptInfo)
+	local product = Config.getDeveloperProductByMarketplaceId(receiptInfo.ProductId)
+	if not product then
+		analytics.developerProductReceiptsRetried += 1
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+
+	local player = Players:GetPlayerByUserId(receiptInfo.PlayerId)
+	if not player then
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+
+	local receiptKey = `Receipt_{receiptInfo.PurchaseId}`
+	if processedReceipts[receiptKey] then
+		return Enum.ProductPurchaseDecision.PurchaseGranted
+	end
+
+	if receiptStore then
+		local ok, existing = pcall(function()
+			return receiptStore:GetAsync(receiptKey)
+		end)
+		if ok and existing == true then
+			processedReceipts[receiptKey] = true
+			return Enum.ProductPurchaseDecision.PurchaseGranted
+		end
+	end
+
+	if not grantDeveloperProduct(player, product) then
+		analytics.developerProductReceiptsRetried += 1
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+
+	processedReceipts[receiptKey] = true
+	if receiptStore then
+		local ok = pcall(function()
+			receiptStore:SetAsync(receiptKey, true)
+		end)
+		if not ok then
+			analytics.developerProductReceiptsRetried += 1
+			return Enum.ProductPurchaseDecision.NotProcessedYet
+		end
+	end
+
+	analytics.shopPromptCompleted += 1
+	analytics.developerProductReceiptsGranted += 1
+	sendShopSnapshot(player, `{product.name} added.`)
+	return Enum.ProductPurchaseDecision.PurchaseGranted
+end
+
 settingsEvent.OnServerEvent:Connect(function(player, action, nextSettings)
 	if action == "Request" then
 		sendSettings(player)
@@ -1463,6 +1844,7 @@ Players.PlayerAdded:Connect(function(player)
 	stateEvent:FireClient(player, nil, {})
 	sendHubState(player, "Welcome to the hub")
 	sendSettings(player)
+	sendShopSnapshot(player)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
@@ -1475,8 +1857,11 @@ Players.PlayerRemoving:Connect(function(player)
 	playerModes[player] = nil
 	playerSettings[player] = nil
 	playerDailyRewardDates[player] = nil
+	playerEntitlements[player] = nil
 	lastPlaceRequestAt[player] = nil
 	lastQueueRequestAt[player] = nil
+	lastShopRequestAt[player] = nil
+	purchasePromptLocks[player] = nil
 	settingsSaveScheduled[player] = nil
 	if session then
 		for index, sessionPlayer in session.players do
@@ -1509,6 +1894,7 @@ for _, player in Players:GetPlayers() do
 	stateEvent:FireClient(player, nil, {})
 	sendHubState(player, "Welcome to the hub")
 	sendSettings(player)
+	sendShopSnapshot(player)
 end
 
 task.spawn(function()

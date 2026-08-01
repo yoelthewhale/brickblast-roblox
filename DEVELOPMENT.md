@@ -54,15 +54,21 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Added server-authoritative combo streaks, combo score bonuses, live combo banners, best-combo tracking, and match duration/best-combo result stats.
 - 2026-08-01: Added a server-authoritative first-win daily bonus for battle victories or next-chapter story completions, persisted claim dates, hub reminder text, and result-panel bonus feedback.
 - 2026-08-01: Added a replayable hub Guide button that reopens the tutorial without resetting saved tutorial completion.
+- 2026-08-01: Added a complete first shop vertical slice with Featured, Passes, Cosmetics, and Currency categories, responsive reusable product cards, server-fed item state, loading/owned/equipped/locked/unavailable/error feedback, touch-sized controls, and gamepad focus entry.
+- 2026-08-01: Added secure monetization scaffolding with centralized placeholder game pass/developer product IDs, server-validated prompt requests, prompt locks, cached game pass ownership refreshes, post-purchase game pass refresh, and server-only developer product receipt fulfillment.
+- 2026-08-01: Added low-volume shop analytics counters for snapshot requests, prompt requests, rejected prompts, completed/cancelled prompts, ownership refreshes, and developer product receipt outcomes.
+- 2026-08-01: Documented Creator Dashboard monetization setup in `docs/MONETIZATION_SETUP.md` and kept placeholder IDs at `0` until real Roblox assets exist.
+- 2026-08-01: Evaluated React Luau for the shop slice and deferred it because the project has no React/Wally dependencies installed; the production slice instead uses a reusable, state-driven Luau panel architecture compatible with the existing Rojo app.
+- 2026-08-01: Built the next place artifact as `BlockBlastBattle-Day6.rbxl`.
 
 ## Current Priorities
 
+- Modernize the home/hub interface into a cohesive reusable module instead of continuing to grow `BlockBlastClient.client.luau`.
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
+- Add a true owned/equipped cosmetic inventory flow that can consume both progression unlocks and future pass entitlements.
 - Continue anti-exploit hardening around server-authoritative economy events and abnormal session lifecycle edge cases.
 - Polish core game feel around line clears, incoming pressure, victory/defeat, and reward reveals.
 - Add quest or challenge presentation that builds on the first-win daily bonus without creating exploitable reward spam.
-- Improve the guide into a more interactive first-match tutorial with step tracking for first placement and first line clear.
-- Expand cosmetic closet into a full shop/inventory flow with earnable inventory, featured items, and clearer purchase-free progression.
 - Add richer original audio assets and mix testing.
 - Expand Story Training with more mission types, longer chapter arcs, and better hub-world story signposting.
 - Validate compact touch layout in Roblox Studio device emulation.
@@ -74,18 +80,73 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Two-player battle flow needs Roblox Studio local server testing.
 - First-time onboarding and compact battle layout need Studio validation across desktop and mobile screen sizes.
 - Current battle board is UI-only; future versions should consider an optional 3D board representation in the arena.
+- Monetization IDs are intentionally `0`; real purchase prompt testing is blocked until Creator Dashboard game passes and developer products exist.
+- Developer product receipt persistence uses `BlockBlastReceiptsV1`; it still needs live DataStore failure testing before any real currency products are enabled.
 
 ## Technical Debt
 
-- `BlockBlastClient.client.luau` is still large; `ResultPanel.luau`, `CosmeticPanel.luau`, and `SoundController.luau` are the first extractions, and battle board, hub panel, and settings controls should follow.
+- `BlockBlastClient.client.luau` is still large; `ResultPanel.luau`, `CosmeticPanel.luau`, `SoundController.luau`, `StoryPanel.luau`, and `ShopPanel.luau` are the first extractions, and battle board, hub panel, and settings controls should follow.
 - Profile save data covers best score, wins, coins, XP, level, Story Stars, first-win daily claim date, core settings, piece skin, and board skin; numeric profile and settings values are sanitized on both server and client, while broader cosmetic inventory still needs persistence.
+- Shop product definitions are centralized, but owned cosmetic inventory is still progression-derived rather than a fully persisted inventory table.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
 - Match sessions now support multiple active arenas with hub availability UI, analytics, exploit diagnostics, and Studio diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
 
 ## Release Readiness
 
 - Status: Prototype.
-- Not ready for public release until multiplayer, save retries, mobile UI, moderation/anti-exploit, onboarding, audio, and retention loops are tested in Studio.
+- Not ready for public release until multiplayer, save retries, mobile UI, monetization IDs/purchase flows, moderation/anti-exploit, onboarding, audio, and retention loops are tested in Studio.
+
+## Session Update - 2026-08-01 Shop Slice
+
+### Completed
+
+- Built `src/client/ui/ShopPanel.luau`, a reusable state-driven shop panel with category tabs, product-card rendering, responsive scaling, touch-friendly activation buttons, and gamepad focus on open.
+- Integrated the shop into `src/client/ui/BlockBlastClient.client.luau` through the existing hub cosmetics entry, while preserving the old closet as the equip destination for progression cosmetics.
+- Added `src/shared/game/Config.luau` monetization definitions for VIP Pass, Deluxe Cosmetics Pass, Extra Preset Slots Pass, Supporter Pass, and three placeholder coin developer products.
+- Added `BlockBlastRemotes.Shop` in `src/server/services/GameServer.server.luau` with validated actions, prompt throttling, prompt locks, placeholder rejection, cached ownership checks, post-purchase refresh, and server-only developer product receipt fulfillment.
+- Added dormant server reward hooks for owned pass benefits. Because every marketplace ID is `0`, no player can currently receive paid benefits accidentally.
+- Added shop analytics counters to the existing server diagnostics data model.
+- Added `docs/MONETIZATION_SETUP.md` with the Creator Dashboard steps and ID replacement rules.
+- Formatted with Stylua, linted with Selene, and built `BlockBlastBattle-Day6.rbxl`.
+
+### Current State
+
+- The shop is a visible playable UI slice, but real Roblox purchase prompts remain intentionally unavailable until dashboard IDs replace the `0` placeholders.
+- React Luau was deferred. The project currently has empty Wally dependencies and no React mounting/runtime pattern, so introducing React during this monetization pass would have increased migration risk without improving this release checkpoint.
+- The client never grants currency, cosmetics, XP, or ownership.
+- The server owns entitlement checks, prompt approval, receipt fulfillment, and post-purchase refresh.
+
+### Recommended Next Priorities
+
+1. Extract and modernize the hub/home UI.
+   This is now the weakest player-facing area and will reduce the oversized main client script.
+2. Add a true cosmetic inventory/equip model.
+   The shop can display owned/equipped/locked states, but cosmetics are still derived from progression instead of an inventory table that can handle pass entitlements later.
+3. Run Roblox Studio purchase and multiplayer tests after real IDs exist.
+   The code builds locally, but MarketplaceService and multiplayer edge cases need Studio validation.
+4. Improve mobile/gamepad navigation across all modal panels.
+   The shop has focus entry and touch-sized buttons, but the older panels should be brought up to the same standard.
+
+### Technical Debt
+
+- Developer product receipt handling has persistent and in-memory receipt tracking, but real product enablement still requires live retry/failure testing.
+- The shop UI destroys/recreates low-volume cards on refresh. This is acceptable for the current item count but could be pooled if the catalog grows.
+- The existing hub controls are still laid out manually in the main client script.
+
+### Ideas
+
+- Add a featured rotation timer once the shop has real cosmetic inventory.
+- Add preview thumbnails for each cosmetic card.
+- Add a non-monetized daily deals area using earnable coins only.
+- Add a VIP/supporter nameplate in the hub after game pass IDs are active.
+
+### Release Readiness
+
+- Estimate: prototype advancing toward alpha, roughly 35% of the way to public Roblox release.
+- Biggest remaining blockers: Studio multiplayer validation, real Creator Dashboard monetization assets, mobile testing, and a polished onboarding/home flow.
+- Biggest gameplay weakness: the core battle loop still needs more tactile arena feedback and pacing tests.
+- Biggest polish opportunity: a modern home screen that clearly routes players into Battle, Story, Shop, Closet, and Settings.
+- Biggest technical risk: Marketplace receipt and entitlement behavior must be tested with real Roblox services before any paid products are enabled.
 
 ## Session Handoff - 2026-07-29
 

@@ -13,6 +13,7 @@ local Config = require(GameShared.Config)
 local Grid = require(GameShared.Grid)
 local CosmeticPanel = require(script.Parent.CosmeticPanel)
 local ResultPanel = require(script.Parent.ResultPanel)
+local ShopPanel = require(script.Parent.ShopPanel)
 local SoundController = require(script.Parent.SoundController)
 local StoryPanel = require(script.Parent.StoryPanel)
 
@@ -23,6 +24,7 @@ local queueEvent = remotes:WaitForChild("Queue")
 local hubEvent = remotes:WaitForChild("Hub")
 local effectsEvent = remotes:WaitForChild("Effects")
 local settingsEvent = remotes:WaitForChild("Settings")
+local shopEvent = remotes:WaitForChild("Shop")
 
 local selectedSlot = nil
 local hoverX = nil
@@ -86,6 +88,7 @@ local diagnosticsLabel = nil
 local loadingScreen = nil
 local cosmeticPanelController = nil
 local resultPanelController = nil
+local shopPanelController = nil
 local storyPanelController = nil
 local loadingDismissed = false
 local tutorialPanel = nil
@@ -373,6 +376,53 @@ local function nextLockedCosmeticText()
 	return "All current cosmetics unlocked"
 end
 
+local function shopCosmeticItems()
+	local progress = localCosmeticProgress()
+	local items = {}
+
+	for _, skinName in Blocks.PieceSkins do
+		local requirement = Config.PieceSkinUnlocks[skinName]
+		local unlocked = Config.meetsCosmeticRequirement(requirement, progress)
+		table.insert(items, {
+			id = `PIECE_{skinName}`,
+			itemType = "Cosmetic",
+			name = `{skinName} Pieces`,
+			category = "Cosmetics",
+			description = unlocked and "Owned progression piece style."
+				or `Unlock through play: {lockedText(requirement)}`,
+			state = Blocks.PieceSkins[pieceSkinIndex] == skinName and "Equipped"
+				or unlocked and "Owned"
+				or "Locked",
+			owned = unlocked,
+			equipped = Blocks.PieceSkins[pieceSkinIndex] == skinName,
+			available = unlocked,
+			lockedText = lockedText(requirement),
+		})
+	end
+
+	for _, skin in Config.BoardSkins do
+		local requirement = Config.BoardSkinUnlocks[skin.name]
+		local unlocked = Config.meetsCosmeticRequirement(requirement, progress)
+		table.insert(items, {
+			id = `BOARD_{skin.name}`,
+			itemType = "Cosmetic",
+			name = `{skin.name} Board`,
+			category = "Cosmetics",
+			description = unlocked and "Owned progression board style."
+				or `Unlock through play: {lockedText(requirement)}`,
+			state = Config.BoardSkins[boardSkinIndex] == skin and "Equipped"
+				or unlocked and "Owned"
+				or "Locked",
+			owned = unlocked,
+			equipped = Config.BoardSkins[boardSkinIndex] == skin,
+			available = unlocked,
+			lockedText = lockedText(requirement),
+		})
+	end
+
+	return items
+end
+
 local function previewColorsForPieceSkin(skinName)
 	if skinName == "Neon" then
 		return {
@@ -445,12 +495,15 @@ local function updateSettingsButtonText()
 	end
 
 	if cosmeticHintLabel then
-		cosmeticHintLabel.Text = nextLockedCosmeticText()
+		cosmeticHintLabel.Text = `Shop & Closet: {nextLockedCosmeticText()}`
 	end
 
 	updateCosmeticPreviews()
 	if cosmeticPanelController then
 		cosmeticPanelController:Refresh()
+	end
+	if shopPanelController then
+		shopPanelController:Refresh()
 	end
 
 	if soundButton then
@@ -552,6 +605,16 @@ cosmeticPanelController = CosmeticPanel.new(gui, Blocks, Config, {
 		saveSettings()
 		local boardSkin = Config.BoardSkins[boardSkinIndex]
 		showBanner(`Board: {boardSkin and boardSkin.name or "Auto"}`, customization.accentColor)
+	end,
+})
+
+shopPanelController = ShopPanel.new(gui, {
+	shopEvent = shopEvent,
+	playSound = playSound,
+	showMessage = showBanner,
+	getCosmetics = shopCosmeticItems,
+	openCloset = function()
+		cosmeticPanelController:Show()
 	end,
 })
 
@@ -965,7 +1028,7 @@ cosmeticHintLabel.BackgroundTransparency = 0.12
 cosmeticHintLabel.Position = UDim2.fromOffset(272, 282)
 cosmeticHintLabel.Size = UDim2.fromOffset(226, 38)
 cosmeticHintLabel.Font = Enum.Font.GothamBold
-cosmeticHintLabel.Text = "Cosmetics unlock through play"
+cosmeticHintLabel.Text = "Shop & Closet"
 cosmeticHintLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
 cosmeticHintLabel.TextSize = 13
 cosmeticHintLabel.TextWrapped = true
@@ -993,6 +1056,7 @@ end)
 storyButton.MouseButton1Click:Connect(function()
 	playSound("Button")
 	cosmeticPanelController:Hide()
+	shopPanelController:Hide()
 	storyPanelController:Show()
 end)
 
@@ -1057,7 +1121,9 @@ end)
 
 cosmeticHintLabel.MouseButton1Click:Connect(function()
 	playSound("Button")
-	cosmeticPanelController:Show()
+	cosmeticPanelController:Hide()
+	storyPanelController:Hide()
+	shopPanelController:Show()
 end)
 
 soundButton.MouseButton1Click:Connect(function()
@@ -1976,6 +2042,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		resultPanelController:Hide()
 	end
 	cosmeticPanelController:Hide()
+	shopPanelController:Hide()
 	storyPanelController:Hide()
 	setHubPanelVisible(false)
 	updateTutorialVisibility()
@@ -2117,6 +2184,12 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 
 	lastQueued = hubState.queued
 	renderDiagnostics()
+end)
+
+shopEvent.OnClientEvent:Connect(function(message)
+	if shopPanelController then
+		shopPanelController:HandleServerMessage(message)
+	end
 end)
 
 effectsEvent.OnClientEvent:Connect(function(effect)

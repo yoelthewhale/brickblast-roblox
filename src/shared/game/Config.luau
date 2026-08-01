@@ -22,6 +22,102 @@ Config.StoryCompletionXp = 50
 Config.DailyBonusCoins = 25
 Config.DailyBonusXp = 40
 
+Config.Monetization = {
+	PlaceholderId = 0,
+	GamePasses = {
+		{
+			id = "VIP_PASS",
+			name = "VIP Pass",
+			category = "Passes",
+			featured = true,
+			gamePassId = 0,
+			suggestedPriceRobux = 299,
+			description = "A prestige pass with modest reward boosts and VIP identity hooks.",
+			benefits = {
+				"VIP title foundation",
+				"+5% coins from runs",
+				"+5% XP from runs",
+			},
+			rewardMultipliers = {
+				coins = 1.05,
+				xp = 1.05,
+			},
+		},
+		{
+			id = "DELUXE_COSMETICS_PASS",
+			name = "Deluxe Cosmetics Pass",
+			category = "Cosmetics",
+			featured = true,
+			gamePassId = 0,
+			suggestedPriceRobux = 399,
+			description = "Unlocks the future deluxe visual collection without affecting match power.",
+			benefits = {
+				"Deluxe cosmetic entitlement",
+				"Future premium board and piece styles",
+				"No gameplay advantage",
+			},
+		},
+		{
+			id = "EXTRA_PRESET_SLOTS_PASS",
+			name = "Extra Preset Slots Pass",
+			category = "Passes",
+			featured = false,
+			gamePassId = 0,
+			suggestedPriceRobux = 199,
+			description = "Adds room for future saved style and layout presets.",
+			benefits = {
+				"Extra cosmetic preset slots",
+				"Future layout preset support",
+				"Account-level entitlement",
+			},
+		},
+		{
+			id = "SUPPORTER_PASS",
+			name = "Supporter Pass",
+			category = "Featured",
+			featured = true,
+			gamePassId = 0,
+			suggestedPriceRobux = 99,
+			description = "A low-cost support option with a small daily bonus hook.",
+			benefits = {
+				"Supporter identity foundation",
+				"+5 daily bonus coins when eligible",
+				"Thank-you cosmetic hook",
+			},
+			dailyBonusCoins = 5,
+		},
+	},
+	DeveloperProducts = {
+		{
+			id = "COINS_SMALL",
+			name = "Small Coin Pack",
+			category = "Currency",
+			productId = 0,
+			suggestedPriceRobux = 49,
+			coins = 150,
+			description = "A starter coin pack for future cosmetic purchases.",
+		},
+		{
+			id = "COINS_MEDIUM",
+			name = "Medium Coin Pack",
+			category = "Currency",
+			productId = 0,
+			suggestedPriceRobux = 149,
+			coins = 525,
+			description = "A better-value coin pack for future shop rotations.",
+		},
+		{
+			id = "COINS_LARGE",
+			name = "Large Coin Pack",
+			category = "Currency",
+			productId = 0,
+			suggestedPriceRobux = 399,
+			coins = 1650,
+			description = "A large coin pack for future collectors.",
+		},
+	},
+}
+
 Config.StoryMissions = {
 	{
 		name = "First Clear",
@@ -149,6 +245,46 @@ function Config.isValidBoardSkin(boardSkin)
 	end
 
 	return false
+end
+
+function Config.getGamePassDefinition(passId)
+	for _, pass in Config.Monetization.GamePasses do
+		if pass.id == passId then
+			return pass
+		end
+	end
+
+	return nil
+end
+
+function Config.getGamePassByMarketplaceId(gamePassId)
+	for _, pass in Config.Monetization.GamePasses do
+		if pass.gamePassId == gamePassId and gamePassId ~= Config.Monetization.PlaceholderId then
+			return pass
+		end
+	end
+
+	return nil
+end
+
+function Config.getDeveloperProductDefinition(productId)
+	for _, product in Config.Monetization.DeveloperProducts do
+		if product.id == productId then
+			return product
+		end
+	end
+
+	return nil
+end
+
+function Config.getDeveloperProductByMarketplaceId(productId)
+	for _, product in Config.Monetization.DeveloperProducts do
+		if product.productId == productId and productId ~= Config.Monetization.PlaceholderId then
+			return product
+		end
+	end
+
+	return nil
 end
 
 return Config
