@@ -633,7 +633,7 @@ local function buildBackground(parent)
 end
 
 local function buildHub(parent)
-	makePart(
+	local mainPlaza = makePart(
 		parent,
 		"MainFloatingPlaza",
 		Vector3.new(112, 2, 84),
@@ -641,6 +641,9 @@ local function buildHub(parent)
 		PALETTE.navyRaised,
 		Enum.Material.Slate
 	)
+	mainPlaza.CanCollide = true
+	mainPlaza.Anchored = true
+
 	makePart(
 		parent,
 		"LowerIslandMass",
@@ -673,6 +676,10 @@ local function buildHub(parent)
 	spawn.CastShadow = false
 	spawn.Neutral = true
 	spawn.Duration = 0
+	spawn.Enabled = true
+	spawn.CanCollide = true
+	spawn.CanTouch = false
+	spawn.CanQuery = true
 	spawn.Parent = parent
 	addLabel(spawn, "BLOCK BLAST", "Floating Puzzle Hub")
 
@@ -831,6 +838,36 @@ local function buildHub(parent)
 	return spawn, battlePrompt, storyPrompt, battleSpawn
 end
 
+local function buildRecoveryPlatform(parent, hubSpawn)
+	local platform = makePart(
+		parent,
+		"VoidRecoveryPlatform",
+		Vector3.new(220, 2, 190),
+		Vector3.new(0, -72, -18),
+		PALETTE.void,
+		Enum.Material.SmoothPlastic,
+		{ transparency = 0.92 }
+	)
+	platform.CanCollide = true
+	platform.CanTouch = true
+	platform.CanQuery = true
+
+	platform.Touched:Connect(function(hit)
+		local character = hit and hit.Parent
+		if not character then
+			return
+		end
+
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		local rootPart = character:FindFirstChild("HumanoidRootPart")
+		if humanoid and rootPart and humanoid.Health > 0 then
+			character:PivotTo(hubSpawn.CFrame + Vector3.new(0, 7, 0))
+		end
+	end)
+
+	return platform
+end
+
 function HubBuilder.build()
 	configureLighting()
 	table.clear(animatedParts)
@@ -845,6 +882,7 @@ function HubBuilder.build()
 	hub.Parent = workspace
 
 	local spawn, battlePrompt, storyPrompt, battleSpawn = buildHub(hub)
+	local recoveryPlatform = buildRecoveryPlatform(hub, spawn)
 	buildBackground(hub)
 
 	local arenas = {}
@@ -878,6 +916,7 @@ function HubBuilder.build()
 		battlePrompt = battlePrompt,
 		storyPrompt = storyPrompt,
 		battleSpawn = battleSpawn,
+		recoveryPlatform = recoveryPlatform,
 		arenas = arenas,
 		arenaSpawns = arenas[1].spawns,
 		arenaReturnPad = arenas[1].returnPad,

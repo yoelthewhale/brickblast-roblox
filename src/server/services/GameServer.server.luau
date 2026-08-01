@@ -3,6 +3,23 @@ local DataStoreService = game:GetService("DataStoreService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+Players.CharacterAutoLoads = false
+
+local HUB_SPAWN_OFFSET = Vector3.new(0, 7, 0)
+local emergencySpawn = Instance.new("SpawnLocation")
+emergencySpawn.Name = "BlockBlastEmergencySpawn"
+emergencySpawn.Anchored = true
+emergencySpawn.Size = Vector3.new(36, 1, 36)
+emergencySpawn.CFrame = CFrame.new(0, 6, 22)
+emergencySpawn.Neutral = true
+emergencySpawn.Duration = 0
+emergencySpawn.Enabled = true
+emergencySpawn.CanCollide = true
+emergencySpawn.CanTouch = false
+emergencySpawn.CanQuery = true
+emergencySpawn.Transparency = 0.35
+emergencySpawn.Parent = workspace
+
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameShared = Shared:WaitForChild("game")
 local Blocks = require(GameShared.Blocks)
@@ -42,8 +59,31 @@ local shopEvent = Instance.new("RemoteEvent")
 shopEvent.Name = "Shop"
 shopEvent.Parent = remotes
 
-local hubParts = HubBuilder.build()
+local hubBuildSucceeded, hubPartsOrError = pcall(HubBuilder.build)
+local hubParts = if hubBuildSucceeded
+	then hubPartsOrError
+	else {
+		hub = emergencySpawn,
+		spawn = emergencySpawn,
+		battleSpawn = emergencySpawn,
+		arenaSpawns = { emergencySpawn },
+		arenas = {},
+	}
+if not hubBuildSucceeded then
+	warn(`Block Blast hub failed to build; using emergency spawn: {hubPartsOrError}`)
+end
+if hubParts.spawn then
+	hubParts.spawn.Anchored = true
+	hubParts.spawn.CanCollide = true
+	hubParts.spawn.Enabled = true
+end
+if hubBuildSucceeded then
+	emergencySpawn:Destroy()
+end
+Players.CharacterAutoLoads = true
+
 local playerStates = {}
+local playerSpawnConnections = {}
 local playerSessions = {}
 local activeSessions = {}
 local queuedPlayers = {}
@@ -1553,9 +1593,19 @@ local function giveNewHand(state)
 end
 
 local function teleportTo(part, player)
+	if not part or not part.Parent then
+		return
+	end
+
 	local character = player.Character
-	if character and character.PrimaryPart then
-		character:PivotTo(part.CFrame + Vector3.new(0, 5, 0))
+	if not character then
+		return
+	end
+
+	local rootPart = character:FindFirstChild("HumanoidRootPart")
+		or character:WaitForChild("HumanoidRootPart", 4)
+	if rootPart then
+		character:PivotTo(part.CFrame + HUB_SPAWN_OFFSET)
 	end
 end
 
@@ -2299,7 +2349,22 @@ for _, arena in (hubParts.arenas or {}) do
 	returnPrompt.Triggered:Connect(leaveBattle)
 end
 
-Players.PlayerAdded:Connect(function(player)
+local function attachHubSpawnSafety(player)
+	if playerSpawnConnections[player] then
+		return
+	end
+
+	playerSpawnConnections[player] = player.CharacterAdded:Connect(function()
+		if playerModes[player] == "Battle" or playerModes[player] == "Story" then
+			return
+		end
+
+		teleportTo(hubParts.spawn, player)
+	end)
+end
+
+local function initializePlayer(player)
+	attachHubSpawnSafety(player)
 	playerSettings[player] = table.clone(DEFAULT_SETTINGS)
 	playerDailyRewardDates[player] = nil
 	playerFulfilledPurchaseIds[player] = {}
@@ -2318,12 +2383,24 @@ Players.PlayerAdded:Connect(function(player)
 	sendHubState(player, "Welcome to the hub")
 	sendSettings(player)
 	sendShopSnapshot(player)
-end)
+
+	if player.Character then
+		teleportTo(hubParts.spawn, player)
+	else
+		player:LoadCharacter()
+	end
+end
+
+Players.PlayerAdded:Connect(initializePlayer)
 
 Players.PlayerRemoving:Connect(function(player)
 	saveProfile(player)
 	local session = playerSessions[player]
 	playerStates[player] = nil
+	if playerSpawnConnections[player] then
+		playerSpawnConnections[player]:Disconnect()
+		playerSpawnConnections[player] = nil
+	end
 	playerSessions[player] = nil
 	queuedPlayers[player] = nil
 	selectedStoryChapters[player] = nil
@@ -2361,19 +2438,9 @@ game:BindToClose(function()
 end)
 
 for _, player in Players:GetPlayers() do
-	if not player:FindFirstChild("leaderstats") then
-		playerSettings[player] = playerSettings[player] or table.clone(DEFAULT_SETTINGS)
-		playerFulfilledPurchaseIds[player] = playerFulfilledPurchaseIds[player] or {}
-		createLeaderstats(player)
+	if not playerModes[player] then
+		initializePlayer(player)
 	end
-	playerCosmeticInventories[player] = playerCosmeticInventories[player]
-		or sanitizeCosmeticInventory(player, nil, cosmeticProgress(player), playerSettings[player])
-	applyEquippedCosmeticsToSettings(player)
-	playerModes[player] = playerModes[player] or "Hub"
-	stateEvent:FireClient(player, nil, {})
-	sendHubState(player, "Welcome to the hub")
-	sendSettings(player)
-	sendShopSnapshot(player)
 end
 
 task.spawn(function()
