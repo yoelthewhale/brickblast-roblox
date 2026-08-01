@@ -41,6 +41,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Add combo streak scoring and result stats | High | Playtest | Codex | 2026-08-02 |
 | Add rewards after battles: coins, XP, wins, and Story Stars | High | Playtest | Codex | 2026-08-03 |
 | Add permanent leaderboard stats for wins, best score, and Story Stars | High | Playtest | Codex | 2026-08-03 |
+| Add first-win daily bonus loop | High | Playtest | Codex | 2026-08-03 |
 | Add post-run results panel | Medium | Playtest | Codex | 2026-08-03 |
 | Add next-unlock hints to post-run results | Medium | Playtest | Codex | 2026-08-03 |
 | Improve hub visuals and signposting | Medium | In Progress | Codex | 2026-08-04 |
@@ -78,6 +79,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Leave an active battle/story run early and confirm no rewards are granted.
 - Return to the hub after a win, story run, out-of-moves run, and forfeit; confirm the hub status keeps that player's own result summary.
 - Confirm the post-run results panel shows outcome, score, lines, coins, XP, Story Stars when earned, best-score progress, next cosmetic unlock, close, and quick battle queue.
+- Claim the first-win daily bonus once through a battle victory or next story chapter completion and confirm the hub/result text does not grant it twice on replay.
 - Use `Play Again` from the battle window and `Queue Battle` from results; confirm each uses one server replay flow, never grants duplicate rewards, and cannot requeue from an active unfinished run.
 - Cycle Sound setting and confirm UI/gameplay cues respect the selected volume or Off state.
 - Start a new run after changing piece style and confirm new pieces use the selected style; change board skin and confirm empty board cells update without recoloring placed pieces.

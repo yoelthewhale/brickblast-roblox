@@ -44,6 +44,7 @@ local activeSessions = {}
 local queuedPlayers = {}
 local playerModes = {}
 local playerSettings = {}
+local playerDailyRewardDates = {}
 local selectedStoryChapters = {}
 local lastPlaceRequestAt = {}
 local lastQueueRequestAt = {}
@@ -94,6 +95,7 @@ local PROFILE_LIMITS = {
 local leaveBattle = nil
 local scheduleReturnIfEliminated = nil
 local resolveBattleIfFinished = nil
+local sendHubState = nil
 local startStoryMode = nil
 
 local DEFAULT_SETTINGS = {
@@ -112,6 +114,11 @@ local function isFiniteNumber(value)
 		and value == value
 		and value ~= math.huge
 		and value ~= -math.huge
+end
+
+local function dailyDateKey()
+	local date = os.date("!*t")
+	return string.format("%04d-%02d-%02d", date.year, date.month, date.day)
 end
 
 local function cosmeticProgress(player)
@@ -397,6 +404,12 @@ local function createLeaderstats(player)
 		analytics.profileFieldsSanitized += sanitizedFields
 
 		playerSettings[player] = sanitizeSettings(profile.settings, cosmeticProgress(player))
+		if typeof(profile.dailyRewardDate) == "string" then
+			playerDailyRewardDates[player] = profile.dailyRewardDate
+		end
+		if sendHubState and playerModes[player] == "Hub" then
+			sendHubState(player, "Welcome to the hub")
+		end
 		sendSettings(player)
 	end)
 end
@@ -470,6 +483,7 @@ local function saveProfile(player)
 		level = sanitizedStatValue(level, 1, PROFILE_LIMITS.level, 1),
 		storyStars = sanitizedStatValue(storyStars, 0, PROFILE_LIMITS.storyStars, 0),
 		settings = sanitizeSettings(playerSettings[player], cosmeticProgress(player)),
+		dailyRewardDate = playerDailyRewardDates[player],
 		updatedAt = os.time(),
 	})
 end
@@ -599,6 +613,18 @@ local function grantBattleRewards(player, state, winner)
 		analytics.storyMissionsCompleted += 1
 	end
 
+	local dailyEligible = (winner and state.mode == "Battle") or storyProgressionCompleted
+	local today = dailyDateKey()
+	local dailyBonusCoins = 0
+	local dailyBonusXp = 0
+	if dailyEligible and playerDailyRewardDates[player] ~= today then
+		dailyBonusCoins = Config.DailyBonusCoins
+		dailyBonusXp = Config.DailyBonusXp
+		earnedCoins += dailyBonusCoins
+		earnedXp += dailyBonusXp
+		playerDailyRewardDates[player] = today
+	end
+
 	coins.Value += earnedCoins
 	xp.Value += earnedXp
 	level.Value = levelFromXp(xp.Value)
@@ -618,6 +644,8 @@ local function grantBattleRewards(player, state, winner)
 		) or nil,
 		coins = earnedCoins,
 		xp = earnedXp,
+		dailyBonusCoins = dailyBonusCoins,
+		dailyBonusXp = dailyBonusXp,
 		storyStars = storyProgressionCompleted and 1 or 0,
 		bestScore = state.bestScore,
 		previousBestScore = oldBestScore,
@@ -748,7 +776,7 @@ local function queueCount()
 	return count
 end
 
-local function sendHubState(player, message)
+sendHubState = function(player, message)
 	local secondsToSoloStart = nil
 	if queueStartedAt and queuedPlayers[player] then
 		secondsToSoloStart =
@@ -758,6 +786,7 @@ local function sendHubState(player, message)
 	local selectedChapter = selectedStoryChapters[player]
 	local storyMission = storyMissionForPlayer(player, selectedChapter)
 	local progress = cosmeticProgress(player)
+	local dailyBonusAvailable = playerDailyRewardDates[player] ~= dailyDateKey()
 
 	hubEvent:FireClient(player, {
 		mode = playerModes[player] or "Hub",
@@ -771,6 +800,10 @@ local function sendHubState(player, message)
 		storyMission = storyMission,
 		storyMissions = storyMissionListForPlayer(player),
 		storyStars = progress.storyStars,
+		dailyBonusAvailable = dailyBonusAvailable,
+		dailyBonusText = dailyBonusAvailable
+				and `Daily bonus ready: win battle or complete story for +{Config.DailyBonusCoins} coins +{Config.DailyBonusXp} XP`
+			or "Daily bonus claimed",
 		profileLoadFailures = profileLoadFailures,
 		profileSaveFailures = profileSaveFailures,
 		analytics = table.clone(analytics),
@@ -1418,6 +1451,7 @@ end
 
 Players.PlayerAdded:Connect(function(player)
 	playerSettings[player] = table.clone(DEFAULT_SETTINGS)
+	playerDailyRewardDates[player] = nil
 	createLeaderstats(player)
 	playerModes[player] = "Hub"
 	player.CharacterAdded:Connect(function()
@@ -1440,6 +1474,7 @@ Players.PlayerRemoving:Connect(function(player)
 	selectedStoryChapters[player] = nil
 	playerModes[player] = nil
 	playerSettings[player] = nil
+	playerDailyRewardDates[player] = nil
 	lastPlaceRequestAt[player] = nil
 	lastQueueRequestAt[player] = nil
 	settingsSaveScheduled[player] = nil

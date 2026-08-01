@@ -52,6 +52,7 @@ Pass criteria:
 - In the final 30 seconds, both players see sudden-death timer state and pressure rows rise every 10 seconds.
 - Winner result appears once.
 - Rewards are granted once per player.
+- First battle victory of the date can grant the daily bonus once and does not grant it again on rematch.
 - Both players return to the hub after the result delay.
 
 ## Scenario C: Two Simultaneous Matches
@@ -122,6 +123,7 @@ Pass criteria:
 - The next unlocked chapter starts from the panel.
 - Completing the next chapter grants exactly one Story Star.
 - Replaying a completed chapter can finish normally but does not grant another Story Star.
+- Completing the next chapter can claim the daily bonus once if it was not already claimed today.
 - Locked upcoming chapters show blocked feedback and do not start a run.
 - The ProximityPrompt story pad still starts the next unlocked chapter.
 

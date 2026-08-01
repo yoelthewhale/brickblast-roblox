@@ -2054,6 +2054,9 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 		storyPanelController:Refresh()
 	end
 	local message = hubState.message or "Welcome to the hub"
+	if hubState.dailyBonusAvailable and message == "Welcome to the hub" then
+		message = hubState.dailyBonusText or "Daily bonus ready"
+	end
 	hubStatusLabel.Text = message
 	hubMatchmakingLabel.Text =
 		`Arenas: {openArenas}/{totalArenas} open | Matches: {activeSessions} | {queueText}`

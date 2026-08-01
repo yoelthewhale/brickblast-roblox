@@ -157,6 +157,8 @@ function ResultPanel:Show(result, message, won)
 	local duration = result.duration
 	local coins = result.coins or 0
 	local xp = result.xp or 0
+	local dailyBonusCoins = result.dailyBonusCoins or 0
+	local dailyBonusXp = result.dailyBonusXp or 0
 	local storyStars = result.storyStars or 0
 	local bestScore = result.bestScore or score
 	local previousBestScore = result.previousBestScore or bestScore
@@ -167,6 +169,9 @@ function ResultPanel:Show(result, message, won)
 
 	if storyStars > 0 then
 		rewardText ..= `   +{storyStars} star`
+	end
+	if dailyBonusCoins > 0 or dailyBonusXp > 0 then
+		rewardText ..= "   Daily bonus!"
 	end
 
 	self.titleLabel.Text = outcome

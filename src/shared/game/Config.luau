@@ -19,6 +19,8 @@ Config.LevelXpBase = 120
 
 Config.StoryCompletionCoins = 30
 Config.StoryCompletionXp = 50
+Config.DailyBonusCoins = 25
+Config.DailyBonusXp = 40
 
 Config.StoryMissions = {
 	{

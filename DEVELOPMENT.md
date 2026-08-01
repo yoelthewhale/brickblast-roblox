@@ -52,12 +52,14 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Mirrored finite-number settings guards on the client before applying theme, UI scale, and sound volume updates.
 - 2026-08-01: Built `BlockBlastBattle-Day4.rbxl` after `BlockBlastBattle-Day3.rbxl` was locked by an open Studio session.
 - 2026-08-01: Added server-authoritative combo streaks, combo score bonuses, live combo banners, best-combo tracking, and match duration/best-combo result stats.
+- 2026-08-01: Added a server-authoritative first-win daily bonus for battle victories or next-chapter story completions, persisted claim dates, hub reminder text, and result-panel bonus feedback.
 
 ## Current Priorities
 
 - Execute Studio multiplayer stress tests using the diagnostics overlay and fix issues found.
 - Continue anti-exploit hardening around server-authoritative economy events and abnormal session lifecycle edge cases.
 - Polish core game feel around line clears, incoming pressure, victory/defeat, and reward reveals.
+- Add quest or challenge presentation that builds on the first-win daily bonus without creating exploitable reward spam.
 - Expand cosmetic closet into a full shop/inventory flow with earnable inventory, featured items, and clearer purchase-free progression.
 - Add richer original audio assets and mix testing.
 - Expand Story Training with more mission types, longer chapter arcs, and better hub-world story signposting.
@@ -74,7 +76,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 ## Technical Debt
 
 - `BlockBlastClient.client.luau` is still large; `ResultPanel.luau`, `CosmeticPanel.luau`, and `SoundController.luau` are the first extractions, and battle board, hub panel, and settings controls should follow.
-- Profile save data covers best score, wins, coins, XP, level, Story Stars, core settings, piece skin, and board skin; numeric profile and settings values are sanitized on both server and client, while broader cosmetic inventory still needs persistence.
+- Profile save data covers best score, wins, coins, XP, level, Story Stars, first-win daily claim date, core settings, piece skin, and board skin; numeric profile and settings values are sanitized on both server and client, while broader cosmetic inventory still needs persistence.
 - Effects are client-side only and need particle polish plus final audio asset replacement.
 - Match sessions now support multiple active arenas with hub availability UI, analytics, exploit diagnostics, and Studio diagnostics; production still needs Studio stress execution and richer arena lifecycle tooling.
 
