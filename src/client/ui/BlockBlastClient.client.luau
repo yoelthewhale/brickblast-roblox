@@ -1,5 +1,4 @@
 local Players = game:GetService("Players")
-local GuiService = game:GetService("GuiService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
@@ -13,6 +12,7 @@ local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
 local Grid = require(GameShared.Grid)
 local CosmeticPanel = require(script.Parent.CosmeticPanel)
+local HomePanel = require(script.Parent.HomePanel)
 local ResultPanel = require(script.Parent.ResultPanel)
 local ShopPanel = require(script.Parent.ShopPanel)
 local SoundController = require(script.Parent.SoundController)
@@ -38,9 +38,6 @@ local cellScales = {}
 local handButtons = {}
 local handPreviews = {}
 local previousBoard = nil
-local queuedPulseTween = nil
-local lastQueued = false
-local hubQueued = false
 local reducedMotion = false
 local uiScale = 1
 local pieceSkinIndex = 1
@@ -59,21 +56,6 @@ local progressionLabel = nil
 local matchInfoLabel = nil
 local statusLabel = nil
 local leaderboardLabel = nil
-local hubPanel = nil
-local hubLogoButton = nil
-local hubCloseButton = nil
-local hubStatusLabel = nil
-local hubMatchmakingLabel = nil
-local battleQueueButton = nil
-local storyPreviewLabel = nil
-local motionButton = nil
-local uiSizeButton = nil
-local pieceSkinButton = nil
-local boardSkinButton = nil
-local cosmeticHintLabel = nil
-local pieceSkinSwatches = {}
-local boardSkinPreviewCells = {}
-local soundButton = nil
 local customizeButton = nil
 local returnHubButton = nil
 local playAgainButton = nil
@@ -92,6 +74,7 @@ local cosmeticPanelController = nil
 local resultPanelController = nil
 local shopPanelController = nil
 local storyPanelController = nil
+local homePanelController = nil
 local loadingDismissed = false
 local tutorialPanel = nil
 local hubManuallyClosed = false
@@ -100,7 +83,6 @@ local tutorialManuallyOpened = false
 local cosmeticPreviewSnapshot = nil
 local root = nil
 local rootScale = nil
-local hubScale = nil
 local dockScale = nil
 local bannerScale = nil
 local clampWindowToScreen = nil
@@ -114,7 +96,6 @@ local DEFAULT_WINDOW_POSITION = UDim2.new(0, 36, 0.5, 0)
 local DEFAULT_WINDOW_SIZE = Vector2.new(640, 438)
 local MIN_WINDOW_SIZE = Vector2.new(360, 420)
 local MAX_WINDOW_SIZE = Vector2.new(860, 620)
-local HUB_SIZE = Vector2.new(620, 420)
 local COMPACT_WINDOW_WIDTH = 560
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -301,15 +282,13 @@ local function applyUiScale()
 	end
 
 	local rootFitScale = math.min(1, (screenSize.X - 16) / math.max(1, root.Size.X.Offset))
-	local hubFitScale =
-		math.min(1, (screenSize.X - 16) / HUB_SIZE.X, (screenSize.Y - 16) / HUB_SIZE.Y)
 	local dockFitScale = math.min(1, (screenSize.X - 16) / 260)
 	local nextScale = automaticScale * uiScale
 	if rootScale then
 		rootScale.Scale = math.clamp(math.min(nextScale, rootFitScale), 0.72, 1.12)
 	end
-	if hubScale then
-		hubScale.Scale = math.clamp(math.min(nextScale, hubFitScale), 0.72, 1.12)
+	if homePanelController then
+		homePanelController:RefreshResponsiveLayout(screenSize, nextScale)
 	end
 	if dockScale then
 		dockScale.Scale = math.clamp(math.min(nextScale, dockFitScale), 0.78, 1.12)
@@ -478,44 +457,29 @@ end
 local function updateCosmeticPreviews()
 	local skinName = Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"
 	local colors = previewColorsForPieceSkin(skinName)
-	for index, swatch in pieceSkinSwatches do
-		swatch.BackgroundColor3 = colors[index] or colors[#colors]
-	end
 
 	local boardSkin = Config.BoardSkins[boardSkinIndex]
 	local emptyColor = boardSkin and boardSkin.empty or customization.boardEmptyColor
 	local borderColor = boardSkin and boardSkin.border or customization.accentColor
-	for index, cell in boardSkinPreviewCells do
-		cell.BackgroundColor3 = index == 3 and borderColor or emptyColor
+	if homePanelController then
+		homePanelController:UpdateCosmeticPreviews(colors, {
+			empty = emptyColor,
+			border = borderColor,
+		})
 	end
 end
 
 local function updateSettingsButtonText()
-	if motionButton then
-		motionButton.Text = reducedMotion and "Motion: Reduced" or "Motion: Full"
-	end
-
-	if uiSizeButton then
-		if uiScale == 1 then
-			uiSizeButton.Text = "UI Size: Auto"
-		elseif uiScale > 1 then
-			uiSizeButton.Text = "UI Size: Large"
-		else
-			uiSizeButton.Text = "UI Size: Compact"
-		end
-	end
-
-	if pieceSkinButton then
-		pieceSkinButton.Text = `  Pieces: {Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"}`
-	end
-
-	if boardSkinButton then
+	if homePanelController then
 		local boardSkin = Config.BoardSkins[boardSkinIndex]
-		boardSkinButton.Text = `  Board: {boardSkin and boardSkin.name or "Auto"}`
-	end
-
-	if cosmeticHintLabel then
-		cosmeticHintLabel.Text = "Shop & Closet"
+		homePanelController:UpdateSettings({
+			reducedMotion = reducedMotion,
+			uiScale = uiScale,
+			pieceSkin = Blocks.PieceSkins[pieceSkinIndex] or "Rainbow",
+			boardSkin = boardSkin and boardSkin.name or "Auto",
+			soundEnabled = soundEnabled,
+			soundVolume = soundVolume,
+		})
 	end
 
 	updateCosmeticPreviews()
@@ -524,14 +488,6 @@ local function updateSettingsButtonText()
 	end
 	if shopPanelController then
 		shopPanelController:Refresh()
-	end
-
-	if soundButton then
-		if not soundEnabled or soundVolume <= 0 then
-			soundButton.Text = "Sound: Off"
-		else
-			soundButton.Text = `Sound: {math.floor(soundVolume * 100)}%`
-		end
 	end
 end
 
@@ -773,108 +729,131 @@ dockReturnButton.TextSize = 14
 dockReturnButton.Parent = battleDock
 styleButton(dockReturnButton, "secondary")
 
-hubPanel = Instance.new("Frame")
-hubPanel.AnchorPoint = Vector2.new(0.5, 0)
-hubPanel.Position = UDim2.fromScale(0.5, 0.06)
-hubPanel.Size = UDim2.fromOffset(HUB_SIZE.X, HUB_SIZE.Y)
-hubPanel.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
-hubPanel.BackgroundTransparency = 0.08
-hubPanel.BorderSizePixel = 0
-hubPanel.Parent = gui
-UITheme.panel(hubPanel, { color = UITheme.Color.panel, bottomColor = Color3.fromRGB(8, 12, 20) })
-
-hubScale = Instance.new("UIScale")
-hubScale.Scale = 1
-hubScale.Parent = hubPanel
-
-hubLogoButton = Instance.new("TextButton")
-hubLogoButton.AnchorPoint = Vector2.new(0, 0.5)
-hubLogoButton.Position = UDim2.fromScale(0, 0.5)
-hubLogoButton.Size = UDim2.fromOffset(58, 58)
-hubLogoButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
-hubLogoButton.BorderSizePixel = 0
-hubLogoButton.Font = Enum.Font.GothamBlack
-hubLogoButton.Text = "BB"
-hubLogoButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-hubLogoButton.TextSize = 20
-hubLogoButton.Visible = false
-hubLogoButton.Parent = gui
-styleButton(hubLogoButton, "primary")
-
-local hubLogoHint = Instance.new("TextLabel")
-hubLogoHint.AnchorPoint = Vector2.new(0, 0.5)
-hubLogoHint.Position = UDim2.fromOffset(66, 0)
-hubLogoHint.Size = UDim2.fromOffset(92, 26)
-hubLogoHint.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
-hubLogoHint.BackgroundTransparency = 0.12
-hubLogoHint.BorderSizePixel = 0
-hubLogoHint.Font = Enum.Font.GothamBold
-hubLogoHint.Text = "Hub"
-hubLogoHint.TextColor3 = Color3.fromRGB(245, 247, 251)
-hubLogoHint.TextSize = 14
-hubLogoHint.Visible = false
-hubLogoHint.Parent = hubLogoButton
-UITheme.card(hubLogoHint, { color = UITheme.Color.panelRaised, strokeTransparency = 0.32 })
-
-hubCloseButton = Instance.new("TextButton")
-hubCloseButton.AnchorPoint = Vector2.new(1, 0)
-hubCloseButton.Position = UDim2.new(1, -14, 0, 14)
-hubCloseButton.Size = UDim2.fromOffset(34, 34)
-hubCloseButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
-hubCloseButton.BorderSizePixel = 0
-hubCloseButton.Font = Enum.Font.GothamBlack
-hubCloseButton.Text = "X"
-hubCloseButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-hubCloseButton.TextSize = 16
-hubCloseButton.Parent = hubPanel
-UITheme.closeButton(hubCloseButton)
-UITheme.attachButtonFeedback(hubCloseButton, isUiReducedMotion)
-
-local hubGuideButton = Instance.new("TextButton")
-hubGuideButton.AnchorPoint = Vector2.new(1, 0)
-hubGuideButton.Position = UDim2.new(1, -58, 0, 14)
-hubGuideButton.Size = UDim2.fromOffset(86, 34)
-hubGuideButton.BackgroundColor3 = Color3.fromRGB(31, 38, 52)
-hubGuideButton.BorderSizePixel = 0
-hubGuideButton.Font = Enum.Font.GothamBold
-hubGuideButton.Text = "Guide"
-hubGuideButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-hubGuideButton.TextSize = 14
-hubGuideButton.Parent = hubPanel
-styleButton(hubGuideButton, "secondary")
-
-local function setHubPanelVisible(visible)
-	local shouldShowHub = visible and currentState == nil
-	hubPanel.Visible = shouldShowHub
-	hubLogoButton.Visible = currentState == nil and not shouldShowHub
-	hubLogoHint.Visible = hubLogoButton.Visible
-
-	if shouldShowHub then
-		hubPanel.Position = UDim2.fromScale(0.5, 0.045)
-		TweenService:Create(hubPanel, SOFT_TWEEN, {
-			Position = UDim2.fromScale(0.5, 0.06),
-		}):Play()
-		if UserInputService.GamepadEnabled and battleQueueButton then
-			GuiService.SelectedObject = battleQueueButton
+local function nextUnlockedIndex(currentIndex, itemCount, isUnlocked)
+	for offset = 1, itemCount do
+		local nextIndex = ((currentIndex + offset - 1) % itemCount) + 1
+		if isUnlocked(nextIndex) then
+			return nextIndex
 		end
 	end
+
+	return currentIndex
 end
 
-hubCloseButton.Activated:Connect(function()
-	hubManuallyClosed = true
-	setHubPanelVisible(false)
-end)
+homePanelController = HomePanel.new(gui, {
+	playSound = playSound,
+	showBanner = showBanner,
+	isReducedMotion = isUiReducedMotion,
+	callbacks = {
+		close = function()
+			hubManuallyClosed = true
+		end,
+		reopen = function()
+			hubManuallyClosed = false
+			homePanelController:SetVisible(true, currentState == nil)
+		end,
+		guide = function()
+			tutorialManuallyOpened = true
+			updateTutorialVisibility()
+		end,
+		battle = function(queued)
+			queueEvent:FireServer(queued and "LeaveQueue" or "Battle")
+		end,
+		story = function()
+			cosmeticPanelController:Hide()
+			shopPanelController:Hide()
+			storyPanelController:Show()
+		end,
+		motion = function()
+			reducedMotion = not reducedMotion
+			updateSettingsButtonText()
+			playSound("Button")
+			saveSettings()
+			showBanner(
+				reducedMotion and "Motion: Reduced" or "Motion: Full",
+				customization.accentColor
+			)
+		end,
+		uiSize = function()
+			if uiScale == 1 then
+				uiScale = 1.12
+			elseif uiScale > 1 then
+				uiScale = 0.92
+			else
+				uiScale = 1
+			end
+			updateSettingsButtonText()
+			applyUiScale()
+			clampWindowToScreen()
+			playSound("Button")
+			saveSettings()
+		end,
+		pieceSkin = function()
+			local nextIndex =
+				nextUnlockedIndex(pieceSkinIndex, #Blocks.PieceSkins, isPieceSkinUnlocked)
+			if nextIndex == pieceSkinIndex then
+				showBanner(nextLockedCosmeticText(), Color3.fromRGB(251, 146, 60))
+				playSound("Blocked")
+				return
+			end
 
-hubLogoButton.Activated:Connect(function()
-	hubManuallyClosed = false
-	setHubPanelVisible(true)
-end)
+			pieceSkinIndex = nextIndex
+			updateSettingsButtonText()
+			playSound("Button")
+			saveSettings()
+			showBanner(
+				`Pieces: {Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"}`,
+				customization.accentColor
+			)
+		end,
+		boardSkin = function()
+			local nextIndex =
+				nextUnlockedIndex(boardSkinIndex, #Config.BoardSkins, isBoardSkinUnlocked)
+			if nextIndex == boardSkinIndex then
+				showBanner(nextLockedCosmeticText(), Color3.fromRGB(251, 146, 60))
+				playSound("Blocked")
+				return
+			end
 
-hubGuideButton.Activated:Connect(function()
-	tutorialManuallyOpened = true
-	playSound("Button")
-	updateTutorialVisibility()
-end)
+			boardSkinIndex = nextIndex
+			updateSettingsButtonText()
+			applyBoardSkin()
+			if currentState then
+				renderBoard()
+			end
+			playSound("Button")
+			saveSettings()
+			local boardSkin = Config.BoardSkins[boardSkinIndex]
+			showBanner(`Board: {boardSkin and boardSkin.name or "Auto"}`, customization.accentColor)
+		end,
+		shop = function()
+			cosmeticPanelController:Hide()
+			storyPanelController:Hide()
+			shopPanelController:Show()
+		end,
+		sound = function()
+			if soundVolume > 0.36 then
+				soundVolume = 0.35
+				soundEnabled = true
+			elseif soundVolume > 0 then
+				soundVolume = 0
+				soundEnabled = false
+			else
+				soundVolume = 0.65
+				soundEnabled = true
+			end
+
+			updateSettingsButtonText()
+			applySoundSettings()
+			playSound("Button")
+			saveSettings()
+		end,
+	},
+})
+
+local function setHubPanelVisible(visible)
+	homePanelController:SetVisible(visible, currentState == nil)
+end
 
 tutorialPanel = Instance.new("Frame")
 tutorialPanel.AnchorPoint = Vector2.new(1, 0)
@@ -958,304 +937,6 @@ tutorialStoryButton.Activated:Connect(function()
 	queueEvent:FireServer("Story")
 end)
 
-local hubTitle = Instance.new("TextLabel")
-hubTitle.BackgroundTransparency = 1
-hubTitle.Position = UDim2.fromOffset(22, 16)
-hubTitle.Size = UDim2.fromOffset(460, 32)
-hubTitle.Font = Enum.Font.GothamBlack
-hubTitle.Text = "Block Blast Home"
-hubTitle.TextColor3 = Color3.fromRGB(245, 247, 251)
-hubTitle.TextSize = 26
-hubTitle.TextXAlignment = Enum.TextXAlignment.Left
-hubTitle.Parent = hubPanel
-UITheme.text(hubTitle, "title")
-
-hubStatusLabel = Instance.new("TextLabel")
-hubStatusLabel.BackgroundTransparency = 1
-hubStatusLabel.Position = UDim2.fromOffset(22, 52)
-hubStatusLabel.Size = UDim2.fromOffset(576, 36)
-hubStatusLabel.Font = Enum.Font.Gotham
-hubStatusLabel.Text = "Walk to a queue pad or use the buttons below."
-hubStatusLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
-hubStatusLabel.TextSize = 16
-hubStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-hubStatusLabel.TextWrapped = true
-hubStatusLabel.Parent = hubPanel
-UITheme.text(hubStatusLabel, "muted")
-
-hubMatchmakingLabel = Instance.new("TextLabel")
-hubMatchmakingLabel.BackgroundTransparency = 1
-hubMatchmakingLabel.Position = UDim2.fromOffset(22, 90)
-hubMatchmakingLabel.Size = UDim2.fromOffset(576, 20)
-hubMatchmakingLabel.Font = Enum.Font.GothamBold
-hubMatchmakingLabel.Text = "Arenas: 3 open | Queue: 0"
-hubMatchmakingLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
-hubMatchmakingLabel.TextSize = 14
-hubMatchmakingLabel.TextXAlignment = Enum.TextXAlignment.Left
-hubMatchmakingLabel.Parent = hubPanel
-UITheme.text(hubMatchmakingLabel, "soft")
-
-battleQueueButton = Instance.new("TextButton")
-battleQueueButton.Position = UDim2.fromOffset(22, 124)
-battleQueueButton.Size = UDim2.fromOffset(276, 58)
-battleQueueButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
-battleQueueButton.BorderSizePixel = 0
-battleQueueButton.Font = Enum.Font.GothamBold
-battleQueueButton.Text = "Join Battle Queue"
-battleQueueButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-battleQueueButton.TextSize = 18
-battleQueueButton.Parent = hubPanel
-styleButton(battleQueueButton, "primary")
-
-local storyButton = Instance.new("TextButton")
-storyButton.Position = UDim2.fromOffset(322, 124)
-storyButton.Size = UDim2.fromOffset(276, 58)
-storyButton.BackgroundColor3 = Color3.fromRGB(74, 222, 128)
-storyButton.BorderSizePixel = 0
-storyButton.Font = Enum.Font.GothamBold
-storyButton.Text = "Story Mode"
-storyButton.TextColor3 = Color3.fromRGB(13, 32, 24)
-storyButton.TextSize = 18
-storyButton.TextWrapped = true
-storyButton.Parent = hubPanel
-styleButton(storyButton, "success")
-
-storyPreviewLabel = Instance.new("TextLabel")
-storyPreviewLabel.BackgroundTransparency = 1
-storyPreviewLabel.Position = UDim2.fromOffset(322, 188)
-storyPreviewLabel.Size = UDim2.fromOffset(276, 22)
-storyPreviewLabel.Font = Enum.Font.GothamBold
-storyPreviewLabel.Text = "Next chapter loading..."
-storyPreviewLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
-storyPreviewLabel.TextSize = 12
-storyPreviewLabel.TextWrapped = true
-storyPreviewLabel.TextXAlignment = Enum.TextXAlignment.Left
-storyPreviewLabel.TextYAlignment = Enum.TextYAlignment.Center
-storyPreviewLabel.Parent = hubPanel
-UITheme.text(storyPreviewLabel, "soft")
-
-motionButton = Instance.new("TextButton")
-motionButton.Position = UDim2.fromOffset(22, 224)
-motionButton.Size = UDim2.fromOffset(276, 42)
-motionButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
-motionButton.BorderSizePixel = 0
-motionButton.Font = Enum.Font.GothamBold
-motionButton.Text = "Motion: Full"
-motionButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-motionButton.TextSize = 15
-motionButton.Parent = hubPanel
-styleButton(motionButton, "secondary")
-
-uiSizeButton = Instance.new("TextButton")
-uiSizeButton.Position = UDim2.fromOffset(322, 224)
-uiSizeButton.Size = UDim2.fromOffset(276, 42)
-uiSizeButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
-uiSizeButton.BorderSizePixel = 0
-uiSizeButton.Font = Enum.Font.GothamBold
-uiSizeButton.Text = "UI Size: Auto"
-uiSizeButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-uiSizeButton.TextSize = 15
-uiSizeButton.Parent = hubPanel
-styleButton(uiSizeButton, "secondary")
-
-pieceSkinButton = Instance.new("TextButton")
-pieceSkinButton.Position = UDim2.fromOffset(22, 278)
-pieceSkinButton.Size = UDim2.fromOffset(276, 42)
-pieceSkinButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
-pieceSkinButton.BorderSizePixel = 0
-pieceSkinButton.Font = Enum.Font.GothamBold
-pieceSkinButton.Text = "  Pieces: Rainbow"
-pieceSkinButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-pieceSkinButton.TextSize = 15
-pieceSkinButton.TextXAlignment = Enum.TextXAlignment.Left
-pieceSkinButton.Parent = hubPanel
-styleButton(pieceSkinButton, "secondary")
-
-local pieceSwatchFrame = Instance.new("Frame")
-pieceSwatchFrame.BackgroundTransparency = 1
-pieceSwatchFrame.Position = UDim2.new(1, -78, 0.5, -6)
-pieceSwatchFrame.Size = UDim2.fromOffset(58, 12)
-pieceSwatchFrame.ZIndex = 3
-pieceSwatchFrame.Parent = pieceSkinButton
-
-for index = 1, 4 do
-	local swatch = Instance.new("Frame")
-	swatch.Position = UDim2.fromOffset((index - 1) * 15, 0)
-	swatch.Size = UDim2.fromOffset(12, 12)
-	swatch.BorderSizePixel = 0
-	swatch.ZIndex = 4
-	swatch.Parent = pieceSwatchFrame
-	pieceSkinSwatches[index] = swatch
-end
-
-soundButton = Instance.new("TextButton")
-soundButton.Position = UDim2.fromOffset(322, 278)
-soundButton.Size = UDim2.fromOffset(276, 42)
-soundButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
-soundButton.BorderSizePixel = 0
-soundButton.Font = Enum.Font.GothamBold
-soundButton.Text = "Sound: 65%"
-soundButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-soundButton.TextSize = 15
-soundButton.Parent = hubPanel
-styleButton(soundButton, "secondary")
-
-boardSkinButton = Instance.new("TextButton")
-boardSkinButton.Position = UDim2.fromOffset(22, 332)
-boardSkinButton.Size = UDim2.fromOffset(276, 42)
-boardSkinButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
-boardSkinButton.BorderSizePixel = 0
-boardSkinButton.Font = Enum.Font.GothamBold
-boardSkinButton.Text = "  Board: Auto"
-boardSkinButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-boardSkinButton.TextSize = 15
-boardSkinButton.TextXAlignment = Enum.TextXAlignment.Left
-boardSkinButton.Parent = hubPanel
-styleButton(boardSkinButton, "secondary")
-
-local boardPreviewFrame = Instance.new("Frame")
-boardPreviewFrame.BackgroundTransparency = 1
-boardPreviewFrame.Position = UDim2.new(1, -72, 0.5, -14)
-boardPreviewFrame.Size = UDim2.fromOffset(48, 28)
-boardPreviewFrame.ZIndex = 3
-boardPreviewFrame.Parent = boardSkinButton
-
-for row = 1, 2 do
-	for column = 1, 3 do
-		local index = (row - 1) * 3 + column
-		local cell = Instance.new("Frame")
-		cell.Position = UDim2.fromOffset((column - 1) * 15, (row - 1) * 15)
-		cell.Size = UDim2.fromOffset(12, 12)
-		cell.BorderSizePixel = 0
-		cell.ZIndex = 4
-		cell.Parent = boardPreviewFrame
-		boardSkinPreviewCells[index] = cell
-	end
-end
-
-cosmeticHintLabel = Instance.new("TextButton")
-cosmeticHintLabel.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
-cosmeticHintLabel.BackgroundTransparency = 0
-cosmeticHintLabel.Position = UDim2.fromOffset(322, 332)
-cosmeticHintLabel.Size = UDim2.fromOffset(276, 42)
-cosmeticHintLabel.Font = Enum.Font.GothamBold
-cosmeticHintLabel.Text = "Shop & Closet"
-cosmeticHintLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-cosmeticHintLabel.TextSize = 15
-cosmeticHintLabel.TextWrapped = true
-cosmeticHintLabel.TextXAlignment = Enum.TextXAlignment.Center
-cosmeticHintLabel.TextYAlignment = Enum.TextYAlignment.Center
-cosmeticHintLabel.BorderSizePixel = 0
-cosmeticHintLabel.Parent = hubPanel
-styleButton(cosmeticHintLabel, "primary")
-
-local function nextUnlockedIndex(currentIndex, itemCount, isUnlocked)
-	for offset = 1, itemCount do
-		local nextIndex = ((currentIndex + offset - 1) % itemCount) + 1
-		if isUnlocked(nextIndex) then
-			return nextIndex
-		end
-	end
-
-	return currentIndex
-end
-
-battleQueueButton.Activated:Connect(function()
-	playSound(hubQueued and "Button" or "Queue")
-	queueEvent:FireServer(hubQueued and "LeaveQueue" or "Battle")
-end)
-
-storyButton.Activated:Connect(function()
-	playSound("Button")
-	cosmeticPanelController:Hide()
-	shopPanelController:Hide()
-	storyPanelController:Show()
-end)
-
-motionButton.Activated:Connect(function()
-	reducedMotion = not reducedMotion
-	updateSettingsButtonText()
-	playSound("Button")
-	saveSettings()
-	showBanner(motionButton.Text, customization.accentColor)
-end)
-
-uiSizeButton.Activated:Connect(function()
-	if uiScale == 1 then
-		uiScale = 1.12
-		uiSizeButton.Text = "UI Size: Large"
-	elseif uiScale > 1 then
-		uiScale = 0.92
-		uiSizeButton.Text = "UI Size: Compact"
-	else
-		uiScale = 1
-	end
-	updateSettingsButtonText()
-	applyUiScale()
-	clampWindowToScreen()
-	playSound("Button")
-	saveSettings()
-end)
-
-pieceSkinButton.Activated:Connect(function()
-	local nextIndex = nextUnlockedIndex(pieceSkinIndex, #Blocks.PieceSkins, isPieceSkinUnlocked)
-	if nextIndex == pieceSkinIndex then
-		showBanner(nextLockedCosmeticText(), Color3.fromRGB(251, 146, 60))
-		playSound("Blocked")
-		return
-	end
-
-	pieceSkinIndex = nextIndex
-	updateSettingsButtonText()
-	playSound("Button")
-	saveSettings()
-	showBanner(pieceSkinButton.Text, customization.accentColor)
-end)
-
-boardSkinButton.Activated:Connect(function()
-	local nextIndex = nextUnlockedIndex(boardSkinIndex, #Config.BoardSkins, isBoardSkinUnlocked)
-	if nextIndex == boardSkinIndex then
-		showBanner(nextLockedCosmeticText(), Color3.fromRGB(251, 146, 60))
-		playSound("Blocked")
-		return
-	end
-
-	boardSkinIndex = nextIndex
-	updateSettingsButtonText()
-	applyBoardSkin()
-	if currentState then
-		renderBoard()
-	end
-	playSound("Button")
-	saveSettings()
-	showBanner(boardSkinButton.Text, customization.accentColor)
-end)
-
-cosmeticHintLabel.Activated:Connect(function()
-	playSound("Button")
-	cosmeticPanelController:Hide()
-	storyPanelController:Hide()
-	shopPanelController:Show()
-end)
-
-soundButton.Activated:Connect(function()
-	if soundVolume > 0.36 then
-		soundVolume = 0.35
-		soundEnabled = true
-	elseif soundVolume > 0 then
-		soundVolume = 0
-		soundEnabled = false
-	else
-		soundVolume = 0.65
-		soundEnabled = true
-	end
-
-	updateSettingsButtonText()
-	applySoundSettings()
-	playSound("Button")
-	saveSettings()
-end)
-
 customizeButton = Instance.new("TextButton")
 customizeButton.AnchorPoint = Vector2.new(1, 0)
 customizeButton.Position = UDim2.new(1, -22, 0, 16)
@@ -1325,12 +1006,11 @@ local function applyTheme()
 	customization.accentColor = theme.accent
 	root.BackgroundColor3 = theme.panel
 	battleDock.BackgroundColor3 = theme.panel
-	hubPanel.BackgroundColor3 = theme.panel
-	battleQueueButton.BackgroundColor3 = theme.accent
-	hubLogoButton.BackgroundColor3 = theme.accent
 	openBoardButton.BackgroundColor3 = theme.accent
 	customizeButton.BackgroundColor3 = theme.accent
-	cosmeticHintLabel.BackgroundColor3 = theme.accent
+	if homePanelController then
+		homePanelController:ApplyTheme(theme)
+	end
 	resetLayoutButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 	customizeButton.Text = `Theme: {theme.name}`
 	applyBoardSkin()
@@ -2253,68 +1933,16 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 
 	setHubPanelVisible(not hubManuallyClosed)
 	updateTutorialVisibility()
-	local queueCount = hubState.queueCount or 0
-	local minPlayers = hubState.minPlayers or 2
-	local openArenas = hubState.openArenas or 0
-	local totalArenas = hubState.totalArenas or 0
-	local activeSessions = hubState.activeSessions or 0
-	local queueText = `{queueCount}/{minPlayers} queued`
-	if hubState.secondsToSoloStart and hubState.secondsToSoloStart > 0 then
-		queueText ..= ` | solo test in {hubState.secondsToSoloStart}s`
-	end
-	if typeof(hubState.storyMission) == "table" then
-		storyButton.Text = `Story: {hubState.storyMission.name or "Mission"}`
-	else
-		storyButton.Text = "Story Mode"
-	end
-	if storyPreviewLabel then
-		storyPreviewLabel.Text = storyPreviewText(hubState.storyMission, hubState.storyStars)
-	end
 	if storyPanelController then
 		storyPanelController:Refresh()
 	end
-	local message = hubState.message or "Welcome to the hub"
-	if hubState.dailyBonusAvailable and message == "Welcome to the hub" then
-		message = hubState.dailyBonusText or "Daily bonus ready"
+	if homePanelController then
+		homePanelController:UpdateHubState(
+			hubState,
+			storyPreviewText(hubState.storyMission, hubState.storyStars),
+			customization.accentColor
+		)
 	end
-	hubStatusLabel.Text = message
-	hubMatchmakingLabel.Text =
-		`Arenas: {openArenas}/{totalArenas} open | Matches: {activeSessions} | {queueText}`
-	hubMatchmakingLabel.TextColor3 = openArenas > 0 and Color3.fromRGB(153, 163, 179)
-		or Color3.fromRGB(255, 207, 102)
-	hubQueued = hubState.queued == true
-	if hubQueued then
-		battleQueueButton.Text = "Queued - Leave Queue"
-	elseif openArenas <= 0 then
-		battleQueueButton.Text = "Arenas Full"
-	else
-		battleQueueButton.Text = "Join Battle Queue"
-	end
-	battleQueueButton.BackgroundColor3 = hubState.queued and Color3.fromRGB(244, 114, 182)
-		or customization.accentColor
-
-	if queuedPulseTween then
-		queuedPulseTween:Cancel()
-		queuedPulseTween = nil
-	end
-
-	if hubState.queued then
-		if not lastQueued then
-			showBanner("Queued for battle", Color3.fromRGB(244, 114, 182))
-		end
-		if not reducedMotion then
-			queuedPulseTween = TweenService:Create(
-				battleQueueButton,
-				TweenInfo.new(0.55, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-				{ BackgroundTransparency = 0.22 }
-			)
-			queuedPulseTween:Play()
-		end
-	else
-		battleQueueButton.BackgroundTransparency = 0
-	end
-
-	lastQueued = hubState.queued
 	renderDiagnostics()
 end)
 
