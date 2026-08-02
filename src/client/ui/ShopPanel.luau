@@ -11,6 +11,19 @@ ShopPanel.__index = ShopPanel
 local CATEGORIES = { "Featured", "Passes", "Cosmetics", "Currency" }
 
 local THEME = UITheme.Color
+local SHOP_BLUE = Color3.fromRGB(21, 143, 255)
+local SHOP_BLUE_DARK = Color3.fromRGB(8, 76, 151)
+local SHOP_GREEN = Color3.fromRGB(106, 236, 67)
+local SHOP_PURPLE = Color3.fromRGB(205, 95, 255)
+local SHOP_GOLD = Color3.fromRGB(255, 215, 72)
+local SHOP_RED = Color3.fromRGB(255, 69, 83)
+local SHOP_TEXT = Color3.fromRGB(18, 59, 96)
+local CARD_COLORS = {
+	Color3.fromRGB(91, 210, 255),
+	Color3.fromRGB(119, 240, 88),
+	Color3.fromRGB(255, 132, 217),
+	Color3.fromRGB(255, 222, 85),
+}
 
 local function safeArray(value)
 	return typeof(value) == "table" and value or {}
@@ -79,69 +92,133 @@ function ShopPanel.new(gui, options)
 	self.pendingPrompt = nil
 	self.cardButtons = {}
 
+	local dim = Instance.new("TextButton")
+	dim.Name = "ShopDim"
+	dim.BackgroundColor3 = Color3.fromRGB(7, 20, 31)
+	dim.BackgroundTransparency = 0.42
+	dim.BorderSizePixel = 0
+	dim.Text = ""
+	dim.AutoButtonColor = false
+	dim.Visible = false
+	dim.Size = UDim2.fromScale(1, 1)
+	dim.ZIndex = 42
+	dim.Parent = gui
+	self.dim = dim
+
+	local rays = Instance.new("Frame")
+	rays.Name = "ShopRays"
+	rays.AnchorPoint = Vector2.new(0.5, 0.5)
+	rays.Position = UDim2.fromScale(0.5, 0.5)
+	rays.Size = UDim2.fromOffset(760, 620)
+	rays.BackgroundTransparency = 1
+	rays.Visible = false
+	rays.ZIndex = 43
+	rays.Parent = gui
+	self.rays = rays
+	for index = 1, 16 do
+		local ray = Instance.new("Frame")
+		ray.Name = `Ray{index}`
+		ray.AnchorPoint = Vector2.new(0.5, 1)
+		ray.Position = UDim2.fromScale(0.5, 0.5)
+		ray.Size = UDim2.fromOffset(index % 2 == 0 and 26 or 16, 360)
+		ray.BackgroundColor3 = index % 2 == 0 and Color3.fromRGB(255, 250, 190)
+			or Color3.fromRGB(255, 255, 255)
+		ray.BackgroundTransparency = 0.72
+		ray.BorderSizePixel = 0
+		ray.Rotation = (index - 1) * (360 / 16)
+		ray.ZIndex = 43
+		ray.Parent = rays
+	end
+
 	local panel = Instance.new("Frame")
 	panel.AnchorPoint = Vector2.new(0.5, 0.5)
 	panel.Position = UDim2.fromScale(0.5, 0.5)
-	panel.Size = UDim2.fromOffset(620, 430)
-	panel.BackgroundColor3 = THEME.panel
-	panel.BackgroundTransparency = 0.02
+	panel.Size = UDim2.fromOffset(690, 500)
+	panel.BackgroundColor3 = Color3.fromRGB(221, 247, 255)
+	panel.BackgroundTransparency = 0
 	panel.BorderSizePixel = 0
 	panel.Visible = false
 	panel.ZIndex = 45
 	panel.Parent = gui
-	UITheme.panel(panel, { color = THEME.panel, bottomColor = Color3.fromRGB(7, 11, 20) })
+	UITheme.card(panel, {
+		color = Color3.fromRGB(221, 247, 255),
+		strokeColor = SHOP_BLUE_DARK,
+		strokeTransparency = 0,
+	})
+	local panelStroke = panel:FindFirstChildOfClass("UIStroke")
+	if panelStroke then
+		panelStroke.Thickness = 4
+	end
 	self.panel = panel
 
 	local panelScale = Instance.new("UIScale")
 	panelScale.Parent = panel
 	self.panelScale = panelScale
 
+	local header = Instance.new("Frame")
+	header.Name = "Header"
+	header.Position = UDim2.fromOffset(0, 0)
+	header.Size = UDim2.new(1, 0, 0, 62)
+	header.BackgroundColor3 = SHOP_BLUE
+	header.BorderSizePixel = 0
+	header.ZIndex = 46
+	header.Parent = panel
+	UITheme.corner(header, UITheme.Radius.md)
+	UITheme.gradient(header, Color3.fromRGB(51, 178, 255), SHOP_BLUE_DARK, 90)
+
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1
-	title.Position = UDim2.fromOffset(18, 14)
-	title.Size = UDim2.fromOffset(480, 28)
+	title.Position = UDim2.fromOffset(36, -26)
+	title.Size = UDim2.fromOffset(320, 84)
 	title.Font = Enum.Font.GothamBlack
-	title.Text = "Battle Shop"
-	title.TextColor3 = THEME.text
-	title.TextSize = 24
+	title.Text = "Shop"
+	title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	title.TextStrokeColor3 = SHOP_BLUE_DARK
+	title.TextStrokeTransparency = 0
+	title.TextSize = 48
 	title.TextXAlignment = Enum.TextXAlignment.Left
-	title.ZIndex = 46
+	title.ZIndex = 48
 	title.Parent = panel
-	UITheme.text(title, "title")
 
 	local closeButton = Instance.new("TextButton")
-	closeButton.Position = UDim2.new(1, -50, 0, 14)
-	closeButton.Size = UDim2.fromOffset(34, 34)
-	closeButton.BackgroundColor3 = THEME.buttonMuted
+	closeButton.Position = UDim2.new(1, -58, 0, -18)
+	closeButton.Size = UDim2.fromOffset(58, 58)
+	closeButton.BackgroundColor3 = SHOP_RED
 	closeButton.BorderSizePixel = 0
 	closeButton.Font = Enum.Font.GothamBlack
 	closeButton.Text = "X"
-	closeButton.TextColor3 = THEME.text
-	closeButton.TextSize = 16
-	closeButton.ZIndex = 47
+	closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeButton.TextStrokeColor3 = Color3.fromRGB(124, 18, 36)
+	closeButton.TextStrokeTransparency = 0.25
+	closeButton.TextSize = 32
+	closeButton.ZIndex = 49
 	closeButton.Parent = panel
-	UITheme.closeButton(closeButton)
+	UITheme.button(closeButton, "danger")
+	closeButton.BackgroundColor3 = SHOP_RED
+	local closeCorner = closeButton:FindFirstChildOfClass("UICorner")
+	if closeCorner then
+		closeCorner.CornerRadius = UDim.new(0, 12)
+	end
 	UITheme.attachButtonFeedback(closeButton)
 	self.closeButton = closeButton
 
 	local subtitle = Instance.new("TextLabel")
 	subtitle.BackgroundTransparency = 1
-	subtitle.Position = UDim2.fromOffset(18, 46)
-	subtitle.Size = UDim2.fromOffset(560, 34)
-	subtitle.Font = Enum.Font.Gotham
-	subtitle.Text = "Passes and currency are server-validated before any purchase prompt opens."
-	subtitle.TextColor3 = THEME.muted
-	subtitle.TextSize = 14
+	subtitle.Position = UDim2.fromOffset(318, 18)
+	subtitle.Size = UDim2.fromOffset(300, 26)
+	subtitle.Font = Enum.Font.GothamBlack
+	subtitle.Text = "Server-safe upgrades"
+	subtitle.TextColor3 = Color3.fromRGB(230, 249, 255)
+	subtitle.TextSize = 17
 	subtitle.TextWrapped = true
-	subtitle.TextXAlignment = Enum.TextXAlignment.Left
-	subtitle.ZIndex = 46
+	subtitle.TextXAlignment = Enum.TextXAlignment.Right
+	subtitle.ZIndex = 48
 	subtitle.Parent = panel
-	UITheme.text(subtitle, "muted")
 
 	local tabFrame = Instance.new("Frame")
 	tabFrame.BackgroundTransparency = 1
-	tabFrame.Position = UDim2.fromOffset(18, 88)
-	tabFrame.Size = UDim2.fromOffset(584, 40)
+	tabFrame.Position = UDim2.fromOffset(-86, 98)
+	tabFrame.Size = UDim2.fromOffset(78, 308)
 	tabFrame.ZIndex = 46
 	tabFrame.Parent = panel
 	self.tabFrame = tabFrame
@@ -149,17 +226,21 @@ function ShopPanel.new(gui, options)
 
 	for index, category in CATEGORIES do
 		local tab = Instance.new("TextButton")
-		tab.Position = UDim2.fromOffset((index - 1) * 146, 0)
-		tab.Size = UDim2.fromOffset(136, 38)
-		tab.BackgroundColor3 = category == self.category and THEME.button or THEME.buttonMuted
+		tab.Position = UDim2.fromOffset(0, (index - 1) * 76)
+		tab.Size = UDim2.fromOffset(78, 68)
+		tab.BackgroundColor3 = category == self.category and SHOP_PURPLE or SHOP_BLUE
 		tab.BorderSizePixel = 0
-		tab.Font = Enum.Font.GothamBold
+		tab.Font = Enum.Font.GothamBlack
 		tab.Text = category
-		tab.TextColor3 = THEME.text
-		tab.TextSize = 14
+		tab.TextColor3 = Color3.fromRGB(255, 255, 255)
+		tab.TextStrokeColor3 = SHOP_BLUE_DARK
+		tab.TextStrokeTransparency = 0.45
+		tab.TextSize = 11
+		tab.TextWrapped = true
 		tab.ZIndex = 47
 		tab.Parent = tabFrame
 		UITheme.button(tab, category == self.category and "primary" or "secondary")
+		tab.BackgroundColor3 = category == self.category and SHOP_PURPLE or SHOP_BLUE
 		UITheme.attachButtonFeedback(tab)
 		tab.Activated:Connect(function()
 			self.playSound("Button")
@@ -172,21 +253,20 @@ function ShopPanel.new(gui, options)
 
 	local status = Instance.new("TextLabel")
 	status.BackgroundTransparency = 1
-	status.Position = UDim2.fromOffset(18, 132)
-	status.Size = UDim2.fromOffset(584, 22)
+	status.Position = UDim2.fromOffset(24, 68)
+	status.Size = UDim2.fromOffset(640, 24)
 	status.Font = Enum.Font.GothamBold
 	status.Text = "Loading shop..."
-	status.TextColor3 = THEME.soft
-	status.TextSize = 13
+	status.TextColor3 = SHOP_TEXT
+	status.TextSize = 14
 	status.TextXAlignment = Enum.TextXAlignment.Left
 	status.ZIndex = 46
 	status.Parent = panel
-	UITheme.text(status, "soft")
 	self.status = status
 
 	local list = Instance.new("ScrollingFrame")
-	list.Position = UDim2.fromOffset(18, 160)
-	list.Size = UDim2.fromOffset(584, 248)
+	list.Position = UDim2.fromOffset(24, 102)
+	list.Size = UDim2.fromOffset(642, 374)
 	list.BackgroundTransparency = 1
 	list.BorderSizePixel = 0
 	list.CanvasSize = UDim2.fromOffset(0, 0)
@@ -197,8 +277,8 @@ function ShopPanel.new(gui, options)
 	self.list = list
 
 	local grid = Instance.new("UIGridLayout")
-	grid.CellSize = UDim2.fromOffset(276, 118)
-	grid.CellPadding = UDim2.fromOffset(12, 12)
+	grid.CellSize = UDim2.fromOffset(310, 154)
+	grid.CellPadding = UDim2.fromOffset(14, 14)
 	grid.SortOrder = Enum.SortOrder.LayoutOrder
 	grid.Parent = list
 	self.grid = grid
@@ -209,15 +289,16 @@ function ShopPanel.new(gui, options)
 	self.updateScale = function()
 		local screenSize = gui.AbsoluteSize
 		local scale =
-			math.clamp(math.min((screenSize.X - 24) / 620, (screenSize.Y - 48) / 430), 0.68, 1)
+			math.clamp(math.min((screenSize.X - 116) / 690, (screenSize.Y - 64) / 500), 0.62, 1)
 		panelScale.Scale = scale
+		rays.Size = UDim2.fromOffset(760 * scale, 620 * scale)
 		local compact = screenSize.X < 720
 		if compact then
-			grid.CellSize = UDim2.fromOffset(560, 126)
-			list.Size = UDim2.fromOffset(584, 248)
+			grid.CellSize = UDim2.fromOffset(618, 146)
+			list.Size = UDim2.fromOffset(642, 374)
 		else
-			grid.CellSize = UDim2.fromOffset(276, 118)
-			list.Size = UDim2.fromOffset(584, 248)
+			grid.CellSize = UDim2.fromOffset(310, 154)
+			list.Size = UDim2.fromOffset(642, 374)
 		end
 	end
 	gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(self.updateScale)
@@ -253,72 +334,133 @@ function ShopPanel:itemsForCurrentCategory()
 end
 
 function ShopPanel:createCard(item, index)
+	local cardColor = CARD_COLORS[((index - 1) % #CARD_COLORS) + 1]
+	local locked = item.state == "Locked" or item.state == "Unavailable"
 	local card = Instance.new("Frame")
-	card.BackgroundColor3 = (item.state == "Locked" or item.state == "Unavailable")
-			and THEME.cardMuted
-		or THEME.card
+	card.BackgroundColor3 = locked and Color3.fromRGB(182, 197, 210) or cardColor
 	card.BorderSizePixel = 0
 	card.LayoutOrder = index
 	card.ZIndex = 47
 	UITheme.card(card, {
-		color = (item.state == "Locked" or item.state == "Unavailable") and THEME.cardMuted
-			or THEME.panelRaised,
+		color = locked and Color3.fromRGB(182, 197, 210) or cardColor,
 		strokeColor = statusColor(item.state),
-		strokeTransparency = item.equipped and 0.08 or 0.42,
+		strokeTransparency = 0.08,
 	})
+	local cardStroke = card:FindFirstChildOfClass("UIStroke")
+	if cardStroke then
+		cardStroke.Color = locked and Color3.fromRGB(95, 114, 130) or SHOP_BLUE_DARK
+		cardStroke.Thickness = 2
+	end
+	UITheme.gradient(
+		card,
+		cardColor,
+		locked and Color3.fromRGB(145, 158, 173) or Color3.fromRGB(205, 250, 255),
+		90
+	)
+
+	local iconBubble = Instance.new("Frame")
+	iconBubble.Name = "IconBubble"
+	iconBubble.Position = UDim2.fromOffset(12, 18)
+	iconBubble.Size = UDim2.fromOffset(86, 86)
+	iconBubble.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	iconBubble.BackgroundTransparency = 0.05
+	iconBubble.BorderSizePixel = 0
+	iconBubble.ZIndex = 48
+	iconBubble.Parent = card
+	UITheme.corner(iconBubble, UITheme.Radius.pill)
+	UITheme.stroke(iconBubble, SHOP_BLUE_DARK, 2, 0.18)
+
+	local icon = Instance.new("TextLabel")
+	icon.BackgroundTransparency = 1
+	icon.Size = UDim2.fromScale(1, 1)
+	icon.Font = Enum.Font.GothamBlack
+	icon.Text = item.itemType == "GamePass" and "PASS"
+		or item.itemType == "DeveloperProduct" and "COIN"
+		or "SKIN"
+	icon.TextColor3 = statusColor(item.state)
+	icon.TextSize = 20
+	icon.TextWrapped = true
+	icon.ZIndex = 49
+	icon.Parent = iconBubble
 
 	local name = Instance.new("TextLabel")
 	name.BackgroundTransparency = 1
-	name.Position = UDim2.fromOffset(12, 10)
-	name.Size = UDim2.new(1, -24, 0, 22)
+	name.Position = UDim2.fromOffset(110, 14)
+	name.Size = UDim2.new(1, -126, 0, 30)
 	name.Font = Enum.Font.GothamBlack
 	name.Text = item.name or "Shop Item"
-	name.TextColor3 = THEME.text
-	name.TextSize = 16
+	name.TextColor3 = Color3.fromRGB(255, 255, 255)
+	name.TextStrokeColor3 = SHOP_BLUE_DARK
+	name.TextStrokeTransparency = 0.2
+	name.TextSize = 20
 	name.TextTruncate = Enum.TextTruncate.AtEnd
 	name.TextXAlignment = Enum.TextXAlignment.Left
 	name.ZIndex = 48
 	name.Parent = card
-	UITheme.text(name, "heading")
 
 	local description = Instance.new("TextLabel")
 	description.BackgroundTransparency = 1
-	description.Position = UDim2.fromOffset(12, 34)
-	description.Size = UDim2.new(1, -24, 0, 34)
-	description.Font = Enum.Font.Gotham
+	description.Position = UDim2.fromOffset(110, 44)
+	description.Size = UDim2.new(1, -126, 0, 42)
+	description.Font = Enum.Font.GothamBold
 	description.Text = item.description or ""
-	description.TextColor3 = THEME.muted
-	description.TextSize = 12
+	description.TextColor3 = SHOP_TEXT
+	description.TextSize = 13
 	description.TextWrapped = true
 	description.TextXAlignment = Enum.TextXAlignment.Left
 	description.TextYAlignment = Enum.TextYAlignment.Top
 	description.ZIndex = 48
 	description.Parent = card
-	UITheme.text(description, "muted")
 
 	local stateLabel = Instance.new("TextLabel")
 	stateLabel.BackgroundTransparency = 1
-	stateLabel.Position = UDim2.fromOffset(12, 72)
-	stateLabel.Size = UDim2.new(1, -142, 0, 18)
-	stateLabel.Font = Enum.Font.GothamBold
+	stateLabel.Position = UDim2.fromOffset(14, 114)
+	stateLabel.Size = UDim2.new(1, -170, 0, 26)
+	stateLabel.Font = Enum.Font.GothamBlack
 	stateLabel.Text = item.unavailableReason or item.state or "Available"
 	stateLabel.TextColor3 = statusColor(item.state)
-	stateLabel.TextSize = 12
+	stateLabel.TextSize = 13
 	stateLabel.TextTruncate = Enum.TextTruncate.AtEnd
 	stateLabel.TextXAlignment = Enum.TextXAlignment.Left
+	stateLabel.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
+	stateLabel.TextStrokeTransparency = 0.45
 	stateLabel.ZIndex = 48
 	stateLabel.Parent = card
 
+	local gift = Instance.new("TextButton")
+	gift.AnchorPoint = Vector2.new(1, 1)
+	gift.Position = UDim2.new(1, -126, 1, -14)
+	gift.Size = UDim2.fromOffset(74, 38)
+	gift.BackgroundColor3 = SHOP_BLUE
+	gift.BorderSizePixel = 0
+	gift.Font = Enum.Font.GothamBlack
+	gift.Text = "Gift"
+	gift.TextColor3 = Color3.fromRGB(255, 255, 255)
+	gift.TextSize = 14
+	gift.Selectable = true
+	gift.ZIndex = 48
+	gift.Parent = card
+	UITheme.button(gift, "primary")
+	gift.BackgroundColor3 = SHOP_BLUE
+	UITheme.attachButtonFeedback(gift)
+	table.insert(self.cardButtons, gift)
+	gift.Activated:Connect(function()
+		self.playSound("Blocked")
+		self.showMessage("Gifting is planned for a later shop update.", THEME.warn)
+	end)
+
 	local action = Instance.new("TextButton")
 	action.AnchorPoint = Vector2.new(1, 1)
-	action.Position = UDim2.new(1, -12, 1, -12)
-	action.Size = UDim2.fromOffset(124, 40)
-	action.BackgroundColor3 = statusColor(item.state)
+	action.Position = UDim2.new(1, -14, 1, -14)
+	action.Size = UDim2.fromOffset(104, 38)
+	action.BackgroundColor3 = SHOP_GREEN
 	action.BorderSizePixel = 0
-	action.Font = Enum.Font.GothamBold
+	action.Font = Enum.Font.GothamBlack
 	action.Text = buttonText(item)
-	action.TextColor3 = THEME.text
-	action.TextSize = 13
+	action.TextColor3 = Color3.fromRGB(255, 255, 255)
+	action.TextStrokeColor3 = Color3.fromRGB(19, 110, 28)
+	action.TextStrokeTransparency = 0.28
+	action.TextSize = 14
 	action.TextWrapped = true
 	action.Selectable = true
 	action.ZIndex = 48
@@ -331,6 +473,8 @@ function ShopPanel:createCard(item, index)
 		action.BackgroundColor3 = THEME.success
 	elseif item.available == false or item.state == "Locked" or item.pending then
 		action.BackgroundColor3 = THEME.buttonMuted
+	else
+		action.BackgroundColor3 = SHOP_GREEN
 	end
 
 	action.Activated:Connect(function()
@@ -339,15 +483,14 @@ function ShopPanel:createCard(item, index)
 
 	if item.itemType == "Cosmetic" then
 		local preview = Instance.new("TextButton")
-		preview.AnchorPoint = Vector2.new(1, 1)
-		preview.Position = UDim2.new(1, -146, 1, -12)
-		preview.Size = UDim2.fromOffset(86, 40)
-		preview.BackgroundColor3 = THEME.buttonMuted
+		preview.Position = UDim2.fromOffset(110, 92)
+		preview.Size = UDim2.fromOffset(86, 30)
+		preview.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 		preview.BorderSizePixel = 0
 		preview.Font = Enum.Font.GothamBold
 		preview.Text = "Preview"
-		preview.TextColor3 = THEME.text
-		preview.TextSize = 13
+		preview.TextColor3 = SHOP_TEXT
+		preview.TextSize = 12
 		preview.Selectable = true
 		preview.ZIndex = 48
 		preview.Parent = card
@@ -447,10 +590,11 @@ function ShopPanel:Refresh()
 	self.cardButtons = {}
 
 	for category, tab in self.tabs do
-		tab.BackgroundColor3 = category == self.category and THEME.button or THEME.buttonMuted
+		tab.BackgroundColor3 = category == self.category and SHOP_PURPLE or SHOP_BLUE
 		local stroke = tab:FindFirstChildOfClass("UIStroke")
 		if stroke then
-			stroke.Transparency = category == self.category and 0.12 or 0.42
+			stroke.Transparency = category == self.category and 0.04 or 0.34
+			stroke.Color = category == self.category and SHOP_GOLD or SHOP_BLUE_DARK
 		end
 	end
 
@@ -514,6 +658,8 @@ end
 function ShopPanel:Hide()
 	self.stopPreview()
 	self.panel.Visible = false
+	self.dim.Visible = false
+	self.rays.Visible = false
 end
 
 function ShopPanel:Show(category)
@@ -521,6 +667,8 @@ function ShopPanel:Show(category)
 	self.shopState.loading = #safeArray(self.shopState.gamePasses) == 0
 	self:Refresh()
 	self.updateScale()
+	self.dim.Visible = true
+	self.rays.Visible = true
 	self.panel.Visible = true
 	self:Track("ShopOpened")
 	self.shopEvent:FireServer("RequestSnapshot")

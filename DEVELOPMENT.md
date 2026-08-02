@@ -446,6 +446,27 @@ This file tracks production-readiness work, priorities, known issues, and techni
 2. Studio-test UI navigation on mobile and gamepad.
    Repository validation passes, but actual Roblox focus movement should be checked with real input.
 
+## Session Update - 2026-08-02 Day21 Simulator Shop Redesign
+
+### Completed
+
+- Restyled `ShopPanel.luau` toward the supplied Bubble Gum Simulator shop reference.
+- Added a dimmed world overlay behind the shop.
+- Added low-cost radial light-ray frames behind the shop panel.
+- Rebuilt the shop frame as a bright blue/white modal with a large outlined `Shop` title.
+- Added a large red chunky close button.
+- Moved category tabs to a vertical side rail.
+- Rebuilt product cards as bright simulator-style tiles with icon bubbles, outlined item names, blue Gift buttons, and green purchase buttons.
+- Kept purchase logic server-authoritative; the new Gift button is clearly non-granting and only shows a planned-feature message.
+- Built `BlockBlastBattle-Day21.rbxl`.
+
+### Validation
+
+- `stylua src` passed.
+- `selene src` passed with 0 errors and 0 warnings.
+- `rojo build default.project.json --output BlockBlastBattle-Day21.rbxl` passed.
+- `git diff --check` reported only Windows CRLF notices.
+
 ## Session Update - 2026-08-02 Day20 Reference HUD Cleanup
 
 ### Completed
