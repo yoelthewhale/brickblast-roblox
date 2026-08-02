@@ -38,6 +38,7 @@ local BLOCK_COLORS = {
 	Color3.fromRGB(255, 112, 189),
 }
 
+local queueVisuals = {}
 local animatedParts = {}
 
 local function toCFrame(positionOrCFrame)
@@ -94,6 +95,7 @@ local function addParticles(parent, name, color, rate, lifetime, speed, spread)
 
 	local emitter = Instance.new("ParticleEmitter")
 	emitter.Name = name
+	emitter:SetAttribute("DefaultRate", rate)
 	emitter.Color = ColorSequence.new(color)
 	emitter.LightEmission = 0.45
 	emitter.Rate = rate
@@ -148,6 +150,40 @@ local function addBillboard(part, title, subtitle, offset)
 	subtitleLabel.TextStrokeTransparency = 0.45
 	subtitleLabel.TextScaled = true
 	subtitleLabel.Parent = billboard
+end
+
+local function addStatusBillboard(part, name, title, subtitle, offset)
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = name
+	billboard.Size = UDim2.fromOffset(290, 96)
+	billboard.StudsOffset = offset or Vector3.new(0, 7, 0)
+	billboard.AlwaysOnTop = true
+	billboard.Parent = part
+
+	local titleLabel = Instance.new("TextLabel")
+	titleLabel.Name = "Title"
+	titleLabel.BackgroundTransparency = 1
+	titleLabel.Size = UDim2.fromScale(1, 0.54)
+	titleLabel.Font = Enum.Font.GothamBlack
+	titleLabel.Text = title
+	titleLabel.TextColor3 = PALETTE.text
+	titleLabel.TextStrokeTransparency = 0.25
+	titleLabel.TextScaled = true
+	titleLabel.Parent = billboard
+
+	local subtitleLabel = Instance.new("TextLabel")
+	subtitleLabel.Name = "Subtitle"
+	subtitleLabel.BackgroundTransparency = 1
+	subtitleLabel.Position = UDim2.fromScale(0, 0.54)
+	subtitleLabel.Size = UDim2.fromScale(1, 0.46)
+	subtitleLabel.Font = Enum.Font.GothamBold
+	subtitleLabel.Text = subtitle
+	subtitleLabel.TextColor3 = Color3.fromRGB(235, 248, 255)
+	subtitleLabel.TextStrokeTransparency = 0.35
+	subtitleLabel.TextScaled = true
+	subtitleLabel.Parent = billboard
+
+	return titleLabel, subtitleLabel
 end
 
 local function addSurfaceText(part, text, face, color)
@@ -309,6 +345,7 @@ local function makeBridge(parent, name, from, to, width, rise)
 				PALETTE.gold,
 				0.12
 			)
+			post.CanCollide = false
 			lamp.Shape = Enum.PartType.Ball
 			addLight(lamp, PALETTE.gold, 0.55, 12)
 		end
@@ -328,7 +365,8 @@ local function makeTree(parent, name, base, scale, leafColor)
 		base + Vector3.new(0, 4 * scale, 0),
 		PALETTE.wood,
 		Enum.Material.Wood
-	)
+	).CanCollide =
+		false
 	for index, offset in
 		{
 			Vector3.new(0, 9, 0),
@@ -369,14 +407,23 @@ end
 
 local function makeBench(parent, name, center, rotation)
 	local cframe = CFrame.new(center) * CFrame.Angles(0, rotation, 0)
-	makePart(parent, `{name}Seat`, Vector3.new(7, 0.8, 2), cframe, PALETTE.wood, Enum.Material.Wood)
+	makePart(
+		parent,
+		`{name}Seat`,
+		Vector3.new(7, 0.8, 2),
+		cframe,
+		PALETTE.wood,
+		Enum.Material.Wood,
+		{ canCollide = false }
+	)
 	makePart(
 		parent,
 		`{name}Back`,
 		Vector3.new(7, 2.5, 0.7),
 		cframe * CFrame.new(0, 1.45, 0.9),
 		PALETTE.wood,
-		Enum.Material.Wood
+		Enum.Material.Wood,
+		{ canCollide = false }
 	)
 	for x in { -2.8, 2.8 } do
 		makePart(
@@ -385,7 +432,8 @@ local function makeBench(parent, name, center, rotation)
 			Vector3.new(0.7, 1.5, 0.7),
 			cframe * CFrame.new(x, -0.9, 0),
 			PALETTE.stoneDark,
-			Enum.Material.Slate
+			Enum.Material.Slate,
+			{ canCollide = false }
 		)
 	end
 end
@@ -774,6 +822,15 @@ local function buildSideIslands(parent)
 	battlePad.Name = "BattleQueuePad"
 	battlePad:SetAttribute("QueueMode", "Battle")
 	local battlePrompt = addPrompt(battlePad, "Join Queue", "Block Blast Battle")
+	local battleTitle, battleSubtitle = addStatusBillboard(
+		battlePad,
+		"QueueStatus",
+		"BATTLE QUEUE",
+		"0 queued - step here or use Hub UI"
+	)
+	queueVisuals.battlePad = battlePad
+	queueVisuals.battleTitle = battleTitle
+	queueVisuals.battleSubtitle = battleSubtitle
 	for index, portalData in
 		{
 			{ name = "RankedPortal", x = -22, title = "RANKED", color = PALETTE.gold },
@@ -808,6 +865,10 @@ local function buildSideIslands(parent)
 	storyPad.Name = "StoryQueuePad"
 	storyPad:SetAttribute("QueueMode", "Story")
 	local storyPrompt = addPrompt(storyPad, "Start", "Story Training")
+	local storyTitle, storySubtitle =
+		addStatusBillboard(storyPad, "StoryStatus", "STORY MODE", "Solo missions - safe practice")
+	queueVisuals.storyTitle = storyTitle
+	queueVisuals.storySubtitle = storySubtitle
 	makeTree(storyIsland, "GlowingStoryTree", Vector3.new(59, 19, 83), 0.9, PALETTE.purple)
 	storyTop.Name = "StoryIslandTop"
 
@@ -1123,6 +1184,7 @@ end
 function HubBuilder.build()
 	configureLighting()
 	table.clear(animatedParts)
+	table.clear(queueVisuals)
 
 	local existing = workspace:FindFirstChild("BlockBlastHub")
 	if existing then
@@ -1172,6 +1234,37 @@ function HubBuilder.build()
 		arenaSpawns = arenas[1].spawns,
 		arenaReturnPad = arenas[1].returnPad,
 	}
+end
+
+function HubBuilder.setQueueVisuals(queueCount, minPlayers, secondsToSoloStart, openArenas)
+	queueCount = queueCount or 0
+	minPlayers = minPlayers or 2
+	openArenas = openArenas or 0
+
+	if queueVisuals.battleSubtitle then
+		local queueText = `{queueCount}/{minPlayers} queued`
+		if openArenas <= 0 then
+			queueText = "Arenas full - wait for return"
+		elseif queueCount > 0 and secondsToSoloStart and secondsToSoloStart > 0 then
+			queueText ..= ` - solo in {secondsToSoloStart}s`
+		else
+			queueText ..= " - step here or use Hub UI"
+		end
+		queueVisuals.battleSubtitle.Text = queueText
+	end
+
+	if queueVisuals.battleTitle then
+		queueVisuals.battleTitle.Text = queueCount > 0 and "QUEUE ACTIVE" or "BATTLE QUEUE"
+	end
+
+	if queueVisuals.battlePad then
+		queueVisuals.battlePad.Color = queueCount > 0 and PALETTE.pink or PALETTE.cyan
+	end
+
+	if queueVisuals.storySubtitle then
+		queueVisuals.storySubtitle.Text = openArenas > 0 and "Solo missions - safe practice"
+			or "Arena busy - try soon"
+	end
 end
 
 return HubBuilder

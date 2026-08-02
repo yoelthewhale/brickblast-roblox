@@ -84,6 +84,7 @@ Players.CharacterAutoLoads = true
 
 local playerStates = {}
 local playerSpawnConnections = {}
+local playerCharacterConnections = {}
 local playerSessions = {}
 local activeSessions = {}
 local queuedPlayers = {}
@@ -168,6 +169,7 @@ local resolveBattleIfFinished = nil
 local sendHubState = nil
 local sendShopSnapshot = nil
 local startStoryMode = nil
+local leaveBattleQueue = nil
 local ownsLegacyCosmetic = nil
 local sanitizeCosmeticInventory = nil
 local cosmeticInventory = nil
@@ -1507,7 +1509,38 @@ local function queueCount()
 	return count
 end
 
+local function pruneQueue()
+	local removed = false
+	for player in queuedPlayers do
+		if player.Parent ~= Players or playerModes[player] ~= "Hub" then
+			queuedPlayers[player] = nil
+			removed = true
+		end
+	end
+
+	if queueCount() == 0 then
+		queueStartedAt = nil
+	end
+
+	return removed
+end
+
+local function updateHubWorldVisuals()
+	local _, openArenas = arenaCounts()
+	local secondsToSoloStart = nil
+	if queueStartedAt and queueCount() > 0 then
+		secondsToSoloStart =
+			math.max(0, math.ceil(SOLO_TEST_SECONDS - (os.clock() - queueStartedAt)))
+	end
+
+	if HubBuilder.setQueueVisuals then
+		HubBuilder.setQueueVisuals(queueCount(), BATTLE_MIN_PLAYERS, secondsToSoloStart, openArenas)
+	end
+end
+
 sendHubState = function(player, message)
+	pruneQueue()
+	updateHubWorldVisuals()
 	local secondsToSoloStart = nil
 	if queueStartedAt and queuedPlayers[player] then
 		secondsToSoloStart =
@@ -1726,6 +1759,23 @@ end
 
 local function startBattle(players, mode, storyChapter)
 	mode = mode or "Battle"
+	local eligiblePlayers = {}
+	for _, player in players do
+		if
+			player.Parent == Players
+			and playerModes[player] == "Hub"
+			and (mode == "Story" or queuedPlayers[player] == true)
+		then
+			table.insert(eligiblePlayers, player)
+		end
+	end
+
+	if #eligiblePlayers == 0 then
+		pruneQueue()
+		broadcastHub()
+		return nil
+	end
+
 	local arena = findFreeArena()
 	if not arena then
 		return nil
@@ -1736,7 +1786,7 @@ local function startBattle(players, mode, storyChapter)
 		id = nextSessionId,
 		mode = mode,
 		players = {},
-		startedWith = #players,
+		startedWith = #eligiblePlayers,
 		finishScheduled = false,
 		startedAt = os.clock(),
 		endsAt = os.clock() + (mode == "Story" and Config.StoryRoundSeconds or Config.RoundSeconds),
@@ -1751,7 +1801,7 @@ local function startBattle(players, mode, storyChapter)
 		analytics.battleSessionsStarted += 1
 	end
 
-	for slot, player in players do
+	for slot, player in eligiblePlayers do
 		queuedPlayers[player] = nil
 		playerModes[player] = mode
 		playerSessions[player] = session
@@ -1766,7 +1816,7 @@ local function startBattle(players, mode, storyChapter)
 		effectsEvent:FireClient(player, {
 			kind = "BattleStart",
 			message = mode == "Story" and storyChapterTitle(storyMission)
-				or #players >= BATTLE_MIN_PLAYERS and "Battle started!"
+				or #eligiblePlayers >= BATTLE_MIN_PLAYERS and "Battle started!"
 				or "Solo test started!",
 			detail = mode == "Story" and storyMission and storyMission.intro or nil,
 		})
@@ -1799,6 +1849,7 @@ local function getHighestScoringAlivePlayer(session)
 end
 
 local function tryStartBattle()
+	pruneQueue()
 	if not findFreeArena() then
 		if queueCount() > 0 then
 			broadcastHub("All arenas are busy")
@@ -1853,7 +1904,7 @@ local function joinBattleQueue(player)
 	tryStartBattle()
 end
 
-local function leaveBattleQueue(player)
+leaveBattleQueue = function(player)
 	if not queuedPlayers[player] then
 		sendHubState(player, "You are not queued")
 		return
@@ -2354,7 +2405,31 @@ local function attachHubSpawnSafety(player)
 		return
 	end
 
-	playerSpawnConnections[player] = player.CharacterAdded:Connect(function()
+	playerSpawnConnections[player] = player.CharacterAdded:Connect(function(character)
+		if playerCharacterConnections[player] then
+			playerCharacterConnections[player]:Disconnect()
+			playerCharacterConnections[player] = nil
+		end
+
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+			or character:WaitForChild("Humanoid", 4)
+		if humanoid then
+			playerCharacterConnections[player] = humanoid.Died:Connect(function()
+				if queuedPlayers[player] and leaveBattleQueue then
+					leaveBattleQueue(player)
+					return
+				end
+
+				if playerModes[player] == "Battle" or playerModes[player] == "Story" then
+					task.delay(0.25, function()
+						if player.Parent == Players and playerStates[player] then
+							leaveBattle(player)
+						end
+					end)
+				end
+			end)
+		end
+
 		if playerModes[player] == "Battle" or playerModes[player] == "Story" then
 			return
 		end
@@ -2373,12 +2448,6 @@ local function initializePlayer(player)
 		sanitizeCosmeticInventory(player, nil, cosmeticProgress(player), playerSettings[player])
 	applyEquippedCosmeticsToSettings(player)
 	playerModes[player] = "Hub"
-	player.CharacterAdded:Connect(function()
-		task.wait(0.2)
-		if playerModes[player] ~= "Battle" and playerModes[player] ~= "Story" then
-			teleportTo(hubParts.spawn, player)
-		end
-	end)
 	stateEvent:FireClient(player, nil, {})
 	sendHubState(player, "Welcome to the hub")
 	sendSettings(player)
@@ -2396,13 +2465,23 @@ Players.PlayerAdded:Connect(initializePlayer)
 Players.PlayerRemoving:Connect(function(player)
 	saveProfile(player)
 	local session = playerSessions[player]
+	if queuedPlayers[player] then
+		analytics.queueLeaves += 1
+	end
 	playerStates[player] = nil
 	if playerSpawnConnections[player] then
 		playerSpawnConnections[player]:Disconnect()
 		playerSpawnConnections[player] = nil
 	end
+	if playerCharacterConnections[player] then
+		playerCharacterConnections[player]:Disconnect()
+		playerCharacterConnections[player] = nil
+	end
 	playerSessions[player] = nil
 	queuedPlayers[player] = nil
+	if queueCount() == 0 then
+		queueStartedAt = nil
+	end
 	selectedStoryChapters[player] = nil
 	playerModes[player] = nil
 	playerSettings[player] = nil

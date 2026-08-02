@@ -55,6 +55,10 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Prevent early-leave reward farming | High | Playtest | Codex | 2026-08-06 |
 | Add suspicious placement remote diagnostics | High | Playtest | Codex | 2026-08-06 |
 | Harden play-again queue lifecycle | High | Playtest | Codex | 2026-08-06 |
+| Validate Day14 floating-island hub traversal and prompts | High | Playtest | Bear / Codex | 2026-08-07 |
+| Test Day14 queue countdown join/leave/reset lifecycle | High | Playtest | Bear / Codex | 2026-08-07 |
+| Test Day14 two-player battle return, tie, reset, and disconnect cleanup | High | Playtest | Bear / Codex | 2026-08-07 |
+| Validate Reduced Motion world-quality scaling on mobile/tablet emulation | Medium | Playtest | Bear / Codex | 2026-08-07 |
 
 ## Bug Tracker
 
@@ -63,6 +67,8 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Original `.rbxl` file may stay locked while Studio has it open | Medium | Known | Bear / Codex | 2026-07-29 |
 | Need confirm Rojo plugin connects to Day 2 place | High | Playtest | Bear / Codex | 2026-07-29 |
 | Need test two-player battle end condition in Studio multiplayer test | High | Ready | Bear / Codex | 2026-07-30 |
+| Day14 bridge/island collision needs Studio walk-through after redesign | High | Playtest | Bear / Codex | 2026-08-07 |
+| Studio MCP still does not expose usable tools to Codex | Medium | Blocked | Bear / Codex | 2026-08-07 |
 
 ## Playtest Checklist
 
@@ -117,3 +123,14 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 ## Build Notes
 
 - 2026-08-01 Day 4: Added finite-number settings hardening and built `BlockBlastBattle-Day4.rbxl` because Day 3 was locked by Studio.
+- 2026-08-01 Day 14: Added hub signage, queue visual reactions, stale queue pruning, reset/death lifecycle cleanup, non-blocking decoration adjustments, and local Reduced Motion world-quality scaling. Built `BlockBlastBattle-Day14.rbxl`.
+
+## Day14 Studio Validation Focus
+
+- Open `BlockBlastBattle-Day14.rbxl` and press Play.
+- Confirm the player lands safely at `HubSpawn` and can walk to Battle, Story, Training, Leaderboard, VIP, and Secrets islands.
+- Confirm Battle and Story world signs are readable from normal camera distance and update after joining/leaving queue.
+- Join queue, leave queue, reset while queued, and confirm the queue count/countdown clears correctly.
+- Start a solo test match, reset during the match, and confirm the player returns to hub with no reward exploit.
+- Run a two-player local server test: player joins/leaves during countdown, one player disconnects, one player resets, and both players finish normally.
+- Toggle Reduced Motion and confirm particles, local lights, bloom/sun rays/depth-of-field are visibly reduced without breaking gameplay readability.

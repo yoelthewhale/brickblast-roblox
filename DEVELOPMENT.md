@@ -79,6 +79,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Added `docs/ENVIRONMENT_VISUAL_AUDIT.md` and `docs/ASSET_AUDIT.md` documenting the visual problems found, implementation choices, imported-asset status, safety checks, and remaining Studio testing needs.
 - 2026-08-01: Built the next place artifact as `BlockBlastBattle-Day10.rbxl`.
 - 2026-08-01: Replaced the dark tech-style hub with a brighter front-page-style floating island lobby featuring a circular spawn plaza, clouds, waterfalls, bridges, trees, flowers, themed islands, portals, VIP/secret/training/leaderboard areas, and a glowing central Block Core.
+- 2026-08-01: Added Day14 hub/play-loop hardening with server-updated Battle/Story world signs, queue pad visual reactions, stale queue pruning, duplicate spawn-connection cleanup, reset/death queue/session handling, non-blocking lobby decorations, and client-side reduced-motion scaling for hub particles/lights/post-processing.
 
 ## Current Priorities
 
@@ -118,6 +119,35 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - Status: Prototype.
 - Not ready for public release until multiplayer, save retries, mobile UI, monetization IDs/purchase flows, moderation/anti-exploit, onboarding, audio, and retention loops are tested in Studio.
 - Day10 improves the first visual read of the world, but it still requires in-Studio camera, collision, mobile readability, and performance validation before being treated as release art.
+- Day14 preserves the Day13 lobby design and adds repository-side safeguards, but full Studio validation is still required for bridge traversal, prompt input on mobile/controller, two-player lifecycle, and actual device performance.
+
+## Session Update - 2026-08-01 Day14 Play-Loop Hardening
+
+### Completed
+
+- Added server-updated world status billboards above Battle and Story destinations so players can read queue count, solo countdown, arena-full state, and story availability from the 3D hub.
+- Added queue pad visual reaction by tinting `BattleQueuePad` while the queue is active.
+- Added stale queue pruning before hub-state sends and match-start checks, preventing disconnected or non-hub players from lingering in queue state.
+- Hardened `startBattle` so it filters eligible players immediately before arena allocation and does not start sessions for invalid, disconnected, or stale queued players.
+- Removed duplicate hub spawn-safety `CharacterAdded` handling from player initialization.
+- Added character death/reset handling: queued hub players leave queue, and active Battle/Story players safely forfeit/return through the existing `leaveBattle` flow.
+- Disconnected per-player character/humanoid connections on player removal.
+- Made decorative benches, tree trunks, and bridge lantern posts non-colliding to reduce movement snags in the lobby.
+- Added local reduced-motion world-quality scaling in `BlockBlastClient.client.luau` that lowers hub particle rates, point-light brightness, bloom, sun rays, and depth of field for lower-end/mobile users without changing server state.
+- Built `BlockBlastBattle-Day14.rbxl`.
+
+### Remaining Studio-Only Checks
+
+- Verify `HubSpawn` orientation, camera angle, and player clearance in Studio Play.
+- Walk every bridge and island entrance to confirm no collision gaps or snag points remain.
+- Confirm `BattleQueuePad` and `StoryQueuePad` prompts work with keyboard, controller, and mobile touch.
+- Run two-player local server tests for queue join/leave during countdown, disconnects, resets, ties, and match cleanup.
+- Compare normal vs Reduced Motion in device emulation and check whether additional particles/lights should be reduced.
+
+### Unresolved Risks
+
+- Studio MCP is still unavailable from Codex, so Output inspection and device/player simulation must be done manually in Roblox Studio.
+- The lobby is still generated from one large world-builder module; future maintenance would benefit from splitting signage, islands, arenas, and lighting into smaller files.
 
 ## Session Update - 2026-08-01 Day10 Environment Pass
 

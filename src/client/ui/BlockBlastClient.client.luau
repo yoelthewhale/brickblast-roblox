@@ -1,9 +1,11 @@
 local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -139,6 +141,57 @@ local function isFiniteNumber(value)
 		and value ~= -math.huge
 end
 
+local function applyWorldVisualQuality()
+	local hub = Workspace:FindFirstChild("BlockBlastHub")
+	if hub then
+		for _, descendant in hub:GetDescendants() do
+			if descendant:IsA("ParticleEmitter") then
+				local defaultRate = descendant:GetAttribute("DefaultRate")
+				if not isFiniteNumber(defaultRate) then
+					defaultRate = descendant.Rate
+					descendant:SetAttribute("DefaultRate", defaultRate)
+				end
+				descendant.Rate = reducedMotion and math.min(defaultRate, 0.35) or defaultRate
+			elseif descendant:IsA("PointLight") then
+				local defaultBrightness = descendant:GetAttribute("DefaultBrightness")
+				if not isFiniteNumber(defaultBrightness) then
+					defaultBrightness = descendant.Brightness
+					descendant:SetAttribute("DefaultBrightness", defaultBrightness)
+				end
+				descendant.Brightness = reducedMotion and defaultBrightness * 0.45
+					or defaultBrightness
+			end
+		end
+	end
+
+	for _, effect in Lighting:GetChildren() do
+		if effect.Name:match("^BlockBlast") then
+			if effect:IsA("BloomEffect") then
+				local defaultIntensity = effect:GetAttribute("DefaultIntensity")
+				if not isFiniteNumber(defaultIntensity) then
+					defaultIntensity = effect.Intensity
+					effect:SetAttribute("DefaultIntensity", defaultIntensity)
+				end
+				effect.Intensity = reducedMotion and defaultIntensity * 0.45 or defaultIntensity
+			elseif effect:IsA("SunRaysEffect") then
+				local defaultIntensity = effect:GetAttribute("DefaultIntensity")
+				if not isFiniteNumber(defaultIntensity) then
+					defaultIntensity = effect.Intensity
+					effect:SetAttribute("DefaultIntensity", defaultIntensity)
+				end
+				effect.Intensity = reducedMotion and defaultIntensity * 0.35 or defaultIntensity
+			elseif effect:IsA("DepthOfFieldEffect") then
+				local defaultFar = effect:GetAttribute("DefaultFarIntensity")
+				if not isFiniteNumber(defaultFar) then
+					defaultFar = effect.FarIntensity
+					effect:SetAttribute("DefaultFarIntensity", defaultFar)
+				end
+				effect.FarIntensity = reducedMotion and 0 or defaultFar
+			end
+		end
+	end
+end
+
 local gui = Instance.new("ScreenGui")
 gui.Name = "BlockBlastBattleGui"
 gui.ResetOnSpawn = false
@@ -146,6 +199,12 @@ gui.Parent = player:WaitForChild("PlayerGui")
 
 pcall(function()
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+end)
+
+Workspace.ChildAdded:Connect(function(child)
+	if child.Name == "BlockBlastHub" then
+		task.defer(applyWorldVisualQuality)
+	end
 end)
 
 loadingScreen = Instance.new("Frame")
@@ -1924,6 +1983,7 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 	end
 
 	currentHubState = hubState
+	applyWorldVisualQuality()
 	renderDiagnostics()
 
 	if hubState.mode == "Battle" or hubState.mode == "Story" then
@@ -2021,6 +2081,7 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 
 	if typeof(settings.reducedMotion) == "boolean" then
 		reducedMotion = settings.reducedMotion
+		applyWorldVisualQuality()
 	end
 
 	if isFiniteNumber(settings.uiScale) then
