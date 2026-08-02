@@ -40,22 +40,22 @@
           "CanQuery": true,
           "CanTouch": false,
           "Color": [
-            0.08627451211214066,
-            0.12156862765550612,
-            0.20392157137393951
+            0.2823529541492462,
+            0.8235294222831726,
+            0.46666666865348816
           ],
-          "Material": "Slate",
+          "Material": "Grass",
           "Position": [
             0.0,
             0.0,
             22.0
           ],
           "Size": [
-            72.0,
+            96.0,
             1.0,
-            72.0
+            96.0
           ],
-          "Transparency": 0.15
+          "Transparency": 0.0
         }
       },
       "BootstrapHubSpawn": {

@@ -59,25 +59,179 @@ local shopEvent = Instance.new("RemoteEvent")
 shopEvent.Name = "Shop"
 shopEvent.Parent = remotes
 
-local hubBuildSucceeded, hubPartsOrError = pcall(HubBuilder.build)
-local hubParts = if hubBuildSucceeded
-	then hubPartsOrError
-	else {
-		hub = emergencySpawn,
-		spawn = emergencySpawn,
-		battleSpawn = emergencySpawn,
-		arenaSpawns = { emergencySpawn },
-		arenas = {},
+local function makeFallbackPart(parent, name, size, position, color, material)
+	local part = Instance.new("Part")
+	part.Name = name
+	part.Anchored = true
+	part.Size = size
+	part.Position = position
+	part.Color = color
+	part.Material = material or Enum.Material.SmoothPlastic
+	part.TopSurface = Enum.SurfaceType.Smooth
+	part.BottomSurface = Enum.SurfaceType.Smooth
+	part.CanCollide = true
+	part.CastShadow = false
+	part.Parent = parent
+	return part
+end
+
+local function makeFallbackPrompt(part, actionText, objectText)
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.ActionText = actionText
+	prompt.ObjectText = objectText
+	prompt.HoldDuration = 0.2
+	prompt.MaxActivationDistance = 14
+	prompt.RequiresLineOfSight = false
+	prompt.Parent = part
+	return prompt
+end
+
+local function buildFallbackHub(buildError)
+	local existing = workspace:FindFirstChild("BlockBlastHub")
+	if existing then
+		existing:Destroy()
+	end
+
+	local hub = Instance.new("Folder")
+	hub.Name = "BlockBlastHub"
+	hub.Parent = workspace
+
+	local floor = workspace:FindFirstChild("BootstrapHubSafetyFloor")
+	if floor and floor:IsA("BasePart") then
+		floor.Color = Color3.fromRGB(72, 210, 119)
+		floor.Material = Enum.Material.Grass
+		floor.Size = Vector3.new(110, 1, 110)
+		floor.Transparency = 0
+	end
+
+	local spawn = workspace:FindFirstChild("BootstrapHubSpawn")
+	if not (spawn and spawn:IsA("SpawnLocation")) then
+		spawn = emergencySpawn
+		spawn.Parent = hub
+	end
+	spawn.Name = "HubSpawn"
+	spawn.Anchored = true
+	spawn.CanCollide = true
+	spawn.Enabled = true
+	spawn.Neutral = true
+
+	local battlePad = makeFallbackPart(
+		hub,
+		"BattleQueuePad",
+		Vector3.new(24, 1, 18),
+		Vector3.new(0, 2, -28),
+		Color3.fromRGB(64, 156, 255),
+		Enum.Material.Neon
+	)
+	battlePad:SetAttribute("QueueMode", "Battle")
+	local battlePrompt = makeFallbackPrompt(battlePad, "Join Queue", "Block Blast Battle")
+
+	local storyPad = makeFallbackPart(
+		hub,
+		"StoryQueuePad",
+		Vector3.new(22, 1, 16),
+		Vector3.new(34, 2, 6),
+		Color3.fromRGB(167, 109, 255),
+		Enum.Material.Neon
+	)
+	storyPad:SetAttribute("QueueMode", "Story")
+	local storyPrompt = makeFallbackPrompt(storyPad, "Start", "Story Training")
+
+	local battleSpawn = makeFallbackPart(
+		hub,
+		"BattleArenaSpawn",
+		Vector3.new(12, 1, 12),
+		Vector3.new(0, 2, -58),
+		Color3.fromRGB(255, 205, 82),
+		Enum.Material.SmoothPlastic
+	)
+
+	local warning = makeFallbackPart(
+		hub,
+		"HubBuildWarning",
+		Vector3.new(48, 10, 1),
+		Vector3.new(0, 9, -48),
+		Color3.fromRGB(255, 255, 255),
+		Enum.Material.SmoothPlastic
+	)
+	local surfaceGui = Instance.new("SurfaceGui")
+	surfaceGui.Face = Enum.NormalId.Front
+	surfaceGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	surfaceGui.PixelsPerStud = 36
+	surfaceGui.Parent = warning
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.Font = Enum.Font.GothamBlack
+	label.Text = "Fallback Hub Loaded\nCheck Studio Output"
+	label.TextColor3 = Color3.fromRGB(35, 45, 55)
+	label.TextScaled = true
+	label.Parent = surfaceGui
+
+	local arenaFloor = makeFallbackPart(
+		hub,
+		"FallbackArenaFloor",
+		Vector3.new(72, 2, 52),
+		Vector3.new(0, 0, -118),
+		Color3.fromRGB(244, 241, 232),
+		Enum.Material.Marble
+	)
+	local leftSpawn = makeFallbackPart(
+		hub,
+		"PlayerSpawnA",
+		Vector3.new(8, 1, 8),
+		Vector3.new(-20, 3, -102),
+		Color3.fromRGB(40, 229, 255),
+		Enum.Material.Neon
+	)
+	local rightSpawn = makeFallbackPart(
+		hub,
+		"PlayerSpawnB",
+		Vector3.new(8, 1, 8),
+		Vector3.new(20, 3, -102),
+		Color3.fromRGB(255, 112, 189),
+		Enum.Material.Neon
+	)
+	local returnPad = makeFallbackPart(
+		hub,
+		"ReturnHubPad",
+		Vector3.new(12, 1, 8),
+		Vector3.new(0, 3, -92),
+		Color3.fromRGB(255, 205, 82),
+		Enum.Material.SmoothPlastic
+	)
+
+	warn(`Block Blast generated hub failed; fallback hub loaded: {buildError}`)
+	return {
+		hub = hub,
+		spawn = spawn,
+		battlePrompt = battlePrompt,
+		storyPrompt = storyPrompt,
+		battleSpawn = battleSpawn,
+		arenaSpawns = { leftSpawn, rightSpawn },
+		arenaReturnPad = returnPad,
+		arenas = {
+			{
+				folder = arenaFloor,
+				index = 1,
+				spawns = { leftSpawn, rightSpawn },
+				returnPad = returnPad,
+			},
+		},
 	}
+end
+
+local hubBuildSucceeded, hubPartsOrError = pcall(HubBuilder.build)
+local hubParts = if hubBuildSucceeded then hubPartsOrError else buildFallbackHub(hubPartsOrError)
 if not hubBuildSucceeded then
-	warn(`Block Blast hub failed to build; using emergency spawn: {hubPartsOrError}`)
+	warn(`Block Blast hub failed to build; using fallback hub: {hubPartsOrError}`)
 end
 if hubParts.spawn then
 	hubParts.spawn.Anchored = true
 	hubParts.spawn.CanCollide = true
 	hubParts.spawn.Enabled = true
 end
-if hubBuildSucceeded then
+if hubBuildSucceeded and emergencySpawn.Parent then
 	emergencySpawn:Destroy()
 end
 Players.CharacterAutoLoads = true
