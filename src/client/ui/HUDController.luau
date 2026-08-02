@@ -9,14 +9,18 @@ local HUDController = {}
 HUDController.__index = HUDController
 
 local RIGHT_BUTTONS = {
-	{ key = "play", icon = ">", label = "Play", primary = true },
-	{ key = "modes", icon = "*", label = "Modes" },
-	{ key = "inventory", icon = "[]", label = "Inventory" },
-	{ key = "shop", icon = "$", label = "Shop" },
-	{ key = "rewards", icon = "+", label = "Rewards" },
-	{ key = "quests", icon = "!", label = "Quests", comingSoon = true },
-	{ key = "codes", icon = "#", label = "Codes", comingSoon = true },
-	{ key = "settings", icon = "=", label = "Settings" },
+	{
+		key = "play",
+		icon = ">",
+		label = "Play",
+		primary = true,
+		color = Color3.fromRGB(64, 156, 255),
+	},
+	{ key = "modes", icon = "*", label = "Modes", color = Color3.fromRGB(167, 109, 255) },
+	{ key = "inventory", icon = "[]", label = "Inventory", color = Color3.fromRGB(255, 112, 189) },
+	{ key = "shop", icon = "$", label = "Shop", color = Color3.fromRGB(255, 205, 82) },
+	{ key = "rewards", icon = "+", label = "Rewards", color = Color3.fromRGB(74, 222, 128) },
+	{ key = "settings", icon = "=", label = "Settings", color = Color3.fromRGB(232, 246, 255) },
 }
 
 local function connect(self, signal, callback)
@@ -188,7 +192,7 @@ function HUDController:BuildRightMenu()
 	stack.Name = "RightActionHud"
 	stack.AnchorPoint = Vector2.new(1, 0.5)
 	stack.Position = UDim2.new(1, -18, 0.5, 0)
-	stack.Size = UDim2.fromOffset(154, 468)
+	stack.Size = UDim2.fromOffset(58, 364)
 	stack.BackgroundTransparency = 1
 	stack.ZIndex = UITheme.Z.hud
 	stack.Parent = self.gui
@@ -199,27 +203,25 @@ function HUDController:BuildRightMenu()
 		local button = Instance.new("TextButton")
 		button.Name = `{data.key}Button`
 		button.LayoutOrder = index
-		button.Size = UDim2.new(1, 0, 0, data.primary and 58 or 46)
-		button.BackgroundColor3 = data.primary and Color3.fromRGB(64, 156, 255)
-			or data.comingSoon and Color3.fromRGB(232, 238, 242)
-			or Color3.fromRGB(255, 255, 255)
+		button.Size = UDim2.fromOffset(data.primary and 58 or 52, data.primary and 58 or 52)
+		button.BackgroundColor3 = data.color or Color3.fromRGB(255, 255, 255)
 		button.Text = self:ButtonText(data)
-		button.TextColor3 = data.comingSoon and Color3.fromRGB(96, 112, 124)
-			or data.primary and Color3.fromRGB(255, 255, 255)
-			or Color3.fromRGB(35, 45, 55)
-		button.TextSize = data.primary and 16 or 14
+		button.TextColor3 = data.key == "settings" and Color3.fromRGB(35, 45, 55)
+			or Color3.fromRGB(255, 255, 255)
+		button.TextSize = data.primary and 22 or 19
 		button.TextWrapped = true
 		button.Font = UITheme.Font.heading
 		button.BorderSizePixel = 0
 		button.Selectable = true
 		button.Parent = stack
 		UITheme.button(button, data.primary and "primary" or "secondary")
-		button.BackgroundColor3 = data.primary and Color3.fromRGB(64, 156, 255)
-			or data.comingSoon and Color3.fromRGB(232, 238, 242)
+		button.BackgroundColor3 = data.color or Color3.fromRGB(255, 255, 255)
+		button.TextColor3 = data.key == "settings" and Color3.fromRGB(35, 45, 55)
 			or Color3.fromRGB(255, 255, 255)
-		button.TextColor3 = data.comingSoon and Color3.fromRGB(96, 112, 124)
-			or data.primary and Color3.fromRGB(255, 255, 255)
-			or Color3.fromRGB(35, 45, 55)
+		local corner = button:FindFirstChildOfClass("UICorner")
+		if corner then
+			corner.CornerRadius = UDim.new(1, 0)
+		end
 		UITheme.attachButtonFeedback(button, self.isReducedMotion)
 		self.buttons[data.key] = button
 
@@ -253,10 +255,7 @@ function HUDController:BuildTopHud()
 end
 
 function HUDController:ButtonText(data)
-	if self.collapsed then
-		return data.icon
-	end
-	return `{data.icon}  {data.label}{data.comingSoon and "\nSoon" or ""}`
+	return data.icon
 end
 
 function HUDController:ActivateButton(data)
@@ -318,13 +317,14 @@ function HUDController:RefreshResponsiveLayout()
 
 	self.rightStack.AnchorPoint = Vector2.new(1, 0.5)
 	self.rightStack.Position = UDim2.new(1, -18, 0.5, phone and -10 or 0)
-	self.rightStack.Size = UDim2.fromOffset(compact and 58 or 154, phone and 384 or 468)
+	self.rightStack.Size = UDim2.fromOffset(phone and 50 or 58, phone and 324 or 364)
 	for _, data in RIGHT_BUTTONS do
 		local button = self.buttons[data.key]
 		if button then
 			button.Text = self:ButtonText(data)
-			button.Size = UDim2.new(1, 0, 0, compact and 48 or data.primary and 58 or 46)
-			button.TextSize = compact and 18 or data.primary and 16 or 14
+			local size = phone and 46 or data.primary and 58 or 52
+			button.Size = UDim2.fromOffset(size, size)
+			button.TextSize = phone and 17 or data.primary and 22 or 19
 		end
 	end
 

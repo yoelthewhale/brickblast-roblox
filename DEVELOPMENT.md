@@ -446,6 +446,29 @@ This file tracks production-readiness work, priorities, known issues, and techni
 2. Studio-test UI navigation on mobile and gamepad.
    Repository validation passes, but actual Roblox focus movement should be checked with real input.
 
+## Session Update - 2026-08-02 Day20 Reference HUD Cleanup
+
+### Completed
+
+- Stopped auto-opening the hub welcome card on spawn; players now open it intentionally from the hub button.
+- Stopped auto-opening the tutorial card; Guide is now the explicit access point.
+- Suppressed the redundant `Welcome to the hub` notification banner.
+- Reworked the right-side hub action rail into compact circular color buttons inspired by simulator UI references.
+- Removed always-visible Quests/Codes coming-soon buttons from the right rail to reduce clutter.
+- Built `BlockBlastBattle-Day20.rbxl`.
+
+### Validation
+
+- `stylua src` passed.
+- `selene src` passed with 0 errors and 0 warnings.
+- `rojo build default.project.json --output BlockBlastBattle-Day20.rbxl` passed.
+- `git diff --check` reported only Windows CRLF notices.
+
+### Notes
+
+- The current direction is a hybrid: Bubble Gum Simulator-style colorful hub controls, BedWars-style low-clutter gameplay.
+- Next UI pass should restyle the shop/items panels more heavily using the user-provided shop references.
+
 ## Session Update - 2026-08-02 Day19 Compact Hub Card
 
 ### Completed

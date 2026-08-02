@@ -87,8 +87,8 @@ local hudController = nil
 local notificationController = nil
 local loadingDismissed = false
 local tutorialPanel = nil
-local hubManuallyClosed = false
-local tutorialComplete = false
+local hubManuallyClosed = true
+local tutorialComplete = true
 local tutorialManuallyOpened = false
 local cosmeticPreviewSnapshot = nil
 local root = nil
@@ -589,10 +589,14 @@ local function updateTutorialVisibility()
 		return
 	end
 
-	tutorialPanel.Visible = currentState == nil and (not tutorialComplete or tutorialManuallyOpened)
+	tutorialPanel.Visible = currentState == nil and tutorialManuallyOpened
 end
 
 local function showBanner(message, color)
+	if message == "Welcome to the hub" then
+		return
+	end
+
 	if notificationController then
 		local kind = "info"
 		if color == Color3.fromRGB(224, 74, 74) or color == Color3.fromRGB(255, 110, 110) then
