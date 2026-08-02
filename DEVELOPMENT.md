@@ -446,6 +446,24 @@ This file tracks production-readiness work, priorities, known issues, and techni
 2. Studio-test UI navigation on mobile and gamepad.
    Repository validation passes, but actual Roblox focus movement should be checked with real input.
 
+## Session Update - 2026-08-02 Day19 Compact Hub Card
+
+### Completed
+
+- Replaced the large centered home/hub window with a compact top-left hub card.
+- Restyled the card with a lighter simulator-style look instead of the old dark panel.
+- Kept only key actions visible: Battle, Story, Shop & Closet, Guide, and close.
+- Hid secondary settings/cosmetic controls from the welcome card because they are available through other UI.
+- Shortened the daily bonus hub message so the welcome card does not become a paragraph.
+- Built `BlockBlastBattle-Day19.rbxl` for testing.
+
+### Validation
+
+- `stylua src` passed.
+- `selene src` passed with 0 errors and 0 warnings.
+- `rojo build default.project.json --output BlockBlastBattle-Day19.rbxl` passed.
+- `git diff --check` reported only Windows CRLF notices.
+
 ## Session Update - 2026-08-02 Day18 Gameplay HUD Cleanup
 
 ### Completed

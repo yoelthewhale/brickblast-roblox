@@ -66,6 +66,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Playtest Day17 colorful hub from first spawn camera | High | Playtest | Bear / Codex | 2026-08-09 |
 | Test Custom Lab rotate/reroll mode end to end | High | Playtest | Bear / Codex | 2026-08-09 |
 | Test Day18 reduced gameplay HUD clutter | High | Playtest | Bear / Codex | 2026-08-09 |
+| Test Day19 compact hub welcome card | High | Playtest | Bear / Codex | 2026-08-09 |
 | Expand Custom Lab into saved block preset editor | Medium | Ready | Codex | 2026-08-10 |
 | Continue UI/gameplay animation polish after Day17 review | Medium | Ready | Codex | 2026-08-10 |
 
@@ -140,6 +141,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - 2026-08-01 Day 15: Added local left-side player HUD cards, right-side action rail, reusable menu panel, stacked notifications, responsive collapse behavior, and Reduced Motion-aware UI feedback. Built `BlockBlastBattle-Day15.rbxl`.
 - 2026-08-02 Day 17: Added Custom Lab rotate/reroll mode, safer cloned/rotated block shapes, more colorful hub/fallback decorations, VS Code organization files, and safe latest-build launcher. Built `BlockBlastBattle-Day17.rbxl`.
 - 2026-08-02 Day 18: Hid permanent side HUD/action rail during active gameplay, made Studio diagnostics F8-only, and built `BlockBlastBattle-Day18.rbxl`.
+- 2026-08-02 Day 19: Replaced the large centered hub welcome window with a compact top-left hub card and built `BlockBlastBattle-Day19.rbxl`.
 
 ## UI Direction References
 

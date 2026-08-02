@@ -7,7 +7,7 @@ local UITheme = require(script.Parent.UITheme)
 local HomePanel = {}
 HomePanel.__index = HomePanel
 
-local HUB_SIZE = Vector2.new(620, 420)
+local HUB_SIZE = Vector2.new(390, 238)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 -- Public interface: Show, Hide, SetVisible, UpdatePlayerSummary, UpdateCurrencies,
@@ -50,14 +50,18 @@ function HomePanel.new(gui, options)
 	self.accentColor = UITheme.Color.primary
 
 	local panel = Instance.new("Frame")
-	panel.AnchorPoint = Vector2.new(0.5, 0)
-	panel.Position = UDim2.fromScale(0.5, 0.06)
+	panel.AnchorPoint = Vector2.new(0, 0)
+	panel.Position = UDim2.fromOffset(18, 86)
 	panel.Size = UDim2.fromOffset(HUB_SIZE.X, HUB_SIZE.Y)
-	panel.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
-	panel.BackgroundTransparency = 0.08
+	panel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	panel.BackgroundTransparency = 0.04
 	panel.BorderSizePixel = 0
 	panel.Parent = gui
-	UITheme.panel(panel, { color = UITheme.Color.panel, bottomColor = Color3.fromRGB(8, 12, 20) })
+	UITheme.card(panel, {
+		color = Color3.fromRGB(255, 255, 255),
+		strokeColor = Color3.fromRGB(125, 203, 255),
+		strokeTransparency = 0.18,
+	})
 	self.panel = panel
 
 	local panelScale = Instance.new("UIScale")
@@ -68,7 +72,7 @@ function HomePanel.new(gui, options)
 	local logoButton = Instance.new("TextButton")
 	logoButton.AnchorPoint = Vector2.new(0, 0.5)
 	logoButton.Position = UDim2.fromScale(0, 0.5)
-	logoButton.Size = UDim2.fromOffset(58, 58)
+	logoButton.Size = UDim2.fromOffset(52, 52)
 	logoButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
 	logoButton.BorderSizePixel = 0
 	logoButton.Font = Enum.Font.GothamBlack
@@ -98,8 +102,8 @@ function HomePanel.new(gui, options)
 
 	local closeButton = Instance.new("TextButton")
 	closeButton.AnchorPoint = Vector2.new(1, 0)
-	closeButton.Position = UDim2.new(1, -14, 0, 14)
-	closeButton.Size = UDim2.fromOffset(34, 34)
+	closeButton.Position = UDim2.new(1, -12, 0, 12)
+	closeButton.Size = UDim2.fromOffset(30, 30)
 	closeButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 	closeButton.BorderSizePixel = 0
 	closeButton.Font = Enum.Font.GothamBlack
@@ -113,26 +117,26 @@ function HomePanel.new(gui, options)
 
 	local guideButton = Instance.new("TextButton")
 	guideButton.AnchorPoint = Vector2.new(1, 0)
-	guideButton.Position = UDim2.new(1, -58, 0, 14)
-	guideButton.Size = UDim2.fromOffset(86, 34)
-	guideButton.BackgroundColor3 = Color3.fromRGB(31, 38, 52)
+	guideButton.Position = UDim2.new(1, -50, 0, 12)
+	guideButton.Size = UDim2.fromOffset(72, 30)
+	guideButton.BackgroundColor3 = Color3.fromRGB(232, 246, 255)
 	guideButton.BorderSizePixel = 0
 	guideButton.Font = Enum.Font.GothamBold
 	guideButton.Text = "Guide"
-	guideButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-	guideButton.TextSize = 14
+	guideButton.TextColor3 = Color3.fromRGB(35, 45, 55)
+	guideButton.TextSize = 13
 	guideButton.Parent = panel
 	styleButton(guideButton, "secondary", self.isReducedMotion)
 	self.guideButton = guideButton
 
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1
-	title.Position = UDim2.fromOffset(22, 16)
-	title.Size = UDim2.fromOffset(460, 32)
+	title.Position = UDim2.fromOffset(16, 12)
+	title.Size = UDim2.fromOffset(190, 30)
 	title.Font = Enum.Font.GothamBlack
-	title.Text = "Block Blast Home"
-	title.TextColor3 = Color3.fromRGB(245, 247, 251)
-	title.TextSize = 26
+	title.Text = "Hub"
+	title.TextColor3 = Color3.fromRGB(35, 45, 55)
+	title.TextSize = 24
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.Parent = panel
 	UITheme.text(title, "title")
@@ -140,53 +144,51 @@ function HomePanel.new(gui, options)
 
 	local statusLabel = Instance.new("TextLabel")
 	statusLabel.BackgroundTransparency = 1
-	statusLabel.Position = UDim2.fromOffset(22, 52)
-	statusLabel.Size = UDim2.fromOffset(576, 36)
-	statusLabel.Font = Enum.Font.Gotham
+	statusLabel.Position = UDim2.fromOffset(16, 48)
+	statusLabel.Size = UDim2.fromOffset(358, 40)
+	statusLabel.Font = Enum.Font.GothamBold
 	statusLabel.Text = "Walk to a queue pad or use the buttons below."
-	statusLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
-	statusLabel.TextSize = 16
+	statusLabel.TextColor3 = Color3.fromRGB(66, 82, 94)
+	statusLabel.TextSize = 14
 	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 	statusLabel.TextWrapped = true
 	statusLabel.Parent = panel
-	UITheme.text(statusLabel, "muted")
 	self.statusLabel = statusLabel
 
 	local matchmakingLabel = Instance.new("TextLabel")
 	matchmakingLabel.BackgroundTransparency = 1
-	matchmakingLabel.Position = UDim2.fromOffset(22, 90)
-	matchmakingLabel.Size = UDim2.fromOffset(576, 20)
+	matchmakingLabel.Position = UDim2.fromOffset(16, 92)
+	matchmakingLabel.Size = UDim2.fromOffset(358, 20)
 	matchmakingLabel.Font = Enum.Font.GothamBold
 	matchmakingLabel.Text = "Arenas: 3 open | Queue: 0"
-	matchmakingLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
-	matchmakingLabel.TextSize = 14
+	matchmakingLabel.TextColor3 = Color3.fromRGB(87, 104, 117)
+	matchmakingLabel.TextSize = 13
 	matchmakingLabel.TextXAlignment = Enum.TextXAlignment.Left
 	matchmakingLabel.Parent = panel
-	UITheme.text(matchmakingLabel, "soft")
 	self.matchmakingLabel = matchmakingLabel
 
 	local battleButton = Instance.new("TextButton")
-	battleButton.Position = UDim2.fromOffset(22, 124)
-	battleButton.Size = UDim2.fromOffset(276, 58)
+	battleButton.Position = UDim2.fromOffset(16, 124)
+	battleButton.Size = UDim2.fromOffset(172, 50)
 	battleButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
 	battleButton.BorderSizePixel = 0
 	battleButton.Font = Enum.Font.GothamBold
 	battleButton.Text = "Join Battle Queue"
 	battleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	battleButton.TextSize = 18
+	battleButton.TextSize = 16
 	battleButton.Parent = panel
 	styleButton(battleButton, "primary", self.isReducedMotion)
 	self.battleButton = battleButton
 
 	local storyButton = Instance.new("TextButton")
-	storyButton.Position = UDim2.fromOffset(322, 124)
-	storyButton.Size = UDim2.fromOffset(276, 58)
+	storyButton.Position = UDim2.fromOffset(204, 124)
+	storyButton.Size = UDim2.fromOffset(170, 50)
 	storyButton.BackgroundColor3 = Color3.fromRGB(74, 222, 128)
 	storyButton.BorderSizePixel = 0
 	storyButton.Font = Enum.Font.GothamBold
 	storyButton.Text = "Story Mode"
 	storyButton.TextColor3 = Color3.fromRGB(13, 32, 24)
-	storyButton.TextSize = 18
+	storyButton.TextSize = 15
 	storyButton.TextWrapped = true
 	storyButton.Parent = panel
 	styleButton(storyButton, "success", self.isReducedMotion)
@@ -194,12 +196,12 @@ function HomePanel.new(gui, options)
 
 	local storyPreviewLabel = Instance.new("TextLabel")
 	storyPreviewLabel.BackgroundTransparency = 1
-	storyPreviewLabel.Position = UDim2.fromOffset(322, 188)
-	storyPreviewLabel.Size = UDim2.fromOffset(276, 22)
+	storyPreviewLabel.Position = UDim2.fromOffset(204, 176)
+	storyPreviewLabel.Size = UDim2.fromOffset(170, 18)
 	storyPreviewLabel.Font = Enum.Font.GothamBold
 	storyPreviewLabel.Text = "Next chapter loading..."
 	storyPreviewLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
-	storyPreviewLabel.TextSize = 12
+	storyPreviewLabel.TextSize = 10
 	storyPreviewLabel.TextWrapped = true
 	storyPreviewLabel.TextXAlignment = Enum.TextXAlignment.Left
 	storyPreviewLabel.TextYAlignment = Enum.TextYAlignment.Center
@@ -217,6 +219,7 @@ function HomePanel.new(gui, options)
 	motionButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 	motionButton.TextSize = 15
 	motionButton.Parent = panel
+	motionButton.Visible = false
 	styleButton(motionButton, "secondary", self.isReducedMotion)
 	self.motionButton = motionButton
 
@@ -230,6 +233,7 @@ function HomePanel.new(gui, options)
 	uiSizeButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 	uiSizeButton.TextSize = 15
 	uiSizeButton.Parent = panel
+	uiSizeButton.Visible = false
 	styleButton(uiSizeButton, "secondary", self.isReducedMotion)
 	self.uiSizeButton = uiSizeButton
 
@@ -244,6 +248,7 @@ function HomePanel.new(gui, options)
 	pieceSkinButton.TextSize = 15
 	pieceSkinButton.TextXAlignment = Enum.TextXAlignment.Left
 	pieceSkinButton.Parent = panel
+	pieceSkinButton.Visible = false
 	styleButton(pieceSkinButton, "secondary", self.isReducedMotion)
 	self.pieceSkinButton = pieceSkinButton
 
@@ -274,6 +279,7 @@ function HomePanel.new(gui, options)
 	soundButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 	soundButton.TextSize = 15
 	soundButton.Parent = panel
+	soundButton.Visible = false
 	styleButton(soundButton, "secondary", self.isReducedMotion)
 	self.soundButton = soundButton
 
@@ -288,6 +294,7 @@ function HomePanel.new(gui, options)
 	boardSkinButton.TextSize = 15
 	boardSkinButton.TextXAlignment = Enum.TextXAlignment.Left
 	boardSkinButton.Parent = panel
+	boardSkinButton.Visible = false
 	styleButton(boardSkinButton, "secondary", self.isReducedMotion)
 	self.boardSkinButton = boardSkinButton
 
@@ -314,12 +321,12 @@ function HomePanel.new(gui, options)
 	local shopButton = Instance.new("TextButton")
 	shopButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
 	shopButton.BackgroundTransparency = 0
-	shopButton.Position = UDim2.fromOffset(322, 332)
-	shopButton.Size = UDim2.fromOffset(276, 42)
+	shopButton.Position = UDim2.fromOffset(16, 190)
+	shopButton.Size = UDim2.fromOffset(358, 34)
 	shopButton.Font = Enum.Font.GothamBold
 	shopButton.Text = "Shop & Closet"
 	shopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-	shopButton.TextSize = 15
+	shopButton.TextSize = 14
 	shopButton.TextWrapped = true
 	shopButton.TextXAlignment = Enum.TextXAlignment.Center
 	shopButton.TextYAlignment = Enum.TextYAlignment.Center
@@ -404,33 +411,13 @@ function HomePanel:ConfigureFocus()
 
 	self.battleButton.NextSelectionRight = self.storyButton
 	self.battleButton.NextSelectionUp = self.guideButton
-	self.battleButton.NextSelectionDown = self.motionButton
+	self.battleButton.NextSelectionDown = self.shopButton
 
 	self.storyButton.NextSelectionLeft = self.battleButton
 	self.storyButton.NextSelectionUp = self.closeButton
-	self.storyButton.NextSelectionDown = self.uiSizeButton
+	self.storyButton.NextSelectionDown = self.shopButton
 
-	self.motionButton.NextSelectionRight = self.uiSizeButton
-	self.motionButton.NextSelectionUp = self.battleButton
-	self.motionButton.NextSelectionDown = self.pieceSkinButton
-
-	self.uiSizeButton.NextSelectionLeft = self.motionButton
-	self.uiSizeButton.NextSelectionUp = self.storyButton
-	self.uiSizeButton.NextSelectionDown = self.soundButton
-
-	self.pieceSkinButton.NextSelectionRight = self.soundButton
-	self.pieceSkinButton.NextSelectionUp = self.motionButton
-	self.pieceSkinButton.NextSelectionDown = self.boardSkinButton
-
-	self.soundButton.NextSelectionLeft = self.pieceSkinButton
-	self.soundButton.NextSelectionUp = self.uiSizeButton
-	self.soundButton.NextSelectionDown = self.shopButton
-
-	self.boardSkinButton.NextSelectionRight = self.shopButton
-	self.boardSkinButton.NextSelectionUp = self.pieceSkinButton
-
-	self.shopButton.NextSelectionLeft = self.boardSkinButton
-	self.shopButton.NextSelectionUp = self.soundButton
+	self.shopButton.NextSelectionUp = self.battleButton
 end
 
 function HomePanel:SetGamepadFocus(target)
@@ -466,17 +453,20 @@ function HomePanel:SetVisible(visible, canShow)
 	self.logoHint.Visible = self.logoButton.Visible
 
 	if shouldShow then
-		self.panel.Position = UDim2.fromScale(0.5, 0.045)
+		local inset = GuiService:GetGuiInset()
+		local openY = math.max(76, inset.Y + 58)
+		local openPosition = UDim2.fromOffset(18, openY)
+		self.panel.Position = UDim2.fromOffset(18, openY - 8)
 		if not self.isReducedMotion() then
 			if self.showTween then
 				self.showTween:Cancel()
 			end
 			self.showTween = TweenService:Create(self.panel, SOFT_TWEEN, {
-				Position = UDim2.fromScale(0.5, 0.06),
+				Position = openPosition,
 			})
 			self.showTween:Play()
 		else
-			self.panel.Position = UDim2.fromScale(0.5, 0.06)
+			self.panel.Position = openPosition
 		end
 		self:SetGamepadFocus("battle")
 	elseif GuiService.SelectedObject and GuiService.SelectedObject:IsDescendantOf(self.panel) then
@@ -486,9 +476,11 @@ end
 
 function HomePanel:RefreshResponsiveLayout(screenSize, nextScale)
 	local automaticScale = nextScale or 1
+	local inset = GuiService:GetGuiInset()
 	local hubFitScale =
-		math.min(1, (screenSize.X - 16) / HUB_SIZE.X, (screenSize.Y - 16) / HUB_SIZE.Y)
+		math.min(1, (screenSize.X - 24) / HUB_SIZE.X, (screenSize.Y - 24) / HUB_SIZE.Y)
 	self.panelScale.Scale = math.clamp(math.min(automaticScale, hubFitScale), 0.72, 1.12)
+	self.panel.Position = UDim2.fromOffset(18, math.max(76, inset.Y + 58))
 end
 
 function HomePanel:GetSize()
@@ -497,7 +489,7 @@ end
 
 function HomePanel:ApplyTheme(theme)
 	self.accentColor = theme.accent or self.accentColor
-	self.panel.BackgroundColor3 = theme.panel or UITheme.Color.panel
+	self.panel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	self.logoButton.BackgroundColor3 = self.accentColor
 	self.battleButton.BackgroundColor3 = self.queued and Color3.fromRGB(244, 114, 182)
 		or self.accentColor
@@ -589,7 +581,7 @@ function HomePanel:UpdateHubState(hubState, storyPreviewText, accentColor)
 
 	local message = hubState.message or "Welcome to the hub"
 	if hubState.dailyBonusAvailable and message == "Welcome to the hub" then
-		message = hubState.dailyBonusText or "Daily bonus ready"
+		message = "Daily bonus ready"
 	end
 	self.statusLabel.Text = message
 	self.matchmakingLabel.Text =
