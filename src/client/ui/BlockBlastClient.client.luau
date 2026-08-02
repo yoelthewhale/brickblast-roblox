@@ -897,10 +897,10 @@ hudController = HUDController.new(gui, {
 			shopPanelController:Show()
 		end,
 		rewards = function()
-			hudController:OpenInfoPanel("Rewards", {
-				"Battle and Story runs award coins and XP through the server.",
-				"First win daily bonus appears when it is available.",
-				"Post-run rewards appear in the results panel after a run.",
+			hudController:OpenInfoPanel("Quests", {
+				"Daily win bonus and run rewards are tracked by the server.",
+				"Story missions unlock more goals as you earn stars.",
+				"A full quest board is coming after the main play loop feels better.",
 			})
 		end,
 		settings = function()

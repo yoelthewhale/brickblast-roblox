@@ -11,16 +11,14 @@ HUDController.__index = HUDController
 local RIGHT_BUTTONS = {
 	{
 		key = "play",
-		icon = "PLAY",
+		icon = ">",
 		label = "Play",
 		primary = true,
-		color = Color3.fromRGB(64, 156, 255),
+		color = Color3.fromRGB(67, 224, 86),
 	},
-	{ key = "modes", icon = "MODE", label = "Modes", color = Color3.fromRGB(167, 109, 255) },
-	{ key = "inventory", icon = "BAG", label = "Inventory", color = Color3.fromRGB(255, 112, 189) },
-	{ key = "shop", icon = "SHOP", label = "Shop", color = Color3.fromRGB(255, 205, 82) },
-	{ key = "rewards", icon = "GIFT", label = "Rewards", color = Color3.fromRGB(74, 222, 128) },
-	{ key = "settings", icon = "SET", label = "Settings", color = Color3.fromRGB(232, 246, 255) },
+	{ key = "shop", icon = "$", label = "Shop", color = Color3.fromRGB(255, 205, 82) },
+	{ key = "rewards", icon = "!", label = "Quests", color = Color3.fromRGB(64, 156, 255) },
+	{ key = "settings", icon = "#", label = "Settings", color = Color3.fromRGB(116, 124, 139) },
 }
 
 local function connect(self, signal, callback)
@@ -70,6 +68,14 @@ local function addList(parent, padding)
 	layout.Padding = UDim.new(0, padding or 10)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = parent
+	return layout
+end
+
+local function addHorizontalList(parent, padding)
+	local layout = addList(parent, padding)
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
 	return layout
 end
 
@@ -208,6 +214,7 @@ function HUDController:BuildLeftHud()
 
 	local objective = makeCard(stack, "ObjectiveCard", UDim2.new(1, 0, 0, 32))
 	self.objectiveCard = objective
+	objective.Visible = false
 	objective.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	self.modeLabel = makeLabel(objective, "Mode", "Hub", UDim2.new(1, 0, 0, 18), "heading")
 	self.modeLabel.Position = UDim2.fromOffset(0, 0)
@@ -223,38 +230,69 @@ end
 
 function HUDController:BuildRightMenu()
 	local stack = Instance.new("Frame")
-	stack.Name = "RightActionHud"
-	stack.AnchorPoint = Vector2.new(1, 0.5)
-	stack.Position = UDim2.new(1, -18, 0.5, 0)
-	stack.Size = UDim2.fromOffset(58, 364)
+	stack.Name = "PrimaryActionHud"
+	stack.AnchorPoint = Vector2.new(0.5, 1)
+	stack.Position = UDim2.new(0.5, 0, 1, -28)
+	stack.Size = UDim2.fromOffset(430, 104)
 	stack.BackgroundTransparency = 1
 	stack.ZIndex = UITheme.Z.hud
 	stack.Parent = self.gui
 	self.rightStack = stack
-	addList(stack, 8)
+
+	local playButton = nil
+	local secondaryRow = Instance.new("Frame")
+	secondaryRow.Name = "SecondaryActions"
+	secondaryRow.AnchorPoint = Vector2.new(0.5, 1)
+	secondaryRow.Position = UDim2.new(0.5, 0, 1, 0)
+	secondaryRow.Size = UDim2.fromOffset(360, 38)
+	secondaryRow.BackgroundTransparency = 1
+	secondaryRow.Parent = stack
+	addHorizontalList(secondaryRow, 10)
 
 	for index, data in RIGHT_BUTTONS do
 		local button = Instance.new("TextButton")
 		button.Name = `{data.key}Button`
 		button.LayoutOrder = index
-		button.Size = UDim2.fromOffset(data.primary and 58 or 52, data.primary and 58 or 52)
+		button.Size = data.primary and UDim2.fromOffset(238, 58) or UDim2.fromOffset(110, 38)
 		button.BackgroundColor3 = data.color or Color3.fromRGB(255, 255, 255)
 		button.Text = self:ButtonText(data)
-		button.TextColor3 = data.key == "settings" and Color3.fromRGB(35, 45, 55)
-			or Color3.fromRGB(255, 255, 255)
-		button.TextSize = data.primary and 22 or 19
+		button.TextColor3 = Color3.fromRGB(255, 255, 255)
+		button.TextStrokeColor3 = data.key == "settings" and Color3.fromRGB(45, 54, 68)
+			or Color3.fromRGB(19, 87, 127)
+		button.TextStrokeTransparency = 0.28
+		button.TextSize = data.primary and 27 or 14
 		button.TextWrapped = true
 		button.Font = UITheme.Font.heading
 		button.BorderSizePixel = 0
 		button.Selectable = true
-		button.Parent = stack
-		UITheme.button(button, data.primary and "primary" or "secondary")
+		button.Parent = data.primary and stack or secondaryRow
+		UITheme.button(button, data.primary and "success" or "secondary")
 		button.BackgroundColor3 = data.color or Color3.fromRGB(255, 255, 255)
-		button.TextColor3 = data.key == "settings" and Color3.fromRGB(35, 45, 55)
-			or Color3.fromRGB(255, 255, 255)
+		if data.primary then
+			button.AnchorPoint = Vector2.new(0.5, 0)
+			button.Position = UDim2.new(0.5, 0, 0, 0)
+			UITheme.gradient(button, Color3.fromRGB(116, 255, 119), Color3.fromRGB(29, 190, 66), 90)
+			playButton = button
+		elseif data.key == "settings" then
+			button.TextColor3 = Color3.fromRGB(255, 255, 255)
+		else
+			UITheme.gradient(
+				button,
+				data.color,
+				data.color:Lerp(Color3.fromRGB(35, 110, 196), 0.24),
+				90
+			)
+		end
 		local corner = button:FindFirstChildOfClass("UICorner")
 		if corner then
-			corner.CornerRadius = UDim.new(0, 14)
+			corner.CornerRadius = UDim.new(0, data.primary and 14 or 10)
+		end
+		local stroke = button:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Color = data.primary and Color3.fromRGB(18, 129, 48)
+				or Color3.fromRGB(11, 87, 159)
+			stroke.Thickness = data.primary and 3 or 2
+			stroke.Transparency = 0.05
 		end
 		UITheme.attachButtonFeedback(button, self.isReducedMotion)
 		self.buttons[data.key] = button
@@ -263,6 +301,9 @@ function HUDController:BuildRightMenu()
 			self:ActivateButton(data)
 		end)
 	end
+
+	self.primaryPlayButton = playButton
+	self.secondaryActionRow = secondaryRow
 end
 
 function HUDController:BuildTopHud()
@@ -290,7 +331,11 @@ function HUDController:BuildTopHud()
 end
 
 function HUDController:ButtonText(data)
-	return data.icon
+	if data.primary then
+		return `{data.icon} {string.upper(data.label)}`
+	end
+
+	return `{data.icon} {string.upper(data.label)}`
 end
 
 function HUDController:ActivateButton(data)
@@ -343,23 +388,32 @@ function HUDController:RefreshResponsiveLayout()
 	local phone = screenSize.X < 620 or screenSize.Y < 520
 	self.collapsed = compact
 
-	self.leftStack.AnchorPoint = Vector2.new(0, 1)
-	self.leftStack.Position = UDim2.new(0, 16, 1, phone and -78 or -28)
+	self.leftStack.AnchorPoint = Vector2.new(0, 0)
+	self.leftStack.Position = UDim2.new(0, 16, 0, math.max(76, inset.Y + 54))
 	self.leftStack.Size =
-		UDim2.fromOffset(phone and 210 or compact and 236 or 270, phone and 128 or 190)
+		UDim2.fromOffset(phone and 198 or compact and 228 or 250, phone and 124 or 164)
 	self.statsCard.Visible = true
-	self.objectiveCard.Visible = not phone
+	self.objectiveCard.Visible = false
 
-	self.rightStack.AnchorPoint = Vector2.new(1, 0.5)
-	self.rightStack.Position = UDim2.new(1, -18, 0.5, phone and -10 or 0)
-	self.rightStack.Size = UDim2.fromOffset(phone and 60 or 66, phone and 372 or 420)
+	self.rightStack.AnchorPoint = Vector2.new(0.5, 1)
+	self.rightStack.Position = UDim2.new(0.5, 0, 1, phone and -72 or -26)
+	self.rightStack.Size =
+		UDim2.fromOffset(phone and 340 or compact and 386 or 430, phone and 96 or 104)
+	if self.secondaryActionRow then
+		self.secondaryActionRow.Size = UDim2.fromOffset(phone and 326 or 360, phone and 36 or 38)
+	end
 	for _, data in RIGHT_BUTTONS do
 		local button = self.buttons[data.key]
 		if button then
 			button.Text = self:ButtonText(data)
-			local size = phone and 52 or data.primary and 66 or 60
-			button.Size = UDim2.fromOffset(size, size)
-			button.TextSize = phone and 13 or data.primary and 15 or 13
+			if data.primary then
+				button.Size =
+					UDim2.fromOffset(phone and 190 or compact and 220 or 238, phone and 52 or 58)
+				button.TextSize = phone and 22 or 27
+			else
+				button.Size = UDim2.fromOffset(phone and 98 or 110, phone and 36 or 38)
+				button.TextSize = phone and 12 or 14
+			end
 		end
 	end
 
@@ -389,6 +443,26 @@ function HUDController:SetMenuButtonSelected(key)
 			stroke.Thickness = selected and 2 or 1
 			stroke.Color = selected and Color3.fromRGB(255, 205, 82) or UITheme.Color.strokeSoft
 		end
+	end
+end
+
+function HUDController:SetPlayButtonState(hubState)
+	local button = self.buttons.play
+	if not button then
+		return
+	end
+
+	local queued = hubState and hubState.queued == true
+	local openArenas = hubState and hubState.openArenas or 0
+	if queued then
+		button.Text = "< LEAVE QUEUE"
+		button.BackgroundColor3 = Color3.fromRGB(255, 112, 189)
+	elseif openArenas <= 0 then
+		button.Text = "ARENAS FULL"
+		button.BackgroundColor3 = Color3.fromRGB(116, 124, 139)
+	else
+		button.Text = "> PLAY"
+		button.BackgroundColor3 = Color3.fromRGB(67, 224, 86)
 	end
 end
 
@@ -432,6 +506,7 @@ function HUDController:UpdateHubState(hubState)
 	local queueCount = hubState.queueCount or 0
 	local minPlayers = hubState.minPlayers or 2
 	local openArenas = hubState.openArenas or 0
+	self:SetPlayButtonState(hubState)
 	self.modeLabel.Text = hubState.queued and "Queued" or "Hub"
 	if hubState.queued then
 		self.objectiveLabel.Text = hubState.secondsToSoloStart
@@ -453,6 +528,7 @@ function HUDController:UpdateGameState(state)
 	if not state then
 		self:SetGameplayFocus(false)
 		self.topBar.Visible = false
+		self:SetPlayButtonState(self.currentHubState)
 		self.zoneLabel.Text = "Floating Hub"
 		return
 	end

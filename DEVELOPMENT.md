@@ -2,6 +2,39 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day23 Option A HUD Checkpoint - 2026-08-02
+
+### Completed
+
+- Reworked the default hub HUD toward the selected Option A concept.
+- Replaced the busy right-side action rail with a bottom-center primary action cluster.
+- Made `PLAY` the clear first action, with compact `SHOP`, `QUESTS`, and `SETTINGS` buttons underneath.
+- Moved the player profile, level, XP bar, coins, wins, and Story Stars back to a compact upper-left stat stack.
+- Hid the persistent objective card on spawn so the first screen feels cleaner for new players.
+- Made the Play button state-aware: it now changes to `LEAVE QUEUE` while queued and `ARENAS FULL` when no arenas are open.
+- Renamed the old Rewards quick panel copy to `Quests` so the visible button matches player expectations while the full quest board is still planned.
+- Built `BlockBlastBattle-Day23.rbxl`.
+
+### Files Modified
+
+- `src/client/ui/HUDController.luau`
+- `src/client/ui/BlockBlastClient.client.luau`
+- `DEVELOPMENT.md`
+- `docs/PROJECT_TRACKER.md`
+
+### Current State
+
+- The hub HUD now follows the cleaner Option A direction: fewer always-visible buttons, stronger visual hierarchy, and a much more obvious play action.
+- The existing Home panel, Story panel, Shop panel, and gameplay board remain intact.
+- The `Quests` button currently opens an honest informational placeholder; it does not fake a completed quest system.
+- Studio visual confirmation is still required to judge exact spacing against Roblox chat/topbar and mobile controls.
+
+### Next Priority
+
+1. Playtest `BlockBlastBattle-Day23.rbxl` in Studio and screenshot the spawn HUD at desktop and phone landscape sizes.
+2. Replace text symbols on the HUD buttons with project-owned image icons after the layout is approved.
+3. Apply the same Option A visual language to the remaining Home panel or retire parts of that older panel once the new hub HUD covers the same jobs.
+
 ## Completed Work
 
 - 2026-07-29: Set up Rojo-based Roblox project structure for VS Code development.

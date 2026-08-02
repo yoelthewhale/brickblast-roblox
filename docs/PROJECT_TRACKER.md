@@ -70,6 +70,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Test Day20 default-clean hub HUD and compact icon rail | High | Playtest | Bear / Codex | 2026-08-09 |
 | Test Day21 Bubble Gum Simulator-style shop redesign | High | Playtest | Bear / Codex | 2026-08-09 |
 | Test Day22 default simulator HUD on spawn | High | Playtest | Bear / Codex | 2026-08-09 |
+| Test Day23 Option A spawn HUD and bottom Play cluster | High | Playtest | Bear / Codex | 2026-08-09 |
 | Expand Custom Lab into saved block preset editor | Medium | Ready | Codex | 2026-08-10 |
 | Continue UI/gameplay animation polish after Day17 review | Medium | Ready | Codex | 2026-08-10 |
 
@@ -148,6 +149,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - 2026-08-02 Day 20: Stopped auto-opening hub/tutorial overlays, suppressed the welcome banner, changed the right rail to compact circular icon buttons, and built `BlockBlastBattle-Day20.rbxl`.
 - 2026-08-02 Day 21: Rebuilt the shop panel with a Bubble Gum Simulator-style bright frame, side category tabs, dim/ray overlay, colorful product cards, and built `BlockBlastBattle-Day21.rbxl`.
 - 2026-08-02 Day 22: Restyled the default hub HUD with bottom-left simulator stat bars, chunkier right action buttons, hidden default top bar, and built `BlockBlastBattle-Day22.rbxl`.
+- 2026-08-02 Day 23: Converted the default HUD toward the selected Option A concept with upper-left stats, a bottom-center green Play button, compact Shop/Quests/Settings buttons, state-aware queue text, and built `BlockBlastBattle-Day23.rbxl`.
 
 ## UI Direction References
 
