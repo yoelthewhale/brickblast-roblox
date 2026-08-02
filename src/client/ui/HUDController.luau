@@ -84,6 +84,7 @@ function HUDController.new(gui, options)
 	self.connections = {}
 	self.buttons = {}
 	self.collapsed = false
+	self.gameplayFocus = false
 	self.currentHubState = nil
 	self.currentState = nil
 
@@ -331,6 +332,19 @@ function HUDController:RefreshResponsiveLayout()
 	self.topBar.Size = UDim2.fromOffset(math.clamp(screenSize.X - 360, 260, 420), 42)
 end
 
+function HUDController:SetGameplayFocus(enabled)
+	self.gameplayFocus = enabled == true
+	if self.leftStack then
+		self.leftStack.Visible = not self.gameplayFocus
+	end
+	if self.rightStack then
+		self.rightStack.Visible = not self.gameplayFocus
+	end
+	if self.gameplayFocus and self.menu then
+		self.menu:Close()
+	end
+end
+
 function HUDController:SetMenuButtonSelected(key)
 	for buttonKey, button in self.buttons do
 		local selected = buttonKey == key
@@ -378,6 +392,7 @@ function HUDController:UpdateHubState(hubState)
 		return
 	end
 
+	self:SetGameplayFocus(false)
 	local queueCount = hubState.queueCount or 0
 	local minPlayers = hubState.minPlayers or 2
 	local openArenas = hubState.openArenas or 0
@@ -400,10 +415,12 @@ end
 function HUDController:UpdateGameState(state)
 	self.currentState = state
 	if not state then
+		self:SetGameplayFocus(false)
 		self.zoneLabel.Text = "Floating Hub"
 		return
 	end
 
+	self:SetGameplayFocus(true)
 	self.modeLabel.Text = state.mode == "Story" and "Story Run"
 		or state.mode == "Custom" and "Custom Lab"
 		or "Battle"

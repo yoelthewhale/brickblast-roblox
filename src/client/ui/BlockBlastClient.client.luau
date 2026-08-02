@@ -76,6 +76,7 @@ local dockReturnButton = nil
 local banner = nil
 local diagnosticsPanel = nil
 local diagnosticsLabel = nil
+local diagnosticsVisible = false
 local loadingScreen = nil
 local cosmeticPanelController = nil
 local resultPanelController = nil
@@ -318,6 +319,7 @@ if RunService:IsStudio() then
 	diagnosticsPanel.BackgroundTransparency = 0.08
 	diagnosticsPanel.BorderSizePixel = 0
 	diagnosticsPanel.ZIndex = 40
+	diagnosticsPanel.Visible = diagnosticsVisible
 	diagnosticsPanel.Parent = gui
 
 	diagnosticsLabel = Instance.new("TextLabel")
@@ -333,6 +335,15 @@ if RunService:IsStudio() then
 	diagnosticsLabel.TextWrapped = true
 	diagnosticsLabel.ZIndex = 41
 	diagnosticsLabel.Parent = diagnosticsPanel
+
+	UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if gameProcessed or input.KeyCode ~= Enum.KeyCode.F8 then
+			return
+		end
+
+		diagnosticsVisible = not diagnosticsVisible
+		diagnosticsPanel.Visible = diagnosticsVisible
+	end)
 end
 
 local function applyUiScale()

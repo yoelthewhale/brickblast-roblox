@@ -446,6 +446,28 @@ This file tracks production-readiness work, priorities, known issues, and techni
 2. Studio-test UI navigation on mobile and gamepad.
    Repository validation passes, but actual Roblox focus movement should be checked with real input.
 
+## Session Update - 2026-08-02 Day18 Gameplay HUD Cleanup
+
+### Completed
+
+- Hid the left player HUD and right action rail automatically during active Battle, Story, and Custom Lab runs.
+- Closed any open HUD menu when gameplay focus begins so panels do not overlap the board.
+- Kept the compact top context label visible for match mode/time context.
+- Hid the Studio diagnostics panel by default and added an F8 Studio-only toggle.
+- Built `BlockBlastBattle-Day18.rbxl` for testing the reduced gameplay clutter.
+
+### Validation
+
+- `stylua src` passed.
+- `selene src` passed with 0 errors and 0 warnings.
+- `rojo build default.project.json --output BlockBlastBattle-Day18.rbxl` passed.
+- `git diff --check` reported only Windows CRLF notices.
+
+### Notes
+
+- This is an immediate cleanup pass, not the full UI redesign.
+- Recommended visual direction after online reference review: playful Bubble Gum Simulator-style hub HUD, but BedWars-style minimal HUD during actual gameplay.
+
 ## Session Update - 2026-08-02 Day17 Color, Custom Lab, and Local Organization
 
 ### Completed
