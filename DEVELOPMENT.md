@@ -446,6 +446,74 @@ This file tracks production-readiness work, priorities, known issues, and techni
 2. Studio-test UI navigation on mobile and gamepad.
    Repository validation passes, but actual Roblox focus movement should be checked with real input.
 
+## Session Update - 2026-08-02 Day17 Color, Custom Lab, and Local Organization
+
+### Completed
+
+- Added a server-authoritative `Hand` RemoteEvent for Custom Lab piece modification.
+- Added Custom Lab as a solo mode launched from the local Modes menu.
+- Added server validation and cooldowns for Custom Lab `Rotate` and `Reroll` actions.
+- Updated shared block generation so every hand receives cloned shape cells instead of shared definition tables.
+- Added `Blocks.rotateShape` with normalized rotated cells for safe piece rotation.
+- Kept Custom Lab non-progression: no coins, XP, wins, Story Stars, or purchase/cosmetic grants are awarded.
+- Added Custom Lab labels, Rotate/Reroll controls, selected-piece pulse feedback, and `HandUpdated` notification feedback in the player UI.
+- Updated HUD status text so Custom Lab is treated as an active run, like Battle and Story.
+- Brightened the hub with rainbow block trails, festival flags, balloons, plaza confetti, and stronger colorful side-island accents.
+- Brightened the fallback hub with rainbow blocks and flower markers so a builder failure no longer looks like a blank/broken map.
+- Added `.vscode/settings.json`, `BlockBlastBattle.code-workspace`, `BLOCK_BLAST_START_HERE.md`, and `scripts/open-latest-local-build.ps1`.
+- Added VS Code tasks for `Rojo: Build Day17` and `Studio: Open Latest Local Build`.
+- Documented that Roblox Studio account selection is controlled by Studio login state and must be verified as `CAPTINNINJATACO` before Play/publish.
+- Formatted with Stylua, linted with Selene, checked diff whitespace, and built `BlockBlastBattle-Day17.rbxl`.
+
+### Files Modified
+
+- `src/shared/game/Blocks.luau`
+- `src/server/services/GameServer.server.luau`
+- `src/server/world/HubBuilder.luau`
+- `src/client/ui/BlockBlastClient.client.luau`
+- `src/client/ui/HUDController.luau`
+- `.vscode/settings.json`
+- `.vscode/tasks.json`
+- `README.md`
+- `BLOCK_BLAST_START_HERE.md`
+- `BlockBlastBattle.code-workspace`
+- `scripts/open-latest-local-build.ps1`
+
+### Current State
+
+- Latest local build: `BlockBlastBattle-Day17.rbxl`.
+- Custom Lab is a first playable vertical slice for adjustable block gameplay: players can start the mode, select a piece, rotate it, reroll it, place it, and return safely.
+- The hub is more colorful, but still needs real Studio camera review to confirm the new details land visually from player perspective.
+- Roblox Studio MCP remains unavailable from Codex, so Studio playtesting was not claimed.
+- The account issue is documented and safer to avoid, but Codex did not modify Roblox credentials. Studio must be signed into `CAPTINNINJATACO`.
+
+### Known Issues
+
+- Custom Lab is intentionally basic: it supports rotate/reroll but not a full saved loadout editor yet.
+- Custom Lab `Play Again` is hidden for now; restart through Modes after returning to hub.
+- The map still needs user-facing Studio review because repository validation cannot prove camera framing, spawn feel, or color balance.
+- Old `.rbxl.lock` files may remain if Studio had older builds open; VS Code now hides them by default.
+
+### Recommended Next Priorities
+
+1. Open `BlockBlastBattle-Day17.rbxl` locally and verify Studio is signed in as `CAPTINNINJATACO`.
+   This prevents accidental testing/publishing from the wrong account and confirms the correct newest build is open.
+2. Playtest the new colorful hub from actual spawn camera.
+   The user specifically disliked the map; player-camera art review is the highest-value next check.
+3. Test Custom Lab end to end.
+   Start from Modes, rotate/reroll each piece, place pieces, force out-of-moves, and confirm no progression is granted.
+4. Build a fuller loadout editor if Custom Lab feels good.
+   The new server foundation can grow into saved shape presets and rule variants.
+5. Continue UI animation polish around board placement, mode transitions, and result presentation.
+
+### Release Readiness
+
+- Estimate: prototype moving toward vertical-slice quality, roughly 35% of the way to public release.
+- Biggest blocker: Roblox Studio playtesting on the correct account and device layouts.
+- Biggest gameplay weakness: Custom Lab exists but does not yet have saved presets, matchmaking rules, or tutorialization.
+- Biggest polish opportunity: actual Studio camera pass on hub colors, landmarks, and first-spawn wow factor.
+- Biggest technical risk: untested Studio runtime behavior for the new `Hand` remote and Custom Lab state path.
+
 ## Session Update - 2026-08-01 HomePanel Extraction
 
 ### Completed

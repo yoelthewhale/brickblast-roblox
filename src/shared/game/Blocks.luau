@@ -68,6 +68,37 @@ local function randomPieceColor(randomizer, pieceSkin)
 	return randomRainbowColor(randomizer)
 end
 
+local function normalizeCells(cells)
+	local minX = math.huge
+	local minY = math.huge
+	for _, cell in cells do
+		minX = math.min(minX, cell.X)
+		minY = math.min(minY, cell.Y)
+	end
+
+	local normalized = {}
+	for index, cell in cells do
+		normalized[index] = Vector2.new(cell.X - minX, cell.Y - minY)
+	end
+	table.sort(normalized, function(left, right)
+		if left.Y == right.Y then
+			return left.X < right.X
+		end
+		return left.Y < right.Y
+	end)
+
+	return normalized
+end
+
+function Blocks.cloneCells(cells)
+	local cloned = {}
+	for index, cell in cells do
+		cloned[index] = Vector2.new(cell.X, cell.Y)
+	end
+
+	return cloned
+end
+
 function Blocks.isValidPieceSkin(pieceSkin)
 	for _, skin in Blocks.PieceSkins do
 		if skin == pieceSkin then
@@ -78,13 +109,30 @@ function Blocks.isValidPieceSkin(pieceSkin)
 	return false
 end
 
+function Blocks.rotateShape(shape)
+	if typeof(shape) ~= "table" or typeof(shape.cells) ~= "table" then
+		return nil
+	end
+
+	local rotated = {}
+	for index, cell in shape.cells do
+		rotated[index] = Vector2.new(cell.Y, -cell.X)
+	end
+
+	return {
+		id = `{shape.id}:rot`,
+		cells = normalizeCells(rotated),
+		color = shape.color,
+	}
+end
+
 function Blocks.getRandomShape(randomizer, pieceSkin)
 	local index = randomizer:NextInteger(1, #Blocks.Shapes)
 	local shape = Blocks.Shapes[index]
 
 	return {
 		id = shape.id,
-		cells = shape.cells,
+		cells = Blocks.cloneCells(shape.cells),
 		color = randomPieceColor(randomizer, pieceSkin),
 	}
 end

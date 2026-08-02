@@ -39,6 +39,10 @@ local placeEvent = Instance.new("RemoteEvent")
 placeEvent.Name = "Place"
 placeEvent.Parent = remotes
 
+local handEvent = Instance.new("RemoteEvent")
+handEvent.Name = "Hand"
+handEvent.Parent = remotes
+
 local queueEvent = Instance.new("RemoteEvent")
 queueEvent.Name = "Queue"
 queueEvent.Parent = remotes
@@ -136,6 +140,39 @@ local function buildFallbackHub(buildError)
 	)
 	storyPad:SetAttribute("QueueMode", "Story")
 	local storyPrompt = makeFallbackPrompt(storyPad, "Start", "Story Training")
+
+	local fallbackColors = {
+		Color3.fromRGB(255, 82, 82),
+		Color3.fromRGB(255, 210, 62),
+		Color3.fromRGB(63, 219, 118),
+		Color3.fromRGB(48, 158, 255),
+		Color3.fromRGB(167, 109, 255),
+		Color3.fromRGB(255, 112, 189),
+	}
+	for index, color in fallbackColors do
+		local angle = (math.pi * 2) * index / #fallbackColors
+		makeFallbackPart(
+			hub,
+			`FallbackRainbowBlock{index}`,
+			Vector3.new(6, 3, 6),
+			Vector3.new(math.cos(angle) * 32, 4, math.sin(angle) * 32),
+			color,
+			Enum.Material.SmoothPlastic
+		).CanCollide =
+			false
+	end
+	for index = 1, 8 do
+		local x = -42 + index * 10
+		makeFallbackPart(
+			hub,
+			`FallbackFlower{index}`,
+			Vector3.new(3, 0.8, 3),
+			Vector3.new(x, 2.8, 36 + (index % 2) * 5),
+			fallbackColors[((index - 1) % #fallbackColors) + 1],
+			Enum.Material.Neon
+		).CanCollide =
+			false
+	end
 
 	local battleSpawn = makeFallbackPart(
 		hub,
@@ -250,6 +287,7 @@ local playerFulfilledPurchaseIds = {}
 local playerCosmeticInventories = {}
 local selectedStoryChapters = {}
 local lastPlaceRequestAt = {}
+local lastHandRequestAt = {}
 local lastQueueRequestAt = {}
 local lastShopRequestAt = {}
 local purchasePromptLocks = {}
@@ -292,6 +330,11 @@ local analytics = {
 	cosmeticPurchaseFailed = 0,
 	cosmeticEquips = 0,
 	gamePassPromptOpened = 0,
+	customLabSessionsStarted = 0,
+	customLabHandRotations = 0,
+	customLabHandRerolls = 0,
+	rejectedHandRequests = 0,
+	throttledHandRequests = 0,
 }
 
 pcall(function()
@@ -303,6 +346,7 @@ local SOLO_TEST_SECONDS = 8
 local OUT_OF_MOVES_RETURN_SECONDS = 4
 local POST_BATTLE_RETURN_SECONDS = 6
 local PLACE_COOLDOWN_SECONDS = 0.08
+local HAND_ACTION_COOLDOWN_SECONDS = 0.18
 local QUEUE_ACTION_COOLDOWN_SECONDS = 0.35
 local SHOP_ACTION_COOLDOWN_SECONDS = 0.35
 local ENTITLEMENT_CACHE_SECONDS = 120
@@ -1460,6 +1504,30 @@ local function grantBattleRewards(player, state, winner)
 	end
 
 	state.rewardsGranted = true
+	if state.mode == "Custom" then
+		state.finishedAt = state.finishedAt or os.clock()
+		state.resultSummary = {
+			mode = state.mode,
+			outcome = "Custom Lab",
+			score = state.score,
+			linesCleared = state.linesCleared,
+			highestCombo = state.highestCombo,
+			duration = state.startedAt
+					and math.max(0, math.floor(state.finishedAt - state.startedAt))
+				or nil,
+			coins = 0,
+			xp = 0,
+			storyStars = 0,
+			bestScore = state.bestScore,
+			previousBestScore = state.startingBestScore or state.bestScore,
+			storyCompleted = false,
+			won = false,
+			nextUnlockText = "Custom Lab does not award progression yet.",
+		}
+		state.message = "Custom Lab complete - no rewards"
+		return
+	end
+
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if not leaderstats then
 		return
@@ -1599,6 +1667,26 @@ local function canAcceptPlaceRequest(player, slot, x, y)
 	return true, nil
 end
 
+local function canAcceptHandAction(player, action, slot)
+	if
+		(action ~= "Rotate" and action ~= "Reroll")
+		or not isWholeNumber(slot)
+		or slot < 1
+		or slot > Config.InventorySize
+	then
+		return false, "InvalidPayload"
+	end
+
+	local now = os.clock()
+	local lastRequestAt = lastHandRequestAt[player] or 0
+	if now - lastRequestAt < HAND_ACTION_COOLDOWN_SECONDS then
+		return false, "Cooldown"
+	end
+
+	lastHandRequestAt[player] = now
+	return true, nil
+end
+
 local function canAcceptQueueAction(player)
 	local now = os.clock()
 	local lastRequestAt = lastQueueRequestAt[player] or 0
@@ -1642,6 +1730,7 @@ local function publicState(player)
 		comboStreak = state.comboStreak,
 		highestCombo = state.highestCombo,
 		mode = state.mode,
+		customMode = state.mode == "Custom",
 		storyMission = state.storyMission,
 		storyComplete = state.mode == "Story" and isStoryMissionComplete(state) or false,
 		resultSummary = state.resultSummary,
@@ -1918,7 +2007,7 @@ local function startBattle(players, mode, storyChapter)
 		if
 			player.Parent == Players
 			and playerModes[player] == "Hub"
-			and (mode == "Story" or queuedPlayers[player] == true)
+			and (mode == "Story" or mode == "Custom" or queuedPlayers[player] == true)
 		then
 			table.insert(eligiblePlayers, player)
 		end
@@ -1951,6 +2040,8 @@ local function startBattle(players, mode, storyChapter)
 	activeSessions[session.id] = session
 	if mode == "Story" then
 		analytics.storySessionsStarted += 1
+	elseif mode == "Custom" then
+		analytics.customLabSessionsStarted += 1
 	else
 		analytics.battleSessionsStarted += 1
 	end
@@ -1970,9 +2061,12 @@ local function startBattle(players, mode, storyChapter)
 		effectsEvent:FireClient(player, {
 			kind = "BattleStart",
 			message = mode == "Story" and storyChapterTitle(storyMission)
+				or mode == "Custom" and "Custom Lab started!"
 				or #eligiblePlayers >= BATTLE_MIN_PLAYERS and "Battle started!"
 				or "Solo test started!",
-			detail = mode == "Story" and storyMission and storyMission.intro or nil,
+			detail = mode == "Story" and storyMission and storyMission.intro
+				or mode == "Custom" and "Rotate or reroll pieces before placing them."
+				or nil,
 		})
 	end
 
@@ -1982,7 +2076,11 @@ local function startBattle(players, mode, storyChapter)
 		queueStartedAt = os.clock()
 	end
 
-	broadcastHub(mode == "Story" and "Story training started" or "Battle started")
+	broadcastHub(
+		mode == "Story" and "Story training started"
+			or mode == "Custom" and "Custom Lab started"
+			or "Battle started"
+	)
 	broadcast(session)
 	return session
 end
@@ -2036,7 +2134,11 @@ local function tryStartBattle()
 end
 
 local function joinBattleQueue(player)
-	if playerModes[player] == "Battle" or playerModes[player] == "Story" then
+	if
+		playerModes[player] == "Battle"
+		or playerModes[player] == "Story"
+		or playerModes[player] == "Custom"
+	then
 		sendHubState(player, "Finish your current run first")
 		return
 	end
@@ -2074,7 +2176,11 @@ leaveBattleQueue = function(player)
 end
 
 startStoryMode = function(player, requestedChapter)
-	if playerModes[player] == "Battle" or playerModes[player] == "Story" then
+	if
+		playerModes[player] == "Battle"
+		or playerModes[player] == "Story"
+		or playerModes[player] == "Custom"
+	then
 		sendHubState(player, "Finish your current run first")
 		return
 	end
@@ -2087,6 +2193,24 @@ startStoryMode = function(player, requestedChapter)
 	local chapter = validatedStoryChapter(player, requestedChapter)
 	selectedStoryChapters[player] = chapter
 	startBattle({ player }, "Story", chapter)
+end
+
+local function startCustomLab(player)
+	if
+		playerModes[player] == "Battle"
+		or playerModes[player] == "Story"
+		or playerModes[player] == "Custom"
+	then
+		sendHubState(player, "Finish your current run first")
+		return
+	end
+
+	if not findFreeArena() then
+		sendHubState(player, "Arena is busy - try Custom Lab again after this match")
+		return
+	end
+
+	startBattle({ player }, "Custom")
 end
 
 local function playAgainBattle(player)
@@ -2346,6 +2470,53 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 	end
 end)
 
+handEvent.OnServerEvent:Connect(function(player, action, slot)
+	local canRequest, rejectReason = canAcceptHandAction(player, action, slot)
+	if not canRequest then
+		if rejectReason == "Cooldown" then
+			analytics.throttledHandRequests += 1
+		else
+			analytics.rejectedHandRequests += 1
+		end
+		return
+	end
+
+	local state = playerStates[player]
+	local session = playerSessions[player]
+	if not state or not session or not state.alive or state.mode ~= "Custom" then
+		analytics.rejectedHandRequests += 1
+		return
+	end
+
+	local shape = state.hand[slot]
+	if not shape then
+		analytics.rejectedHandRequests += 1
+		return
+	end
+
+	if action == "Rotate" then
+		local rotated = Blocks.rotateShape(shape)
+		if not rotated then
+			analytics.rejectedHandRequests += 1
+			return
+		end
+		state.hand[slot] = rotated
+		analytics.customLabHandRotations += 1
+	else
+		state.hand[slot] = Blocks.getRandomShape(state.randomizer, state.pieceSkin)
+		analytics.customLabHandRerolls += 1
+	end
+
+	state.alive = Grid.hasAnyMove(state.board, state.hand)
+	effectsEvent:FireClient(player, {
+		kind = "HandUpdated",
+		action = action,
+		slot = slot,
+		message = action == "Rotate" and `Piece {slot} rotated` or `Piece {slot} rerolled`,
+	})
+	broadcast(session)
+end)
+
 queueEvent.OnServerEvent:Connect(function(player, mode, requestedChapter)
 	if not canAcceptQueueAction(player) then
 		return
@@ -2361,6 +2532,8 @@ queueEvent.OnServerEvent:Connect(function(player, mode, requestedChapter)
 		playAgainBattle(player)
 	elseif mode == "Story" then
 		startStoryMode(player, requestedChapter)
+	elseif mode == "CustomLab" then
+		startCustomLab(player)
 	end
 end)
 
@@ -2574,7 +2747,11 @@ local function attachHubSpawnSafety(player)
 					return
 				end
 
-				if playerModes[player] == "Battle" or playerModes[player] == "Story" then
+				if
+					playerModes[player] == "Battle"
+					or playerModes[player] == "Story"
+					or playerModes[player] == "Custom"
+				then
 					task.delay(0.25, function()
 						if player.Parent == Players and playerStates[player] then
 							leaveBattle(player)
@@ -2584,7 +2761,11 @@ local function attachHubSpawnSafety(player)
 			end)
 		end
 
-		if playerModes[player] == "Battle" or playerModes[player] == "Story" then
+		if
+			playerModes[player] == "Battle"
+			or playerModes[player] == "Story"
+			or playerModes[player] == "Custom"
+		then
 			return
 		end
 
@@ -2644,6 +2825,7 @@ Players.PlayerRemoving:Connect(function(player)
 	playerFulfilledPurchaseIds[player] = nil
 	playerCosmeticInventories[player] = nil
 	lastPlaceRequestAt[player] = nil
+	lastHandRequestAt[player] = nil
 	lastQueueRequestAt[player] = nil
 	lastShopRequestAt[player] = nil
 	purchasePromptLocks[player] = nil

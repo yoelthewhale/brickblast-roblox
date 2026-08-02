@@ -83,6 +83,30 @@
         "BlockBlastBattle.rbxl"
       ],
       "problemMatcher": []
+    },
+    {
+      "label": "Rojo: Build Day17",
+      "type": "shell",
+      "command": "${workspaceFolder}\\tools\\rojo.exe",
+      "args": [
+        "build",
+        "default.project.json",
+        "--output",
+        "BlockBlastBattle-Day17.rbxl"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Studio: Open Latest Local Build",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\open-latest-local-build.ps1"
+      ],
+      "problemMatcher": []
     }
   ]
 }

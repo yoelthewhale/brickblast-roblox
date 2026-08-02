@@ -503,6 +503,83 @@ local function makeBlockStatue(parent, name, origin, colors)
 	end
 end
 
+local function makeRainbowBlockTrail(parent, name, center, radius, count, yOffset)
+	local trail = Instance.new("Folder")
+	trail.Name = name
+	trail.Parent = parent
+	for index = 1, count do
+		local angle = (math.pi * 2) * index / count
+		local color = BLOCK_COLORS[((index - 1) % #BLOCK_COLORS) + 1]
+		local block = makePart(
+			trail,
+			`TrailBlock{index}`,
+			Vector3.new(3.4, 1.2, 3.4),
+			CFrame.new(
+				center + Vector3.new(math.cos(angle) * radius, yOffset, math.sin(angle) * radius)
+			) * CFrame.Angles(0, -angle, 0),
+			color,
+			Enum.Material.SmoothPlastic,
+			{ canCollide = false }
+		)
+		block.Transparency = index % 2 == 0 and 0.03 or 0
+	end
+end
+
+local function makeBalloonCluster(parent, name, origin, count)
+	local cluster = Instance.new("Folder")
+	cluster.Name = name
+	cluster.Parent = parent
+	for index = 1, count do
+		local angle = (math.pi * 2) * index / count
+		local offset = Vector3.new(
+			math.cos(angle) * (2.5 + index % 3),
+			7 + (index % 4) * 1.4,
+			math.sin(angle) * 2.5
+		)
+		local string = makePart(
+			cluster,
+			`BalloonString{index}`,
+			Vector3.new(0.12, offset.Y - 1.2, 0.12),
+			origin + Vector3.new(offset.X, (offset.Y - 1.2) / 2, offset.Z),
+			PALETTE.cloud,
+			Enum.Material.SmoothPlastic,
+			{ canCollide = false }
+		)
+		string.Transparency = 0.25
+		local balloon = makePart(
+			cluster,
+			`Balloon{index}`,
+			Vector3.new(2.8, 3.3, 2.8),
+			origin + offset,
+			BLOCK_COLORS[((index - 1) % #BLOCK_COLORS) + 1],
+			Enum.Material.SmoothPlastic,
+			{ canCollide = false, shape = Enum.PartType.Ball }
+		)
+		queueSpin(balloon, 22 + index, Vector3.new(0, 1, 0))
+	end
+end
+
+local function makeFestivalFlags(parent, name, startPosition, endPosition, count)
+	local flags = Instance.new("Folder")
+	flags.Name = name
+	flags.Parent = parent
+	local delta = endPosition - startPosition
+	for index = 1, count do
+		local alpha = index / (count + 1)
+		local position = startPosition + delta * alpha
+		local flag = makePart(
+			flags,
+			`Flag{index}`,
+			Vector3.new(3, 2.2, 0.25),
+			CFrame.new(position) * CFrame.Angles(0, math.atan2(delta.X, delta.Z), 0),
+			BLOCK_COLORS[((index - 1) % #BLOCK_COLORS) + 1],
+			Enum.Material.SmoothPlastic,
+			{ canCollide = false }
+		)
+		flag.Transparency = 0.02
+	end
+end
+
 local function makePortal(parent, name, center, primary, secondary, title, subtitle)
 	local portal = Instance.new("Folder")
 	portal.Name = name
@@ -713,6 +790,24 @@ local function buildMainIsland(parent)
 		)
 		queueSpin(block, 14 + index, Vector3.new(0, 1, 0))
 	end
+	makeRainbowBlockTrail(island, "RainbowPlazaTrail", Vector3.new(0, 7.95, 0), 24, 18, 0)
+	makeRainbowBlockTrail(island, "OuterCandyTrail", Vector3.new(0, 7.9, 0), 51, 28, 0)
+	makeBalloonCluster(island, "SpawnBalloonClusterWest", Vector3.new(-44, 8.2, 8), 7)
+	makeBalloonCluster(island, "SpawnBalloonClusterEast", Vector3.new(44, 8.2, 10), 7)
+	makeFestivalFlags(
+		island,
+		"SpawnFestivalFlagsNorth",
+		Vector3.new(-32, 17, -34),
+		Vector3.new(32, 17, -34),
+		13
+	)
+	makeFestivalFlags(
+		island,
+		"SpawnFestivalFlagsSouth",
+		Vector3.new(-30, 15, 38),
+		Vector3.new(30, 15, 38),
+		12
+	)
 
 	for index, treeData in
 		{
@@ -744,6 +839,7 @@ local function buildMainIsland(parent)
 		{ offset = Vector3.new(0, 4.2, 0), color = PALETTE.cyan },
 		{ offset = Vector3.new(0, 8.4, 0), color = PALETTE.purple },
 	})
+	addParticles(top, "PlazaConfetti", PALETTE.gold, 2.2, 2.2, 3, 55)
 
 	return island, top, spawn
 end
@@ -779,6 +875,14 @@ local function buildSideIslands(parent)
 		PALETTE.wood,
 		Enum.Material.Wood
 	)
+	makeRainbowBlockTrail(training, "TrainingComboTrail", Vector3.new(-92, 14, -18), 20, 14, 0)
+	makeFestivalFlags(
+		training,
+		"TrainingFlags",
+		Vector3.new(-116, 23, -5),
+		Vector3.new(-72, 23, -5),
+		9
+	)
 
 	local leaderboard, leaderboardTop =
 		makeIsland(parent, "LeaderboardIsland", Vector3.new(92, 12, -16), 33, PALETTE.gold)
@@ -806,6 +910,7 @@ local function buildSideIslands(parent)
 		{ offset = Vector3.new(4, 0, 0), color = PALETTE.gold },
 	})
 	addBillboard(leaderboardTop, "LEADERBOARDS", "Wins and scores", Vector3.new(0, 8, 0))
+	makeBalloonCluster(leaderboard, "TrophyBalloons", Vector3.new(106, 14.4, 4), 6)
 
 	local portalIsland, portalTop =
 		makeIsland(parent, "PortalIsland", Vector3.new(0, 13, -82), 38, PALETTE.purple)
@@ -831,6 +936,14 @@ local function buildSideIslands(parent)
 	queueVisuals.battlePad = battlePad
 	queueVisuals.battleTitle = battleTitle
 	queueVisuals.battleSubtitle = battleSubtitle
+	makeRainbowBlockTrail(portalIsland, "PortalColorRunway", Vector3.new(0, 16.2, -82), 28, 18, 0)
+	makeFestivalFlags(
+		portalIsland,
+		"PortalModeFlags",
+		Vector3.new(-28, 30, -94),
+		Vector3.new(28, 30, -94),
+		11
+	)
 	for index, portalData in
 		{
 			{ name = "RankedPortal", x = -22, title = "RANKED", color = PALETTE.gold },
@@ -870,6 +983,7 @@ local function buildSideIslands(parent)
 	queueVisuals.storyTitle = storyTitle
 	queueVisuals.storySubtitle = storySubtitle
 	makeTree(storyIsland, "GlowingStoryTree", Vector3.new(59, 19, 83), 0.9, PALETTE.purple)
+	makeBalloonCluster(storyIsland, "StoryMagicBalloons", Vector3.new(87, 19, 83), 5)
 	storyTop.Name = "StoryIslandTop"
 
 	local vipIsland, vipTop =
@@ -904,6 +1018,7 @@ local function buildSideIslands(parent)
 		)
 	end
 	addBillboard(vipTop, "VIP ISLAND", "Gold lounge", Vector3.new(0, 8, 0))
+	makeRainbowBlockTrail(vipIsland, "VIPGoldPartyTrail", Vector3.new(-80, 20.8, 72), 21, 12, 0)
 	vipTop.Name = "VIPIslandTop"
 
 	local secret, secretTop =
@@ -943,6 +1058,7 @@ local function buildSideIslands(parent)
 			Enum.Material.SmoothPlastic
 		)
 	end
+	makeFestivalFlags(secret, "SecretCaveFlags", Vector3.new(-18, 8, 92), Vector3.new(18, 8, 92), 7)
 	secretTop.Name = "SecretsIslandTop"
 
 	return battlePrompt, storyPrompt

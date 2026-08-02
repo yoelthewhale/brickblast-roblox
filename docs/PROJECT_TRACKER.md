@@ -44,7 +44,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Add first-win daily bonus loop | High | Playtest | Codex | 2026-08-03 |
 | Add post-run results panel | Medium | Playtest | Codex | 2026-08-03 |
 | Add next-unlock hints to post-run results | Medium | Playtest | Codex | 2026-08-03 |
-| Improve hub visuals and signposting | Medium | In Progress | Codex | 2026-08-04 |
+| Improve hub visuals and signposting | Medium | Playtest | Codex | 2026-08-04 |
 | Add sound effects for placing, clearing, queueing, and winning | Medium | Playtest | Codex | 2026-08-04 |
 | Extract client sound controller module | Medium | Playtest | Codex | 2026-08-04 |
 | Add mobile-friendly controls and scale testing | High | Playtest | Codex | 2026-08-05 |
@@ -62,6 +62,11 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Validate Day15 player HUD on desktop/laptop/tablet/phone layouts | High | Playtest | Bear / Codex | 2026-08-08 |
 | Test Day15 right-side menu buttons and one-open-panel behavior | High | Playtest | Bear / Codex | 2026-08-08 |
 | Test Day15 notification stack and Reduced Motion UI behavior | Medium | Playtest | Bear / Codex | 2026-08-08 |
+| Verify Studio is signed into CAPTINNINJATACO before local Play/publish | High | Playtest | Bear | 2026-08-09 |
+| Playtest Day17 colorful hub from first spawn camera | High | Playtest | Bear / Codex | 2026-08-09 |
+| Test Custom Lab rotate/reroll mode end to end | High | Playtest | Bear / Codex | 2026-08-09 |
+| Expand Custom Lab into saved block preset editor | Medium | Ready | Codex | 2026-08-10 |
+| Continue UI/gameplay animation polish after Day17 review | Medium | Ready | Codex | 2026-08-10 |
 
 ## Bug Tracker
 
@@ -73,11 +78,14 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Day14 bridge/island collision needs Studio walk-through after redesign | High | Playtest | Bear / Codex | 2026-08-07 |
 | Studio MCP still does not expose usable tools to Codex | Medium | Blocked | Bear / Codex | 2026-08-07 |
 | Day15 HUD requires manual safe-area verification against Roblox chat/topbar/mobile controls | High | Playtest | Bear / Codex | 2026-08-08 |
+| Roblox Studio may open under the wrong signed-in account if Studio is still logged into cousin account | High | Known | Bear | 2026-08-09 |
 
 ## Playtest Checklist
 
 - Start Rojo server from VS Code or `start-rojo.ps1`.
 - Open `BlockBlastBattle-Day4.rbxl` in Roblox Studio.
+- For current work, open `BlockBlastBattle-Day17.rbxl` or run `.\scripts\open-latest-local-build.ps1`.
+- Before pressing Play or publishing, confirm Roblox Studio's top-right account says `CAPTINNINJATACO`.
 - Connect the Rojo plugin to `localhost:34872`.
 - Confirm the loading splash appears briefly and fades after game state arrives.
 - Press Play and confirm the hub appears.
@@ -129,6 +137,19 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - 2026-08-01 Day 4: Added finite-number settings hardening and built `BlockBlastBattle-Day4.rbxl` because Day 3 was locked by Studio.
 - 2026-08-01 Day 14: Added hub signage, queue visual reactions, stale queue pruning, reset/death lifecycle cleanup, non-blocking decoration adjustments, and local Reduced Motion world-quality scaling. Built `BlockBlastBattle-Day14.rbxl`.
 - 2026-08-01 Day 15: Added local left-side player HUD cards, right-side action rail, reusable menu panel, stacked notifications, responsive collapse behavior, and Reduced Motion-aware UI feedback. Built `BlockBlastBattle-Day15.rbxl`.
+- 2026-08-02 Day 17: Added Custom Lab rotate/reroll mode, safer cloned/rotated block shapes, more colorful hub/fallback decorations, VS Code organization files, and safe latest-build launcher. Built `BlockBlastBattle-Day17.rbxl`.
+
+## Day17 Custom Lab And Hub Validation Focus
+
+- Open `BlockBlastBattle-Day17.rbxl` and confirm Studio is signed into `CAPTINNINJATACO`.
+- Press Play and confirm the first spawn camera sees a brighter, more colorful hub with rainbow blocks, flags, balloons, and confetti.
+- Open the right-side Modes menu and confirm Battle Queue, Story Missions, and Custom Lab are readable and clickable.
+- Start Custom Lab, select each hand piece, press Rotate, press Reroll, and confirm the preview updates without errors.
+- Confirm Rotate/Reroll controls only appear in Custom Lab while alive.
+- Place rotated/rerolled pieces and confirm score/line-clear behavior still works.
+- Force out-of-moves or return to hub and confirm Custom Lab grants `0` coins, `0` XP, `0` wins, and `0` Story Stars.
+- Confirm Battle and Story still start normally after returning from Custom Lab.
+- If the main hub fails and fallback loads, confirm fallback is visibly colorful instead of a plain tile.
 
 ## Day15 HUD Validation Focus
 

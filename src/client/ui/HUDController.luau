@@ -374,7 +374,7 @@ function HUDController:UpdateHubState(hubState)
 		return
 	end
 
-	if hubState.mode == "Battle" or hubState.mode == "Story" then
+	if hubState.mode == "Battle" or hubState.mode == "Story" or hubState.mode == "Custom" then
 		return
 	end
 
@@ -404,9 +404,12 @@ function HUDController:UpdateGameState(state)
 		return
 	end
 
-	self.modeLabel.Text = state.mode == "Story" and "Story Run" or "Battle"
+	self.modeLabel.Text = state.mode == "Story" and "Story Run"
+		or state.mode == "Custom" and "Custom Lab"
+		or "Battle"
 	self.objectiveLabel.Text = state.message
 		or state.mode == "Story" and "Complete the mission objective."
+		or state.mode == "Custom" and "Rotate or reroll pieces, then test placements."
 		or "Place blocks, clear lines, and outscore rivals."
 	self.zoneLabel.Text = state.timeLeft and `{self.modeLabel.Text} | {state.timeLeft}s`
 		or self.modeLabel.Text

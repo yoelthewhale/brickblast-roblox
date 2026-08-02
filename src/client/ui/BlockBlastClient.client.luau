@@ -26,6 +26,7 @@ local UITheme = require(script.Parent.UITheme)
 local remotes = ReplicatedStorage:WaitForChild("BlockBlastRemotes")
 local stateEvent = remotes:WaitForChild("State")
 local placeEvent = remotes:WaitForChild("Place")
+local handEvent = remotes:WaitForChild("Hand")
 local queueEvent = remotes:WaitForChild("Queue")
 local hubEvent = remotes:WaitForChild("Hub")
 local effectsEvent = remotes:WaitForChild("Effects")
@@ -63,6 +64,8 @@ local leaderboardLabel = nil
 local customizeButton = nil
 local returnHubButton = nil
 local playAgainButton = nil
+local rotatePieceButton = nil
+local rerollPieceButton = nil
 local minimizeButton = nil
 local resetLayoutButton = nil
 local resizeHandle = nil
@@ -97,6 +100,7 @@ local applyBoardSkin = nil
 local renderBoard = nil
 local renderHand = nil
 local renderDiagnostics = nil
+local pulseHandSlot = nil
 
 local DEFAULT_WINDOW_POSITION = UDim2.new(0, 36, 0.5, 0)
 local DEFAULT_WINDOW_SIZE = Vector2.new(640, 438)
@@ -788,7 +792,84 @@ hudController = HUDController.new(gui, {
 			end
 			cosmeticPanelController:Hide()
 			shopPanelController:Hide()
-			storyPanelController:Show()
+			storyPanelController:Hide()
+			hudController.menu:Open("modes", "Choose Mode", function(content)
+				local layout = Instance.new("UIListLayout")
+				layout.Padding = UDim.new(0, 10)
+				layout.SortOrder = Enum.SortOrder.LayoutOrder
+				layout.Parent = content
+
+				local function makeModeButton(order, titleText, detailText, color, callback)
+					local button = Instance.new("TextButton")
+					button.LayoutOrder = order
+					button.Size = UDim2.new(1, 0, 0, 72)
+					button.BackgroundColor3 = color
+					button.BorderSizePixel = 0
+					button.Text = ""
+					button.Selectable = true
+					button.Parent = content
+					UITheme.button(button, order == 1 and "primary" or "secondary")
+					button.BackgroundColor3 = color
+					UITheme.attachButtonFeedback(button, isUiReducedMotion)
+
+					local titleLabel = Instance.new("TextLabel")
+					titleLabel.BackgroundTransparency = 1
+					titleLabel.Position = UDim2.fromOffset(14, 8)
+					titleLabel.Size = UDim2.new(1, -28, 0, 24)
+					titleLabel.Font = Enum.Font.GothamBlack
+					titleLabel.Text = titleText
+					titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+					titleLabel.TextSize = 17
+					titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+					titleLabel.Parent = button
+
+					local detailLabel = Instance.new("TextLabel")
+					detailLabel.BackgroundTransparency = 1
+					detailLabel.Position = UDim2.fromOffset(14, 34)
+					detailLabel.Size = UDim2.new(1, -28, 0, 28)
+					detailLabel.Font = Enum.Font.Gotham
+					detailLabel.Text = detailText
+					detailLabel.TextColor3 = Color3.fromRGB(240, 248, 255)
+					detailLabel.TextSize = 13
+					detailLabel.TextWrapped = true
+					detailLabel.TextXAlignment = Enum.TextXAlignment.Left
+					detailLabel.Parent = button
+
+					button.Activated:Connect(function()
+						playSound("Button")
+						hudController.menu:Close()
+						callback()
+					end)
+				end
+
+				makeModeButton(
+					1,
+					"Battle Queue",
+					"Classic race to outscore rivals.",
+					Color3.fromRGB(64, 156, 255),
+					function()
+						queueEvent:FireServer("Battle")
+					end
+				)
+				makeModeButton(
+					2,
+					"Story Missions",
+					"Solo objectives and replayable guide practice.",
+					Color3.fromRGB(167, 109, 255),
+					function()
+						storyPanelController:Show()
+					end
+				)
+				makeModeButton(
+					3,
+					"Custom Lab",
+					"Test block rotations and reroll your hand.",
+					Color3.fromRGB(255, 112, 189),
+					function()
+						queueEvent:FireServer("CustomLab")
+					end
+				)
+			end)
 		end,
 		inventory = function()
 			shopPanelController:Hide()
@@ -1424,6 +1505,9 @@ for slot = 1, Config.InventorySize do
 	button.Activated:Connect(function()
 		selectedSlot = slot
 		playSound("Button")
+		if pulseHandSlot then
+			pulseHandSlot(slot)
+		end
 		updateStatusText()
 		if currentState then
 			renderBoard()
@@ -1468,6 +1552,32 @@ playAgainButton.TextSize = 14
 playAgainButton.Visible = false
 playAgainButton.Parent = root
 styleButton(playAgainButton, "primary")
+
+rotatePieceButton = Instance.new("TextButton")
+rotatePieceButton.Position = UDim2.fromOffset(360, 352)
+rotatePieceButton.Size = UDim2.fromOffset(124, 32)
+rotatePieceButton.BackgroundColor3 = Color3.fromRGB(167, 109, 255)
+rotatePieceButton.BorderSizePixel = 0
+rotatePieceButton.Font = Enum.Font.GothamBold
+rotatePieceButton.Text = "Rotate"
+rotatePieceButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+rotatePieceButton.TextSize = 14
+rotatePieceButton.Visible = false
+rotatePieceButton.Parent = root
+styleButton(rotatePieceButton, "primary")
+
+rerollPieceButton = Instance.new("TextButton")
+rerollPieceButton.Position = UDim2.fromOffset(492, 352)
+rerollPieceButton.Size = UDim2.fromOffset(124, 32)
+rerollPieceButton.BackgroundColor3 = Color3.fromRGB(255, 112, 189)
+rerollPieceButton.BorderSizePixel = 0
+rerollPieceButton.Font = Enum.Font.GothamBold
+rerollPieceButton.Text = "Reroll"
+rerollPieceButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+rerollPieceButton.TextSize = 14
+rerollPieceButton.Visible = false
+rerollPieceButton.Parent = root
+styleButton(rerollPieceButton, "primary")
 
 resizeHandle = Instance.new("TextButton")
 resizeHandle.AnchorPoint = Vector2.new(1, 1)
@@ -1576,6 +1686,13 @@ applyWindowLayout = function()
 	playAgainButton.Position =
 		UDim2.fromOffset((compact and leftPadding or sideX) + actionWidth + 8, bottomY)
 	playAgainButton.Size = UDim2.fromOffset(actionWidth, 32)
+
+	local customY = bottomY - 38
+	rotatePieceButton.Position = UDim2.fromOffset(compact and leftPadding or sideX, customY)
+	rotatePieceButton.Size = UDim2.fromOffset(actionWidth, 32)
+	rerollPieceButton.Position =
+		UDim2.fromOffset((compact and leftPadding or sideX) + actionWidth + 8, customY)
+	rerollPieceButton.Size = UDim2.fromOffset(actionWidth, 32)
 	resizeHandle.Position = UDim2.new(1, -12, 1, -10)
 end
 
@@ -1587,6 +1704,31 @@ end)
 playAgainButton.Activated:Connect(function()
 	playSound("Queue")
 	queueEvent:FireServer("PlayAgain")
+end)
+
+local function requestSelectedHandAction(action)
+	if not currentState or currentState.mode ~= "Custom" then
+		showBanner("Custom Lab only", Color3.fromRGB(251, 146, 60))
+		playSound("Blocked")
+		return
+	end
+
+	if not selectedSlot or not currentState.hand or not currentState.hand[selectedSlot] then
+		showBanner("Choose an active piece first", Color3.fromRGB(251, 146, 60))
+		playSound("Blocked")
+		return
+	end
+
+	playSound("Button")
+	handEvent:FireServer(action, selectedSlot)
+end
+
+rotatePieceButton.Activated:Connect(function()
+	requestSelectedHandAction("Rotate")
+end)
+
+rerollPieceButton.Activated:Connect(function()
+	requestSelectedHandAction("Reroll")
 end)
 
 resetLayoutButton.Activated:Connect(function()
@@ -1847,6 +1989,23 @@ local function renderShapePreview(preview, shape)
 	end
 end
 
+pulseHandSlot = function(slot)
+	local button = handButtons[slot]
+	if not button or reducedMotion then
+		return
+	end
+
+	local scale = button:FindFirstChildOfClass("UIScale") or Instance.new("UIScale")
+	scale.Scale = 1
+	scale.Parent = button
+	TweenService:Create(scale, QUICK_TWEEN, { Scale = 1.06 }):Play()
+	task.delay(0.12, function()
+		if scale.Parent then
+			TweenService:Create(scale, SOFT_TWEEN, { Scale = 1 }):Play()
+		end
+	end)
+end
+
 local function shapeText(shape)
 	if not shape then
 		return "Used"
@@ -1900,7 +2059,9 @@ renderHand = function()
 end
 
 local function renderLeaderboard(leaderboard)
-	local modeName = currentState.mode == "Story" and "Story Training" or "Battle"
+	local modeName = currentState.mode == "Story" and "Story Training"
+		or currentState.mode == "Custom" and "Custom Lab"
+		or "Battle"
 	local lines = { `{modeName} - Best: {currentState.bestScore or 0}` }
 
 	for index, entry in leaderboard do
@@ -1996,6 +2157,8 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	if not currentState then
 		root.Visible = false
 		battleDock.Visible = false
+		rotatePieceButton.Visible = false
+		rerollPieceButton.Visible = false
 		if hudController then
 			hudController:UpdateGameState(nil)
 		end
@@ -2021,10 +2184,13 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	setHubPanelVisible(false)
 	updateTutorialVisibility()
 	battleDock.Visible = not root.Visible
-	title.Text = currentState.mode == "Story" and "Story Training" or "Block Blast Battle"
+	title.Text = currentState.mode == "Story" and "Story Training"
+		or currentState.mode == "Custom" and "Custom Lab"
+		or "Block Blast Battle"
 	scoreLabel.Text = `Score: {currentState.score}`
 	matchInfoLabel.Text = currentState.mode == "Story"
 			and (storyGoalText(currentState) or "Story Mission")
+		or currentState.mode == "Custom" and "Rotate or reroll pieces before placement"
 		or `Arena {currentState.arenaIndex or "--"} | Match {currentState.sessionId or "--"}`
 	timerLabel.Text = currentState.timeLeft
 			and currentState.suddenDeath
@@ -2040,7 +2206,10 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		or currentState.suddenDeath and `Sudden death | Score: {currentState.score} | {currentState.timeLeft or "--"}s`
 		or currentState.alive and `Arena {currentState.arenaIndex or "--"} | Score: {currentState.score} | {currentState.timeLeft or "--"}s`
 		or "Out of moves - returning"
-	playAgainButton.Visible = not currentState.alive
+	playAgainButton.Text = currentState.mode == "Story" and "Replay" or "Play Again"
+	playAgainButton.Visible = not currentState.alive and currentState.mode ~= "Custom"
+	rotatePieceButton.Visible = currentState.mode == "Custom" and currentState.alive
+	rerollPieceButton.Visible = currentState.mode == "Custom" and currentState.alive
 
 	selectFirstAvailablePiece()
 
@@ -2092,7 +2261,7 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 	end
 	renderDiagnostics()
 
-	if hubState.mode == "Battle" or hubState.mode == "Story" then
+	if hubState.mode == "Battle" or hubState.mode == "Story" or hubState.mode == "Custom" then
 		if hudController then
 			hudController:UpdateGameState({
 				mode = hubState.mode,
@@ -2160,6 +2329,12 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		playSound("Queue")
 		resultPanelController:Hide()
 		showBanner(effect.detail or effect.message or "Battle started!", customization.accentColor)
+	elseif effect.kind == "HandUpdated" then
+		playSound("Button")
+		if effect.slot and pulseHandSlot then
+			pulseHandSlot(effect.slot)
+		end
+		showBanner(effect.message or "Piece updated", Color3.fromRGB(255, 112, 189))
 	elseif effect.kind == "SuddenDeath" then
 		playSound("Blocked")
 		showBanner(

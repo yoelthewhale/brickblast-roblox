@@ -9,6 +9,7 @@ Use this as the first place to look when you want to change the game.
 - `src/server/world/` - generated world/hub construction.
 - `src/shared/game/` - shared Block Blast rules, board logic, pieces, and config.
 - `docs/` - project planning, Tuesday.com import files, roadmap, bugs, and playtest notes.
+- `scripts/` - local helper scripts for opening the latest build safely.
 
 ## Tooling
 
@@ -18,6 +19,8 @@ Use this as the first place to look when you want to change the game.
 - `selene.toml` - Luau lint config.
 - `stylua.toml` - Luau formatter config.
 - `tools/` - local CLI binaries used by VS Code tasks.
+- `BlockBlastBattle.code-workspace` - clean VS Code workspace entry point.
+- `BLOCK_BLAST_START_HERE.md` - local launch and account-check instructions.
 
 ## Current Entry Points
 
@@ -26,6 +29,7 @@ Use this as the first place to look when you want to change the game.
 - Shared puzzle logic: `src/shared/game/Grid.luau`
 - Piece definitions: `src/shared/game/Blocks.luau`
 - Hub generation: `src/server/world/HubBuilder.luau`
+- Local launch script: `scripts/open-latest-local-build.ps1`
 - Tracker: `docs/PROJECT_TRACKER.md`
 - Multiplayer stress test plan: `docs/MULTIPLAYER_STRESS_TEST.md`
 - Tuesday import CSV: `docs/TUESDAY_IMPORT.csv`

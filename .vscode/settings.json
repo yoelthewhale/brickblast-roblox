@@ -1,0 +1,16 @@
+{
+  "files.exclude": {
+    "**/*.rbxl.lock": true
+  },
+  "files.associations": {
+    "*.luau": "luau"
+  },
+  "search.exclude": {
+    "**/*.rbxl": true,
+    "**/*.rbxl.lock": true,
+    "tools/**": true
+  },
+  "editor.tabSize": 2,
+  "editor.insertSpaces": false,
+  "editor.formatOnSave": false
+}

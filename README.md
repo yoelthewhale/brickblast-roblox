@@ -4,6 +4,8 @@ A Rojo-powered Roblox project for a battle version of Block Blast.
 
 See `PROJECT_MAP.md` for where each part of the game lives.
 
+Start with `BLOCK_BLAST_START_HERE.md` when opening the project locally.
+
 Project management lives in `docs/PROJECT_TRACKER.md`, with a Tuesday.com-ready CSV at
 `docs/TUESDAY_IMPORT.csv`.
 
@@ -40,6 +42,8 @@ Useful VS Code tasks:
 - `Tools: Install With Rokit`
 - `Rojo: Serve`
 - `Rojo: Build Place`
+- `Rojo: Build Day17`
+- `Studio: Open Latest Local Build`
 - `Rojo: Generate Sourcemap`
 - `Wally: Install Packages`
 - `Wally: Generate Package Types`

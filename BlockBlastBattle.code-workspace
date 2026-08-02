@@ -1,0 +1,18 @@
+{
+  "folders": [
+    {
+      "name": "Block Blast Battle",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/*.rbxl.lock": true
+    },
+    "search.exclude": {
+      "**/*.rbxl": true,
+      "**/*.rbxl.lock": true,
+      "tools/**": true
+    }
+  }
+}
