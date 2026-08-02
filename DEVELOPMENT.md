@@ -2,6 +2,25 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day26 Free HUD Icon Pack - 2026-08-02
+
+### Completed
+
+- Generated a free project-owned HUD icon pack for Play, Shop, Quests, Settings, Coins, Wins, and Story Stars.
+- Added `assets/ui/icons/*.png` source upload files and `assets/ui/mockups/hud-icon-upload-pack-preview.png`.
+- Added `scripts/generate-ui-icons.ps1` so the icon pack can be regenerated without paid assets.
+- Added `docs/UI_ICON_UPLOAD_MANIFEST.md` mapping every PNG to its `UIAssets.luau` key.
+- Rebuilt `BlockBlastBattle-Day26.rbxl`.
+
+### Current State
+
+- The PNG files are ready to upload, but the Roblox UI cannot display them until Roblox image asset IDs are pasted into `UIAssets.luau`.
+- Day26 still safely falls back to text badges if the IDs are blank.
+
+### Next Priority
+
+Upload the seven PNGs in `assets/ui/icons`, paste the returned IDs into `UIAssets.luau`, then rebuild the next Day file so the in-game HUD uses real images.
+
 ## Day25 Free UI Asset Pipeline - 2026-08-02
 
 ### Completed
