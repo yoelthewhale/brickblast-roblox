@@ -2,6 +2,26 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day27 Blocky UI Direction - 2026-08-02
+
+### Completed
+
+- Selected direction B: blocky competitive / BedWars-inspired icon language.
+- Generated a separate chosen icon pack under `assets/ui/icons-blocky-bedwars`.
+- Added `assets/ui/mockups/blocky-bedwars-icon-pack-preview.png` as the selected preview sheet.
+- Added `scripts/generate-blocky-ui-icons.ps1` so the chosen pack can be regenerated.
+- Updated `docs/UI_ICON_UPLOAD_MANIFEST.md` and `UIAssets.luau` comments to point at the selected B pack.
+
+### Current State
+
+- The selected B icons are ready for review and upload.
+- The old Day26 icon pack remains in the repo as an earlier rejected draft, but the manifest now points to the chosen B pack.
+- The game still needs uploaded Roblox image IDs before the HUD can display these icons in Studio.
+
+### Next Priority
+
+Upload the B pack PNGs from `assets/ui/icons-blocky-bedwars`, paste the IDs into `UIAssets.luau`, rebuild, and then evaluate the live HUD again.
+
 ## Day26 Free HUD Icon Pack - 2026-08-02
 
 ### Completed
