@@ -11,16 +11,16 @@ HUDController.__index = HUDController
 local RIGHT_BUTTONS = {
 	{
 		key = "play",
-		icon = ">",
+		icon = "PLAY",
 		label = "Play",
 		primary = true,
 		color = Color3.fromRGB(64, 156, 255),
 	},
-	{ key = "modes", icon = "*", label = "Modes", color = Color3.fromRGB(167, 109, 255) },
-	{ key = "inventory", icon = "[]", label = "Inventory", color = Color3.fromRGB(255, 112, 189) },
-	{ key = "shop", icon = "$", label = "Shop", color = Color3.fromRGB(255, 205, 82) },
-	{ key = "rewards", icon = "+", label = "Rewards", color = Color3.fromRGB(74, 222, 128) },
-	{ key = "settings", icon = "=", label = "Settings", color = Color3.fromRGB(232, 246, 255) },
+	{ key = "modes", icon = "MODE", label = "Modes", color = Color3.fromRGB(167, 109, 255) },
+	{ key = "inventory", icon = "BAG", label = "Inventory", color = Color3.fromRGB(255, 112, 189) },
+	{ key = "shop", icon = "SHOP", label = "Shop", color = Color3.fromRGB(255, 205, 82) },
+	{ key = "rewards", icon = "GIFT", label = "Rewards", color = Color3.fromRGB(74, 222, 128) },
+	{ key = "settings", icon = "SET", label = "Settings", color = Color3.fromRGB(232, 246, 255) },
 }
 
 local function connect(self, signal, callback)
@@ -114,21 +114,29 @@ function HUDController:BuildLeftHud()
 	stack.Name = "LeftPlayerHud"
 	stack.AnchorPoint = Vector2.new(0, 0)
 	stack.Position = UDim2.fromOffset(18, 86)
-	stack.Size = UDim2.fromOffset(236, 260)
+	stack.Size = UDim2.fromOffset(270, 190)
 	stack.BackgroundTransparency = 1
 	stack.ZIndex = UITheme.Z.hud
 	stack.Parent = self.gui
 	self.leftStack = stack
 	addList(stack, 10)
 
-	local profile = makeCard(stack, "ProfileCard", UDim2.new(1, 0, 0, 82))
+	local profile = makeCard(stack, "ProfileCard", UDim2.new(1, 0, 0, 58))
 	self.profileCard = profile
+	profile.BackgroundColor3 = Color3.fromRGB(36, 185, 255)
+	UITheme.gradient(profile, Color3.fromRGB(58, 209, 255), Color3.fromRGB(18, 119, 219), 0)
+	local profileStroke = profile:FindFirstChildOfClass("UIStroke")
+	if profileStroke then
+		profileStroke.Color = Color3.fromRGB(9, 64, 139)
+		profileStroke.Thickness = 3
+		profileStroke.Transparency = 0.08
+	end
 
 	local avatar = Instance.new("ImageLabel")
 	avatar.Name = "Avatar"
 	avatar.Position = UDim2.fromOffset(0, 0)
-	avatar.Size = UDim2.fromOffset(54, 54)
-	avatar.BackgroundColor3 = Color3.fromRGB(225, 246, 255)
+	avatar.Size = UDim2.fromOffset(38, 38)
+	avatar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	avatar.BorderSizePixel = 0
 	avatar.Image = `rbxthumb://type=AvatarHeadShot&id={self.player.UserId}&w=100&h=100`
 	avatar.Parent = profile
@@ -139,18 +147,25 @@ function HUDController:BuildLeftHud()
 		profile,
 		"DisplayName",
 		self.player.DisplayName,
-		UDim2.new(1, -66, 0, 24),
+		UDim2.new(1, -52, 0, 22),
 		"title"
 	)
-	self.nameLabel.Position = UDim2.fromOffset(66, 1)
-	self.levelLabel = makeLabel(profile, "Level", "Level 1", UDim2.new(1, -66, 0, 22), "heading")
-	self.levelLabel.Position = UDim2.fromOffset(66, 28)
+	self.nameLabel.Position = UDim2.fromOffset(50, 0)
+	self.nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	self.nameLabel.TextStrokeColor3 = Color3.fromRGB(8, 66, 128)
+	self.nameLabel.TextStrokeTransparency = 0.35
+	self.nameLabel.TextSize = 17
+	self.levelLabel = makeLabel(profile, "Level", "LV. 1", UDim2.new(1, -52, 0, 18), "heading")
+	self.levelLabel.Position = UDim2.fromOffset(50, 23)
+	self.levelLabel.TextColor3 = Color3.fromRGB(255, 247, 130)
+	self.levelLabel.TextStrokeColor3 = Color3.fromRGB(8, 66, 128)
+	self.levelLabel.TextStrokeTransparency = 0.45
 
 	local xpBack = Instance.new("Frame")
 	xpBack.Name = "XPBack"
-	xpBack.Position = UDim2.fromOffset(66, 56)
-	xpBack.Size = UDim2.new(1, -72, 0, 8)
-	xpBack.BackgroundColor3 = Color3.fromRGB(212, 231, 240)
+	xpBack.Position = UDim2.fromOffset(50, 43)
+	xpBack.Size = UDim2.new(1, -58, 0, 7)
+	xpBack.BackgroundColor3 = Color3.fromRGB(7, 70, 139)
 	xpBack.BorderSizePixel = 0
 	xpBack.Parent = profile
 	UITheme.corner(xpBack, UITheme.Radius.pill)
@@ -158,33 +173,52 @@ function HUDController:BuildLeftHud()
 	local xpFill = Instance.new("Frame")
 	xpFill.Name = "XPFill"
 	xpFill.Size = UDim2.fromScale(0, 1)
-	xpFill.BackgroundColor3 = Color3.fromRGB(74, 222, 128)
+	xpFill.BackgroundColor3 = Color3.fromRGB(255, 238, 77)
 	xpFill.BorderSizePixel = 0
 	xpFill.Parent = xpBack
 	UITheme.corner(xpFill, UITheme.Radius.pill)
 	self.xpFill = xpFill
 
-	local stats = makeCard(stack, "StatsCard", UDim2.new(1, 0, 0, 88))
+	local stats = makeCard(stack, "StatsCard", UDim2.new(1, 0, 0, 92))
 	self.statsCard = stats
-	self.coinsLabel = makeLabel(stats, "Coins", "Coins: 0", UDim2.new(1, 0, 0, 22), "heading")
+	stats.BackgroundTransparency = 1
+	local statsStroke = stats:FindFirstChildOfClass("UIStroke")
+	if statsStroke then
+		statsStroke.Enabled = false
+	end
+	self.coinsLabel = makeLabel(stats, "Coins", "COINS 0", UDim2.new(1, 0, 0, 28), "heading")
 	self.coinsLabel.Position = UDim2.fromOffset(0, 0)
-	self.winsLabel = makeLabel(stats, "Wins", "Wins: 0", UDim2.new(1, 0, 0, 22), "heading")
-	self.winsLabel.Position = UDim2.fromOffset(0, 26)
-	self.starsLabel = makeLabel(stats, "Stars", "Story Stars: 0", UDim2.new(1, 0, 0, 22), "muted")
-	self.starsLabel.Position = UDim2.fromOffset(0, 52)
+	self.winsLabel = makeLabel(stats, "Wins", "WINS 0", UDim2.new(1, 0, 0, 28), "heading")
+	self.winsLabel.Position = UDim2.fromOffset(0, 32)
+	self.starsLabel = makeLabel(stats, "Stars", "STARS 0", UDim2.new(1, 0, 0, 28), "heading")
+	self.starsLabel.Position = UDim2.fromOffset(0, 64)
+	for index, label in { self.coinsLabel, self.winsLabel, self.starsLabel } do
+		label.BackgroundTransparency = 0
+		label.BackgroundColor3 = index == 1 and Color3.fromRGB(255, 194, 47)
+			or index == 2 and Color3.fromRGB(59, 226, 116)
+			or Color3.fromRGB(177, 101, 255)
+		label.TextColor3 = Color3.fromRGB(255, 255, 255)
+		label.TextStrokeColor3 = Color3.fromRGB(45, 76, 115)
+		label.TextStrokeTransparency = 0.35
+		label.TextSize = 17
+		label.TextXAlignment = Enum.TextXAlignment.Center
+		UITheme.corner(label, UITheme.Radius.pill)
+		UITheme.stroke(label, Color3.fromRGB(8, 76, 151), 2, 0.08)
+	end
 
-	local objective = makeCard(stack, "ObjectiveCard", UDim2.new(1, 0, 0, 78))
+	local objective = makeCard(stack, "ObjectiveCard", UDim2.new(1, 0, 0, 32))
 	self.objectiveCard = objective
-	self.modeLabel = makeLabel(objective, "Mode", "Hub", UDim2.new(1, 0, 0, 22), "heading")
+	objective.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	self.modeLabel = makeLabel(objective, "Mode", "Hub", UDim2.new(1, 0, 0, 18), "heading")
 	self.modeLabel.Position = UDim2.fromOffset(0, 0)
 	self.objectiveLabel = makeLabel(
 		objective,
 		"Objective",
 		"Walk to a portal or open Play.",
-		UDim2.new(1, 0, 0, 42),
+		UDim2.new(1, 0, 0, 0),
 		"muted"
 	)
-	self.objectiveLabel.Position = UDim2.fromOffset(0, 28)
+	self.objectiveLabel.Visible = false
 end
 
 function HUDController:BuildRightMenu()
@@ -220,7 +254,7 @@ function HUDController:BuildRightMenu()
 			or Color3.fromRGB(255, 255, 255)
 		local corner = button:FindFirstChildOfClass("UICorner")
 		if corner then
-			corner.CornerRadius = UDim.new(1, 0)
+			corner.CornerRadius = UDim.new(0, 14)
 		end
 		UITheme.attachButtonFeedback(button, self.isReducedMotion)
 		self.buttons[data.key] = button
@@ -240,6 +274,7 @@ function HUDController:BuildTopHud()
 	top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	top.BackgroundTransparency = 0.12
 	top.BorderSizePixel = 0
+	top.Visible = false
 	top.ZIndex = UITheme.Z.hud
 	top.Parent = self.gui
 	UITheme.card(top, {
@@ -308,23 +343,23 @@ function HUDController:RefreshResponsiveLayout()
 	local phone = screenSize.X < 620 or screenSize.Y < 520
 	self.collapsed = compact
 
-	self.leftStack.Position = UDim2.fromOffset(16, math.max(72, inset.Y + 58))
+	self.leftStack.AnchorPoint = Vector2.new(0, 1)
+	self.leftStack.Position = UDim2.new(0, 16, 1, phone and -78 or -28)
 	self.leftStack.Size =
-		UDim2.fromOffset(phone and 184 or compact and 206 or 236, phone and 186 or 260)
-	self.statsCard.Visible = not phone
-	self.objectiveCard.Size = UDim2.new(1, 0, 0, phone and 66 or 78)
-	self.objectiveLabel.TextSize = phone and 12 or 13
+		UDim2.fromOffset(phone and 210 or compact and 236 or 270, phone and 128 or 190)
+	self.statsCard.Visible = true
+	self.objectiveCard.Visible = not phone
 
 	self.rightStack.AnchorPoint = Vector2.new(1, 0.5)
 	self.rightStack.Position = UDim2.new(1, -18, 0.5, phone and -10 or 0)
-	self.rightStack.Size = UDim2.fromOffset(phone and 50 or 58, phone and 324 or 364)
+	self.rightStack.Size = UDim2.fromOffset(phone and 60 or 66, phone and 372 or 420)
 	for _, data in RIGHT_BUTTONS do
 		local button = self.buttons[data.key]
 		if button then
 			button.Text = self:ButtonText(data)
-			local size = phone and 46 or data.primary and 58 or 52
+			local size = phone and 52 or data.primary and 66 or 60
 			button.Size = UDim2.fromOffset(size, size)
-			button.TextSize = phone and 17 or data.primary and 22 or 19
+			button.TextSize = phone and 13 or data.primary and 15 or 13
 		end
 	end
 
@@ -367,10 +402,10 @@ function HUDController:UpdateProgression()
 
 	local levelValue = level and level.Value or 1
 	local xpValue = xp and xp.Value or 0
-	self.levelLabel.Text = `Level {levelValue} | {xpValue} XP`
-	self.coinsLabel.Text = `Coins: {coins and coins.Value or 0}`
-	self.winsLabel.Text = `Wins: {wins and wins.Value or 0}`
-	self.starsLabel.Text = `Story Stars: {storyStars and storyStars.Value or 0}`
+	self.levelLabel.Text = `LV. {levelValue} | {xpValue} XP`
+	self.coinsLabel.Text = `$ {coins and coins.Value or 0}`
+	self.winsLabel.Text = `WINS {wins and wins.Value or 0}`
+	self.starsLabel.Text = `STARS {storyStars and storyStars.Value or 0}`
 
 	local progress = (xpValue % 100) / 100
 	if self.isReducedMotion() then
@@ -393,6 +428,7 @@ function HUDController:UpdateHubState(hubState)
 	end
 
 	self:SetGameplayFocus(false)
+	self.topBar.Visible = hubState.queued == true
 	local queueCount = hubState.queueCount or 0
 	local minPlayers = hubState.minPlayers or 2
 	local openArenas = hubState.openArenas or 0
@@ -416,11 +452,13 @@ function HUDController:UpdateGameState(state)
 	self.currentState = state
 	if not state then
 		self:SetGameplayFocus(false)
+		self.topBar.Visible = false
 		self.zoneLabel.Text = "Floating Hub"
 		return
 	end
 
 	self:SetGameplayFocus(true)
+	self.topBar.Visible = true
 	self.modeLabel.Text = state.mode == "Story" and "Story Run"
 		or state.mode == "Custom" and "Custom Lab"
 		or "Battle"

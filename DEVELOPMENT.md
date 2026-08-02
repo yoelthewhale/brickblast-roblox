@@ -446,6 +446,25 @@ This file tracks production-readiness work, priorities, known issues, and techni
 2. Studio-test UI navigation on mobile and gamepad.
    Repository validation passes, but actual Roblox focus movement should be checked with real input.
 
+## Session Update - 2026-08-02 Day22 Default Simulator HUD
+
+### Completed
+
+- Restyled the always-visible hub HUD instead of only the shop modal.
+- Moved player stats to a bottom-left simulator-style stack.
+- Reworked profile/level into a bright blue pill with avatar and yellow XP bar.
+- Reworked Coins, Wins, and Story Stars into chunky colored bars.
+- Hid the top-center context bar during normal hub exploration; it only appears for queue/gameplay context.
+- Reworked the right action rail into larger chunky labeled simulator buttons.
+- Built `BlockBlastBattle-Day22.rbxl`.
+
+### Validation
+
+- `stylua src` passed.
+- `selene src` passed with 0 errors and 0 warnings.
+- `rojo build default.project.json --output BlockBlastBattle-Day22.rbxl` passed.
+- `git diff --check` reported only Windows CRLF notices.
+
 ## Session Update - 2026-08-02 Day21 Simulator Shop Redesign
 
 ### Completed
