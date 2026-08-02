@@ -80,6 +80,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Built the next place artifact as `BlockBlastBattle-Day10.rbxl`.
 - 2026-08-01: Replaced the dark tech-style hub with a brighter front-page-style floating island lobby featuring a circular spawn plaza, clouds, waterfalls, bridges, trees, flowers, themed islands, portals, VIP/secret/training/leaderboard areas, and a glowing central Block Core.
 - 2026-08-01: Added Day14 hub/play-loop hardening with server-updated Battle/Story world signs, queue pad visual reactions, stale queue pruning, duplicate spawn-connection cleanup, reset/death queue/session handling, non-blocking lobby decorations, and client-side reduced-motion scaling for hub particles/lights/post-processing.
+- 2026-08-01: Added Day15 local player HUD polish with left-side player/progression/objective cards, right-side action rail, reusable side menu panel, stacked notifications, bright floating-island HUD theme tokens, responsive collapse behavior, and Reduced Motion-aware menu/notification feedback.
 
 ## Current Priorities
 
@@ -148,6 +149,59 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 - Studio MCP is still unavailable from Codex, so Output inspection and device/player simulation must be done manually in Roblox Studio.
 - The lobby is still generated from one large world-builder module; future maintenance would benefit from splitting signage, islands, arenas, and lighting into smaller files.
+
+## Session Update - 2026-08-01 Day15 Player HUD Polish
+
+### Completed
+
+- Added `src/client/ui/HUDController.luau` as a local-only PlayerGui HUD controller.
+- Added a left-side HUD stack with compact cards for avatar/display name, Level/XP, Coins, Wins, Story Stars, current mode, and current objective/status.
+- Added a right-side action rail with Play, Modes, Inventory, Shop, Rewards, Quests, Codes, and Settings.
+- Connected functional right-side buttons to existing safe client flows:
+  - Play queues/leaves battle or reopens the active battle board.
+  - Modes opens the existing Story Missions panel.
+  - Inventory opens the existing Cosmetic Closet panel.
+  - Shop opens the existing Shop panel.
+  - Rewards and Settings open local informational panels.
+- Labeled Quests and Codes as coming soon instead of presenting them as functional systems.
+- Added `src/client/ui/MenuController.luau`, a reusable local side-panel system with one-open-menu behavior, dim background, title bar, close button, Escape/controller-back close, and responsive sizing.
+- Added `src/client/ui/NotificationController.luau`, a stacked notification system with success/warning/error/reward/info styling, duplicate suppression, auto-dismiss, and Reduced Motion behavior.
+- Updated `src/client/ui/UITheme.luau` with bright HUD/floating-island theme tokens.
+- Wired HUD state updates to existing hub state, battle/story state, leaderstats, settings, and Reduced Motion paths without adding client-authoritative rewards or currencies.
+- Built `BlockBlastBattle-Day15.rbxl`.
+
+### Responsive Behavior
+
+- Desktop keeps a wider right-side button rail with icon plus text labels.
+- Tablet and narrow laptop widths collapse the right rail to icon-first buttons.
+- Phone-sized layouts reduce left HUD width, hide the secondary stats card, keep the objective card compact, and preserve the bottom screen area for Roblox movement controls.
+- Top HUD remains a compact contextual zone/status pill instead of a permanent full-width bar.
+
+### Placeholder Versus Functional Buttons
+
+- Functional: Play, Modes, Inventory, Shop, Rewards, Settings.
+- Explicit placeholder: Quests, Codes.
+- Rewards is informational only; actual reward grants remain server-owned and shown through result panels.
+- Settings is informational for now; full setting controls remain in the existing Home panel.
+
+### Reduced Motion Integration
+
+- Button feedback already respects Reduced Motion through shared `UITheme` feedback.
+- Notifications skip slide animation when Reduced Motion is enabled.
+- Menu panels skip slide animation when Reduced Motion is enabled.
+- Existing world-quality Reduced Motion behavior from Day14 remains intact.
+
+### Remaining Studio-Only Checks
+
+- Test desktop 1920x1080 and laptop 1366x768 for no overlap with chat, top bar, or existing home panel.
+- Test tablet and phone landscape for right-rail collapse, left-card readability, and mobile movement-control clearance.
+- Confirm Escape and controller B close the new side menu.
+- Confirm reset/respawn does not duplicate HUD, notifications, or event connections.
+- Confirm new HUD does not obscure Battle board controls during active matches.
+
+### Recommended Next UI Improvement
+
+- Move the remaining centered Home panel controls into the new `MenuController` pattern so Play/Modes/Inventory/Shop/Settings feel like one consistent UI system.
 
 ## Session Update - 2026-08-01 Day10 Environment Pass
 

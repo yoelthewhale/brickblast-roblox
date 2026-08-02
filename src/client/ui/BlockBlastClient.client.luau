@@ -14,7 +14,9 @@ local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
 local Grid = require(GameShared.Grid)
 local CosmeticPanel = require(script.Parent.CosmeticPanel)
+local HUDController = require(script.Parent.HUDController)
 local HomePanel = require(script.Parent.HomePanel)
+local NotificationController = require(script.Parent.NotificationController)
 local ResultPanel = require(script.Parent.ResultPanel)
 local ShopPanel = require(script.Parent.ShopPanel)
 local SoundController = require(script.Parent.SoundController)
@@ -77,6 +79,8 @@ local resultPanelController = nil
 local shopPanelController = nil
 local storyPanelController = nil
 local homePanelController = nil
+local hudController = nil
+local notificationController = nil
 local loadingDismissed = false
 local tutorialPanel = nil
 local hubManuallyClosed = false
@@ -295,6 +299,12 @@ bannerScale = Instance.new("UIScale")
 bannerScale.Scale = 1
 bannerScale.Parent = banner
 
+notificationController = NotificationController.new(gui, {
+	isReducedMotion = function()
+		return reducedMotion
+	end,
+})
+
 if RunService:IsStudio() then
 	diagnosticsPanel = Instance.new("Frame")
 	diagnosticsPanel.AnchorPoint = Vector2.new(1, 1)
@@ -354,6 +364,12 @@ local function applyUiScale()
 	end
 	if bannerScale then
 		bannerScale.Scale = math.max(0.82, nextScale)
+	end
+	if notificationController then
+		notificationController:RefreshResponsiveLayout()
+	end
+	if hudController then
+		hudController:RefreshResponsiveLayout()
 	end
 end
 
@@ -548,6 +564,9 @@ local function updateSettingsButtonText()
 	if shopPanelController then
 		shopPanelController:Refresh()
 	end
+	if hudController then
+		hudController:UpdateProgression()
+	end
 end
 
 local function updateTutorialVisibility()
@@ -559,6 +578,19 @@ local function updateTutorialVisibility()
 end
 
 local function showBanner(message, color)
+	if notificationController then
+		local kind = "info"
+		if color == Color3.fromRGB(224, 74, 74) or color == Color3.fromRGB(255, 110, 110) then
+			kind = "error"
+		elseif color == Color3.fromRGB(251, 146, 60) or color == Color3.fromRGB(255, 207, 102) then
+			kind = "warning"
+		elseif color == Color3.fromRGB(74, 222, 128) then
+			kind = "success"
+		end
+		notificationController:Show(message, kind)
+		return
+	end
+
 	banner.Text = message
 	banner.BackgroundColor3 = color or Color3.fromRGB(14, 18, 27)
 	banner.TextTransparency = 1
@@ -721,6 +753,68 @@ storyPanelController = StoryPanel.new(gui, {
 	startMission = function(chapter)
 		queueEvent:FireServer("Story", chapter)
 	end,
+})
+
+hudController = HUDController.new(gui, {
+	player = player,
+	playSound = playSound,
+	notify = function(message, kind)
+		if notificationController then
+			notificationController:Show(message, kind)
+		else
+			showBanner(message, customization.accentColor)
+		end
+	end,
+	isReducedMotion = function()
+		return reducedMotion
+	end,
+	callbacks = {
+		play = function()
+			if currentState then
+				root.Visible = true
+				battleDock.Visible = false
+				return
+			end
+			if currentHubState and currentHubState.queued then
+				queueEvent:FireServer("LeaveQueue")
+			else
+				queueEvent:FireServer("Battle")
+			end
+		end,
+		modes = function()
+			if currentState then
+				showBanner("Finish your current run first", Color3.fromRGB(251, 146, 60))
+				return
+			end
+			cosmeticPanelController:Hide()
+			shopPanelController:Hide()
+			storyPanelController:Show()
+		end,
+		inventory = function()
+			shopPanelController:Hide()
+			storyPanelController:Hide()
+			cosmeticPanelController:Show()
+		end,
+		shop = function()
+			cosmeticPanelController:Hide()
+			storyPanelController:Hide()
+			shopPanelController:Show()
+		end,
+		rewards = function()
+			hudController:OpenInfoPanel("Rewards", {
+				"Battle and Story runs award coins and XP through the server.",
+				"First win daily bonus appears when it is available.",
+				"Post-run rewards appear in the results panel after a run.",
+			})
+		end,
+		settings = function()
+			hudController:OpenInfoPanel("Settings", {
+				reducedMotion and "Motion: Reduced" or "Motion: Full",
+				soundEnabled and `Sound: {math.floor(soundVolume * 100)}%` or "Sound: Off",
+				"Full controls remain in the Home panel for now.",
+			})
+		end,
+	},
 })
 
 root = Instance.new("Frame")
@@ -1830,6 +1924,9 @@ local function renderProgression()
 
 	progressionLabel.Text =
 		`{titleName} | Level {level and level.Value or 1} | {coins and coins.Value or 0} coins | {xp and xp.Value or 0} XP | {storyStars and storyStars.Value or 0} stars | {cleared} cleared`
+	if hudController then
+		hudController:UpdateProgression()
+	end
 end
 
 renderDiagnostics = function()
@@ -1899,6 +1996,9 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	if not currentState then
 		root.Visible = false
 		battleDock.Visible = false
+		if hudController then
+			hudController:UpdateGameState(nil)
+		end
 		setHubPanelVisible(not hubManuallyClosed)
 		updateTutorialVisibility()
 		previousBoard = nil
@@ -1908,6 +2008,9 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 
 	if not root.Visible and not battleDock.Visible then
 		root.Visible = true
+	end
+	if hudController then
+		hudController:UpdateGameState(currentState)
 	end
 	if currentState.alive then
 		resultPanelController:Hide()
@@ -1984,9 +2087,18 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 
 	currentHubState = hubState
 	applyWorldVisualQuality()
+	if hudController then
+		hudController:UpdateHubState(hubState)
+	end
 	renderDiagnostics()
 
 	if hubState.mode == "Battle" or hubState.mode == "Story" then
+		if hudController then
+			hudController:UpdateGameState({
+				mode = hubState.mode,
+				message = hubState.message,
+			})
+		end
 		updateTutorialVisibility()
 		return
 	end
@@ -2122,6 +2234,9 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 	updateSettingsButtonText()
 	applyTheme()
 	applyUiScale()
+	if hudController then
+		hudController:UpdateProgression()
+	end
 	clampWindowToScreen()
 	updateTutorialVisibility()
 end)

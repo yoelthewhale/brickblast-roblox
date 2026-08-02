@@ -28,6 +28,14 @@ UITheme.Color.muted = UITheme.Color.textMuted
 UITheme.Color.soft = UITheme.Color.textSoft
 UITheme.Color.warn = UITheme.Color.warning
 UITheme.Color.error = UITheme.Color.danger
+UITheme.Color.hudPanel = Color3.fromRGB(255, 255, 255)
+UITheme.Color.hudPanelBlue = Color3.fromRGB(225, 246, 255)
+UITheme.Color.hudText = Color3.fromRGB(35, 45, 55)
+UITheme.Color.hudTextMuted = Color3.fromRGB(87, 104, 117)
+UITheme.Color.hubGrass = Color3.fromRGB(74, 222, 128)
+UITheme.Color.hubWater = Color3.fromRGB(64, 156, 255)
+UITheme.Color.hubGold = Color3.fromRGB(255, 205, 82)
+UITheme.Color.hubPurple = Color3.fromRGB(167, 109, 255)
 
 UITheme.Font = {
 	title = Enum.Font.GothamBlack,

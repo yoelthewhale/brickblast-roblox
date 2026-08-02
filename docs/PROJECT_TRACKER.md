@@ -59,6 +59,9 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Test Day14 queue countdown join/leave/reset lifecycle | High | Playtest | Bear / Codex | 2026-08-07 |
 | Test Day14 two-player battle return, tie, reset, and disconnect cleanup | High | Playtest | Bear / Codex | 2026-08-07 |
 | Validate Reduced Motion world-quality scaling on mobile/tablet emulation | Medium | Playtest | Bear / Codex | 2026-08-07 |
+| Validate Day15 player HUD on desktop/laptop/tablet/phone layouts | High | Playtest | Bear / Codex | 2026-08-08 |
+| Test Day15 right-side menu buttons and one-open-panel behavior | High | Playtest | Bear / Codex | 2026-08-08 |
+| Test Day15 notification stack and Reduced Motion UI behavior | Medium | Playtest | Bear / Codex | 2026-08-08 |
 
 ## Bug Tracker
 
@@ -69,6 +72,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Need test two-player battle end condition in Studio multiplayer test | High | Ready | Bear / Codex | 2026-07-30 |
 | Day14 bridge/island collision needs Studio walk-through after redesign | High | Playtest | Bear / Codex | 2026-08-07 |
 | Studio MCP still does not expose usable tools to Codex | Medium | Blocked | Bear / Codex | 2026-08-07 |
+| Day15 HUD requires manual safe-area verification against Roblox chat/topbar/mobile controls | High | Playtest | Bear / Codex | 2026-08-08 |
 
 ## Playtest Checklist
 
@@ -124,6 +128,20 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 - 2026-08-01 Day 4: Added finite-number settings hardening and built `BlockBlastBattle-Day4.rbxl` because Day 3 was locked by Studio.
 - 2026-08-01 Day 14: Added hub signage, queue visual reactions, stale queue pruning, reset/death lifecycle cleanup, non-blocking decoration adjustments, and local Reduced Motion world-quality scaling. Built `BlockBlastBattle-Day14.rbxl`.
+- 2026-08-01 Day 15: Added local left-side player HUD cards, right-side action rail, reusable menu panel, stacked notifications, responsive collapse behavior, and Reduced Motion-aware UI feedback. Built `BlockBlastBattle-Day15.rbxl`.
+
+## Day15 HUD Validation Focus
+
+- Open `BlockBlastBattle-Day15.rbxl` and press Play.
+- At 1920x1080, confirm the left HUD cards and right action rail do not overlap chat, top bar, Home panel, or the battle board.
+- At 1366x768, confirm text remains readable and buttons keep comfortable target sizes.
+- In tablet emulation, confirm right-side buttons remain usable and menus fit within safe bounds.
+- In phone landscape, confirm the right rail collapses to icon-first buttons and the bottom screen remains open for movement controls.
+- Test Play, Modes, Inventory, Shop, Rewards, and Settings buttons.
+- Confirm Quests and Codes clearly show coming-soon behavior.
+- Confirm Escape and controller B close the menu panel.
+- Toggle Reduced Motion and confirm menu/notification animation is reduced.
+- Reset the character and confirm the HUD does not duplicate.
 
 ## Day14 Studio Validation Focus
 
