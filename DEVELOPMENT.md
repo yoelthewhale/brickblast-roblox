@@ -2,6 +2,22 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day24 Option A Polish Follow-Up - 2026-08-02
+
+### Completed
+
+- Tightened the selected Option A HUD implementation after playtest feedback that Day23 still looked too rough.
+- Replaced single-line text-button visuals with layered native Roblox UI: play badge, main play label, compact button badges, and stat badges.
+- Added simulator-style badges to the coin, wins, and Story Stars bars so the HUD reads more like a polished Roblox experience.
+- Preserved server-authoritative behavior; the UI changes do not grant rewards, currency, ownership, or queue state from the client.
+- Built `BlockBlastBattle-Day24.rbxl`.
+
+### Image Asset Decision
+
+- The concept image cannot be pasted in as the full working interface because a screenshot would not be interactive, responsive, accessible, or state-aware.
+- Roblox UI image art must use uploaded image asset IDs such as `rbxassetid://123`.
+- Next icon pass should generate project-owned PNG icons, upload them through Creator Dashboard, record the IDs in a centralized module, then swap the temporary native text badges for `ImageLabel` icons.
+
 ## Day23 Option A HUD Checkpoint - 2026-08-02
 
 ### Completed
