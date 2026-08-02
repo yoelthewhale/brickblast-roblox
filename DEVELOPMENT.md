@@ -78,6 +78,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
 - 2026-08-01: Rebuilt the generated hub and arenas into a floating competitive puzzle world with a Block Core landmark, Battle/Story portals, block-market area, richer battle arenas, distant scenery, lighting, atmosphere, and restrained decorative animation/VFX.
 - 2026-08-01: Added `docs/ENVIRONMENT_VISUAL_AUDIT.md` and `docs/ASSET_AUDIT.md` documenting the visual problems found, implementation choices, imported-asset status, safety checks, and remaining Studio testing needs.
 - 2026-08-01: Built the next place artifact as `BlockBlastBattle-Day10.rbxl`.
+- 2026-08-01: Replaced the dark tech-style hub with a brighter front-page-style floating island lobby featuring a circular spawn plaza, clouds, waterfalls, bridges, trees, flowers, themed islands, portals, VIP/secret/training/leaderboard areas, and a glowing central Block Core.
 
 ## Current Priorities
 
