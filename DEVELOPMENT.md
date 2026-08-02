@@ -2,6 +2,28 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day25 Free UI Asset Pipeline - 2026-08-02
+
+### Completed
+
+- Chose the free UI improvement path instead of purchasing a UI pack.
+- Added `src/client/ui/UIAssets.luau` as the centralized home for uploaded Roblox UI image IDs.
+- Updated `HUDController.luau` so Play, Shop, Quests, Settings, Coins, Wins, and Story Stars can automatically use `ImageLabel` icons once IDs are filled in.
+- Preserved safe text-badge fallbacks so the HUD still works before asset upload.
+- Added `docs/FREE_UI_ASSET_WORKFLOW.md` with the Figma/RoImport/free Creator Store quarantine workflow.
+
+### Current State
+
+- No paid assets are required for the next UI pass.
+- The game is ready to accept free/generated/uploaded icon assets without scattering IDs across the codebase.
+- The actual icon PNGs still need to be created or selected and uploaded through Roblox Creator Dashboard.
+
+### Next Priority
+
+1. Create the seven icon PNGs for Play, Shop, Quests, Settings, Coins, Wins, and Story Stars.
+2. Upload them to Roblox and paste the resulting IDs into `UIAssets.luau`.
+3. Replace more of the shop/menu visuals with imported Figma/RoImport components after the HUD icon pass is working.
+
 ## Day24 Option A Polish Follow-Up - 2026-08-02
 
 ### Completed
