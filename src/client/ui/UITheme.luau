@@ -176,9 +176,17 @@ function UITheme.button(button, variant)
 end
 
 function UITheme.closeButton(button)
-	UITheme.button(button, "secondary")
+	UITheme.button(button, "danger")
 	button.Text = "X"
 	button.TextSize = 16
+	button.BackgroundColor3 = Color3.fromRGB(255, 76, 104)
+	button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	local stroke = button:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Color = Color3.fromRGB(126, 19, 40)
+		stroke.Thickness = 2
+		stroke.Transparency = 0
+	end
 	return button
 end
 

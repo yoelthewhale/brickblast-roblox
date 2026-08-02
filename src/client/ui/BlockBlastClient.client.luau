@@ -103,7 +103,7 @@ local renderHand = nil
 local renderDiagnostics = nil
 local pulseHandSlot = nil
 
-local DEFAULT_WINDOW_POSITION = UDim2.new(0, 36, 0.5, 0)
+local DEFAULT_WINDOW_POSITION = UDim2.new(0.5, -320, 0.5, 0)
 local DEFAULT_WINDOW_SIZE = Vector2.new(640, 438)
 local MIN_WINDOW_SIZE = Vector2.new(360, 420)
 local MAX_WINDOW_SIZE = Vector2.new(860, 620)
@@ -917,12 +917,21 @@ root = Instance.new("Frame")
 root.AnchorPoint = Vector2.new(0, 0.5)
 root.Position = DEFAULT_WINDOW_POSITION
 root.Size = UDim2.fromOffset(DEFAULT_WINDOW_SIZE.X, DEFAULT_WINDOW_SIZE.Y)
-root.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
-root.BackgroundTransparency = 0.08
+root.BackgroundColor3 = Color3.fromRGB(10, 17, 34)
+root.BackgroundTransparency = 0.02
 root.BorderSizePixel = 0
 root.Visible = false
 root.Parent = gui
-UITheme.panel(root, { color = UITheme.Color.panel, bottomColor = Color3.fromRGB(8, 12, 20) })
+UITheme.panel(root, {
+	color = Color3.fromRGB(13, 22, 43),
+	bottomColor = Color3.fromRGB(7, 12, 25),
+	strokeColor = Color3.fromRGB(48, 190, 255),
+	strokeTransparency = 0,
+})
+local rootStroke = root:FindFirstChildOfClass("UIStroke")
+if rootStroke then
+	rootStroke.Thickness = 3
+end
 
 rootScale = Instance.new("UIScale")
 rootScale.Scale = 1
@@ -931,12 +940,17 @@ rootScale.Parent = root
 battleDock = Instance.new("Frame")
 battleDock.Position = UDim2.fromOffset(18, 88)
 battleDock.Size = UDim2.fromOffset(260, 116)
-battleDock.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
-battleDock.BackgroundTransparency = 0.08
+battleDock.BackgroundColor3 = Color3.fromRGB(13, 22, 43)
+battleDock.BackgroundTransparency = 0.02
 battleDock.BorderSizePixel = 0
 battleDock.Visible = false
 battleDock.Parent = gui
-UITheme.panel(battleDock, { color = UITheme.Color.panel, bottomColor = UITheme.Color.background })
+UITheme.panel(battleDock, {
+	color = Color3.fromRGB(13, 22, 43),
+	bottomColor = Color3.fromRGB(7, 12, 25),
+	strokeColor = Color3.fromRGB(48, 190, 255),
+	strokeTransparency = 0.04,
+})
 
 dockScale = Instance.new("UIScale")
 dockScale.Scale = 1
@@ -1099,9 +1113,10 @@ homePanelController = HomePanel.new(gui, {
 		end,
 	},
 })
+homePanelController:SetVisible(false, false)
 
-local function setHubPanelVisible(visible)
-	homePanelController:SetVisible(visible, currentState == nil)
+local function setHubPanelVisible(_visible)
+	homePanelController:SetVisible(false, false)
 end
 
 tutorialPanel = Instance.new("Frame")

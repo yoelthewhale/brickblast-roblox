@@ -1,9 +1,26 @@
 # UI Icon Upload Manifest
 
-Chosen direction: **B Blocky BedWars / blocky competitive**.
+Status: **no icon pack is approved for upload**.
 
-Upload these PNGs to Roblox Creator Dashboard or Studio Asset Manager as images.
-After each upload, copy the resulting `rbxassetid://...` value into `src/client/ui/UIAssets.luau`.
+The generated UI PNG packs below were rejected during art direction review. Preserve
+them only as comparison references. Do not upload them to Roblox, wire them into
+`src/client/ui/UIAssets.luau`, or treat them as production candidates.
+
+## Rejected Packs
+
+| Pack | Local path | Preview |
+| --- | --- | --- |
+| Early HUD icon pack | `assets/ui/icons/` | `assets/ui/mockups/hud-icon-upload-pack-preview.png` |
+| Blocky BedWars-style icon pack | `assets/ui/icons-blocky-bedwars/` | `assets/ui/mockups/blocky-bedwars-icon-pack-preview.png` |
+
+## Current UIAssets State
+
+`src/client/ui/UIAssets.luau` intentionally keeps all IDs blank until a complete
+HUD visual system is approved. The next approved direction should define layout,
+panels, typography, icon style, button states, spacing, colors, depth, and
+responsive behavior before any individual images are uploaded.
+
+## Deprecated Upload List
 
 | UIAssets key | Local PNG |
 | --- | --- |
@@ -15,21 +32,9 @@ After each upload, copy the resulting `rbxassetid://...` value into `src/client/
 | `Wins` | `assets/ui/icons-blocky-bedwars/wins.png` |
 | `StoryStars` | `assets/ui/icons-blocky-bedwars/story-stars.png` |
 
-Preview sheet:
-
-- `assets/ui/mockups/blocky-bedwars-icon-pack-preview.png`
-
-## Upload Steps
-
-1. Open Roblox Studio on the current local build.
-2. Open `View > Asset Manager`.
-3. Use bulk import or upload each PNG from `assets/ui/icons-blocky-bedwars`.
-4. Copy each created image asset ID.
-5. Paste the IDs into `src/client/ui/UIAssets.luau`.
-6. Run `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-DayXX.rbxl`.
-
 ## Safety Notes
 
-- These icons are local project-generated PNGs and contain no scripts.
-- Upload only the PNGs, not any random free model scripts.
+- These rejected icons are local project-generated PNGs and contain no scripts.
+- Keep them out of production UI until replaced by an approved complete visual system.
+- Upload only future approved, project-owned PNGs, not random free model scripts.
 - Keep the existing server-authoritative systems for rewards, purchases, currency, and progression.

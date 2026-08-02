@@ -11,18 +11,18 @@ ShopPanel.__index = ShopPanel
 local CATEGORIES = { "Featured", "Passes", "Cosmetics", "Currency" }
 
 local THEME = UITheme.Color
-local SHOP_BLUE = Color3.fromRGB(21, 143, 255)
-local SHOP_BLUE_DARK = Color3.fromRGB(8, 76, 151)
+local SHOP_BLUE = Color3.fromRGB(34, 186, 255)
+local SHOP_BLUE_DARK = Color3.fromRGB(10, 19, 42)
 local SHOP_GREEN = Color3.fromRGB(106, 236, 67)
 local SHOP_PURPLE = Color3.fromRGB(205, 95, 255)
 local SHOP_GOLD = Color3.fromRGB(255, 215, 72)
 local SHOP_RED = Color3.fromRGB(255, 69, 83)
-local SHOP_TEXT = Color3.fromRGB(18, 59, 96)
+local SHOP_TEXT = Color3.fromRGB(244, 248, 255)
 local CARD_COLORS = {
-	Color3.fromRGB(91, 210, 255),
-	Color3.fromRGB(119, 240, 88),
-	Color3.fromRGB(255, 132, 217),
-	Color3.fromRGB(255, 222, 85),
+	Color3.fromRGB(35, 185, 255),
+	Color3.fromRGB(116, 236, 70),
+	Color3.fromRGB(205, 95, 255),
+	Color3.fromRGB(255, 211, 71),
 }
 
 local function safeArray(value)
@@ -94,8 +94,8 @@ function ShopPanel.new(gui, options)
 
 	local dim = Instance.new("TextButton")
 	dim.Name = "ShopDim"
-	dim.BackgroundColor3 = Color3.fromRGB(7, 20, 31)
-	dim.BackgroundTransparency = 0.42
+	dim.BackgroundColor3 = Color3.fromRGB(6, 10, 22)
+	dim.BackgroundTransparency = 0.48
 	dim.BorderSizePixel = 0
 	dim.Text = ""
 	dim.AutoButtonColor = false
@@ -121,9 +121,9 @@ function ShopPanel.new(gui, options)
 		ray.AnchorPoint = Vector2.new(0.5, 1)
 		ray.Position = UDim2.fromScale(0.5, 0.5)
 		ray.Size = UDim2.fromOffset(index % 2 == 0 and 26 or 16, 360)
-		ray.BackgroundColor3 = index % 2 == 0 and Color3.fromRGB(255, 250, 190)
-			or Color3.fromRGB(255, 255, 255)
-		ray.BackgroundTransparency = 0.72
+		ray.BackgroundColor3 = index % 2 == 0 and Color3.fromRGB(232, 190, 255)
+			or Color3.fromRGB(101, 224, 255)
+		ray.BackgroundTransparency = 0.82
 		ray.BorderSizePixel = 0
 		ray.Rotation = (index - 1) * (360 / 16)
 		ray.ZIndex = 43
@@ -133,21 +133,21 @@ function ShopPanel.new(gui, options)
 	local panel = Instance.new("Frame")
 	panel.AnchorPoint = Vector2.new(0.5, 0.5)
 	panel.Position = UDim2.fromScale(0.5, 0.5)
-	panel.Size = UDim2.fromOffset(690, 500)
-	panel.BackgroundColor3 = Color3.fromRGB(221, 247, 255)
+	panel.Size = UDim2.fromOffset(760, 540)
+	panel.BackgroundColor3 = Color3.fromRGB(25, 18, 54)
 	panel.BackgroundTransparency = 0
 	panel.BorderSizePixel = 0
 	panel.Visible = false
 	panel.ZIndex = 45
 	panel.Parent = gui
 	UITheme.card(panel, {
-		color = Color3.fromRGB(221, 247, 255),
-		strokeColor = SHOP_BLUE_DARK,
+		color = Color3.fromRGB(25, 18, 54),
+		strokeColor = Color3.fromRGB(84, 222, 255),
 		strokeTransparency = 0,
 	})
 	local panelStroke = panel:FindFirstChildOfClass("UIStroke")
 	if panelStroke then
-		panelStroke.Thickness = 4
+		panelStroke.Thickness = 5
 	end
 	self.panel = panel
 
@@ -158,22 +158,22 @@ function ShopPanel.new(gui, options)
 	local header = Instance.new("Frame")
 	header.Name = "Header"
 	header.Position = UDim2.fromOffset(0, 0)
-	header.Size = UDim2.new(1, 0, 0, 62)
-	header.BackgroundColor3 = SHOP_BLUE
+	header.Size = UDim2.new(1, 0, 0, 70)
+	header.BackgroundColor3 = Color3.fromRGB(119, 60, 214)
 	header.BorderSizePixel = 0
 	header.ZIndex = 46
 	header.Parent = panel
 	UITheme.corner(header, UITheme.Radius.md)
-	UITheme.gradient(header, Color3.fromRGB(51, 178, 255), SHOP_BLUE_DARK, 90)
+	UITheme.gradient(header, Color3.fromRGB(190, 91, 255), Color3.fromRGB(72, 45, 180), 90)
 
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1
-	title.Position = UDim2.fromOffset(36, -26)
+	title.Position = UDim2.fromOffset(38, -18)
 	title.Size = UDim2.fromOffset(320, 84)
 	title.Font = Enum.Font.GothamBlack
-	title.Text = "Shop"
+	title.Text = "SHOP"
 	title.TextColor3 = Color3.fromRGB(255, 255, 255)
-	title.TextStrokeColor3 = SHOP_BLUE_DARK
+	title.TextStrokeColor3 = Color3.fromRGB(17, 10, 44)
 	title.TextStrokeTransparency = 0
 	title.TextSize = 48
 	title.TextXAlignment = Enum.TextXAlignment.Left
@@ -181,8 +181,8 @@ function ShopPanel.new(gui, options)
 	title.Parent = panel
 
 	local closeButton = Instance.new("TextButton")
-	closeButton.Position = UDim2.new(1, -58, 0, -18)
-	closeButton.Size = UDim2.fromOffset(58, 58)
+	closeButton.Position = UDim2.new(1, -64, 0, -16)
+	closeButton.Size = UDim2.fromOffset(60, 60)
 	closeButton.BackgroundColor3 = SHOP_RED
 	closeButton.BorderSizePixel = 0
 	closeButton.Font = Enum.Font.GothamBlack
@@ -204,8 +204,8 @@ function ShopPanel.new(gui, options)
 
 	local subtitle = Instance.new("TextLabel")
 	subtitle.BackgroundTransparency = 1
-	subtitle.Position = UDim2.fromOffset(318, 18)
-	subtitle.Size = UDim2.fromOffset(300, 26)
+	subtitle.Position = UDim2.fromOffset(350, 22)
+	subtitle.Size = UDim2.fromOffset(330, 26)
 	subtitle.Font = Enum.Font.GothamBlack
 	subtitle.Text = "Server-safe upgrades"
 	subtitle.TextColor3 = Color3.fromRGB(230, 249, 255)
@@ -217,8 +217,8 @@ function ShopPanel.new(gui, options)
 
 	local tabFrame = Instance.new("Frame")
 	tabFrame.BackgroundTransparency = 1
-	tabFrame.Position = UDim2.fromOffset(-86, 98)
-	tabFrame.Size = UDim2.fromOffset(78, 308)
+	tabFrame.Position = UDim2.fromOffset(18, 96)
+	tabFrame.Size = UDim2.fromOffset(112, 386)
 	tabFrame.ZIndex = 46
 	tabFrame.Parent = panel
 	self.tabFrame = tabFrame
@@ -226,8 +226,8 @@ function ShopPanel.new(gui, options)
 
 	for index, category in CATEGORIES do
 		local tab = Instance.new("TextButton")
-		tab.Position = UDim2.fromOffset(0, (index - 1) * 76)
-		tab.Size = UDim2.fromOffset(78, 68)
+		tab.Position = UDim2.fromOffset(0, (index - 1) * 84)
+		tab.Size = UDim2.fromOffset(108, 72)
 		tab.BackgroundColor3 = category == self.category and SHOP_PURPLE or SHOP_BLUE
 		tab.BorderSizePixel = 0
 		tab.Font = Enum.Font.GothamBlack
@@ -235,7 +235,7 @@ function ShopPanel.new(gui, options)
 		tab.TextColor3 = Color3.fromRGB(255, 255, 255)
 		tab.TextStrokeColor3 = SHOP_BLUE_DARK
 		tab.TextStrokeTransparency = 0.45
-		tab.TextSize = 11
+		tab.TextSize = 13
 		tab.TextWrapped = true
 		tab.ZIndex = 47
 		tab.Parent = tabFrame
@@ -253,11 +253,11 @@ function ShopPanel.new(gui, options)
 
 	local status = Instance.new("TextLabel")
 	status.BackgroundTransparency = 1
-	status.Position = UDim2.fromOffset(24, 68)
-	status.Size = UDim2.fromOffset(640, 24)
+	status.Position = UDim2.fromOffset(150, 82)
+	status.Size = UDim2.fromOffset(580, 24)
 	status.Font = Enum.Font.GothamBold
 	status.Text = "Loading shop..."
-	status.TextColor3 = SHOP_TEXT
+	status.TextColor3 = Color3.fromRGB(223, 238, 255)
 	status.TextSize = 14
 	status.TextXAlignment = Enum.TextXAlignment.Left
 	status.ZIndex = 46
@@ -265,8 +265,8 @@ function ShopPanel.new(gui, options)
 	self.status = status
 
 	local list = Instance.new("ScrollingFrame")
-	list.Position = UDim2.fromOffset(24, 102)
-	list.Size = UDim2.fromOffset(642, 374)
+	list.Position = UDim2.fromOffset(150, 112)
+	list.Size = UDim2.fromOffset(584, 398)
 	list.BackgroundTransparency = 1
 	list.BorderSizePixel = 0
 	list.CanvasSize = UDim2.fromOffset(0, 0)
@@ -277,8 +277,8 @@ function ShopPanel.new(gui, options)
 	self.list = list
 
 	local grid = Instance.new("UIGridLayout")
-	grid.CellSize = UDim2.fromOffset(310, 154)
-	grid.CellPadding = UDim2.fromOffset(14, 14)
+	grid.CellSize = UDim2.fromOffset(280, 166)
+	grid.CellPadding = UDim2.fromOffset(16, 16)
 	grid.SortOrder = Enum.SortOrder.LayoutOrder
 	grid.Parent = list
 	self.grid = grid
@@ -289,16 +289,22 @@ function ShopPanel.new(gui, options)
 	self.updateScale = function()
 		local screenSize = gui.AbsoluteSize
 		local scale =
-			math.clamp(math.min((screenSize.X - 116) / 690, (screenSize.Y - 64) / 500), 0.62, 1)
+			math.clamp(math.min((screenSize.X - 44) / 760, (screenSize.Y - 64) / 540), 0.58, 1)
 		panelScale.Scale = scale
 		rays.Size = UDim2.fromOffset(760 * scale, 620 * scale)
 		local compact = screenSize.X < 720
 		if compact then
-			grid.CellSize = UDim2.fromOffset(618, 146)
-			list.Size = UDim2.fromOffset(642, 374)
+			grid.CellSize = UDim2.fromOffset(560, 150)
+			list.Position = UDim2.fromOffset(104, 112)
+			list.Size = UDim2.fromOffset(620, 398)
+			tabFrame.Position = UDim2.fromOffset(14, 112)
+			tabFrame.Size = UDim2.fromOffset(76, 360)
 		else
-			grid.CellSize = UDim2.fromOffset(310, 154)
-			list.Size = UDim2.fromOffset(642, 374)
+			grid.CellSize = UDim2.fromOffset(280, 166)
+			list.Position = UDim2.fromOffset(150, 112)
+			list.Size = UDim2.fromOffset(584, 398)
+			tabFrame.Position = UDim2.fromOffset(18, 96)
+			tabFrame.Size = UDim2.fromOffset(112, 386)
 		end
 	end
 	gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(self.updateScale)

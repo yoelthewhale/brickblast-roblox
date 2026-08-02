@@ -27,8 +27,8 @@ function MenuController.new(gui, options)
 
 	local dim = Instance.new("TextButton")
 	dim.Name = "MenuDim"
-	dim.BackgroundColor3 = Color3.fromRGB(15, 24, 32)
-	dim.BackgroundTransparency = 0.68
+	dim.BackgroundColor3 = Color3.fromRGB(6, 11, 22)
+	dim.BackgroundTransparency = 0.58
 	dim.BorderSizePixel = 0
 	dim.Text = ""
 	dim.Visible = false
@@ -41,20 +41,24 @@ function MenuController.new(gui, options)
 	local panel = Instance.new("Frame")
 	panel.Name = "SideMenuPanel"
 	panel.AnchorPoint = Vector2.new(1, 0.5)
-	panel.Position = UDim2.new(1, -108, 0.5, 0)
-	panel.Size = UDim2.fromOffset(380, 420)
-	panel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	panel.BackgroundTransparency = 0.05
+	panel.Position = UDim2.new(1, -250, 0.5, 0)
+	panel.Size = UDim2.fromOffset(460, 450)
+	panel.BackgroundColor3 = Color3.fromRGB(18, 28, 52)
+	panel.BackgroundTransparency = 0
 	panel.BorderSizePixel = 0
 	panel.Visible = false
 	panel.ZIndex = UITheme.Z.modal
 	panel.Parent = gui
 	UITheme.panel(panel, {
-		color = Color3.fromRGB(255, 255, 255),
-		bottomColor = Color3.fromRGB(225, 246, 255),
-		strokeColor = Color3.fromRGB(135, 201, 255),
-		strokeTransparency = 0.12,
+		color = Color3.fromRGB(18, 28, 52),
+		bottomColor = Color3.fromRGB(10, 17, 34),
+		strokeColor = Color3.fromRGB(48, 190, 255),
+		strokeTransparency = 0,
 	})
+	local panelStroke = panel:FindFirstChildOfClass("UIStroke")
+	if panelStroke then
+		panelStroke.Thickness = 3
+	end
 	self.panel = panel
 
 	local scale = Instance.new("UIScale")
@@ -69,8 +73,10 @@ function MenuController.new(gui, options)
 	title.Size = UDim2.new(1, -68, 0, 34)
 	title.Font = UITheme.Font.title
 	title.Text = "Menu"
-	title.TextColor3 = Color3.fromRGB(35, 45, 55)
-	title.TextSize = 22
+	title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	title.TextSize = 30
+	title.TextStrokeColor3 = Color3.fromRGB(6, 14, 30)
+	title.TextStrokeTransparency = 0.28
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.ZIndex = panel.ZIndex + 1
 	title.Parent = panel
@@ -79,10 +85,10 @@ function MenuController.new(gui, options)
 	local close = Instance.new("TextButton")
 	close.Name = "Close"
 	close.AnchorPoint = Vector2.new(1, 0)
-	close.Position = UDim2.new(1, -16, 0, 14)
-	close.Size = UDim2.fromOffset(36, 36)
+	close.Position = UDim2.new(1, -16, 0, 12)
+	close.Size = UDim2.fromOffset(46, 46)
 	close.Text = "X"
-	close.TextSize = 16
+	close.TextSize = 22
 	close.ZIndex = panel.ZIndex + 1
 	close.Parent = panel
 	UITheme.closeButton(close)
@@ -92,8 +98,8 @@ function MenuController.new(gui, options)
 	local content = Instance.new("Frame")
 	content.Name = "Content"
 	content.BackgroundTransparency = 1
-	content.Position = UDim2.fromOffset(18, 62)
-	content.Size = UDim2.new(1, -36, 1, -80)
+	content.Position = UDim2.fromOffset(22, 76)
+	content.Size = UDim2.new(1, -44, 1, -98)
 	content.ZIndex = panel.ZIndex + 1
 	content.Parent = panel
 	self.content = content
@@ -125,10 +131,10 @@ end
 function MenuController:RefreshResponsiveLayout()
 	local screenSize = self.gui.AbsoluteSize
 	local narrow = screenSize.X < 760
-	local width = narrow and math.clamp(screenSize.X - 28, 300, 360) or 380
-	local height = math.clamp(screenSize.Y - 96, 320, narrow and 380 or 430)
+	local width = narrow and math.clamp(screenSize.X - 28, 320, 420) or 460
+	local height = math.clamp(screenSize.Y - 96, 340, narrow and 440 or 470)
 	self.panel.Size = UDim2.fromOffset(width, height)
-	self.panel.Position = narrow and UDim2.new(0.5, 0, 0.5, 0) or UDim2.new(1, -108, 0.5, 0)
+	self.panel.Position = narrow and UDim2.new(0.5, 0, 0.5, 0) or UDim2.new(1, -250, 0.5, 0)
 	self.panel.AnchorPoint = narrow and Vector2.new(0.5, 0.5) or Vector2.new(1, 0.5)
 	self.scale.Scale = screenSize.X < 520 and 0.92 or 1
 end

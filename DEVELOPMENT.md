@@ -2,25 +2,74 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day28 Selected UI Concept Implementation - 2026-08-02
+
+### Completed
+
+- Implemented the selected concept direction in the actual Roblox UI instead of producing another concept sheet.
+- Replaced the immediate hub HUD with an Option B-inspired simulator/arcade layout:
+  - top resource bar for Level, XP, Coins, Wins, and Story Stars using live `leaderstats`
+  - compact left utility navigation for Quests and Modes
+  - right-side Play, Shop, Inventory, and Settings actions
+  - state-aware Play button for `PLAY`, `LEAVE`, and `FULL`
+  - contextual queue/match banner with valid leave-queue control
+- Disabled the conflicting legacy Home panel visibility path so the player no longer sees duplicate hub interfaces.
+- Restyled the shared menu shell with dark navy structure, bright blue strokes, red close button, and arcade spacing.
+- Restyled the Shop panel toward the selected Option B shop direction:
+  - purple/navy outer window
+  - left category rail
+  - stronger `SHOP` title and red close button
+  - brighter item cards while preserving existing server-authoritative purchase requests and item states
+- Restyled Inventory/Cosmetics toward the selected Option C direction:
+  - dark outer shell with left category rail
+  - lighter item cards
+  - clear equipped, unlocked, and locked visual states
+- Restyled the active battle window and dock with a compact dark-tech treatment while preserving board, hand, rotate/reroll, return, and replay behavior.
+- Marked previously generated UI PNG packs as rejected-only references; no icon pack is approved for upload.
+- Built `BlockBlastBattle-Day28.rbxl`.
+
+### Files Modified
+
+- `src/client/ui/HUDController.luau`
+- `src/client/ui/MenuController.luau`
+- `src/client/ui/ShopPanel.luau`
+- `src/client/ui/CosmeticPanel.luau`
+- `src/client/ui/BlockBlastClient.client.luau`
+- `src/client/ui/UITheme.luau`
+- `src/client/ui/UIAssets.luau`
+- `docs/UI_ICON_UPLOAD_MANIFEST.md`
+- `DEVELOPMENT.md`
+- `docs/PROJECT_TRACKER.md`
+
+### Current State
+
+- The next local build to open is `BlockBlastBattle-Day28.rbxl`.
+- The selected UI direction is now implemented with native Roblox GUI objects, not uploaded image assets.
+- Custom icons are still temporary native shape silhouettes; no rejected PNGs are wired into the game.
+- Roblox Studio was launched with the Day28 file, but Codex does not currently have reliable Studio screenshot capture/control in this session, so Play-mode visual approval still needs manual screenshots.
+
+### Next Priority
+
+Open `BlockBlastBattle-Day28.rbxl`, press Play, and capture desktop/mobile screenshots for hub, shop, inventory, queue state, and active battle. Fix any overlap or spacing issues found in those screenshots before adding more visual systems.
+
 ## Day27 Blocky UI Direction - 2026-08-02
 
 ### Completed
 
-- Selected direction B: blocky competitive / BedWars-inspired icon language.
+- Generated a blocky competitive / BedWars-inspired icon language draft that was later rejected.
 - Generated a separate chosen icon pack under `assets/ui/icons-blocky-bedwars`.
-- Added `assets/ui/mockups/blocky-bedwars-icon-pack-preview.png` as the selected preview sheet.
+- Added `assets/ui/mockups/blocky-bedwars-icon-pack-preview.png` as a preview sheet.
 - Added `scripts/generate-blocky-ui-icons.ps1` so the chosen pack can be regenerated.
-- Updated `docs/UI_ICON_UPLOAD_MANIFEST.md` and `UIAssets.luau` comments to point at the selected B pack.
+- The later Day28 correction marks this pack as rejected-only and not approved for upload.
 
 ### Current State
 
-- The selected B icons are ready for review and upload.
-- The old Day26 icon pack remains in the repo as an earlier rejected draft, but the manifest now points to the chosen B pack.
-- The game still needs uploaded Roblox image IDs before the HUD can display these icons in Studio.
+- No generated icon pack is approved for upload.
+- The game uses native UI components and temporary consistent shape silhouettes instead of relying on uploaded image IDs.
 
 ### Next Priority
 
-Upload the B pack PNGs from `assets/ui/icons-blocky-bedwars`, paste the IDs into `UIAssets.luau`, rebuild, and then evaluate the live HUD again.
+Approve the Day28 native UI direction from Play-mode screenshots before producing any final icon assets.
 
 ## Day26 Free HUD Icon Pack - 2026-08-02
 

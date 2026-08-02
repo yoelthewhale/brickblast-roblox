@@ -44,19 +44,20 @@ end
 
 local function setCardState(card, unlocked, equipped)
 	if equipped then
-		card.BackgroundColor3 = UITheme.Color.primary
+		card.BackgroundColor3 = Color3.fromRGB(35, 185, 255)
 	elseif unlocked then
-		card.BackgroundColor3 = UITheme.Color.panelSoft
+		card.BackgroundColor3 = Color3.fromRGB(232, 247, 255)
 	else
-		card.BackgroundColor3 = UITheme.Color.cardMuted
+		card.BackgroundColor3 = Color3.fromRGB(111, 121, 138)
 	end
 
 	local stroke = card:FindFirstChildOfClass("UIStroke")
 	if stroke then
-		stroke.Color = equipped and Color3.fromRGB(156, 211, 255)
-			or unlocked and UITheme.Color.strokeSoft
-			or UITheme.Color.warning
-		stroke.Transparency = equipped and 0.08 or unlocked and 0.38 or 0.52
+		stroke.Color = equipped and Color3.fromRGB(255, 215, 72)
+			or unlocked and Color3.fromRGB(32, 185, 255)
+			or Color3.fromRGB(255, 190, 74)
+		stroke.Transparency = equipped and 0 or unlocked and 0.1 or 0.32
+		stroke.Thickness = equipped and 3 or 2
 	end
 end
 
@@ -85,14 +86,23 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	local panel = Instance.new("Frame")
 	panel.AnchorPoint = Vector2.new(0.5, 0.5)
 	panel.Position = UDim2.fromScale(0.5, 0.5)
-	panel.Size = UDim2.fromOffset(520, 340)
-	panel.BackgroundColor3 = Color3.fromRGB(14, 18, 27)
-	panel.BackgroundTransparency = 0.03
+	panel.Size = UDim2.fromOffset(650, 430)
+	panel.BackgroundColor3 = Color3.fromRGB(18, 28, 52)
+	panel.BackgroundTransparency = 0
 	panel.BorderSizePixel = 0
 	panel.Visible = false
 	panel.ZIndex = 38
 	panel.Parent = gui
-	UITheme.panel(panel, { color = UITheme.Color.panel, bottomColor = UITheme.Color.background })
+	UITheme.panel(panel, {
+		color = Color3.fromRGB(18, 28, 52),
+		bottomColor = Color3.fromRGB(10, 17, 34),
+		strokeColor = Color3.fromRGB(48, 190, 255),
+		strokeTransparency = 0,
+	})
+	local panelStroke = panel:FindFirstChildOfClass("UIStroke")
+	if panelStroke then
+		panelStroke.Thickness = 4
+	end
 	self.panel = panel
 
 	local panelScale = Instance.new("UIScale")
@@ -102,7 +112,7 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	self.updateScale = function()
 		local screenSize = gui.AbsoluteSize
 		panelScale.Scale =
-			math.clamp(math.min((screenSize.X - 24) / 520, (screenSize.Y - 48) / 340), 0.72, 1)
+			math.clamp(math.min((screenSize.X - 28) / 650, (screenSize.Y - 56) / 430), 0.62, 1)
 	end
 	gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(self.updateScale)
 	self.updateScale()
@@ -110,11 +120,13 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1
 	title.Position = UDim2.fromOffset(18, 14)
-	title.Size = UDim2.fromOffset(420, 30)
+	title.Size = UDim2.fromOffset(500, 36)
 	title.Font = Enum.Font.GothamBlack
-	title.Text = "Cosmetic Closet"
+	title.Text = "INVENTORY"
 	title.TextColor3 = Color3.fromRGB(245, 247, 251)
-	title.TextSize = 24
+	title.TextSize = 32
+	title.TextStrokeColor3 = Color3.fromRGB(6, 14, 30)
+	title.TextStrokeTransparency = 0.25
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.ZIndex = 39
 	title.Parent = panel
@@ -122,13 +134,13 @@ function CosmeticPanel.new(gui, blocks, config, options)
 
 	local closeButton = Instance.new("TextButton")
 	closeButton.Position = UDim2.new(1, -48, 0, 14)
-	closeButton.Size = UDim2.fromOffset(32, 32)
-	closeButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+	closeButton.Size = UDim2.fromOffset(46, 46)
+	closeButton.BackgroundColor3 = Color3.fromRGB(255, 76, 104)
 	closeButton.BorderSizePixel = 0
 	closeButton.Font = Enum.Font.GothamBlack
 	closeButton.Text = "X"
 	closeButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-	closeButton.TextSize = 16
+	closeButton.TextSize = 22
 	closeButton.ZIndex = 39
 	closeButton.Parent = panel
 	UITheme.closeButton(closeButton)
@@ -137,12 +149,12 @@ function CosmeticPanel.new(gui, blocks, config, options)
 
 	local piecesHeader = Instance.new("TextLabel")
 	piecesHeader.BackgroundTransparency = 1
-	piecesHeader.Position = UDim2.fromOffset(18, 54)
+	piecesHeader.Position = UDim2.fromOffset(144, 68)
 	piecesHeader.Size = UDim2.fromOffset(240, 20)
 	piecesHeader.Font = Enum.Font.GothamBold
 	piecesHeader.Text = "Piece Styles"
-	piecesHeader.TextColor3 = Color3.fromRGB(193, 201, 215)
-	piecesHeader.TextSize = 15
+	piecesHeader.TextColor3 = Color3.fromRGB(142, 232, 255)
+	piecesHeader.TextSize = 17
 	piecesHeader.TextXAlignment = Enum.TextXAlignment.Left
 	piecesHeader.ZIndex = 39
 	piecesHeader.Parent = panel
@@ -150,12 +162,12 @@ function CosmeticPanel.new(gui, blocks, config, options)
 
 	local boardsHeader = Instance.new("TextLabel")
 	boardsHeader.BackgroundTransparency = 1
-	boardsHeader.Position = UDim2.fromOffset(18, 176)
+	boardsHeader.Position = UDim2.fromOffset(144, 222)
 	boardsHeader.Size = UDim2.fromOffset(240, 20)
 	boardsHeader.Font = Enum.Font.GothamBold
 	boardsHeader.Text = "Board Skins"
-	boardsHeader.TextColor3 = Color3.fromRGB(193, 201, 215)
-	boardsHeader.TextSize = 15
+	boardsHeader.TextColor3 = Color3.fromRGB(255, 215, 72)
+	boardsHeader.TextSize = 17
 	boardsHeader.TextXAlignment = Enum.TextXAlignment.Left
 	boardsHeader.ZIndex = 39
 	boardsHeader.Parent = panel
@@ -178,6 +190,39 @@ function CosmeticPanel.new(gui, blocks, config, options)
 		self.playSound("Button")
 		self:Hide()
 	end)
+
+	local rail = Instance.new("Frame")
+	rail.Name = "CategoryRail"
+	rail.Position = UDim2.fromOffset(18, 70)
+	rail.Size = UDim2.fromOffset(104, 326)
+	rail.BackgroundColor3 = Color3.fromRGB(13, 22, 43)
+	rail.BorderSizePixel = 0
+	rail.ZIndex = 39
+	rail.Parent = panel
+	UITheme.corner(rail, 16)
+	UITheme.stroke(rail, Color3.fromRGB(48, 190, 255), 2, 0.05)
+
+	local railLabels = {
+		{ text = "Pieces", color = Color3.fromRGB(48, 190, 255), y = 18 },
+		{ text = "Boards", color = Color3.fromRGB(255, 215, 72), y = 94 },
+		{ text = "Locked", color = Color3.fromRGB(184, 96, 255), y = 170 },
+	}
+	for _, item in railLabels do
+		local railButton = Instance.new("TextLabel")
+		railButton.Position = UDim2.fromOffset(12, item.y)
+		railButton.Size = UDim2.fromOffset(80, 54)
+		railButton.BackgroundColor3 = item.color
+		railButton.BorderSizePixel = 0
+		railButton.Font = Enum.Font.GothamBlack
+		railButton.Text = item.text
+		railButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		railButton.TextSize = 13
+		railButton.TextWrapped = true
+		railButton.ZIndex = 40
+		railButton.Parent = rail
+		UITheme.corner(railButton, 12)
+		UITheme.stroke(railButton, Color3.fromRGB(7, 16, 34), 2, 0)
+	end
 
 	return self
 end
@@ -205,8 +250,8 @@ end
 
 function CosmeticPanel:createPieceCard(index, skinName)
 	local card = Instance.new("TextButton")
-	card.Position = UDim2.fromOffset(18 + ((index - 1) * 122), 80)
-	card.Size = UDim2.fromOffset(112, 74)
+	card.Position = UDim2.fromOffset(144 + ((index - 1) * 122), 98)
+	card.Size = UDim2.fromOffset(112, 86)
 	card.BorderSizePixel = 0
 	card.Font = Enum.Font.GothamBold
 	card.Text = ""
@@ -227,6 +272,7 @@ function CosmeticPanel:createPieceCard(index, skinName)
 	nameLabel.ZIndex = 40
 	nameLabel.Parent = card
 	UITheme.text(nameLabel, "heading")
+	nameLabel.TextColor3 = Color3.fromRGB(14, 28, 49)
 
 	local statusLabel = Instance.new("TextLabel")
 	statusLabel.Name = "Status"
@@ -241,6 +287,7 @@ function CosmeticPanel:createPieceCard(index, skinName)
 	statusLabel.ZIndex = 40
 	statusLabel.Parent = card
 	UITheme.text(statusLabel, "soft")
+	statusLabel.TextColor3 = Color3.fromRGB(45, 62, 86)
 
 	local colors = previewColorsForPieceSkin(skinName)
 	for swatchIndex = 1, 4 do
@@ -272,8 +319,8 @@ end
 
 function CosmeticPanel:createBoardCard(index, skin)
 	local card = Instance.new("TextButton")
-	card.Position = UDim2.fromOffset(18 + ((index - 1) * 98), 202)
-	card.Size = UDim2.fromOffset(88, 78)
+	card.Position = UDim2.fromOffset(144 + ((index - 1) * 98), 252)
+	card.Size = UDim2.fromOffset(88, 88)
 	card.BorderSizePixel = 0
 	card.Font = Enum.Font.GothamBold
 	card.Text = ""
@@ -295,6 +342,7 @@ function CosmeticPanel:createBoardCard(index, skin)
 	nameLabel.ZIndex = 40
 	nameLabel.Parent = card
 	UITheme.text(nameLabel, "heading")
+	nameLabel.TextColor3 = Color3.fromRGB(14, 28, 49)
 
 	local statusLabel = Instance.new("TextLabel")
 	statusLabel.Name = "Status"
@@ -309,6 +357,7 @@ function CosmeticPanel:createBoardCard(index, skin)
 	statusLabel.ZIndex = 40
 	statusLabel.Parent = card
 	UITheme.text(statusLabel, "soft")
+	statusLabel.TextColor3 = Color3.fromRGB(45, 62, 86)
 
 	local emptyColor = skin.empty or Color3.fromRGB(24, 28, 36)
 	local borderColor = skin.border or Color3.fromRGB(64, 156, 255)

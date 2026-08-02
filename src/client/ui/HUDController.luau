@@ -1,42 +1,80 @@
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 
 local MenuController = require(script.Parent.MenuController)
-local UIAssets = require(script.Parent.UIAssets)
 local UITheme = require(script.Parent.UITheme)
 
 local HUDController = {}
 HUDController.__index = HUDController
 
+local LEFT_BUTTONS = {
+	{
+		key = "rewards",
+		label = "Quests",
+		icon = "Quest",
+		accent = Color3.fromRGB(255, 211, 71),
+	},
+	{
+		key = "modes",
+		label = "Modes",
+		icon = "Blocks",
+		accent = Color3.fromRGB(48, 215, 255),
+	},
+}
+
 local RIGHT_BUTTONS = {
 	{
 		key = "play",
-		icon = "PLAY",
 		label = "Play",
+		icon = "Play",
 		primary = true,
-		color = Color3.fromRGB(67, 224, 86),
+		accent = Color3.fromRGB(112, 237, 71),
 	},
 	{
 		key = "shop",
-		icon = "SHOP",
-		assetKey = "Shop",
 		label = "Shop",
-		color = Color3.fromRGB(255, 205, 82),
+		icon = "Bag",
+		accent = Color3.fromRGB(184, 96, 255),
 	},
 	{
-		key = "rewards",
-		icon = "QUEST",
-		assetKey = "Quests",
-		label = "Quests",
-		color = Color3.fromRGB(64, 156, 255),
+		key = "inventory",
+		label = "Inventory",
+		icon = "Grid",
+		accent = Color3.fromRGB(48, 190, 255),
 	},
 	{
 		key = "settings",
-		icon = "SET",
-		assetKey = "Settings",
 		label = "Settings",
-		color = Color3.fromRGB(116, 124, 139),
+		icon = "Gear",
+		accent = Color3.fromRGB(255, 190, 74),
+	},
+}
+
+local RESOURCE_ITEMS = {
+	{
+		key = "level",
+		label = "LV",
+		accent = Color3.fromRGB(52, 215, 255),
+	},
+	{
+		key = "xp",
+		label = "XP",
+		accent = Color3.fromRGB(112, 237, 71),
+	},
+	{
+		key = "coins",
+		label = "Coins",
+		accent = Color3.fromRGB(255, 211, 71),
+	},
+	{
+		key = "wins",
+		label = "Wins",
+		accent = Color3.fromRGB(255, 255, 255),
+	},
+	{
+		key = "stars",
+		label = "Stars",
+		accent = Color3.fromRGB(184, 96, 255),
 	},
 }
 
@@ -46,98 +84,222 @@ local function connect(self, signal, callback)
 	return connection
 end
 
-local function makeLabel(parent, name, text, size, role)
-	local label = Instance.new("TextLabel")
-	label.Name = name
-	label.BackgroundTransparency = 1
-	label.Size = size
-	label.Text = text
-	label.TextColor3 = role == "muted" and Color3.fromRGB(87, 104, 117)
-		or Color3.fromRGB(35, 45, 55)
-	label.Font = role == "title" and UITheme.Font.title
-		or role == "heading" and UITheme.Font.heading
-		or UITheme.Font.body
-	label.TextSize = role == "title" and 19 or role == "heading" and 15 or 13
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.TextYAlignment = Enum.TextYAlignment.Center
-	label.TextWrapped = true
-	label.Parent = parent
-	return label
+local function addCorner(parent, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, radius)
+	corner.Parent = parent
+	return corner
 end
 
-local function makeCard(parent, name, size)
-	local card = Instance.new("Frame")
-	card.Name = name
-	card.Size = size
-	card.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	card.BackgroundTransparency = 0.07
-	card.BorderSizePixel = 0
-	card.Parent = parent
-	UITheme.card(card, {
-		color = Color3.fromRGB(255, 255, 255),
-		strokeColor = Color3.fromRGB(125, 203, 255),
-		strokeTransparency = 0.22,
+local function addStroke(parent, color, thickness, transparency)
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color
+	stroke.Thickness = thickness
+	stroke.Transparency = transparency or 0
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = parent
+	return stroke
+end
+
+local function addGradient(parent, topColor, bottomColor)
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, topColor),
+		ColorSequenceKeypoint.new(1, bottomColor),
 	})
-	UITheme.padding(card, 12)
-	return card
+	gradient.Rotation = 90
+	gradient.Parent = parent
+	return gradient
 end
 
-local function addList(parent, padding)
+local function addPadding(parent, left, right, top, bottom)
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, left)
+	padding.PaddingRight = UDim.new(0, right or left)
+	padding.PaddingTop = UDim.new(0, top or left)
+	padding.PaddingBottom = UDim.new(0, bottom or top or left)
+	padding.Parent = parent
+	return padding
+end
+
+local function addList(parent, direction, padding, horizontalAlignment, verticalAlignment)
 	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = direction or Enum.FillDirection.Vertical
 	layout.Padding = UDim.new(0, padding or 10)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.HorizontalAlignment = horizontalAlignment or Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = verticalAlignment or Enum.VerticalAlignment.Center
 	layout.Parent = parent
 	return layout
 end
 
-local function addHorizontalList(parent, padding)
-	local layout = addList(parent, padding)
-	layout.FillDirection = Enum.FillDirection.Horizontal
-	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.VerticalAlignment = Enum.VerticalAlignment.Center
-	return layout
+local function makeLabel(parent, name, text, font, size, color)
+	local label = Instance.new("TextLabel")
+	label.Name = name
+	label.BackgroundTransparency = 1
+	label.Font = font
+	label.Text = text
+	label.TextColor3 = color
+	label.TextSize = size
+	label.TextWrapped = true
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextYAlignment = Enum.TextYAlignment.Center
+	label.Parent = parent
+	return label
 end
 
-local function addTextConstraint(label, minSize, maxSize)
-	local constraint = Instance.new("UITextSizeConstraint")
-	constraint.MinTextSize = minSize
-	constraint.MaxTextSize = maxSize
-	constraint.Parent = label
-	return constraint
+local function makeShadow(parent, radius)
+	local shadow = Instance.new("Frame")
+	shadow.Name = "Shadow"
+	shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+	shadow.Position = UDim2.new(0.5, 0, 0.5, 6)
+	shadow.Size = UDim2.new(1, 4, 1, 4)
+	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	shadow.BackgroundTransparency = 0.72
+	shadow.BorderSizePixel = 0
+	shadow.ZIndex = parent.ZIndex - 1
+	shadow.Parent = parent
+	addCorner(shadow, radius)
+	return shadow
 end
 
-local function makeBadge(parent, name, imageKey, fallbackText, textColor, size)
-	local image = UIAssets.imageFor(imageKey)
-	if image then
-		local badge = Instance.new("ImageLabel")
-		badge.Name = name
-		badge.Size = size
-		badge.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		badge.BackgroundTransparency = 0.08
-		badge.BorderSizePixel = 0
-		badge.Image = image
-		badge.ScaleType = Enum.ScaleType.Fit
-		badge.ZIndex = parent.ZIndex + 1
-		badge.Parent = parent
-		UITheme.corner(badge, UITheme.Radius.pill)
-		return badge
+local function makeIcon(parent, iconType, accent)
+	local iconFrame = Instance.new("Frame")
+	iconFrame.Name = "Icon"
+	iconFrame.Size = UDim2.fromOffset(36, 36)
+	iconFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	iconFrame.BackgroundTransparency = 0.08
+	iconFrame.BorderSizePixel = 0
+	iconFrame.Parent = parent
+	addCorner(iconFrame, 10)
+	addStroke(iconFrame, accent, 2, 0.08)
+
+	local function block(name, position, size, color)
+		local frame = Instance.new("Frame")
+		frame.Name = name
+		frame.Position = position
+		frame.Size = size
+		frame.BackgroundColor3 = color
+		frame.BorderSizePixel = 0
+		frame.Parent = iconFrame
+		addCorner(frame, 3)
+		return frame
 	end
 
+	if iconType == "Play" then
+		block("A", UDim2.fromOffset(11, 9), UDim2.fromOffset(14, 18), accent)
+		block("B", UDim2.fromOffset(21, 14), UDim2.fromOffset(6, 8), accent)
+	elseif iconType == "Bag" then
+		block("Body", UDim2.fromOffset(8, 14), UDim2.fromOffset(20, 14), accent)
+		block("HandleLeft", UDim2.fromOffset(11, 9), UDim2.fromOffset(4, 8), accent)
+		block("HandleRight", UDim2.fromOffset(21, 9), UDim2.fromOffset(4, 8), accent)
+	elseif iconType == "Grid" then
+		for row = 0, 1 do
+			for column = 0, 1 do
+				block(
+					`Cell{row}{column}`,
+					UDim2.fromOffset(9 + column * 10, 9 + row * 10),
+					UDim2.fromOffset(8, 8),
+					accent
+				)
+			end
+		end
+	elseif iconType == "Gear" then
+		block("Core", UDim2.fromOffset(13, 13), UDim2.fromOffset(10, 10), accent)
+		block("Top", UDim2.fromOffset(15, 7), UDim2.fromOffset(6, 7), accent)
+		block("Bottom", UDim2.fromOffset(15, 22), UDim2.fromOffset(6, 7), accent)
+		block("Left", UDim2.fromOffset(7, 15), UDim2.fromOffset(7, 6), accent)
+		block("Right", UDim2.fromOffset(22, 15), UDim2.fromOffset(7, 6), accent)
+	elseif iconType == "Quest" then
+		block("Box", UDim2.fromOffset(9, 9), UDim2.fromOffset(18, 18), accent)
+		block(
+			"CheckA",
+			UDim2.fromOffset(13, 18),
+			UDim2.fromOffset(6, 5),
+			Color3.fromRGB(17, 28, 48)
+		)
+		block(
+			"CheckB",
+			UDim2.fromOffset(18, 13),
+			UDim2.fromOffset(5, 10),
+			Color3.fromRGB(17, 28, 48)
+		)
+	else
+		block("A", UDim2.fromOffset(9, 10), UDim2.fromOffset(9, 9), accent)
+		block("B", UDim2.fromOffset(19, 17), UDim2.fromOffset(9, 9), accent)
+	end
+
+	return iconFrame
+end
+
+local function makeNavButton(parent, data, compact)
+	local button = Instance.new("TextButton")
+	button.Name = `{data.key}Button`
+	button.AutoButtonColor = false
+	button.BackgroundColor3 = data.primary and Color3.fromRGB(109, 235, 71)
+		or Color3.fromRGB(22, 33, 58)
+	button.BorderSizePixel = 0
+	button.Font = Enum.Font.GothamBlack
+	button.Text = ""
+	button.Selectable = true
+	button.ZIndex = parent.ZIndex + 1
+	button.Parent = parent
+	addCorner(button, data.primary and 18 or 14)
+	addStroke(
+		button,
+		data.primary and Color3.fromRGB(21, 116, 44) or data.accent,
+		data.primary and 4 or 2,
+		0
+	)
+	addGradient(
+		button,
+		data.primary and Color3.fromRGB(143, 255, 102)
+			or data.accent:Lerp(Color3.fromRGB(255, 255, 255), 0.08),
+		data.primary and Color3.fromRGB(73, 206, 54) or Color3.fromRGB(17, 27, 48)
+	)
+	makeShadow(button, data.primary and 18 or 14)
+
+	local iconFrame =
+		makeIcon(button, data.icon, data.primary and Color3.fromRGB(255, 255, 255) or data.accent)
+	iconFrame.Position =
+		UDim2.fromOffset(data.primary and 16 or compact and 12 or 10, data.primary and 12 or 10)
+	iconFrame.ZIndex = button.ZIndex + 1
+
+	local label = makeLabel(
+		button,
+		"Label",
+		string.upper(data.label),
+		Enum.Font.GothamBlack,
+		data.primary and 28 or 16,
+		Color3.fromRGB(255, 255, 255)
+	)
+	label.Position = UDim2.fromOffset(data.primary and 66 or compact and 0 or 52, 0)
+	label.Size = compact and UDim2.new(1, 0, 1, 0)
+		or UDim2.new(1, data.primary and -82 or -62, 1, 0)
+	label.TextXAlignment = compact and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left
+	label.TextStrokeColor3 = data.primary and Color3.fromRGB(20, 112, 41)
+		or Color3.fromRGB(8, 16, 34)
+	label.TextStrokeTransparency = 0.28
+	label.ZIndex = button.ZIndex + 1
+
 	local badge = Instance.new("TextLabel")
-	badge.Name = name
-	badge.Size = size
-	badge.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	badge.BackgroundTransparency = 0.08
+	badge.Name = "NotificationBadge"
+	badge.AnchorPoint = Vector2.new(1, 0)
+	badge.Position = UDim2.new(1, -6, 0, -6)
+	badge.Size = UDim2.fromOffset(24, 24)
+	badge.BackgroundColor3 = Color3.fromRGB(255, 76, 104)
 	badge.BorderSizePixel = 0
-	badge.Font = UITheme.Font.heading
-	badge.Text = fallbackText
-	badge.TextColor3 = textColor
-	badge.TextSize = 13
-	badge.TextWrapped = true
-	badge.ZIndex = parent.ZIndex + 1
-	badge.Parent = parent
-	UITheme.corner(badge, UITheme.Radius.pill)
-	return badge
+	badge.Font = Enum.Font.GothamBlack
+	badge.Text = "1"
+	badge.TextColor3 = Color3.fromRGB(255, 255, 255)
+	badge.TextSize = 12
+	badge.Visible = false
+	badge.ZIndex = button.ZIndex + 3
+	badge.Parent = button
+	addCorner(badge, 999)
+	addStroke(badge, Color3.fromRGB(122, 17, 41), 2, 0)
+
+	return button
 end
 
 function HUDController.new(gui, options)
@@ -154,351 +316,257 @@ function HUDController.new(gui, options)
 	end
 	self.connections = {}
 	self.buttons = {}
-	self.collapsed = false
-	self.gameplayFocus = false
+	self.resourceLabels = {}
 	self.currentHubState = nil
 	self.currentState = nil
+	self.gameplayFocus = false
 
 	self.menu = MenuController.new(gui, {
 		isReducedMotion = self.isReducedMotion,
 		playSound = self.playSound,
 	})
 
-	self:BuildLeftHud()
-	self:BuildRightMenu()
+	self:BuildBrand()
+	self:BuildResourceBar()
+	self:BuildLeftNav()
+	self:BuildRightNav()
 	self:BuildTopHud()
 
 	connect(self, gui:GetPropertyChangedSignal("AbsoluteSize"), function()
 		self:RefreshResponsiveLayout()
 	end)
 	self:RefreshResponsiveLayout()
+	self:UpdateProgression()
 
 	return self
 end
 
-function HUDController:BuildLeftHud()
-	local stack = Instance.new("Frame")
-	stack.Name = "LeftPlayerHud"
-	stack.AnchorPoint = Vector2.new(0, 0)
-	stack.Position = UDim2.fromOffset(18, 86)
-	stack.Size = UDim2.fromOffset(270, 190)
-	stack.BackgroundTransparency = 1
-	stack.ZIndex = UITheme.Z.hud
-	stack.Parent = self.gui
-	self.leftStack = stack
-	addList(stack, 10)
+function HUDController:BuildBrand()
+	local brand = Instance.new("Frame")
+	brand.Name = "ArcadeBrand"
+	brand.Position = UDim2.fromOffset(24, 58)
+	brand.Size = UDim2.fromOffset(260, 56)
+	brand.BackgroundTransparency = 1
+	brand.ZIndex = UITheme.Z.hud
+	brand.Parent = self.gui
+	self.brand = brand
 
-	local profile = makeCard(stack, "ProfileCard", UDim2.new(1, 0, 0, 58))
-	self.profileCard = profile
-	profile.BackgroundColor3 = Color3.fromRGB(36, 185, 255)
-	UITheme.gradient(profile, Color3.fromRGB(58, 209, 255), Color3.fromRGB(18, 119, 219), 0)
-	local profileStroke = profile:FindFirstChildOfClass("UIStroke")
-	if profileStroke then
-		profileStroke.Color = Color3.fromRGB(9, 64, 139)
-		profileStroke.Thickness = 3
-		profileStroke.Transparency = 0.08
-	end
-
-	local avatar = Instance.new("ImageLabel")
-	avatar.Name = "Avatar"
-	avatar.Position = UDim2.fromOffset(0, 0)
-	avatar.Size = UDim2.fromOffset(38, 38)
-	avatar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	avatar.BorderSizePixel = 0
-	avatar.Image = `rbxthumb://type=AvatarHeadShot&id={self.player.UserId}&w=100&h=100`
-	avatar.Parent = profile
-	UITheme.corner(avatar, UITheme.Radius.pill)
-	UITheme.stroke(avatar, Color3.fromRGB(72, 178, 255), 1, 0.22)
-
-	self.nameLabel = makeLabel(
-		profile,
-		"DisplayName",
-		self.player.DisplayName,
-		UDim2.new(1, -52, 0, 22),
-		"title"
+	local title = makeLabel(
+		brand,
+		"Title",
+		"Block Blast Battle",
+		Enum.Font.GothamBlack,
+		26,
+		Color3.fromRGB(255, 255, 255)
 	)
-	self.nameLabel.Position = UDim2.fromOffset(50, 0)
-	self.nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	self.nameLabel.TextStrokeColor3 = Color3.fromRGB(8, 66, 128)
-	self.nameLabel.TextStrokeTransparency = 0.35
-	self.nameLabel.TextSize = 17
-	addTextConstraint(self.nameLabel, 12, 17)
-	self.levelLabel = makeLabel(profile, "Level", "LV. 1", UDim2.new(1, -52, 0, 18), "heading")
-	self.levelLabel.Position = UDim2.fromOffset(50, 23)
-	self.levelLabel.TextColor3 = Color3.fromRGB(255, 247, 130)
-	self.levelLabel.TextStrokeColor3 = Color3.fromRGB(8, 66, 128)
-	self.levelLabel.TextStrokeTransparency = 0.45
-	addTextConstraint(self.levelLabel, 10, 15)
+	title.Size = UDim2.new(1, 0, 0, 30)
+	title.TextStrokeColor3 = Color3.fromRGB(9, 33, 72)
+	title.TextStrokeTransparency = 0.25
+	self.brandTitle = title
 
-	local xpBack = Instance.new("Frame")
-	xpBack.Name = "XPBack"
-	xpBack.Position = UDim2.fromOffset(50, 43)
-	xpBack.Size = UDim2.new(1, -58, 0, 7)
-	xpBack.BackgroundColor3 = Color3.fromRGB(7, 70, 139)
-	xpBack.BorderSizePixel = 0
-	xpBack.Parent = profile
-	UITheme.corner(xpBack, UITheme.Radius.pill)
-
-	local xpFill = Instance.new("Frame")
-	xpFill.Name = "XPFill"
-	xpFill.Size = UDim2.fromScale(0, 1)
-	xpFill.BackgroundColor3 = Color3.fromRGB(255, 238, 77)
-	xpFill.BorderSizePixel = 0
-	xpFill.Parent = xpBack
-	UITheme.corner(xpFill, UITheme.Radius.pill)
-	self.xpFill = xpFill
-
-	local stats = makeCard(stack, "StatsCard", UDim2.new(1, 0, 0, 92))
-	self.statsCard = stats
-	stats.BackgroundTransparency = 1
-	local statsStroke = stats:FindFirstChildOfClass("UIStroke")
-	if statsStroke then
-		statsStroke.Enabled = false
-	end
-	self.coinsLabel = makeLabel(stats, "Coins", "COINS 0", UDim2.new(1, 0, 0, 28), "heading")
-	self.coinsLabel.Position = UDim2.fromOffset(0, 0)
-	self.winsLabel = makeLabel(stats, "Wins", "WINS 0", UDim2.new(1, 0, 0, 28), "heading")
-	self.winsLabel.Position = UDim2.fromOffset(0, 32)
-	self.starsLabel = makeLabel(stats, "Stars", "STARS 0", UDim2.new(1, 0, 0, 28), "heading")
-	self.starsLabel.Position = UDim2.fromOffset(0, 64)
-	local statAssetKeys = { "Coins", "Wins", "StoryStars" }
-	for index, label in { self.coinsLabel, self.winsLabel, self.starsLabel } do
-		local iconText = index == 1 and "$" or index == 2 and "W" or "*"
-		label.BackgroundTransparency = 0
-		label.BackgroundColor3 = index == 1 and Color3.fromRGB(255, 194, 47)
-			or index == 2 and Color3.fromRGB(59, 226, 116)
-			or Color3.fromRGB(177, 101, 255)
-		label.TextColor3 = Color3.fromRGB(255, 255, 255)
-		label.TextStrokeColor3 = Color3.fromRGB(45, 76, 115)
-		label.TextStrokeTransparency = 0.35
-		label.TextSize = 17
-		label.TextXAlignment = Enum.TextXAlignment.Center
-		UITheme.corner(label, UITheme.Radius.pill)
-		UITheme.stroke(label, Color3.fromRGB(8, 76, 151), 2, 0.08)
-		addTextConstraint(label, 12, 17)
-
-		local iconBadge = makeBadge(
-			label,
-			"IconBadge",
-			statAssetKeys[index],
-			iconText,
-			label.BackgroundColor3,
-			UDim2.fromOffset(20, 20)
-		)
-		iconBadge.Position = UDim2.fromOffset(5, 4)
-
-		local plusBadge = Instance.new("TextLabel")
-		plusBadge.Name = "PlusBadge"
-		plusBadge.AnchorPoint = Vector2.new(1, 0)
-		plusBadge.Position = UDim2.new(1, -5, 0, 4)
-		plusBadge.Size = UDim2.fromOffset(20, 20)
-		plusBadge.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-		plusBadge.BackgroundTransparency = index == 1 and 0.08 or 1
-		plusBadge.BorderSizePixel = 0
-		plusBadge.Font = UITheme.Font.heading
-		plusBadge.Text = index == 1 and "+" or ""
-		plusBadge.TextColor3 = label.BackgroundColor3
-		plusBadge.TextSize = 14
-		plusBadge.ZIndex = label.ZIndex + 1
-		plusBadge.Parent = label
-		UITheme.corner(plusBadge, UITheme.Radius.pill)
-	end
-
-	local objective = makeCard(stack, "ObjectiveCard", UDim2.new(1, 0, 0, 32))
-	self.objectiveCard = objective
-	objective.Visible = false
-	objective.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	self.modeLabel = makeLabel(objective, "Mode", "Hub", UDim2.new(1, 0, 0, 18), "heading")
-	self.modeLabel.Position = UDim2.fromOffset(0, 0)
-	self.objectiveLabel = makeLabel(
-		objective,
-		"Objective",
-		"Walk to a portal or open Play.",
-		UDim2.new(1, 0, 0, 0),
-		"muted"
+	local subtitle = makeLabel(
+		brand,
+		"Subtitle",
+		"Puzzle islands await",
+		Enum.Font.GothamBold,
+		15,
+		Color3.fromRGB(119, 244, 255)
 	)
-	self.objectiveLabel.Visible = false
+	subtitle.Position = UDim2.fromOffset(1, 31)
+	subtitle.Size = UDim2.new(1, 0, 0, 22)
+	self.brandSubtitle = subtitle
 end
 
-function HUDController:BuildRightMenu()
+function HUDController:BuildResourceBar()
+	local bar = Instance.new("Frame")
+	bar.Name = "TopResourceBar"
+	bar.AnchorPoint = Vector2.new(1, 0)
+	bar.Position = UDim2.new(1, -24, 0, 56)
+	bar.Size = UDim2.fromOffset(650, 54)
+	bar.BackgroundColor3 = Color3.fromRGB(18, 28, 50)
+	bar.BorderSizePixel = 0
+	bar.ZIndex = UITheme.Z.hud
+	bar.Parent = self.gui
+	addCorner(bar, 18)
+	addStroke(bar, Color3.fromRGB(39, 184, 255), 2, 0.08)
+	addGradient(bar, Color3.fromRGB(22, 35, 65), Color3.fromRGB(13, 21, 39))
+	self.resourceBar = bar
+	addPadding(bar, 12, 12, 8, 8)
+	addList(
+		bar,
+		Enum.FillDirection.Horizontal,
+		8,
+		Enum.HorizontalAlignment.Center,
+		Enum.VerticalAlignment.Center
+	)
+
+	for index, item in RESOURCE_ITEMS do
+		local chip = Instance.new("Frame")
+		chip.Name = `{item.key}Resource`
+		chip.LayoutOrder = index
+		chip.Size = UDim2.fromOffset(index == 3 and 144 or 104, 38)
+		chip.BackgroundColor3 = Color3.fromRGB(14, 23, 43)
+		chip.BorderSizePixel = 0
+		chip.ZIndex = bar.ZIndex + 1
+		chip.Parent = bar
+		addCorner(chip, 999)
+		addStroke(chip, item.accent, 2, 0.04)
+
+		local iconDot = Instance.new("Frame")
+		iconDot.Name = "Accent"
+		iconDot.Position = UDim2.fromOffset(12, 14)
+		iconDot.Size = UDim2.fromOffset(14, 10)
+		iconDot.BackgroundColor3 = item.accent
+		iconDot.BorderSizePixel = 0
+		iconDot.ZIndex = chip.ZIndex + 1
+		iconDot.Parent = chip
+		addCorner(iconDot, 3)
+
+		local label = makeLabel(
+			chip,
+			"Value",
+			`{item.label} 0`,
+			Enum.Font.GothamBlack,
+			15,
+			Color3.fromRGB(255, 255, 255)
+		)
+		label.Position = UDim2.fromOffset(32, 0)
+		label.Size = UDim2.new(1, -38, 1, 0)
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.ZIndex = chip.ZIndex + 1
+		self.resourceLabels[item.key] = label
+	end
+end
+
+function HUDController:BuildLeftNav()
 	local stack = Instance.new("Frame")
-	stack.Name = "PrimaryActionHud"
-	stack.AnchorPoint = Vector2.new(0.5, 1)
-	stack.Position = UDim2.new(0.5, 0, 1, -28)
-	stack.Size = UDim2.fromOffset(430, 104)
-	stack.BackgroundTransparency = 1
+	stack.Name = "LeftArcadeNav"
+	stack.Position = UDim2.fromOffset(24, 156)
+	stack.Size = UDim2.fromOffset(150, 190)
+	stack.BackgroundColor3 = Color3.fromRGB(15, 25, 48)
+	stack.BorderSizePixel = 0
 	stack.ZIndex = UITheme.Z.hud
 	stack.Parent = self.gui
-	self.rightStack = stack
+	addCorner(stack, 20)
+	addStroke(stack, Color3.fromRGB(39, 184, 255), 3, 0)
+	makeShadow(stack, 20)
+	addPadding(stack, 12, 12, 12, 12)
+	addList(
+		stack,
+		Enum.FillDirection.Vertical,
+		12,
+		Enum.HorizontalAlignment.Center,
+		Enum.VerticalAlignment.Top
+	)
+	self.leftNav = stack
 
-	local playButton = nil
-	local secondaryRow = Instance.new("Frame")
-	secondaryRow.Name = "SecondaryActions"
-	secondaryRow.AnchorPoint = Vector2.new(0.5, 1)
-	secondaryRow.Position = UDim2.new(0.5, 0, 1, 0)
-	secondaryRow.Size = UDim2.fromOffset(360, 38)
-	secondaryRow.BackgroundTransparency = 1
-	secondaryRow.Parent = stack
-	addHorizontalList(secondaryRow, 10)
-
-	for index, data in RIGHT_BUTTONS do
-		local button = Instance.new("TextButton")
-		button.Name = `{data.key}Button`
+	for index, data in LEFT_BUTTONS do
+		local button = makeNavButton(stack, data, false)
 		button.LayoutOrder = index
-		button.Size = data.primary and UDim2.fromOffset(238, 58) or UDim2.fromOffset(110, 38)
-		button.BackgroundColor3 = data.color or Color3.fromRGB(255, 255, 255)
-		button.Text = ""
-		button.TextColor3 = Color3.fromRGB(255, 255, 255)
-		button.TextStrokeColor3 = data.key == "settings" and Color3.fromRGB(45, 54, 68)
-			or Color3.fromRGB(19, 87, 127)
-		button.TextStrokeTransparency = 0.28
-		button.TextSize = data.primary and 27 or 14
-		button.TextWrapped = true
-		button.Font = UITheme.Font.heading
-		button.BorderSizePixel = 0
-		button.Selectable = true
-		button.Parent = data.primary and stack or secondaryRow
-		UITheme.button(button, data.primary and "success" or "secondary")
-		button.BackgroundColor3 = data.color or Color3.fromRGB(255, 255, 255)
-		if data.primary then
-			button.AnchorPoint = Vector2.new(0.5, 0)
-			button.Position = UDim2.new(0.5, 0, 0, 0)
-			UITheme.gradient(button, Color3.fromRGB(116, 255, 119), Color3.fromRGB(29, 190, 66), 90)
-			playButton = button
-		elseif data.key == "settings" then
-			button.TextColor3 = Color3.fromRGB(255, 255, 255)
-		else
-			UITheme.gradient(
-				button,
-				data.color,
-				data.color:Lerp(Color3.fromRGB(35, 110, 196), 0.24),
-				90
-			)
-		end
-		local corner = button:FindFirstChildOfClass("UICorner")
-		if corner then
-			corner.CornerRadius = UDim.new(0, data.primary and 14 or 10)
-		end
-		local stroke = button:FindFirstChildOfClass("UIStroke")
-		if stroke then
-			stroke.Color = data.primary and Color3.fromRGB(18, 129, 48)
-				or Color3.fromRGB(11, 87, 159)
-			stroke.Thickness = data.primary and 3 or 2
-			stroke.Transparency = 0.05
-		end
-		UITheme.attachButtonFeedback(button, self.isReducedMotion)
+		button.Size = UDim2.fromOffset(126, 70)
 		self.buttons[data.key] = button
-
-		if data.primary then
-			local iconBadge = makeBadge(
-				button,
-				"IconBadge",
-				"Play",
-				">",
-				Color3.fromRGB(34, 184, 65),
-				UDim2.fromOffset(38, 38)
-			)
-			iconBadge.Position = UDim2.fromOffset(16, 10)
-			UITheme.stroke(iconBadge, Color3.fromRGB(18, 129, 48), 2, 0.12)
-			if iconBadge:IsA("TextLabel") then
-				iconBadge.Font = UITheme.Font.title
-				iconBadge.TextSize = 28
-			end
-
-			local playText = Instance.new("TextLabel")
-			playText.Name = "ButtonText"
-			playText.BackgroundTransparency = 1
-			playText.Position = UDim2.fromOffset(62, 0)
-			playText.Size = UDim2.new(1, -78, 1, 0)
-			playText.Font = UITheme.Font.title
-			playText.Text = "PLAY"
-			playText.TextColor3 = Color3.fromRGB(255, 255, 255)
-			playText.TextStrokeColor3 = Color3.fromRGB(19, 112, 39)
-			playText.TextStrokeTransparency = 0.2
-			playText.TextSize = 30
-			playText.TextXAlignment = Enum.TextXAlignment.Center
-			playText.ZIndex = button.ZIndex + 1
-			playText.Parent = button
-			addTextConstraint(playText, 18, 30)
-			self.playButtonText = playText
-			self.playButtonIcon = iconBadge
-		else
-			local iconBadge = makeBadge(
-				button,
-				"IconBadge",
-				data.assetKey,
-				data.icon,
-				data.color,
-				UDim2.fromOffset(24, 24)
-			)
-			iconBadge.Position = UDim2.fromOffset(7, 7)
-			if iconBadge:IsA("TextLabel") then
-				iconBadge.TextSize = 9
-			end
-
-			local label = Instance.new("TextLabel")
-			label.Name = "ButtonText"
-			label.BackgroundTransparency = 1
-			label.Position = UDim2.fromOffset(34, 0)
-			label.Size = UDim2.new(1, -38, 1, 0)
-			label.Font = UITheme.Font.heading
-			label.Text = string.upper(data.label)
-			label.TextColor3 = Color3.fromRGB(255, 255, 255)
-			label.TextStrokeColor3 = Color3.fromRGB(18, 78, 132)
-			label.TextStrokeTransparency = 0.32
-			label.TextSize = 14
-			label.TextWrapped = true
-			label.TextXAlignment = Enum.TextXAlignment.Left
-			label.ZIndex = button.ZIndex + 1
-			label.Parent = button
-			addTextConstraint(label, 10, 14)
-		end
-
 		connect(self, button.Activated, function()
 			self:ActivateButton(data)
 		end)
 	end
+end
 
-	self.primaryPlayButton = playButton
-	self.secondaryActionRow = secondaryRow
+function HUDController:BuildRightNav()
+	local stack = Instance.new("Frame")
+	stack.Name = "RightArcadeNav"
+	stack.AnchorPoint = Vector2.new(1, 0.5)
+	stack.Position = UDim2.new(1, -24, 0.5, 24)
+	stack.Size = UDim2.fromOffset(210, 344)
+	stack.BackgroundTransparency = 1
+	stack.ZIndex = UITheme.Z.hud
+	stack.Parent = self.gui
+	addList(
+		stack,
+		Enum.FillDirection.Vertical,
+		14,
+		Enum.HorizontalAlignment.Right,
+		Enum.VerticalAlignment.Center
+	)
+	self.rightNav = stack
+
+	for index, data in RIGHT_BUTTONS do
+		local button = makeNavButton(stack, data, false)
+		button.LayoutOrder = index
+		button.Size = data.primary and UDim2.fromOffset(206, 80) or UDim2.fromOffset(180, 64)
+		self.buttons[data.key] = button
+		connect(self, button.Activated, function()
+			self:ActivateButton(data)
+		end)
+	end
 end
 
 function HUDController:BuildTopHud()
 	local top = Instance.new("Frame")
-	top.Name = "TopContextHud"
+	top.Name = "TopQueueBanner"
 	top.AnchorPoint = Vector2.new(0.5, 0)
-	top.Position = UDim2.fromScale(0.5, 0.02)
-	top.Size = UDim2.fromOffset(360, 42)
-	top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	top.BackgroundTransparency = 0.12
+	top.Position = UDim2.new(0.5, 0, 0, 126)
+	top.Size = UDim2.fromOffset(520, 48)
+	top.BackgroundColor3 = Color3.fromRGB(18, 28, 50)
+	top.BackgroundTransparency = 0.04
 	top.BorderSizePixel = 0
 	top.Visible = false
 	top.ZIndex = UITheme.Z.hud
 	top.Parent = self.gui
-	UITheme.card(top, {
-		color = Color3.fromRGB(255, 255, 255),
-		strokeColor = Color3.fromRGB(125, 203, 255),
-		strokeTransparency = 0.3,
-	})
+	addCorner(top, 16)
+	addStroke(top, Color3.fromRGB(39, 184, 255), 2, 0.08)
+	addGradient(top, Color3.fromRGB(23, 42, 78), Color3.fromRGB(14, 23, 43))
+	makeShadow(top, 16)
 	self.topBar = top
 
-	self.zoneLabel = makeLabel(top, "Zone", "Floating Hub", UDim2.new(1, -24, 1, 0), "heading")
-	self.zoneLabel.Position = UDim2.fromOffset(12, 0)
-	self.zoneLabel.TextXAlignment = Enum.TextXAlignment.Center
-end
+	local zone = makeLabel(
+		top,
+		"Status",
+		"Floating Hub",
+		Enum.Font.GothamBlack,
+		18,
+		Color3.fromRGB(255, 255, 255)
+	)
+	zone.Position = UDim2.fromOffset(18, 0)
+	zone.Size = UDim2.new(1, -136, 1, 0)
+	zone.TextXAlignment = Enum.TextXAlignment.Left
+	zone.ZIndex = top.ZIndex + 1
+	self.zoneLabel = zone
 
-function HUDController:ButtonText(data)
-	if data.primary then
-		return `{data.icon} {string.upper(data.label)}`
-	end
-
-	return `{data.icon} {string.upper(data.label)}`
+	local cancel = Instance.new("TextButton")
+	cancel.Name = "CancelQueue"
+	cancel.AnchorPoint = Vector2.new(1, 0.5)
+	cancel.Position = UDim2.new(1, -10, 0.5, 0)
+	cancel.Size = UDim2.fromOffset(108, 32)
+	cancel.AutoButtonColor = false
+	cancel.BackgroundColor3 = Color3.fromRGB(255, 76, 104)
+	cancel.BorderSizePixel = 0
+	cancel.Font = Enum.Font.GothamBlack
+	cancel.Text = "LEAVE"
+	cancel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	cancel.TextSize = 13
+	cancel.Visible = false
+	cancel.ZIndex = top.ZIndex + 1
+	cancel.Parent = top
+	addCorner(cancel, 10)
+	addStroke(cancel, Color3.fromRGB(126, 19, 40), 2, 0)
+	UITheme.attachButtonFeedback(cancel, self.isReducedMotion)
+	self.cancelQueueButton = cancel
+	connect(self, cancel.Activated, function()
+		self.playSound("Button")
+		local callback = self.callbacks.play
+		if callback then
+			callback()
+		end
+	end)
 end
 
 function HUDController:ActivateButton(data)
 	self.playSound(data.comingSoon and "Blocked" or "Button")
-	self.menu:Close()
+	if self.menu then
+		self.menu:Close()
+	end
 	self:SetMenuButtonSelected(data.key)
+
 	if data.comingSoon then
 		self:OpenComingSoon(data.label)
 		self.notify(`{data.label} is coming soon`, "info")
@@ -520,20 +588,44 @@ function HUDController:OpenComingSoon(title)
 			content,
 			"ComingSoon",
 			`{title} is planned but not fully connected yet.`,
-			UDim2.new(1, 0, 0, 74),
-			"heading"
+			Enum.Font.GothamBold,
+			18,
+			Color3.fromRGB(255, 255, 255)
 		)
+		label.Size = UDim2.new(1, 0, 0, 74)
 		label.TextXAlignment = Enum.TextXAlignment.Center
 	end)
 end
 
 function HUDController:OpenInfoPanel(title, lines)
 	self.menu:Open(title, title, function(content)
-		addList(content, 10)
+		addList(
+			content,
+			Enum.FillDirection.Vertical,
+			12,
+			Enum.HorizontalAlignment.Center,
+			Enum.VerticalAlignment.Top
+		)
 		for index, line in lines do
-			local card = makeCard(content, `Line{index}`, UDim2.new(1, 0, 0, 56))
-			local label = makeLabel(card, "Text", line, UDim2.new(1, 0, 1, 0), "muted")
-			label.TextXAlignment = Enum.TextXAlignment.Left
+			local card = Instance.new("Frame")
+			card.Name = `Line{index}`
+			card.LayoutOrder = index
+			card.Size = UDim2.new(1, 0, 0, 62)
+			card.BackgroundColor3 = Color3.fromRGB(28, 44, 78)
+			card.BorderSizePixel = 0
+			card.Parent = content
+			addCorner(card, 14)
+			addStroke(card, Color3.fromRGB(72, 195, 255), 2, 0.22)
+			addPadding(card, 14, 14, 8, 8)
+			local label = makeLabel(
+				card,
+				"Text",
+				line,
+				Enum.Font.GothamBold,
+				16,
+				Color3.fromRGB(235, 246, 255)
+			)
+			label.Size = UDim2.fromScale(1, 1)
 		end
 	end)
 end
@@ -541,68 +633,132 @@ end
 function HUDController:RefreshResponsiveLayout()
 	local screenSize = self.gui.AbsoluteSize
 	local inset = GuiService:GetGuiInset()
-	local compact = screenSize.X < 860
-	local phone = screenSize.X < 620 or screenSize.Y < 520
-	self.collapsed = compact
+	local phone = screenSize.X < 720 or screenSize.Y < 520
+	local tablet = screenSize.X < 1060
 
-	self.leftStack.AnchorPoint = Vector2.new(0, 0)
-	self.leftStack.Position = UDim2.new(0, 16, 0, math.max(76, inset.Y + 54))
-	self.leftStack.Size =
-		UDim2.fromOffset(phone and 198 or compact and 228 or 250, phone and 124 or 164)
-	self.statsCard.Visible = true
-	self.objectiveCard.Visible = false
-
-	self.rightStack.AnchorPoint = Vector2.new(0.5, 1)
-	self.rightStack.Position = UDim2.new(0.5, 0, 1, phone and -72 or -26)
-	self.rightStack.Size =
-		UDim2.fromOffset(phone and 340 or compact and 386 or 430, phone and 96 or 104)
-	if self.secondaryActionRow then
-		self.secondaryActionRow.Size = UDim2.fromOffset(phone and 326 or 360, phone and 36 or 38)
+	if self.brand then
+		self.brand.Position =
+			UDim2.new(0, phone and 16 or 24, 0, math.max(inset.Y + 18, phone and 32 or 54))
+		self.brand.Size = UDim2.fromOffset(phone and 210 or 280, phone and 46 or 58)
+		self.brandTitle.TextSize = phone and 20 or 26
+		self.brandSubtitle.TextSize = phone and 12 or 15
 	end
-	for _, data in RIGHT_BUTTONS do
-		local button = self.buttons[data.key]
-		if button then
-			if data.primary then
-				button.Size =
-					UDim2.fromOffset(phone and 190 or compact and 220 or 238, phone and 52 or 58)
-				local playText = button:FindFirstChild("ButtonText")
-				local iconBadge = button:FindFirstChild("IconBadge")
-				if playText and playText:IsA("TextLabel") then
-					playText.Position = UDim2.fromOffset(phone and 54 or 62, 0)
-					playText.Size = UDim2.new(1, phone and -66 or -78, 1, 0)
-					playText.TextSize = phone and 24 or 30
-				end
-				if iconBadge and iconBadge:IsA("GuiObject") then
-					iconBadge.Position = UDim2.fromOffset(phone and 12 or 16, phone and 9 or 10)
-					iconBadge.Size = UDim2.fromOffset(phone and 34 or 38, phone and 34 or 38)
-				end
-			else
-				button.Size = UDim2.fromOffset(phone and 98 or 110, phone and 36 or 38)
-				local label = button:FindFirstChild("ButtonText")
-				local iconBadge = button:FindFirstChild("IconBadge")
+
+	if self.resourceBar then
+		self.resourceBar.Position = phone and UDim2.new(0, 16, 0, math.max(inset.Y + 82, 92))
+			or UDim2.new(1, -24, 0, math.max(inset.Y + 18, 56))
+		self.resourceBar.AnchorPoint = phone and Vector2.new(0, 0) or Vector2.new(1, 0)
+		self.resourceBar.Size = phone and UDim2.new(1, -32, 0, 46)
+			or UDim2.fromOffset(tablet and 560 or 650, 54)
+		for _, item in RESOURCE_ITEMS do
+			local label = self.resourceLabels[item.key]
+			local chip = label and label.Parent
+			if chip and chip:IsA("Frame") then
+				chip.Size = UDim2.fromOffset(
+					phone and (item.key == "coins" and 118 or 82)
+						or item.key == "coins" and 144
+						or 104,
+					phone and 32 or 38
+				)
+				label.TextSize = phone and 12 or 15
+			end
+		end
+	end
+
+	if self.leftNav then
+		self.leftNav.Position = phone and UDim2.new(0, 16, 1, -110)
+			or UDim2.new(0, 24, 0, math.max(inset.Y + 118, 156))
+		self.leftNav.Size = phone and UDim2.fromOffset(236, 82) or UDim2.fromOffset(150, 190)
+		local layout = self.leftNav:FindFirstChildOfClass("UIListLayout")
+		if layout then
+			layout.FillDirection = phone and Enum.FillDirection.Horizontal
+				or Enum.FillDirection.Vertical
+			layout.Padding = UDim.new(0, phone and 10 or 12)
+		end
+		for _, data in LEFT_BUTTONS do
+			local button = self.buttons[data.key]
+			if button then
+				button.Size = phone and UDim2.fromOffset(100, 56) or UDim2.fromOffset(126, 70)
+				local label = button:FindFirstChild("Label")
+				local iconFrame = button:FindFirstChild("Icon")
 				if label and label:IsA("TextLabel") then
-					label.Position = UDim2.fromOffset(phone and 32 or 34, 0)
-					label.Size = UDim2.new(1, phone and -34 or -38, 1, 0)
-					label.TextSize = phone and 12 or 14
+					label.TextSize = phone and 11 or 16
+					label.Position = phone and UDim2.fromOffset(0, 28) or UDim2.fromOffset(52, 0)
+					label.Size = phone and UDim2.new(1, 0, 0, 24) or UDim2.new(1, -62, 1, 0)
+					label.TextXAlignment = phone and Enum.TextXAlignment.Center
+						or Enum.TextXAlignment.Left
 				end
-				if iconBadge and iconBadge:IsA("GuiObject") then
-					iconBadge.Size = UDim2.fromOffset(phone and 22 or 24, phone and 22 or 24)
+				if iconFrame and iconFrame:IsA("Frame") then
+					iconFrame.Position = phone and UDim2.fromOffset(32, 8)
+						or UDim2.fromOffset(10, 10)
+					iconFrame.Size = phone and UDim2.fromOffset(28, 28) or UDim2.fromOffset(36, 36)
 				end
 			end
 		end
 	end
 
-	self.topBar.Position = UDim2.new(0.5, 0, 0, math.max(12, inset.Y + 8))
-	self.topBar.Size = UDim2.fromOffset(math.clamp(screenSize.X - 360, 260, 420), 42)
+	if self.rightNav then
+		self.rightNav.AnchorPoint = phone and Vector2.new(1, 1) or Vector2.new(1, 0.5)
+		self.rightNav.Position = phone and UDim2.new(1, -16, 1, -110) or UDim2.new(1, -24, 0.5, 24)
+		self.rightNav.Size = phone and UDim2.fromOffset(520, 82) or UDim2.fromOffset(210, 344)
+		local layout = self.rightNav:FindFirstChildOfClass("UIListLayout")
+		if layout then
+			layout.FillDirection = phone and Enum.FillDirection.Horizontal
+				or Enum.FillDirection.Vertical
+			layout.Padding = UDim.new(0, phone and 10 or 14)
+			layout.HorizontalAlignment = phone and Enum.HorizontalAlignment.Right
+				or Enum.HorizontalAlignment.Right
+		end
+		for _, data in RIGHT_BUTTONS do
+			local button = self.buttons[data.key]
+			if button then
+				button.Size = phone and UDim2.fromOffset(data.primary and 132 or 108, 56)
+					or data.primary and UDim2.fromOffset(206, 80)
+					or UDim2.fromOffset(180, 64)
+				local label = button:FindFirstChild("Label")
+				local iconFrame = button:FindFirstChild("Icon")
+				if label and label:IsA("TextLabel") then
+					label.TextSize = phone and 11 or data.primary and 28 or 16
+					label.Position = phone and UDim2.fromOffset(0, 28)
+						or UDim2.fromOffset(data.primary and 66 or 52, 0)
+					label.Size = phone and UDim2.new(1, 0, 0, 24)
+						or UDim2.new(1, data.primary and -82 or -62, 1, 0)
+					label.TextXAlignment = phone and Enum.TextXAlignment.Center
+						or Enum.TextXAlignment.Left
+				end
+				if iconFrame and iconFrame:IsA("Frame") then
+					iconFrame.Position = phone
+							and UDim2.fromOffset((button.Size.X.Offset - 28) / 2, 8)
+						or UDim2.fromOffset(data.primary and 16 or 10, data.primary and 12 or 10)
+					iconFrame.Size = phone and UDim2.fromOffset(28, 28) or UDim2.fromOffset(36, 36)
+				end
+			end
+		end
+	end
+
+	if self.topBar then
+		self.topBar.Position = UDim2.new(
+			0.5,
+			0,
+			0,
+			phone and math.max(inset.Y + 138, 148) or math.max(inset.Y + 86, 126)
+		)
+		self.topBar.Size =
+			UDim2.fromOffset(math.clamp(screenSize.X - 36, 320, 560), phone and 44 or 48)
+	end
 end
 
 function HUDController:SetGameplayFocus(enabled)
 	self.gameplayFocus = enabled == true
-	if self.leftStack then
-		self.leftStack.Visible = not self.gameplayFocus
+	local visible = not self.gameplayFocus
+	if self.brand then
+		self.brand.Visible = visible
 	end
-	if self.rightStack then
-		self.rightStack.Visible = not self.gameplayFocus
+	if self.leftNav then
+		self.leftNav.Visible = visible
+	end
+	if self.rightNav then
+		self.rightNav.Visible = visible
 	end
 	if self.gameplayFocus and self.menu then
 		self.menu:Close()
@@ -612,12 +768,23 @@ end
 function HUDController:SetMenuButtonSelected(key)
 	for buttonKey, button in self.buttons do
 		local selected = buttonKey == key
-		button.BackgroundTransparency = selected and 0 or 0.04
+		local dataAccent = Color3.fromRGB(48, 190, 255)
+		for _, data in LEFT_BUTTONS do
+			if data.key == buttonKey then
+				dataAccent = data.accent
+			end
+		end
+		for _, data in RIGHT_BUTTONS do
+			if data.key == buttonKey then
+				dataAccent = data.accent
+			end
+		end
 		local stroke = button:FindFirstChildOfClass("UIStroke")
 		if stroke then
-			stroke.Thickness = selected and 2 or 1
-			stroke.Color = selected and Color3.fromRGB(255, 205, 82) or UITheme.Color.strokeSoft
+			stroke.Color = selected and Color3.fromRGB(255, 211, 71) or dataAccent
+			stroke.Thickness = selected and 4 or buttonKey == "play" and 4 or 2
 		end
+		button.BackgroundTransparency = selected and 0 or 0.02
 	end
 end
 
@@ -629,33 +796,19 @@ function HUDController:SetPlayButtonState(hubState)
 
 	local queued = hubState and hubState.queued == true
 	local openArenas = hubState and hubState.openArenas or 0
-	local label = self.playButtonText
-	local icon = self.playButtonIcon
-	if queued then
-		if label then
+	local label = button:FindFirstChild("Label")
+	if label and label:IsA("TextLabel") then
+		if queued then
 			label.Text = "LEAVE"
-		end
-		if icon and icon:IsA("TextLabel") then
-			icon.Text = "<"
-		end
-		button.BackgroundColor3 = Color3.fromRGB(255, 112, 189)
-	elseif openArenas <= 0 then
-		if label then
+		elseif openArenas <= 0 then
 			label.Text = "FULL"
-		end
-		if icon and icon:IsA("TextLabel") then
-			icon.Text = "!"
-		end
-		button.BackgroundColor3 = Color3.fromRGB(116, 124, 139)
-	else
-		if label then
+		else
 			label.Text = "PLAY"
 		end
-		if icon and icon:IsA("TextLabel") then
-			icon.Text = ">"
-		end
-		button.BackgroundColor3 = Color3.fromRGB(67, 224, 86)
 	end
+	button.BackgroundColor3 = queued and Color3.fromRGB(255, 89, 178)
+		or openArenas <= 0 and Color3.fromRGB(88, 96, 112)
+		or Color3.fromRGB(109, 235, 71)
 end
 
 function HUDController:UpdateProgression()
@@ -668,18 +821,24 @@ function HUDController:UpdateProgression()
 
 	local levelValue = level and level.Value or 1
 	local xpValue = xp and xp.Value or 0
-	self.levelLabel.Text = `LV. {levelValue} | {xpValue} XP`
-	self.coinsLabel.Text = `$ {coins and coins.Value or 0}`
-	self.winsLabel.Text = `WINS {wins and wins.Value or 0}`
-	self.starsLabel.Text = `STARS {storyStars and storyStars.Value or 0}`
+	local coinsValue = coins and coins.Value or 0
+	local winsValue = wins and wins.Value or 0
+	local starsValue = storyStars and storyStars.Value or 0
 
-	local progress = (xpValue % 100) / 100
-	if self.isReducedMotion() then
-		self.xpFill.Size = UDim2.fromScale(progress, 1)
-	else
-		TweenService:Create(self.xpFill, UITheme.Motion.soft, {
-			Size = UDim2.fromScale(progress, 1),
-		}):Play()
+	if self.resourceLabels.level then
+		self.resourceLabels.level.Text = `LV {levelValue}`
+	end
+	if self.resourceLabels.xp then
+		self.resourceLabels.xp.Text = `XP {xpValue % 100}%`
+	end
+	if self.resourceLabels.coins then
+		self.resourceLabels.coins.Text = `{coinsValue} Coins`
+	end
+	if self.resourceLabels.wins then
+		self.resourceLabels.wins.Text = `{winsValue} Wins`
+	end
+	if self.resourceLabels.stars then
+		self.resourceLabels.stars.Text = `{starsValue} Stars`
 	end
 end
 
@@ -699,19 +858,19 @@ function HUDController:UpdateHubState(hubState)
 	local minPlayers = hubState.minPlayers or 2
 	local openArenas = hubState.openArenas or 0
 	self:SetPlayButtonState(hubState)
-	self.modeLabel.Text = hubState.queued and "Queued" or "Hub"
-	if hubState.queued then
-		self.objectiveLabel.Text = hubState.secondsToSoloStart
-				and hubState.secondsToSoloStart > 0
-				and `Waiting for players. Solo test in {hubState.secondsToSoloStart}s.`
-			or `Queue: {queueCount}/{minPlayers}. Stay ready.`
-	elseif openArenas <= 0 then
-		self.objectiveLabel.Text = "Arenas are full. Try Story or wait."
-	else
-		self.objectiveLabel.Text = "Choose Play, Modes, Shop, or walk to a portal."
+	if self.cancelQueueButton then
+		self.cancelQueueButton.Visible = hubState.queued == true
 	end
-
-	self.zoneLabel.Text = hubState.message or `Floating Hub | {openArenas} arena(s) open`
+	if hubState.queued then
+		self.zoneLabel.Text = hubState.secondsToSoloStart
+				and hubState.secondsToSoloStart > 0
+				and `Queued {queueCount}/{minPlayers} - solo test in {hubState.secondsToSoloStart}s`
+			or `Queued {queueCount}/{minPlayers} - waiting for players`
+	elseif openArenas <= 0 then
+		self.zoneLabel.Text = "Arenas are full - try Story or wait"
+	else
+		self.zoneLabel.Text = hubState.message or `Floating Hub - {openArenas} arena(s) open`
+	end
 	self:UpdateProgression()
 end
 
@@ -727,15 +886,15 @@ function HUDController:UpdateGameState(state)
 
 	self:SetGameplayFocus(true)
 	self.topBar.Visible = true
-	self.modeLabel.Text = state.mode == "Story" and "Story Run"
+	if self.cancelQueueButton then
+		self.cancelQueueButton.Visible = false
+	end
+	local modeName = state.mode == "Story" and "Story Run"
 		or state.mode == "Custom" and "Custom Lab"
 		or "Battle"
-	self.objectiveLabel.Text = state.message
-		or state.mode == "Story" and "Complete the mission objective."
-		or state.mode == "Custom" and "Rotate or reroll pieces, then test placements."
-		or "Place blocks, clear lines, and outscore rivals."
-	self.zoneLabel.Text = state.timeLeft and `{self.modeLabel.Text} | {state.timeLeft}s`
-		or self.modeLabel.Text
+	self.zoneLabel.Text = state.timeLeft and `{modeName} - {state.timeLeft}s`
+		or state.message
+		or modeName
 	self:UpdateProgression()
 end
 
@@ -747,11 +906,17 @@ function HUDController:Destroy()
 	if self.menu then
 		self.menu:Destroy()
 	end
-	if self.leftStack then
-		self.leftStack:Destroy()
+	if self.brand then
+		self.brand:Destroy()
 	end
-	if self.rightStack then
-		self.rightStack:Destroy()
+	if self.resourceBar then
+		self.resourceBar:Destroy()
+	end
+	if self.leftNav then
+		self.leftNav:Destroy()
+	end
+	if self.rightNav then
+		self.rightNav:Destroy()
 	end
 	if self.topBar then
 		self.topBar:Destroy()
