@@ -8,6 +8,7 @@ ExperienceConfig.Modes = {
 }
 
 ExperienceConfig.World = {
+	UseToyboxHub = true,
 	BuildBattleRoutes = false,
 	BuildStoryRoutes = false,
 	BuildBattleArenas = false,

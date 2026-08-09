@@ -57,6 +57,9 @@ local customization = {
 	accentColor = Color3.fromRGB(64, 156, 255),
 }
 local scoreLabel = nil
+local bestScoreLabel = nil
+local comboBadgeLabel = nil
+local coinChipLabel = nil
 local timerLabel = nil
 local progressionLabel = nil
 local matchInfoLabel = nil
@@ -104,11 +107,11 @@ local renderHand = nil
 local renderDiagnostics = nil
 local pulseHandSlot = nil
 
-local DEFAULT_WINDOW_POSITION = UDim2.new(0.5, -320, 0.5, 0)
-local DEFAULT_WINDOW_SIZE = Vector2.new(640, 438)
-local MIN_WINDOW_SIZE = Vector2.new(360, 420)
-local MAX_WINDOW_SIZE = Vector2.new(860, 620)
-local COMPACT_WINDOW_WIDTH = 560
+local DEFAULT_WINDOW_POSITION = UDim2.new(0.5, -500, 0.5, 0)
+local DEFAULT_WINDOW_SIZE = Vector2.new(1000, 650)
+local MIN_WINDOW_SIZE = Vector2.new(380, 540)
+local MAX_WINDOW_SIZE = Vector2.new(1180, 760)
+local COMPACT_WINDOW_WIDTH = 700
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
@@ -940,14 +943,16 @@ root.BorderSizePixel = 0
 root.Visible = false
 root.Parent = gui
 UITheme.panel(root, {
-	color = Color3.fromRGB(13, 22, 43),
-	bottomColor = Color3.fromRGB(7, 12, 25),
-	strokeColor = Color3.fromRGB(48, 190, 255),
-	strokeTransparency = 0,
+	color = Color3.fromRGB(8, 18, 35),
+	bottomColor = Color3.fromRGB(5, 10, 20),
+	strokeColor = Color3.fromRGB(47, 199, 255),
+	strokeTransparency = 0.16,
+	radius = 30,
 })
+root.BackgroundTransparency = 0.22
 local rootStroke = root:FindFirstChildOfClass("UIStroke")
 if rootStroke then
-	rootStroke.Thickness = 3
+	rootStroke.Thickness = 5
 end
 
 rootScale = Instance.new("UIScale")
@@ -1349,17 +1354,72 @@ title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = root
 UITheme.text(title, "title")
 
+local scoreCard = Instance.new("Frame")
+scoreCard.Name = "ScoreCard"
+scoreCard.Position = UDim2.fromOffset(22, 72)
+scoreCard.Size = UDim2.fromOffset(210, 142)
+scoreCard.Parent = root
+UITheme.panel(scoreCard, {
+	color = Color3.fromRGB(12, 28, 52),
+	bottomColor = Color3.fromRGB(5, 14, 30),
+	strokeColor = Color3.fromRGB(35, 173, 244),
+	strokeTransparency = 0.04,
+	strokeThickness = 4,
+	radius = 20,
+})
+
 scoreLabel = Instance.new("TextLabel")
 scoreLabel.BackgroundTransparency = 1
-scoreLabel.Position = UDim2.fromOffset(24, 56)
-scoreLabel.Size = UDim2.fromOffset(240, 26)
-scoreLabel.Font = Enum.Font.Gotham
-scoreLabel.Text = "Score: 0"
-scoreLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
-scoreLabel.TextSize = 18
-scoreLabel.TextXAlignment = Enum.TextXAlignment.Left
-scoreLabel.Parent = root
-UITheme.text(scoreLabel, "muted")
+scoreLabel.Position = UDim2.fromOffset(14, 16)
+scoreLabel.Size = UDim2.new(1, -28, 0, 58)
+scoreLabel.Font = Enum.Font.GothamBlack
+scoreLabel.Text = "0"
+scoreLabel.TextColor3 = Color3.fromRGB(255, 222, 72)
+scoreLabel.TextSize = 42
+scoreLabel.TextXAlignment = Enum.TextXAlignment.Center
+scoreLabel.TextStrokeColor3 = Color3.fromRGB(42, 28, 10)
+scoreLabel.TextStrokeTransparency = 0.35
+scoreLabel.Parent = scoreCard
+
+bestScoreLabel = Instance.new("TextLabel")
+bestScoreLabel.BackgroundTransparency = 1
+bestScoreLabel.Position = UDim2.fromOffset(18, 82)
+bestScoreLabel.Size = UDim2.new(1, -36, 0, 28)
+bestScoreLabel.Font = Enum.Font.GothamBlack
+bestScoreLabel.Text = "BEST 0"
+bestScoreLabel.TextColor3 = Color3.fromRGB(63, 205, 255)
+bestScoreLabel.TextSize = 20
+bestScoreLabel.TextXAlignment = Enum.TextXAlignment.Center
+bestScoreLabel.Parent = scoreCard
+
+comboBadgeLabel = Instance.new("TextLabel")
+comboBadgeLabel.BackgroundTransparency = 0.08
+comboBadgeLabel.BackgroundColor3 = Color3.fromRGB(118, 45, 220)
+comboBadgeLabel.Position = UDim2.fromOffset(22, 232)
+comboBadgeLabel.Size = UDim2.fromOffset(210, 96)
+comboBadgeLabel.Font = Enum.Font.GothamBlack
+comboBadgeLabel.Text = "COMBO\nx1"
+comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+comboBadgeLabel.TextSize = 28
+comboBadgeLabel.TextStrokeColor3 = Color3.fromRGB(31, 9, 69)
+comboBadgeLabel.TextStrokeTransparency = 0.2
+comboBadgeLabel.Parent = root
+UITheme.corner(comboBadgeLabel, 22)
+UITheme.stroke(comboBadgeLabel, Color3.fromRGB(244, 212, 255), 4, 0.03)
+
+coinChipLabel = Instance.new("TextLabel")
+coinChipLabel.AnchorPoint = Vector2.new(1, 0)
+coinChipLabel.BackgroundTransparency = 0.02
+coinChipLabel.BackgroundColor3 = Color3.fromRGB(11, 27, 51)
+coinChipLabel.Position = UDim2.new(1, -170, 0, 20)
+coinChipLabel.Size = UDim2.fromOffset(150, 46)
+coinChipLabel.Font = Enum.Font.GothamBlack
+coinChipLabel.Text = "0 Coins  +"
+coinChipLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+coinChipLabel.TextSize = 20
+coinChipLabel.Parent = root
+UITheme.corner(coinChipLabel, 18)
+UITheme.stroke(coinChipLabel, Color3.fromRGB(34, 173, 244), 3, 0.08)
 
 timerLabel = Instance.new("TextLabel")
 timerLabel.AnchorPoint = Vector2.new(1, 0)
@@ -1376,7 +1436,7 @@ UITheme.text(timerLabel, "muted")
 
 progressionLabel = Instance.new("TextLabel")
 progressionLabel.BackgroundTransparency = 1
-progressionLabel.Position = UDim2.fromOffset(24, 78)
+progressionLabel.Position = UDim2.fromOffset(24, 42)
 progressionLabel.Size = UDim2.fromOffset(420, 20)
 progressionLabel.Font = Enum.Font.Gotham
 progressionLabel.Text = "Level 1 | 0 coins | 0 XP"
@@ -1429,8 +1489,17 @@ end
 local boardFrame = Instance.new("Frame")
 boardFrame.Position = UDim2.fromOffset(24, 104)
 boardFrame.Size = UDim2.fromOffset(304, 304)
-boardFrame.BackgroundTransparency = 1
+boardFrame.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
+boardFrame.BackgroundTransparency = 0.02
 boardFrame.Parent = root
+UITheme.corner(boardFrame, 20)
+UITheme.stroke(boardFrame, Color3.fromRGB(39, 178, 255), 5, 0.05)
+local boardPadding = Instance.new("UIPadding")
+boardPadding.PaddingTop = UDim.new(0, 16)
+boardPadding.PaddingBottom = UDim.new(0, 16)
+boardPadding.PaddingLeft = UDim.new(0, 16)
+boardPadding.PaddingRight = UDim.new(0, 16)
+boardPadding.Parent = boardFrame
 
 local boardLayout = Instance.new("UIGridLayout")
 boardLayout.CellSize = UDim2.fromOffset(35, 35)
@@ -1448,6 +1517,8 @@ for y = 1, Config.BoardSize do
 		button.Text = ""
 		button.AutoButtonColor = false
 		button.Parent = boardFrame
+		UITheme.corner(button, 8)
+		UITheme.stroke(button, Color3.fromRGB(36, 59, 94), 2, 0.12)
 
 		local scale = Instance.new("UIScale")
 		scale.Scale = 1
@@ -1495,8 +1566,11 @@ end
 local side = Instance.new("Frame")
 side.Position = UDim2.fromOffset(360, 104)
 side.Size = UDim2.fromOffset(256, 304)
-side.BackgroundTransparency = 1
+side.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
+side.BackgroundTransparency = 0.06
 side.Parent = root
+UITheme.corner(side, 26)
+UITheme.stroke(side, Color3.fromRGB(39, 178, 255), 4, 0.08)
 
 statusLabel = Instance.new("TextLabel")
 statusLabel.BackgroundTransparency = 1
@@ -1533,6 +1607,12 @@ for slot = 1, Config.InventorySize do
 	button.Text = ""
 	button.Parent = side
 	styleButton(button, "secondary")
+	local buttonStroke = button:FindFirstChildOfClass("UIStroke")
+	if buttonStroke then
+		buttonStroke.Thickness = 3
+		buttonStroke.Color = Color3.fromRGB(34, 173, 244)
+		buttonStroke.Transparency = 0.1
+	end
 	handButtons[slot] = button
 
 	local preview = Instance.new("Frame")
@@ -1572,16 +1652,19 @@ for slot = 1, Config.InventorySize do
 end
 
 leaderboardLabel = Instance.new("TextLabel")
-leaderboardLabel.BackgroundTransparency = 1
+leaderboardLabel.BackgroundColor3 = Color3.fromRGB(10, 27, 52)
+leaderboardLabel.BackgroundTransparency = 0.05
 leaderboardLabel.Position = UDim2.fromOffset(0, 242)
 leaderboardLabel.Size = UDim2.fromOffset(256, 56)
-leaderboardLabel.Font = Enum.Font.Gotham
-leaderboardLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
+leaderboardLabel.Font = Enum.Font.GothamBlack
+leaderboardLabel.TextColor3 = Color3.fromRGB(245, 247, 251)
 leaderboardLabel.TextSize = 16
 leaderboardLabel.TextXAlignment = Enum.TextXAlignment.Left
 leaderboardLabel.TextYAlignment = Enum.TextYAlignment.Top
 leaderboardLabel.Parent = side
 UITheme.text(leaderboardLabel, "muted")
+UITheme.corner(leaderboardLabel, 18)
+UITheme.stroke(leaderboardLabel, Color3.fromRGB(39, 178, 255), 3, 0.14)
 
 returnHubButton = Instance.new("TextButton")
 returnHubButton.Position = UDim2.fromOffset(360, 390)
@@ -1668,41 +1751,77 @@ applyWindowLayout = function()
 	local height = windowSize.Y
 	local compact = width < COMPACT_WINDOW_WIDTH
 	local leftPadding = compact and 16 or 24
-	local topPadding = compact and 92 or 96
-	local bottomPadding = compact and 54 or 52
-	local gap = compact and 10 or 24
-	local boardLimitByHeight = compact and (height - topPadding - bottomPadding - 126)
+	local topPadding = compact and 112 or 88
+	local bottomPadding = compact and 190 or 56
+	local gap = compact and 12 or 22
+	local sideColumnWidth = compact and width - (leftPadding * 2) or 260
+	local scoreColumnWidth = compact and 0 or 230
+	local boardLimitByHeight = compact and (height - topPadding - bottomPadding)
 		or (height - topPadding - bottomPadding)
-	local boardLimitByWidth = compact and (width - (leftPadding * 2)) or math.floor(width * 0.48)
+	local boardLimitByWidth = compact and (width - (leftPadding * 2))
+		or (width - scoreColumnWidth - sideColumnWidth - (leftPadding * 2) - gap * 2)
 	local boardPixels =
-		clampNumber(math.min(boardLimitByHeight, boardLimitByWidth), 220, compact and 320 or 384)
-	local cellPixels = math.floor((boardPixels - ((Config.BoardSize - 1) * 3)) / Config.BoardSize)
-	boardPixels = (cellPixels * Config.BoardSize) + ((Config.BoardSize - 1) * 3)
+		clampNumber(math.min(boardLimitByHeight, boardLimitByWidth), 260, compact and 480 or 520)
+	local innerBoardPixels = boardPixels - 32
+	local cellPixels =
+		math.floor((innerBoardPixels - ((Config.BoardSize - 1) * 4)) / Config.BoardSize)
+	innerBoardPixels = (cellPixels * Config.BoardSize) + ((Config.BoardSize - 1) * 4)
+	boardPixels = innerBoardPixels + 32
 
 	boardFrame.Position = UDim2.fromOffset(
-		compact and math.floor((width - boardPixels) / 2) or leftPadding,
+		compact and math.floor((width - boardPixels) / 2) or leftPadding + scoreColumnWidth + gap,
 		topPadding
 	)
 	boardFrame.Size = UDim2.fromOffset(boardPixels, boardPixels)
 	boardLayout.CellSize = UDim2.fromOffset(cellPixels, cellPixels)
+	boardLayout.CellPadding = UDim2.fromOffset(4, 4)
 
-	local sideX = compact and leftPadding or leftPadding + boardPixels + gap
+	if scoreCard then
+		scoreCard.Position = compact and UDim2.new(0.5, -135, 0, 22) or UDim2.fromOffset(22, 72)
+		scoreCard.Size = compact and UDim2.fromOffset(270, 74) or UDim2.fromOffset(210, 142)
+	end
+	scoreLabel.Size = compact and UDim2.new(1, -28, 0, 42) or UDim2.new(1, -28, 0, 58)
+	scoreLabel.TextSize = compact and 40 or 42
+	if bestScoreLabel then
+		bestScoreLabel.Position = compact and UDim2.fromOffset(18, 48) or UDim2.fromOffset(18, 82)
+		bestScoreLabel.TextSize = compact and 17 or 20
+	end
+	if coinChipLabel then
+		coinChipLabel.Position = compact and UDim2.fromOffset(16, 22) or UDim2.new(1, -170, 0, 20)
+		coinChipLabel.AnchorPoint = compact and Vector2.new(0, 0) or Vector2.new(1, 0)
+		coinChipLabel.Size = compact and UDim2.fromOffset(112, 42) or UDim2.fromOffset(150, 46)
+		coinChipLabel.TextSize = compact and 15 or 20
+	end
+
+	local boardX = compact and math.floor((width - boardPixels) / 2)
+		or leftPadding + scoreColumnWidth + gap
+	local sideX = compact and leftPadding or boardX + boardPixels + gap
 	local sideY = compact and topPadding + boardPixels + gap or topPadding
-	local sideWidth = compact and width - (leftPadding * 2)
-		or math.max(180, width - sideX - leftPadding)
+	local sideWidth = compact and width - (leftPadding * 2) or sideColumnWidth
+	local sideHeight = compact and 148 or boardPixels
 	side.Position = UDim2.fromOffset(sideX, sideY)
-	side.Size = UDim2.fromOffset(sideWidth, compact and 108 or boardPixels)
+	side.Size = UDim2.fromOffset(sideWidth, sideHeight)
 	statusLabel.Size = UDim2.fromOffset(sideWidth, 28)
-	statusLabel.TextSize = compact and 16 or sideWidth < 220 and 17 or 20
+	statusLabel.TextSize = compact and 16 or 20
 
-	local slotHeight = compact and 52
+	if bestScoreLabel then
+		bestScoreLabel.Visible = not compact
+	end
+	if comboBadgeLabel then
+		comboBadgeLabel.Position = compact and UDim2.new(1, -154, 0, topPadding + 8)
+			or UDim2.fromOffset(22, 232)
+		comboBadgeLabel.Size = compact and UDim2.fromOffset(132, 74) or UDim2.fromOffset(210, 96)
+		comboBadgeLabel.TextSize = compact and 22 or 28
+	end
+
+	local slotHeight = compact and 96
 		or clampNumber(math.floor((boardPixels - 112) / Config.InventorySize), 52, 72)
 	for slot, button in handButtons do
 		local buttonWidth = sideWidth
 		if compact then
 			buttonWidth =
 				math.floor((sideWidth - ((Config.InventorySize - 1) * 8)) / Config.InventorySize)
-			button.Position = UDim2.fromOffset((slot - 1) * (buttonWidth + 8), 34)
+			button.Position = UDim2.fromOffset((slot - 1) * (buttonWidth + 8), 38)
 		else
 			button.Position = UDim2.fromOffset(0, 38 + (slot - 1) * (slotHeight + 8))
 		end
@@ -1730,8 +1849,8 @@ applyWindowLayout = function()
 	local leaderboardY = compact and 92 or 38 + (Config.InventorySize * (slotHeight + 8)) + 2
 	leaderboardLabel.Position = UDim2.fromOffset(0, leaderboardY)
 	leaderboardLabel.Size =
-		UDim2.fromOffset(sideWidth, compact and 34 or math.max(50, boardPixels - leaderboardY))
-	leaderboardLabel.TextSize = compact and 12 or sideWidth < 220 and 14 or 16
+		UDim2.fromOffset(sideWidth, compact and 42 or math.max(84, boardPixels - leaderboardY))
+	leaderboardLabel.TextSize = compact and 14 or 16
 
 	local bottomY = height - 42
 	local actionWidth = compact and math.floor((width - (leftPadding * 2) - 8) / 2)
@@ -1978,6 +2097,12 @@ renderBoard = function()
 			else
 				cells[y][x].BackgroundColor3 = Config.Colors.Filled
 			end
+			local stroke = cells[y][x]:FindFirstChildOfClass("UIStroke")
+			if stroke then
+				stroke.Color = value == false and Color3.fromRGB(38, 61, 97)
+					or Color3.fromRGB(255, 255, 255)
+				stroke.Transparency = value == false and 0.2 or 0.55
+			end
 		end
 	end
 
@@ -1996,6 +2121,12 @@ renderBoard = function()
 		local y = hoverY + cell.Y
 		if x >= 1 and x <= Config.BoardSize and y >= 1 and y <= Config.BoardSize then
 			cells[y][x].BackgroundColor3 = canPlace and shape.color or Config.Colors.PreviewInvalid
+			local stroke = cells[y][x]:FindFirstChildOfClass("UIStroke")
+			if stroke then
+				stroke.Color = canPlace and Color3.fromRGB(255, 255, 255)
+					or Color3.fromRGB(255, 105, 105)
+				stroke.Transparency = 0.12
+			end
 		end
 	end
 end
@@ -2041,6 +2172,8 @@ local function renderShapePreview(preview, shape)
 		tile.BackgroundColor3 = shape.color
 		tile.BorderSizePixel = 0
 		tile.Parent = preview
+		UITheme.corner(tile, 5)
+		UITheme.stroke(tile, shape.color:Lerp(Color3.fromRGB(255, 255, 255), 0.4), 1, 0.25)
 	end
 end
 
@@ -2114,14 +2247,18 @@ renderHand = function()
 end
 
 local function renderLeaderboard(leaderboard)
-	local modeName = currentState.mode == "Story" and "Story Training"
-		or currentState.mode == "Custom" and "Custom Lab"
-		or currentState.mode == "Solo" and "Solo Puzzle"
-		or "Battle"
-	local lines = { `{modeName} - Best: {currentState.bestScore or 0}` }
+	local lines = { "SERVER TOP" }
 
 	for index, entry in leaderboard do
-		table.insert(lines, `{index}. {entry.name}: {entry.score} | Best {entry.bestScore or 0}`)
+		if index > 7 then
+			break
+		end
+		local name = entry.name or "Player"
+		table.insert(lines, `#{index} {name}: {entry.score or 0}`)
+	end
+
+	if #lines == 1 then
+		table.insert(lines, "Start a run to rank here")
 	end
 
 	leaderboardLabel.Text = table.concat(lines, "\n")
@@ -2141,6 +2278,9 @@ local function renderProgression()
 
 	progressionLabel.Text =
 		`{titleName} | Level {level and level.Value or 1} | {coins and coins.Value or 0} coins | {xp and xp.Value or 0} XP | {storyStars and storyStars.Value or 0} stars | {cleared} cleared`
+	if coinChipLabel then
+		coinChipLabel.Text = `{coins and coins.Value or 0} Coins  +`
+	end
 	if hudController then
 		hudController:UpdateProgression()
 	end
@@ -2244,7 +2384,15 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		or currentState.mode == "Custom" and "Custom Lab"
 		or currentState.mode == "Solo" and "Solo Puzzle"
 		or "Block Blast Battle"
-	scoreLabel.Text = `Score: {currentState.score}`
+	scoreLabel.Text = tostring(currentState.score)
+	if bestScoreLabel then
+		bestScoreLabel.Text = `BEST {currentState.bestScore or 0}`
+	end
+	if comboBadgeLabel then
+		local combo = math.max(1, currentState.comboStreak or 1)
+		comboBadgeLabel.Text = `COMBO\nx{combo}`
+		comboBadgeLabel.Visible = combo > 1 or currentState.mode == "Solo"
+	end
 	matchInfoLabel.Text = currentState.mode == "Story"
 			and (storyGoalText(currentState) or "Story Mission")
 		or currentState.mode == "Custom" and "Rotate or reroll pieces before placement"

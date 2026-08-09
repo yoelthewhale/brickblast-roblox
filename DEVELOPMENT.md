@@ -2,6 +2,92 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day34 Reference Reconstruction - 2026-08-09
+
+### Completed
+
+- Treated the three attached references as the official visual target and saved the extracted specification in `docs/DAY34_VISUAL_SPEC.md`.
+- Added `ExperienceConfig.World.UseToyboxHub = true` so the active hub uses the new toybox path while preserving previous hub code for rollback/reference.
+- Replaced the visible Day33 fantasy hub direction with a source-built toybox playground:
+  - large flat central toy plaza
+  - oversized cyan `PLAY` pad
+  - safe spawn deck
+  - `SoloPlayPad` with server-owned Solo prompt
+  - chunky `HIGH SCORES` wall
+  - block-drop machine filled with colorful rotating toy blocks
+  - blue slide
+  - red bounce pad
+  - green launcher pad
+  - purple spinner platform
+  - moving puzzle platform
+  - pressable button reaction
+  - scattered toy bricks, lamps, clouds, and colorful zones
+- Preserved safe spawn and void recovery behavior.
+- Preserved Solo-first configuration; Battle and Story remain disabled and absent from active prompts/routes/arenas.
+- Rebuilt the gameplay board UI toward the PC and mobile references:
+  - larger default 1000x650 active puzzle overlay
+  - dark navy rounded board frame with cyan stroke
+  - rounded stroked board cells
+  - large score card
+  - best-score label
+  - coin chip
+  - combo badge
+  - darker rounded piece tray/cards
+  - concept-style `SERVER TOP` leaderboard panel
+  - responsive mobile stacking with score above board and hand tray below board
+- Added a real current-server leaderboard foundation:
+  - server owns entries
+  - scores come from server-authoritative placement/scoring
+  - top list is capped and broadcast to Solo players
+  - no client score submission was added
+- Built `BlockBlastBattle-Day34.rbxl`.
+
+### Asset Notes
+
+- No Roblox asset uploads were performed.
+- No full-screen screenshot was used as the working UI.
+- Day34 uses Roblox-native `Frame`, `UIStroke`, `UICorner`, `UIGradient`, text, and Part geometry.
+- Future PNG/nine-slice assets should follow `docs/DAY34_VISUAL_SPEC.md`; upload/import remains a manual Roblox account action unless Studio upload automation becomes available.
+
+### Current State
+
+- Day34 is the first functional reconstruction of the chosen direction, not the final pixel-perfect version.
+- The toybox map should now read much closer to Image 1 than the prior floating terrain hub.
+- The PC puzzle UI should now read closer to Image 2: score left, large board center, server leaderboard right, strong dark/cyan panels.
+- The mobile layout should now read closer to Image 3: score top, board center, touch-friendly tray lower on the screen.
+
+### Known Issues
+
+- Studio Play-mode screenshots were not captured in this Codex session; visual proof still needs manual screenshots.
+- UI pieces are still made from Roblox Frames rather than uploaded glossy PNG/nine-slice art, so they will not yet match the rendered concept exactly.
+- The map uses primitive Parts and cylinders; it needs bevel/mesh polish, denser background structures, more avatars/social staging, and better material tuning.
+- Global and weekly OrderedDataStore leaderboards are still not implemented.
+- Some legacy internal names remain (`BattleStart`, `BattleResult`, `LeaveBattle`) to avoid breaking existing remote contracts during the visual checkpoint.
+
+### Required Manual Screenshots
+
+1. Spawn view facing the central PLAY pad.
+2. Main toybox plaza from player height.
+3. Three-quarter aerial view of the whole toybox.
+4. PC puzzle UI during a Solo run.
+5. Mobile/portrait puzzle UI during a Solo run.
+6. A line-clear or combo moment.
+7. Server leaderboard panel after at least one score.
+
+### Recommended Day35 Priorities
+
+1. Compare the required screenshots against the three references and fix the largest visual mismatches.
+2. Add stronger glossy asset treatment or uploaded nine-slice panel assets if Roblox asset upload is available.
+3. Improve board piece drag/touch feel and add stronger line-clear/score animations.
+4. Add all-time and weekly leaderboard architecture with OrderedDataStores.
+5. Increase toybox density with more polished structures while profiling mobile part count.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with 0 errors and 0 warnings; Selene used its cached Roblox standard library after failing to generate a fresh API dump.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day34.rbxl` passed.
+
 ## Day33 Solo-First Pivot - 2026-08-09
 
 ### Completed

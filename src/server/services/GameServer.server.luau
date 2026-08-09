@@ -239,6 +239,7 @@ local processedReceipts = {}
 local settingsSaveScheduled = {}
 local queueStartedAt = nil
 local nextSessionId = 0
+local serverHighScores = {}
 local profileStore = nil
 local profileLoadFailures = 0
 local profileSaveFailures = 0
@@ -689,6 +690,33 @@ local function updateLeaderstats(player, score)
 	if bestScore and score > bestScore.Value then
 		bestScore.Value = score
 	end
+
+	serverHighScores[player.UserId] = {
+		userId = player.UserId,
+		name = player.DisplayName,
+		score = math.max(score, bestScore and bestScore.Value or 0),
+		bestScore = bestScore and bestScore.Value or score,
+	}
+end
+
+local function serverHighScoreList()
+	local list = {}
+	for _, entry in serverHighScores do
+		table.insert(list, table.clone(entry))
+	end
+
+	table.sort(list, function(a, b)
+		if a.score == b.score then
+			return a.name < b.name
+		end
+		return a.score > b.score
+	end)
+
+	while #list > 10 do
+		table.remove(list)
+	end
+
+	return list
 end
 
 local function setProfileWithRetry(player, payload)
@@ -1772,6 +1800,7 @@ sendHubState = function(player, message)
 		profileLoadFailures = profileLoadFailures,
 		profileSaveFailures = profileSaveFailures,
 		analytics = table.clone(analytics),
+		serverHighScores = serverHighScoreList(),
 		secondsToSoloStart = secondsToSoloStart,
 		message = message,
 	})
@@ -1793,27 +1822,29 @@ local function broadcast(session)
 		return
 	end
 
-	local leaderboard = {}
+	local leaderboard = session.mode == "Solo" and serverHighScoreList() or {}
 
-	for _, player in session.players do
-		local state = playerStates[player]
-		if not state then
-			continue
+	if session.mode ~= "Solo" then
+		for _, player in session.players do
+			local state = playerStates[player]
+			if not state then
+				continue
+			end
+
+			table.insert(leaderboard, {
+				userId = player.UserId,
+				name = player.DisplayName,
+				score = state.score,
+				bestScore = state.bestScore,
+				alive = state.alive,
+				message = state.message,
+			})
 		end
 
-		table.insert(leaderboard, {
-			userId = player.UserId,
-			name = player.DisplayName,
-			score = state.score,
-			bestScore = state.bestScore,
-			alive = state.alive,
-			message = state.message,
-		})
+		table.sort(leaderboard, function(a, b)
+			return a.score > b.score
+		end)
 	end
-
-	table.sort(leaderboard, function(a, b)
-		return a.score > b.score
-	end)
 
 	for _, player in session.players do
 		if player.Parent == Players and playerStates[player] then
@@ -2355,6 +2386,10 @@ leaveBattle = function(player)
 	playerModes[player] = "Hub"
 
 	if session then
+		local stateScore = state and state.score or nil
+		if stateScore then
+			updateLeaderstats(player, stateScore)
+		end
 		if session.mode == "Solo" then
 			analytics.soloSessionsFinished += 1
 		end
@@ -2856,6 +2891,7 @@ Players.PlayerRemoving:Connect(function(player)
 	end
 	selectedStoryChapters[player] = nil
 	playerModes[player] = nil
+	serverHighScores[player.UserId] = nil
 	playerSettings[player] = nil
 	playerDailyRewardDates[player] = nil
 	playerEntitlements[player] = nil
