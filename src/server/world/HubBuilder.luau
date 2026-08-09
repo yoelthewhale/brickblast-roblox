@@ -238,6 +238,24 @@ local function fillTerrainBlock(center, size, material, rotationY)
 	)
 end
 
+local function safeLightingSet(property, value)
+	local ok, err = pcall(function()
+		Lighting[property] = value
+	end)
+	if not ok then
+		warn(`Block Blast lighting skipped {property}: {err}`)
+	end
+end
+
+local function removeBootstrapSafetyParts()
+	for _, name in { "BootstrapHubSafetyFloor", "BootstrapHubSpawn" } do
+		local object = workspace:FindFirstChild(name)
+		if object then
+			object:Destroy()
+		end
+	end
+end
+
 local function makeIsland(parent, name, center, radius, accent)
 	local island = Instance.new("Folder")
 	island.Name = name
@@ -794,17 +812,16 @@ local function makeGateway(parent, name, center, rotation, leftColor, rightColor
 end
 
 local function configureLighting()
-	Lighting.Technology = Enum.Technology.Future
-	Lighting.GlobalShadows = false
-	Lighting.Brightness = 3
-	Lighting.ClockTime = 17.35
-	Lighting.ExposureCompensation = 0.05
-	Lighting.EnvironmentDiffuseScale = 0.45
-	Lighting.EnvironmentSpecularScale = 0.55
-	Lighting.Ambient = Color3.fromRGB(152, 174, 195)
-	Lighting.OutdoorAmbient = Color3.fromRGB(130, 152, 176)
-	Lighting.ColorShift_Top = Color3.fromRGB(255, 205, 145)
-	Lighting.ColorShift_Bottom = Color3.fromRGB(131, 202, 255)
+	safeLightingSet("GlobalShadows", false)
+	safeLightingSet("Brightness", 3)
+	safeLightingSet("ClockTime", 17.35)
+	safeLightingSet("ExposureCompensation", 0.05)
+	safeLightingSet("EnvironmentDiffuseScale", 0.45)
+	safeLightingSet("EnvironmentSpecularScale", 0.55)
+	safeLightingSet("Ambient", Color3.fromRGB(152, 174, 195))
+	safeLightingSet("OutdoorAmbient", Color3.fromRGB(130, 152, 176))
+	safeLightingSet("ColorShift_Top", Color3.fromRGB(255, 205, 145))
+	safeLightingSet("ColorShift_Bottom", Color3.fromRGB(131, 202, 255))
 
 	for _, child in Lighting:GetChildren() do
 		if child.Name:match("^BlockBlast") then
@@ -1648,6 +1665,8 @@ function HubBuilder.build()
 			end
 		end)
 	end
+
+	removeBootstrapSafetyParts()
 
 	return {
 		hub = hub,

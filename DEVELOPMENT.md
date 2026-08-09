@@ -2,6 +2,54 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day31 Runtime Map Mismatch Fix - 2026-08-09
+
+### Completed
+
+- Investigated the user-provided Day30 Play-mode screenshot as the runtime source of truth and confirmed it showed the fallback hub, not the claimed Day30 hub.
+- Confirmed `BlockBlastBattle-Day30.rbxl` existed at `C:\Users\Bear4\Documents\Codex\2026-07-28\build\outputs\block-blast-battle\BlockBlastBattle-Day30.rbxl`, size `118277`, modified `2026-08-09 7:58:04 AM`.
+- Confirmed Rojo mapped the edited `src/server/world/HubBuilder.luau` into the built place by building an inspection `.rbxlx` and finding `CentralHubIsland` and `BrickCoreLandmark` in the generated module source.
+- Found the actual runtime cause in Roblox Studio logs: `The current thread cannot write 'Technology' (lacking capability RobloxScript)`.
+- Identified the failing code path:
+  - Runtime entry point: `src/server/services/GameServer.server.luau`
+  - Active builder require: `require(script.Parent.Parent.world.HubBuilder)`
+  - Failing call: `pcall(HubBuilder.build)`
+  - Fallback path: `buildFallbackHub(hubPartsOrError)`
+  - Protected write: `Lighting.Technology = Enum.Technology.Future` in `HubBuilder.configureLighting()`
+- Replaced direct Lighting property writes with `safeLightingSet()` for runtime-safe lighting configuration.
+- Removed the protected `Lighting.Technology` write entirely.
+- Added successful-build cleanup for `Workspace.BootstrapHubSafetyFloor` and `Workspace.BootstrapHubSpawn` so bootstrap safety geometry cannot remain visible after the real hub builds.
+- Preserved fallback behavior if a future hub error occurs before successful construction.
+- Built the corrected next unused artifact: `BlockBlastBattle-Day31.rbxl`.
+
+### Runtime Object Mapping From Rejected Screenshot
+
+- Enormous rectangular grass platform: `Workspace.BootstrapHubSafetyFloor`, resized and recolored by `buildFallbackHub()`.
+- Flat gray central baseplate: `Workspace.BlockBlastHub.FallbackArenaFloor`.
+- Large cyan/purple glowing pads: `Workspace.BlockBlastHub.BattleQueuePad` and `Workspace.BlockBlastHub.StoryQueuePad` created by `buildFallbackHub()`.
+- Scattered colored cubes: `Workspace.BlockBlastHub.FallbackRainbowBlock*`.
+- Glowing rectangles: `Workspace.BlockBlastHub.FallbackFlower*`.
+- Primitive floating box at the back: fallback arena/fallback warning geometry, not the Day30 central hub.
+
+### Evidence
+
+- Studio logs repeatedly showed fallback warnings with the same cause: `The current thread cannot write 'Technology' (lacking capability RobloxScript)`.
+- Built `.rbxlx` inspection showed Day31 includes `safeLightingSet`, `removeBootstrapSafetyParts`, `CentralHubIsland`, and `BrickCoreLandmark`.
+- No duplicate authoritative hub path was found; the fallback was created only because `HubBuilder.build()` errored.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with `0 errors`, `0 warnings`, `0 parse errors`.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day31.rbxl` passed.
+- `git diff --check` passed with line-ending warnings only.
+
+### Current State
+
+- The source-of-truth mismatch is fixed in code, but visual approval still requires a new Play-mode screenshot from `BlockBlastBattle-Day31.rbxl`.
+- Press F8 in Studio Play mode to hide/show the custom HUD during map inspection.
+- If fallback appears again, Studio Output should now show a different warning; the previous `Lighting.Technology` blocker is removed.
+
 ## Day30 Visual Correction - 2026-08-09
 
 ### Completed

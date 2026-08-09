@@ -162,6 +162,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - 2026-08-02 Day 28: Implemented the selected UI concept direction with native Roblox GUI components: Option B-style hub/resource/navigation HUD, Option B-style purple/navy shop shell, Option C-style dark/light inventory shell, disabled duplicate legacy Home panel visibility, restyled battle shell, and built `BlockBlastBattle-Day28.rbxl`.
 - 2026-08-09 Day 29: Backed up the likely manually edited Day28 place, moved map rescue work into reproducible `HubBuilder` source, added reusable map prefabs, reorganized the hub into Battle, Story, Shop/Cosmetics, Guide/Settings, and Leaderboard zones, added stronger central plaza routes/landmarks/background silhouettes, and built `BlockBlastBattle-Day29.rbxl`.
 - 2026-08-09 Day 30: Marked Day29 visually rejected from the real Play-mode screenshot, replaced the flat central plate with source-generated Terrain land mass, rebuilt the central plaza and Brick Core landmark, reduced the side-island spread to Battle and Story route endpoints, added a Studio-only F8 custom-HUD inspection toggle, and built `BlockBlastBattle-Day30.rbxl`.
+- 2026-08-09 Day 31: Diagnosed why Day30 still showed the fallback hub at runtime, removed the protected `Lighting.Technology` write that caused `HubBuilder.build()` to fail, added successful cleanup for bootstrap safety parts, and built `BlockBlastBattle-Day31.rbxl`.
 
 ## UI Direction References
 
@@ -172,7 +173,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 ## Day30 Visual Review Focus
 
-- Open `BlockBlastBattle-Day30.rbxl` locally and press Play.
+- Open `BlockBlastBattle-Day31.rbxl` locally and press Play.
 - Press F8 during Studio Play mode to hide/show the custom HUD for map inspection.
 - Capture a normal spawn-view screenshot.
 - Capture a plaza-facing-Brick-Core screenshot.
@@ -182,6 +183,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Confirm Battle and Story pads retain prompt behavior and remain reachable.
 - Confirm the hidden safe walk surfaces do not visibly cover the terrain.
 - Confirm the new terrain island has no spawn holes, route gaps, or camera-blocking decoration.
+- Confirm Studio Output no longer shows `The current thread cannot write 'Technology'`.
 - Do not redesign the remaining Shop/Guide/Leaderboard islands until the central hub direction is visually approved.
 
 ## Day17 Custom Lab And Hub Validation Focus
