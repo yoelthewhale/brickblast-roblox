@@ -12,6 +12,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameShared = Shared:WaitForChild("game")
 local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
+local ExperienceConfig = require(GameShared.ExperienceConfig)
 local Grid = require(GameShared.Grid)
 local CosmeticPanel = require(script.Parent.CosmeticPanel)
 local HUDController = require(script.Parent.HUDController)
@@ -604,7 +605,7 @@ local function updateTutorialVisibility()
 end
 
 local function showBanner(message, color)
-	if message == "Welcome to the hub" then
+	if message == "Welcome to the hub" or message == ExperienceConfig.Solo.WelcomeMessage then
 		return
 	end
 
@@ -805,7 +806,12 @@ hudController = HUDController.new(gui, {
 				battleDock.Visible = false
 				return
 			end
-			if currentHubState and currentHubState.queued then
+			if
+				ExperienceConfig.isModeEnabled("Solo")
+				and not ExperienceConfig.isModeEnabled("Battle")
+			then
+				queueEvent:FireServer("Solo")
+			elseif currentHubState and currentHubState.queued then
 				queueEvent:FireServer("LeaveQueue")
 			else
 				queueEvent:FireServer("Battle")
@@ -909,9 +915,9 @@ hudController = HUDController.new(gui, {
 		end,
 		rewards = function()
 			hudController:OpenInfoPanel("Quests", {
-				"Daily win bonus and run rewards are tracked by the server.",
-				"Story missions unlock more goals as you earn stars.",
-				"A full quest board is coming after the main play loop feels better.",
+				"Solo scores, coins, XP, and personal bests are tracked by the server.",
+				"Daily quests are coming after the solo loop is tightened.",
+				"Leaderboards are the next major progression priority.",
 			})
 		end,
 		settings = function()
@@ -972,7 +978,7 @@ dockStatusLabel.BackgroundTransparency = 1
 dockStatusLabel.Position = UDim2.fromOffset(14, 10)
 dockStatusLabel.Size = UDim2.fromOffset(232, 36)
 dockStatusLabel.Font = Enum.Font.GothamBold
-dockStatusLabel.Text = "Battle running"
+dockStatusLabel.Text = "Solo run active"
 dockStatusLabel.TextColor3 = Color3.fromRGB(245, 247, 251)
 dockStatusLabel.TextSize = 16
 dockStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -1031,7 +1037,14 @@ homePanelController = HomePanel.new(gui, {
 			updateTutorialVisibility()
 		end,
 		battle = function(queued)
-			queueEvent:FireServer(queued and "LeaveQueue" or "Battle")
+			if
+				ExperienceConfig.isModeEnabled("Solo")
+				and not ExperienceConfig.isModeEnabled("Battle")
+			then
+				queueEvent:FireServer("Solo")
+			else
+				queueEvent:FireServer(queued and "LeaveQueue" or "Battle")
+			end
 		end,
 		story = function()
 			cosmeticPanelController:Hide()
@@ -1162,7 +1175,7 @@ tutorialBody.Position = UDim2.fromOffset(18, 50)
 tutorialBody.Size = UDim2.fromOffset(284, 96)
 tutorialBody.Font = Enum.Font.Gotham
 tutorialBody.Text =
-	"1. Pick a piece on the right.\n2. Hover the board to preview it.\n3. Clear full rows or columns to score and pressure rivals."
+	"1. Press Play to start a solo run.\n2. Pick a piece on the right.\n3. Clear full rows or columns and beat your best score."
 tutorialBody.TextColor3 = Color3.fromRGB(193, 201, 215)
 tutorialBody.TextSize = 15
 tutorialBody.TextWrapped = true
@@ -1190,6 +1203,7 @@ tutorialStoryButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 tutorialStoryButton.BorderSizePixel = 0
 tutorialStoryButton.Font = Enum.Font.GothamBold
 tutorialStoryButton.Text = "Try Story"
+tutorialStoryButton.Visible = ExperienceConfig.isModeEnabled("Story")
 tutorialStoryButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 tutorialStoryButton.TextSize = 15
 tutorialStoryButton.Parent = tutorialPanel
@@ -1328,7 +1342,7 @@ title.Position = UDim2.fromOffset(24, 18)
 title.Size = UDim2.fromOffset(210, 36)
 title.AutoButtonColor = false
 title.Font = Enum.Font.GothamBold
-title.Text = "Block Blast Battle"
+title.Text = "Solo Puzzle"
 title.TextColor3 = Color3.fromRGB(245, 247, 251)
 title.TextSize = 22
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -1378,7 +1392,7 @@ matchInfoLabel.BackgroundTransparency = 1
 matchInfoLabel.Position = UDim2.new(1, -22, 0, 80)
 matchInfoLabel.Size = UDim2.fromOffset(180, 20)
 matchInfoLabel.Font = Enum.Font.Gotham
-matchInfoLabel.Text = "Arena -- | Match --"
+matchInfoLabel.Text = "Beat your best score"
 matchInfoLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
 matchInfoLabel.TextSize = 14
 matchInfoLabel.TextXAlignment = Enum.TextXAlignment.Right
@@ -2102,6 +2116,7 @@ end
 local function renderLeaderboard(leaderboard)
 	local modeName = currentState.mode == "Story" and "Story Training"
 		or currentState.mode == "Custom" and "Custom Lab"
+		or currentState.mode == "Solo" and "Solo Puzzle"
 		or "Battle"
 	local lines = { `{modeName} - Best: {currentState.bestScore or 0}` }
 
@@ -2171,7 +2186,7 @@ renderDiagnostics = function()
 		if typeof(currentHubState.analytics) == "table" then
 			table.insert(
 				lines,
-				`Analytics B/S/Q/P/C/K/I/F/R/T/D: {stats.battleSessionsStarted or 0}/{stats.storySessionsStarted or 0}/{stats.queueJoins or 0}/{stats.placements or 0}/{stats.linesCleared or 0}/{stats.combosTriggered or 0}/{stats.invalidPlacements or 0}/{stats.forfeits or 0}/{stats.rejectedPlaceRequests or 0}/{stats.throttledPlaceRequests or 0}/{stats.suddenDeathPressureRows or 0}`
+				`Analytics Solo/Battle/Story/P/C/K/I/F/R/T/D: {stats.soloSessionsStarted or 0}/{stats.battleSessionsStarted or 0}/{stats.storySessionsStarted or 0}/{stats.placements or 0}/{stats.linesCleared or 0}/{stats.combosTriggered or 0}/{stats.invalidPlacements or 0}/{stats.forfeits or 0}/{stats.rejectedPlaceRequests or 0}/{stats.throttledPlaceRequests or 0}/{stats.suddenDeathPressureRows or 0}`
 			)
 		end
 	else
@@ -2227,11 +2242,13 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	battleDock.Visible = not root.Visible
 	title.Text = currentState.mode == "Story" and "Story Training"
 		or currentState.mode == "Custom" and "Custom Lab"
+		or currentState.mode == "Solo" and "Solo Puzzle"
 		or "Block Blast Battle"
 	scoreLabel.Text = `Score: {currentState.score}`
 	matchInfoLabel.Text = currentState.mode == "Story"
 			and (storyGoalText(currentState) or "Story Mission")
 		or currentState.mode == "Custom" and "Rotate or reroll pieces before placement"
+		or currentState.mode == "Solo" and `Best score: {currentState.bestScore or 0}`
 		or `Arena {currentState.arenaIndex or "--"} | Match {currentState.sessionId or "--"}`
 	timerLabel.Text = currentState.timeLeft
 			and currentState.suddenDeath
@@ -2243,6 +2260,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		or Color3.fromRGB(193, 201, 215)
 	dockStatusLabel.Text = currentState.message
 		or currentState.mode == "Story" and storyGoalText(currentState)
+		or currentState.mode == "Solo" and `Solo score: {currentState.score}`
 		or currentState.comboStreak and currentState.comboStreak > 1 and `Combo x{currentState.comboStreak} | Score: {currentState.score}`
 		or currentState.suddenDeath and `Sudden death | Score: {currentState.score} | {currentState.timeLeft or "--"}s`
 		or currentState.alive and `Arena {currentState.arenaIndex or "--"} | Score: {currentState.score} | {currentState.timeLeft or "--"}s`
@@ -2302,7 +2320,12 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 	end
 	renderDiagnostics()
 
-	if hubState.mode == "Battle" or hubState.mode == "Story" or hubState.mode == "Custom" then
+	if
+		hubState.mode == "Battle"
+		or hubState.mode == "Story"
+		or hubState.mode == "Custom"
+		or hubState.mode == "Solo"
+	then
 		if hudController then
 			hudController:UpdateGameState({
 				mode = hubState.mode,
@@ -2369,7 +2392,10 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 	elseif effect.kind == "BattleStart" then
 		playSound("Queue")
 		resultPanelController:Hide()
-		showBanner(effect.detail or effect.message or "Battle started!", customization.accentColor)
+		showBanner(
+			effect.detail or effect.message or "Solo puzzle started!",
+			customization.accentColor
+		)
 	elseif effect.kind == "HandUpdated" then
 		playSound("Button")
 		if effect.slot and pulseHandSlot then
@@ -2389,7 +2415,7 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		playSound("Result")
 		resultPanelController:Show(effect.result, effect.message, effect.won)
 		showBanner(
-			effect.message or "Battle complete",
+			effect.message or "Run complete",
 			effect.won and Color3.fromRGB(74, 222, 128) or Color3.fromRGB(251, 146, 60)
 		)
 	end

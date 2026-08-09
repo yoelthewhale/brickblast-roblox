@@ -1,8 +1,12 @@
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local MenuController = require(script.Parent.MenuController)
 local UITheme = require(script.Parent.UITheme)
+local ExperienceConfig = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game"):WaitForChild("ExperienceConfig")
+)
 
 local HUDController = {}
 HUDController.__index = HUDController
@@ -14,13 +18,16 @@ local LEFT_BUTTONS = {
 		icon = "Quest",
 		accent = Color3.fromRGB(255, 211, 71),
 	},
-	{
+}
+
+if ExperienceConfig.UI.ShowModesButton then
+	table.insert(LEFT_BUTTONS, {
 		key = "modes",
 		label = "Modes",
 		icon = "Blocks",
 		accent = Color3.fromRGB(48, 215, 255),
-	},
-}
+	})
+end
 
 local RIGHT_BUTTONS = {
 	{
@@ -67,16 +74,27 @@ local RESOURCE_ITEMS = {
 		accent = Color3.fromRGB(255, 211, 71),
 	},
 	{
+		key = "bestScore",
+		label = "Best",
+		accent = Color3.fromRGB(255, 255, 255),
+	},
+}
+
+if ExperienceConfig.UI.ShowWins then
+	table.insert(RESOURCE_ITEMS, {
 		key = "wins",
 		label = "Wins",
 		accent = Color3.fromRGB(255, 255, 255),
-	},
-	{
+	})
+end
+
+if ExperienceConfig.UI.ShowStoryStars then
+	table.insert(RESOURCE_ITEMS, {
 		key = "stars",
 		label = "Stars",
 		accent = Color3.fromRGB(184, 96, 255),
-	},
-}
+	})
+end
 
 local function connect(self, signal, callback)
 	local connection = signal:Connect(callback)
@@ -354,7 +372,7 @@ function HUDController:BuildBrand()
 	local title = makeLabel(
 		brand,
 		"Title",
-		"Block Blast Battle",
+		"Solo Puzzle",
 		Enum.Font.GothamBlack,
 		26,
 		Color3.fromRGB(255, 255, 255)
@@ -367,7 +385,7 @@ function HUDController:BuildBrand()
 	local subtitle = makeLabel(
 		brand,
 		"Subtitle",
-		"Puzzle islands await",
+		"Beat your best score",
 		Enum.Font.GothamBold,
 		15,
 		Color3.fromRGB(119, 244, 255)
@@ -798,15 +816,18 @@ function HUDController:SetPlayButtonState(hubState)
 	local openArenas = hubState and hubState.openArenas or 0
 	local label = button:FindFirstChild("Label")
 	if label and label:IsA("TextLabel") then
-		if queued then
+		if queued and ExperienceConfig.isModeEnabled("Battle") then
 			label.Text = "LEAVE"
-		elseif openArenas <= 0 then
+		elseif openArenas <= 0 and ExperienceConfig.isModeEnabled("Battle") then
 			label.Text = "FULL"
 		else
 			label.Text = "PLAY"
 		end
 	end
-	button.BackgroundColor3 = queued and Color3.fromRGB(255, 89, 178)
+	button.BackgroundColor3 = ExperienceConfig.isModeEnabled("Solo")
+			and not ExperienceConfig.isModeEnabled("Battle")
+			and Color3.fromRGB(109, 235, 71)
+		or queued and Color3.fromRGB(255, 89, 178)
 		or openArenas <= 0 and Color3.fromRGB(88, 96, 112)
 		or Color3.fromRGB(109, 235, 71)
 end
@@ -818,12 +839,14 @@ function HUDController:UpdateProgression()
 	local level = leaderstats and leaderstats:FindFirstChild("Level")
 	local wins = leaderstats and leaderstats:FindFirstChild("Wins")
 	local storyStars = leaderstats and leaderstats:FindFirstChild("StoryStars")
+	local bestScore = leaderstats and leaderstats:FindFirstChild("BestScore")
 
 	local levelValue = level and level.Value or 1
 	local xpValue = xp and xp.Value or 0
 	local coinsValue = coins and coins.Value or 0
 	local winsValue = wins and wins.Value or 0
 	local starsValue = storyStars and storyStars.Value or 0
+	local bestValue = bestScore and bestScore.Value or 0
 
 	if self.resourceLabels.level then
 		self.resourceLabels.level.Text = `LV {levelValue}`
@@ -833,6 +856,9 @@ function HUDController:UpdateProgression()
 	end
 	if self.resourceLabels.coins then
 		self.resourceLabels.coins.Text = `{coinsValue} Coins`
+	end
+	if self.resourceLabels.bestScore then
+		self.resourceLabels.bestScore.Text = `{bestValue} Best`
 	end
 	if self.resourceLabels.wins then
 		self.resourceLabels.wins.Text = `{winsValue} Wins`
@@ -848,7 +874,12 @@ function HUDController:UpdateHubState(hubState)
 		return
 	end
 
-	if hubState.mode == "Battle" or hubState.mode == "Story" or hubState.mode == "Custom" then
+	if
+		hubState.mode == "Battle"
+		or hubState.mode == "Story"
+		or hubState.mode == "Custom"
+		or hubState.mode == "Solo"
+	then
 		return
 	end
 
@@ -861,7 +892,9 @@ function HUDController:UpdateHubState(hubState)
 	if self.cancelQueueButton then
 		self.cancelQueueButton.Visible = hubState.queued == true
 	end
-	if hubState.queued then
+	if ExperienceConfig.isModeEnabled("Solo") and not ExperienceConfig.isModeEnabled("Battle") then
+		self.zoneLabel.Text = hubState.message or "Solo Puzzle Lounge"
+	elseif hubState.queued then
 		self.zoneLabel.Text = hubState.secondsToSoloStart
 				and hubState.secondsToSoloStart > 0
 				and `Queued {queueCount}/{minPlayers} - solo test in {hubState.secondsToSoloStart}s`
@@ -880,7 +913,7 @@ function HUDController:UpdateGameState(state)
 		self:SetGameplayFocus(false)
 		self.topBar.Visible = false
 		self:SetPlayButtonState(self.currentHubState)
-		self.zoneLabel.Text = "Floating Hub"
+		self.zoneLabel.Text = "Solo Puzzle Lounge"
 		return
 	end
 
@@ -891,6 +924,7 @@ function HUDController:UpdateGameState(state)
 	end
 	local modeName = state.mode == "Story" and "Story Run"
 		or state.mode == "Custom" and "Custom Lab"
+		or state.mode == "Solo" and "Solo Puzzle"
 		or "Battle"
 	self.zoneLabel.Text = state.timeLeft and `{modeName} - {state.timeLeft}s`
 		or state.message

@@ -2,6 +2,102 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day33 Solo-First Pivot - 2026-08-09
+
+### Completed
+
+- Pivoted the active product direction from Battle-first to Solo-first without deleting reusable Battle/Story source.
+- Added `src/shared/game/ExperienceConfig.luau` as the central feature flag module:
+  - Solo enabled.
+  - Battle disabled.
+  - Story disabled.
+  - Custom Lab disabled for the current live flow.
+  - Battle routes, Story routes, and battle arenas disabled from world generation.
+- Fixed the likely unsafe spawn cause from Day32: `HubSpawn` was positioned over lumpy generated Terrain near the central island instead of on a dedicated clean surface.
+- Added a raised, flat `SafeSoloSpawnPlaza` and moved `HubSpawn` to `CFrame.new(0, 12.8, 42)` facing the central puzzle core.
+- Kept the void recovery platform invisible and pointed it at the same safe `HubSpawn`.
+- Updated fallback hub generation so a future hub-build error creates a Solo pad and safe spawn instead of bringing back Battle/Story pads and fallback arenas.
+- Added a visible `SoloPlayPad` / `SoloPuzzlePortal` with a server-owned ProximityPrompt.
+- Disabled active Battle/Story prompt connections when their feature flags are off.
+- Made the primary Play button request server-authoritative Solo play immediately instead of joining the Battle queue.
+- Made `PlayAgain` restart Solo instead of queueing Battle.
+- Added server-side Solo session handling through the existing validated puzzle state, placement, score, reward, result, and save flow.
+- Kept client placement, score, rewards, XP, coins, best score, cosmetics, settings, and purchase authority on the server.
+- Updated HUD text away from Battle/arena-first language:
+  - title now reads `Solo Puzzle`
+  - subtitle now reads `Beat your best score`
+  - resource bar shows Best Score instead of Wins/Stars while Solo-first flags are active
+  - tutorial text now describes solo scoring instead of pressuring rivals
+- Removed active Modes UI exposure by config while preserving the mode menu source for later reuse.
+- Built `BlockBlastBattle-Day33.rbxl`.
+
+### Solo Puzzle Loop Audit
+
+- Confirmed by source/build:
+  - `Play` sends `Queue` remote mode `Solo`.
+  - Server accepts `Solo` only because `ExperienceConfig.Modes.Solo = true`.
+  - Server creates the board with `Grid.create()`.
+  - Server creates three pieces with `Blocks.createHand(..., Config.InventorySize, ...)`.
+  - Placement requests are rate-limited and payload-validated server-side.
+  - Legal placements use `Grid.place`.
+  - Illegal placements fire `InvalidPlace` without changing score.
+  - Row/column clears use `Grid.clearLines`.
+  - Combos add `Config.ComboBonusPoints`.
+  - Score updates on the server and pushes to clients through `State`.
+  - `BestScore` updates when the current score beats saved best.
+  - Out-of-moves uses `Grid.hasAnyMove`.
+  - Results include score, lines cleared, best combo, coins, XP, and best-score delta.
+  - `Play Again` now requests a new Solo run.
+  - Profile save/load still uses `BlockBlastProfilesV1`; DataStore keys were not renamed.
+- Present but not Studio-verified in this checkpoint:
+  - Initial spawn, reset spawn, and fall recovery in real Play mode.
+  - Mouse/touch/controller board placement behavior.
+  - Result panel timing after out-of-moves.
+  - Rejoin with saved best score and settings.
+  - Mobile screen fit.
+- Missing or future:
+  - Server/global/weekly OrderedDataStore leaderboards.
+  - A final polished solo board UX pass.
+  - Dedicated solo tutorial/onboarding flow.
+  - Final non-infringing product name/branding.
+
+### Leaderboard Status
+
+- Existing leaderstats include `Coins`, `XP`, `Level`, `Wins`, `BestScore`, `BattleScore`, and `StoryStars`.
+- `BestScore` is functional in code and saved inside the existing player profile payload.
+- In-run leaderboard currently shows only players in the same active session, which for Solo means mostly the current player.
+- No global or weekly OrderedDataStore leaderboard system is currently implemented.
+- Next leaderboard work should add server-authoritative OrderedDataStore writes with throttling, anti-spam protection, and a readable hub leaderboard display.
+
+### Current State
+
+- Day33 is a Solo-first foundation build, not a final art or gameplay polish pass.
+- Battle/Story systems are preserved in source but hidden/inactive through `ExperienceConfig`.
+- The main hub is simpler: one central area, one safe spawn plaza, one obvious Solo play portal, no active Battle/Story route endpoints, no visible match arenas.
+- Roblox Studio Play-mode testing was not performed in this Codex session; Studio validation remains required.
+
+### Known Issues
+
+- The custom board UI still carries some legacy variable/function names such as BattleStart/BattleResult effect kinds and `LeaveBattle`; these are contract names and were intentionally not renamed during Day33.
+- HomePanel source still contains old Battle/Story labels, but the active client path force-hides the HomePanel and hides Modes by config.
+- The map is still source-generated, so the solo lounge needs real player-height screenshots before the next visual polish pass.
+- Global and weekly leaderboards are not built yet.
+
+### Recommended Day34 Priorities
+
+1. Studio Play-mode validation of Day33 spawn, reset, fall recovery, and Solo play start. This proves the pivot works in the real client.
+2. Polish the solo board interaction and results loop. This is now the actual product core.
+3. Add server/global/weekly leaderboard foundation. Best score exists, but players need visible competition.
+4. Clean up legacy Battle naming in remotes/UI internals only after behavior is stable. Rename risk is lower once Day33 is proven.
+5. Begin a compact solo lounge art pass from real player-height screenshots.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with 0 errors and 0 warnings; Selene used its cached Roblox standard library after failing to generate a fresh API dump.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day33.rbxl` passed.
+- `git diff --check` passed, with Git line-ending warnings only.
+
 ## Day32 Visual Cleanup - 2026-08-09
 
 ### Completed

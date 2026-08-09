@@ -128,7 +128,7 @@ function ResultPanel.new(gui, queueEvent, options)
 	local replayButton = Instance.new("TextButton")
 	replayButton.Position = UDim2.fromOffset(326, 200)
 	replayButton.Size = UDim2.fromOffset(156, 38)
-	replayButton.Text = "Queue Battle"
+	replayButton.Text = "Play Again"
 	replayButton.TextSize = 14
 	replayButton.ZIndex = 36
 	replayButton.Parent = panel
@@ -150,7 +150,7 @@ function ResultPanel.new(gui, queueEvent, options)
 		if self.hasCurrentRun() then
 			self.queueEvent:FireServer("PlayAgain")
 		else
-			self.queueEvent:FireServer("Battle")
+			self.queueEvent:FireServer("Solo")
 		end
 	end)
 

@@ -24,6 +24,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameShared = Shared:WaitForChild("game")
 local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
+local ExperienceConfig = require(GameShared.ExperienceConfig)
 local Grid = require(GameShared.Grid)
 local HubBuilder = require(script.Parent.Parent.world.HubBuilder)
 
@@ -118,28 +119,19 @@ local function buildFallbackHub(buildError)
 	spawn.CanCollide = true
 	spawn.Enabled = true
 	spawn.Neutral = true
+	spawn.Size = Vector3.new(16, 1, 16)
+	spawn.CFrame = CFrame.new(0, 7.2, 22) * CFrame.Angles(0, math.rad(180), 0)
 
-	local battlePad = makeFallbackPart(
+	local soloPad = makeFallbackPart(
 		hub,
-		"BattleQueuePad",
+		"SoloPlayPad",
 		Vector3.new(24, 1, 18),
 		Vector3.new(0, 2, -28),
 		Color3.fromRGB(64, 156, 255),
 		Enum.Material.Neon
 	)
-	battlePad:SetAttribute("QueueMode", "Battle")
-	local battlePrompt = makeFallbackPrompt(battlePad, "Join Queue", "Block Blast Battle")
-
-	local storyPad = makeFallbackPart(
-		hub,
-		"StoryQueuePad",
-		Vector3.new(22, 1, 16),
-		Vector3.new(34, 2, 6),
-		Color3.fromRGB(167, 109, 255),
-		Enum.Material.Neon
-	)
-	storyPad:SetAttribute("QueueMode", "Story")
-	local storyPrompt = makeFallbackPrompt(storyPad, "Start", "Story Training")
+	soloPad:SetAttribute("QueueMode", "Solo")
+	local soloPrompt = makeFallbackPrompt(soloPad, "Play", "Solo Puzzle")
 
 	local fallbackColors = {
 		Color3.fromRGB(255, 82, 82),
@@ -174,15 +166,6 @@ local function buildFallbackHub(buildError)
 			false
 	end
 
-	local battleSpawn = makeFallbackPart(
-		hub,
-		"BattleArenaSpawn",
-		Vector3.new(12, 1, 12),
-		Vector3.new(0, 2, -58),
-		Color3.fromRGB(255, 205, 82),
-		Enum.Material.SmoothPlastic
-	)
-
 	local warning = makeFallbackPart(
 		hub,
 		"HubBuildWarning",
@@ -205,56 +188,17 @@ local function buildFallbackHub(buildError)
 	label.TextScaled = true
 	label.Parent = surfaceGui
 
-	local arenaFloor = makeFallbackPart(
-		hub,
-		"FallbackArenaFloor",
-		Vector3.new(72, 2, 52),
-		Vector3.new(0, 0, -118),
-		Color3.fromRGB(244, 241, 232),
-		Enum.Material.Marble
-	)
-	local leftSpawn = makeFallbackPart(
-		hub,
-		"PlayerSpawnA",
-		Vector3.new(8, 1, 8),
-		Vector3.new(-20, 3, -102),
-		Color3.fromRGB(40, 229, 255),
-		Enum.Material.Neon
-	)
-	local rightSpawn = makeFallbackPart(
-		hub,
-		"PlayerSpawnB",
-		Vector3.new(8, 1, 8),
-		Vector3.new(20, 3, -102),
-		Color3.fromRGB(255, 112, 189),
-		Enum.Material.Neon
-	)
-	local returnPad = makeFallbackPart(
-		hub,
-		"ReturnHubPad",
-		Vector3.new(12, 1, 8),
-		Vector3.new(0, 3, -92),
-		Color3.fromRGB(255, 205, 82),
-		Enum.Material.SmoothPlastic
-	)
-
 	warn(`Block Blast generated hub failed; fallback hub loaded: {buildError}`)
 	return {
 		hub = hub,
 		spawn = spawn,
-		battlePrompt = battlePrompt,
-		storyPrompt = storyPrompt,
-		battleSpawn = battleSpawn,
-		arenaSpawns = { leftSpawn, rightSpawn },
-		arenaReturnPad = returnPad,
-		arenas = {
-			{
-				folder = arenaFloor,
-				index = 1,
-				spawns = { leftSpawn, rightSpawn },
-				returnPad = returnPad,
-			},
-		},
+		soloPrompt = soloPrompt,
+		battlePrompt = nil,
+		storyPrompt = nil,
+		battleSpawn = nil,
+		arenaSpawns = {},
+		arenaReturnPad = nil,
+		arenas = {},
 	}
 end
 
@@ -299,6 +243,8 @@ local profileStore = nil
 local profileLoadFailures = 0
 local profileSaveFailures = 0
 local analytics = {
+	soloSessionsStarted = 0,
+	soloSessionsFinished = 0,
 	battleSessionsStarted = 0,
 	storySessionsStarted = 0,
 	battleSessionsFinished = 0,
@@ -1613,6 +1559,9 @@ local function grantBattleRewards(player, state, winner)
 	if winner and state.mode == "Battle" then
 		state.message = `Victory! +{earnedCoins} coins +{earnedXp} XP`
 		state.resultSummary.outcome = "Victory"
+	elseif state.mode == "Solo" then
+		state.message = `Solo complete: +{earnedCoins} coins +{earnedXp} XP`
+		state.resultSummary.outcome = "Solo Complete"
 	elseif storyProgressionCompleted then
 		state.message = `Mission complete! +{earnedCoins} coins +{earnedXp} XP`
 		state.resultSummary.outcome = "Mission Complete"
@@ -1769,6 +1718,13 @@ local function pruneQueue()
 end
 
 local function updateHubWorldVisuals()
+	if not ExperienceConfig.isModeEnabled("Battle") then
+		if HubBuilder.setQueueVisuals then
+			HubBuilder.setQueueVisuals(0, BATTLE_MIN_PLAYERS, nil, 0)
+		end
+		return
+	end
+
 	local _, openArenas = arenaCounts()
 	local secondsToSoloStart = nil
 	if queueStartedAt and queueCount() > 0 then
@@ -1791,9 +1747,11 @@ sendHubState = function(player, message)
 	end
 	local totalArenas, openArenas = arenaCounts()
 	local selectedChapter = selectedStoryChapters[player]
-	local storyMission = storyMissionForPlayer(player, selectedChapter)
+	local storyMission = if ExperienceConfig.isModeEnabled("Story")
+		then storyMissionForPlayer(player, selectedChapter)
+		else nil
 	local progress = cosmeticProgress(player)
-	local dailyBonusAvailable = playerDailyRewardDates[player] ~= dailyDateKey()
+	local dailyBonusAvailable = false
 
 	hubEvent:FireClient(player, {
 		mode = playerModes[player] or "Hub",
@@ -1805,12 +1763,12 @@ sendHubState = function(player, message)
 		totalArenas = totalArenas,
 		sessions = sessionSummaries(),
 		storyMission = storyMission,
-		storyMissions = storyMissionListForPlayer(player),
+		storyMissions = if ExperienceConfig.isModeEnabled("Story")
+			then storyMissionListForPlayer(player)
+			else {},
 		storyStars = progress.storyStars,
 		dailyBonusAvailable = dailyBonusAvailable,
-		dailyBonusText = dailyBonusAvailable
-				and `Daily bonus ready: win battle or complete story for +{Config.DailyBonusCoins} coins +{Config.DailyBonusXp} XP`
-			or "Daily bonus claimed",
+		dailyBonusText = "Solo rewards are based on score and personal bests.",
 		profileLoadFailures = profileLoadFailures,
 		profileSaveFailures = profileSaveFailures,
 		analytics = table.clone(analytics),
@@ -1895,7 +1853,7 @@ local function teleportToArenaSlot(player, slot, session)
 end
 
 local function pressureOpponents(attacker, linesCleared, session)
-	if linesCleared <= 0 then
+	if linesCleared <= 0 or not session or session.mode ~= "Battle" then
 		return
 	end
 
@@ -2002,12 +1960,26 @@ end
 
 local function startBattle(players, mode, storyChapter)
 	mode = mode or "Battle"
+	if not ExperienceConfig.isModeEnabled(mode) then
+		for _, player in players do
+			if player.Parent == Players then
+				sendHubState(player, `{mode} is disabled in the current solo-first build`)
+			end
+		end
+		return nil
+	end
+
 	local eligiblePlayers = {}
 	for _, player in players do
 		if
 			player.Parent == Players
 			and playerModes[player] == "Hub"
-			and (mode == "Story" or mode == "Custom" or queuedPlayers[player] == true)
+			and (
+				mode == "Solo"
+				or mode == "Story"
+				or mode == "Custom"
+				or queuedPlayers[player] == true
+			)
 		then
 			table.insert(eligiblePlayers, player)
 		end
@@ -2019,8 +1991,8 @@ local function startBattle(players, mode, storyChapter)
 		return nil
 	end
 
-	local arena = findFreeArena()
-	if not arena then
+	local arena = if mode == "Solo" then nil else findFreeArena()
+	if mode ~= "Solo" and not arena then
 		return nil
 	end
 
@@ -2032,13 +2004,17 @@ local function startBattle(players, mode, storyChapter)
 		startedWith = #eligiblePlayers,
 		finishScheduled = false,
 		startedAt = os.clock(),
-		endsAt = os.clock() + (mode == "Story" and Config.StoryRoundSeconds or Config.RoundSeconds),
+		endsAt = if mode == "Solo"
+			then nil
+			else os.clock() + (mode == "Story" and Config.StoryRoundSeconds or Config.RoundSeconds),
 		suddenDeathAnnounced = false,
 		nextSuddenDeathPressureAt = nil,
 		arena = arena,
 	}
 	activeSessions[session.id] = session
-	if mode == "Story" then
+	if mode == "Solo" then
+		analytics.soloSessionsStarted += 1
+	elseif mode == "Story" then
 		analytics.storySessionsStarted += 1
 	elseif mode == "Custom" then
 		analytics.customLabSessionsStarted += 1
@@ -2057,14 +2033,20 @@ local function startBattle(players, mode, storyChapter)
 			state.startedAt = session.startedAt
 		end
 		local storyMission = state and state.storyMission
-		teleportToArenaSlot(player, slot, session)
+		if mode == "Solo" then
+			teleportTo(hubParts.spawn, player)
+		else
+			teleportToArenaSlot(player, slot, session)
+		end
 		effectsEvent:FireClient(player, {
 			kind = "BattleStart",
-			message = mode == "Story" and storyChapterTitle(storyMission)
+			message = mode == "Solo" and "Solo puzzle started!"
+				or mode == "Story" and storyChapterTitle(storyMission)
 				or mode == "Custom" and "Custom Lab started!"
 				or #eligiblePlayers >= BATTLE_MIN_PLAYERS and "Battle started!"
 				or "Solo test started!",
-			detail = mode == "Story" and storyMission and storyMission.intro
+			detail = mode == "Solo" and "Place pieces, clear lines, and beat your best score."
+				or mode == "Story" and storyMission and storyMission.intro
 				or mode == "Custom" and "Rotate or reroll pieces before placing them."
 				or nil,
 		})
@@ -2077,7 +2059,8 @@ local function startBattle(players, mode, storyChapter)
 	end
 
 	broadcastHub(
-		mode == "Story" and "Story training started"
+		mode == "Solo" and "Solo puzzle started"
+			or mode == "Story" and "Story training started"
 			or mode == "Custom" and "Custom Lab started"
 			or "Battle started"
 	)
@@ -2101,6 +2084,10 @@ local function getHighestScoringAlivePlayer(session)
 end
 
 local function tryStartBattle()
+	if not ExperienceConfig.isModeEnabled("Battle") then
+		return
+	end
+
 	pruneQueue()
 	if not findFreeArena() then
 		if queueCount() > 0 then
@@ -2134,10 +2121,16 @@ local function tryStartBattle()
 end
 
 local function joinBattleQueue(player)
+	if not ExperienceConfig.isModeEnabled("Battle") then
+		sendHubState(player, "Battle is disabled while the game focuses on solo puzzle play")
+		return
+	end
+
 	if
 		playerModes[player] == "Battle"
 		or playerModes[player] == "Story"
 		or playerModes[player] == "Custom"
+		or playerModes[player] == "Solo"
 	then
 		sendHubState(player, "Finish your current run first")
 		return
@@ -2176,10 +2169,16 @@ leaveBattleQueue = function(player)
 end
 
 startStoryMode = function(player, requestedChapter)
+	if not ExperienceConfig.isModeEnabled("Story") then
+		sendHubState(player, "Story is disabled while the game focuses on solo puzzle play")
+		return
+	end
+
 	if
 		playerModes[player] == "Battle"
 		or playerModes[player] == "Story"
 		or playerModes[player] == "Custom"
+		or playerModes[player] == "Solo"
 	then
 		sendHubState(player, "Finish your current run first")
 		return
@@ -2196,10 +2195,16 @@ startStoryMode = function(player, requestedChapter)
 end
 
 local function startCustomLab(player)
+	if not ExperienceConfig.isModeEnabled("Custom") then
+		sendHubState(player, "Custom Lab is disabled in the current solo-first build")
+		return
+	end
+
 	if
 		playerModes[player] == "Battle"
 		or playerModes[player] == "Story"
 		or playerModes[player] == "Custom"
+		or playerModes[player] == "Solo"
 	then
 		sendHubState(player, "Finish your current run first")
 		return
@@ -2211,6 +2216,20 @@ local function startCustomLab(player)
 	end
 
 	startBattle({ player }, "Custom")
+end
+
+local function startSoloRun(player)
+	if
+		playerModes[player] == "Battle"
+		or playerModes[player] == "Story"
+		or playerModes[player] == "Custom"
+		or playerModes[player] == "Solo"
+	then
+		sendHubState(player, "Finish your current run first")
+		return
+	end
+
+	startBattle({ player }, "Solo")
 end
 
 local function playAgainBattle(player)
@@ -2226,7 +2245,7 @@ local function playAgainBattle(player)
 		leaveBattle(player)
 	end
 
-	joinBattleQueue(player)
+	startSoloRun(player)
 end
 
 local function finishBattle(session, winner)
@@ -2336,6 +2355,9 @@ leaveBattle = function(player)
 	playerModes[player] = "Hub"
 
 	if session then
+		if session.mode == "Solo" then
+			analytics.soloSessionsFinished += 1
+		end
 		for index, sessionPlayer in session.players do
 			if sessionPlayer == player then
 				table.remove(session.players, index)
@@ -2522,7 +2544,9 @@ queueEvent.OnServerEvent:Connect(function(player, mode, requestedChapter)
 		return
 	end
 
-	if mode == "Battle" then
+	if mode == "Solo" then
+		startSoloRun(player)
+	elseif mode == "Battle" then
 		joinBattleQueue(player)
 	elseif mode == "LeaveQueue" then
 		leaveBattleQueue(player)
@@ -2710,13 +2734,24 @@ settingsEvent.OnServerEvent:Connect(function(player, action, nextSettings)
 	scheduleSettingsSave(player)
 end)
 
-hubParts.battlePrompt.Triggered:Connect(joinBattleQueue)
+if hubParts.soloPrompt then
+	hubParts.soloPrompt.Triggered:Connect(startSoloRun)
+end
 
-hubParts.storyPrompt.Triggered:Connect(function(player)
-	startStoryMode(player)
-end)
+if hubParts.battlePrompt and ExperienceConfig.isModeEnabled("Battle") then
+	hubParts.battlePrompt.Triggered:Connect(joinBattleQueue)
+end
+
+if hubParts.storyPrompt and ExperienceConfig.isModeEnabled("Story") then
+	hubParts.storyPrompt.Triggered:Connect(function(player)
+		startStoryMode(player)
+	end)
+end
 
 for _, arena in (hubParts.arenas or {}) do
+	if not arena.returnPad then
+		continue
+	end
 	local returnPrompt = Instance.new("ProximityPrompt")
 	returnPrompt.ActionText = "Return"
 	returnPrompt.ObjectText = "Hub"
@@ -2751,6 +2786,7 @@ local function attachHubSpawnSafety(player)
 					playerModes[player] == "Battle"
 					or playerModes[player] == "Story"
 					or playerModes[player] == "Custom"
+					or playerModes[player] == "Solo"
 				then
 					task.delay(0.25, function()
 						if player.Parent == Players and playerStates[player] then
@@ -2765,6 +2801,7 @@ local function attachHubSpawnSafety(player)
 			playerModes[player] == "Battle"
 			or playerModes[player] == "Story"
 			or playerModes[player] == "Custom"
+			or playerModes[player] == "Solo"
 		then
 			return
 		end
@@ -2784,7 +2821,7 @@ local function initializePlayer(player)
 	applyEquippedCosmeticsToSettings(player)
 	playerModes[player] = "Hub"
 	stateEvent:FireClient(player, nil, {})
-	sendHubState(player, "Welcome to the hub")
+	sendHubState(player, ExperienceConfig.Solo.WelcomeMessage)
 	sendSettings(player)
 	sendShopSnapshot(player)
 
@@ -2861,7 +2898,9 @@ end
 task.spawn(function()
 	while true do
 		task.wait(1)
-		tryStartBattle()
+		if ExperienceConfig.isModeEnabled("Battle") then
+			tryStartBattle()
+		end
 		for _, session in activeSessions do
 			if session.endsAt and os.clock() >= session.endsAt then
 				finishBattle(session, getHighestScoringAlivePlayer(session))

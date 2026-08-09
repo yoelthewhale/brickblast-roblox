@@ -23,6 +23,12 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 | Task | Priority | Status | Owner | Due Date |
 | --- | --- | --- | --- | --- |
+| Validate Day33 solo-first spawn, reset, and fall recovery in Studio | High | Playtest | Bear / Codex | 2026-08-10 |
+| Validate Day33 Play button starts a Solo puzzle run immediately | High | Playtest | Bear / Codex | 2026-08-10 |
+| Validate Day33 out-of-moves results, rewards, best score, and Play Again | High | Playtest | Bear / Codex | 2026-08-10 |
+| Add server/global/weekly solo score leaderboards | High | Ready | Codex | 2026-08-10 |
+| Polish solo board UX, placement feedback, and result presentation | High | Ready | Codex | 2026-08-10 |
+| Create final non-infringing solo puzzle brand direction | Medium | Ready | Bear / Codex | 2026-08-11 |
 | Verify Day 2 place opens and Rojo connects | High | Playtest | Bear / Codex | 2026-07-29 |
 | Test adjustable battle UI in Roblox Studio | High | Playtest | Bear / Codex | 2026-07-29 |
 | Test hover placement preview and blocked-placement feedback | High | Playtest | Bear / Codex | 2026-07-29 |
@@ -84,6 +90,8 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 | Bug | Priority | Status | Owner | Due Date |
 | --- | --- | --- | --- | --- |
+| Day33 requires real Roblox Studio Play-mode proof for spawn safety and Solo start | High | Playtest | Bear / Codex | 2026-08-10 |
+| Legacy Battle/Story internal names remain in some remotes and modules after Solo pivot | Medium | Known | Codex | 2026-08-11 |
 | Original `.rbxl` file may stay locked while Studio has it open | Medium | Known | Bear / Codex | 2026-07-29 |
 | Need confirm Rojo plugin connects to Day 2 place | High | Playtest | Bear / Codex | 2026-07-29 |
 | Need test two-player battle end condition in Studio multiplayer test | High | Ready | Bear / Codex | 2026-07-30 |
@@ -97,9 +105,19 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 ## Playtest Checklist
 
 - Start Rojo server from VS Code or `start-rojo.ps1`.
-- Open `BlockBlastBattle-Day4.rbxl` in Roblox Studio.
-- For current work, open `BlockBlastBattle-Day17.rbxl` or run `.\scripts\open-latest-local-build.ps1`.
+- Open `BlockBlastBattle-Day33.rbxl` in Roblox Studio for the current Solo-first checkpoint.
 - Before pressing Play or publishing, confirm Roblox Studio's top-right account says `CAPTINNINJATACO`.
+- Press Play and confirm the character lands on the raised safe solo spawn plaza, not inside Terrain or rock.
+- Reset the character and confirm respawn returns to the same safe plaza.
+- Walk off the hub or touch the recovery zone and confirm it returns the player to the safe plaza.
+- Confirm no BattleQueuePad, StoryQueuePad, Battle route, Story route, or match arena is visible in the active hub.
+- Press the right-side `PLAY` button and confirm the solo puzzle board opens without queueing.
+- Use the world `SoloPlayPad` prompt and confirm it starts the same Solo puzzle flow.
+- Place a legal piece and confirm score updates.
+- Attempt an illegal placement and confirm score does not change.
+- Clear a row/column and confirm line-clear score/feedback.
+- Trigger out-of-moves and confirm the result panel shows score, coins, XP, best score, and `Play Again`.
+- Press `Play Again` and confirm a fresh Solo run starts.
 - Connect the Rojo plugin to `localhost:34872`.
 - Confirm the loading splash appears briefly and fades after game state arrives.
 - Press Play and confirm the hub appears.
@@ -148,6 +166,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 ## Build Notes
 
+- 2026-08-09 Day 33: Pivoted the active product to Solo-first gameplay through `ExperienceConfig`, added a safe raised spawn plaza and Solo play portal, disabled Battle/Story routes/prompts/arenas from active generation, changed Play/Play Again to server-authoritative Solo runs, updated HUD copy/resources toward personal bests, and built `BlockBlastBattle-Day33.rbxl`.
 - 2026-08-01 Day 4: Added finite-number settings hardening and built `BlockBlastBattle-Day4.rbxl` because Day 3 was locked by Studio.
 - 2026-08-01 Day 14: Added hub signage, queue visual reactions, stale queue pruning, reset/death lifecycle cleanup, non-blocking decoration adjustments, and local Reduced Motion world-quality scaling. Built `BlockBlastBattle-Day14.rbxl`.
 - 2026-08-01 Day 15: Added local left-side player HUD cards, right-side action rail, reusable menu panel, stacked notifications, responsive collapse behavior, and Reduced Motion-aware UI feedback. Built `BlockBlastBattle-Day15.rbxl`.

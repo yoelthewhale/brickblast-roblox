@@ -1,6 +1,11 @@
 local HubBuilder = {}
 local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+
+local ExperienceConfig = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game"):WaitForChild("ExperienceConfig")
+)
 
 local ARENA_CENTERS = {
 	Vector3.new(0, 8, -430),
@@ -918,8 +923,8 @@ local function buildMainIsland(parent)
 	local walkSurface = makePart(
 		island,
 		"CentralHubSafeWalkSurface",
-		Vector3.new(122, 1, 112),
-		Vector3.new(0, 8.15, 0),
+		Vector3.new(112, 1, 98),
+		Vector3.new(0, 8.15, -4),
 		PALETTE.grass,
 		Enum.Material.Grass,
 		{
@@ -929,11 +934,33 @@ local function buildMainIsland(parent)
 	walkSurface.CanCollide = true
 	walkSurface.CanQuery = false
 
+	local spawnPlaza = makePart(
+		island,
+		"SafeSoloSpawnPlaza",
+		Vector3.new(44, 2, 32),
+		Vector3.new(0, 11.25, 42),
+		PALETTE.marble,
+		Enum.Material.Marble,
+		{ shape = Enum.PartType.Cylinder }
+	)
+	spawnPlaza.CFrame *= CFrame.Angles(0, 0, math.rad(90))
+	makePathSlab(
+		island,
+		"SoloSpawnEntryPath",
+		Vector3.new(0, 11.95, 26),
+		Vector3.new(18, 0.5, 24),
+		0,
+		PALETTE.stone
+	)
+	for side, x in { Left = -18, Right = 18 } do
+		makeLamp(island, `SafeSpawnLamp{side}`, Vector3.new(x, 12.15, 42), PALETTE.gold)
+	end
+
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "HubSpawn"
 	spawn.Anchored = true
 	spawn.Size = Vector3.new(16, 1, 16)
-	spawn.Position = Vector3.new(0, 9.2, 34)
+	spawn.CFrame = CFrame.new(0, 12.8, 42) * CFrame.Angles(0, math.rad(180), 0)
 	spawn.Color = PALETTE.cyan
 	spawn.Material = Enum.Material.Neon
 	spawn.CastShadow = false
@@ -943,8 +970,8 @@ local function buildMainIsland(parent)
 	spawn.CanCollide = true
 	spawn.CanTouch = false
 	spawn.CanQuery = true
+	spawn.Transparency = 1
 	spawn.Parent = island
-	addBillboard(spawn, "BRICK CORE", "")
 
 	local plaza = makeZoneFolder(island, "LayeredCentralPlaza")
 	for radiusIndex, radius in { 17, 27, 38 } do
@@ -1081,38 +1108,33 @@ local function buildMainIsland(parent)
 	addLight(coreFrame:FindFirstChild("CoreCenterCyan"), PALETTE.cyan, 2.2, 42)
 	addParticles(coreBase, "CoreSparkles", PALETTE.gold, 2.4, 1.7, 2.1, 32)
 
-	local routeFolder = makeZoneFolder(island, "PrimaryRouteEntrances")
+	local routeFolder = makeZoneFolder(island, "SoloPuzzleSocialArea")
 	makePathSlab(
 		routeFolder,
-		"BattleRoute",
-		Vector3.new(0, 9.75, -46),
-		Vector3.new(24, 0.65, 62),
-		0,
-		PALETTE.stone
-	)
-	makePathSlab(
-		routeFolder,
-		"StoryRoute",
-		Vector3.new(48, 9.8, 28),
-		Vector3.new(20, 0.65, 58),
-		math.rad(-52),
-		PALETTE.stone
-	)
-	makePathSlab(
-		routeFolder,
-		"SpawnEntryPath",
+		"SoloPuzzlePath",
 		Vector3.new(0, 9.7, 27),
-		Vector3.new(20, 0.65, 28),
+		Vector3.new(24, 0.65, 34),
 		0,
 		PALETTE.marble
 	)
+	local soloPad = makePortal(
+		routeFolder,
+		"SoloPuzzlePortal",
+		Vector3.new(0, 13.6, -34),
+		PALETTE.cyan,
+		PALETTE.gold,
+		"SOLO PUZZLE",
+		"Beat your best score"
+	)
+	soloPad.Name = "SoloPlayPad"
+	soloPad:SetAttribute("QueueMode", "Solo")
+	local soloPrompt = addPrompt(soloPad, "Play", "Solo Puzzle")
+	queueVisuals.soloPad = soloPad
 
 	for index, lampData in
 		{
-			{ pos = Vector3.new(-12, 9.7, -34), color = PALETTE.cyan },
-			{ pos = Vector3.new(12, 9.7, -34), color = PALETTE.red },
-			{ pos = Vector3.new(31, 9.7, 15), color = PALETTE.purple },
-			{ pos = Vector3.new(47, 9.7, 31), color = PALETTE.gold },
+			{ pos = Vector3.new(-13, 9.7, -23), color = PALETTE.cyan },
+			{ pos = Vector3.new(13, 9.7, -23), color = PALETTE.gold },
 			{ pos = Vector3.new(-22, 9.7, 24), color = PALETTE.gold },
 			{ pos = Vector3.new(22, 9.7, 25), color = PALETTE.cyan },
 		}
@@ -1122,35 +1144,11 @@ local function buildMainIsland(parent)
 
 	makeBanner(
 		routeFolder,
-		"BattleDirectionalBanner",
-		Vector3.new(-18, 9.85, -66),
-		math.rad(0),
-		PALETTE.cyan,
-		"BATTLE"
-	)
-	makeBanner(
-		routeFolder,
-		"StoryDirectionalBanner",
-		Vector3.new(65, 9.85, 45),
-		math.rad(-46),
-		PALETTE.purple,
-		"STORY"
-	)
-	makeGateway(
-		routeFolder,
-		"BattleRouteGate",
-		Vector3.new(0, 13.4, -72),
+		"SoloDirectionalBanner",
+		Vector3.new(-18, 9.85, -49),
 		0,
 		PALETTE.cyan,
-		PALETTE.red,
-		"BATTLE"
-	)
-	makeRuinArch(
-		routeFolder,
-		"StoryRouteTempleArch",
-		Vector3.new(72, 12.8, 51),
-		math.rad(-52),
-		PALETTE.gold
+		"PLAY"
 	)
 
 	for index, treeData in
@@ -1179,188 +1177,219 @@ local function buildMainIsland(parent)
 
 	addParticles(coreBase, "PlazaGoldDust", PALETTE.gold, 1.1, 2.4, 2, 38)
 
-	return island, walkSurface, spawn
+	return island, walkSurface, spawn, soloPrompt
 end
 
 local function buildSideIslands(parent)
+	if not ExperienceConfig.isBattleVisible() and not ExperienceConfig.isStoryVisible() then
+		return nil, nil
+	end
+
 	local zones = makeZoneFolder(parent, "Day30RouteEndpoints")
 
-	local battleZone = makeZoneFolder(zones, "BattleRouteEndpoint")
-	fillTerrainBall(Vector3.new(0, 4, -116), 35, Enum.Material.Rock)
-	fillTerrainBall(Vector3.new(-12, 9, -109), 27, Enum.Material.Grass)
-	fillTerrainBall(Vector3.new(14, 9, -122), 28, Enum.Material.Grass)
-	fillTerrainBall(Vector3.new(0, -14, -116), 22, Enum.Material.Slate)
-	local battleLanding = makePart(
-		battleZone,
-		"BattleLandingSafeSurface",
-		Vector3.new(70, 1, 54),
-		Vector3.new(0, 12.1, -116),
-		PALETTE.grass,
-		Enum.Material.Grass,
-		{ transparency = 1 }
-	)
-	battleLanding.CanCollide = true
-	battleLanding.CanQuery = false
-	makeBridge(parent, "BattleBridge", Vector3.new(0, 10, -65), Vector3.new(0, 12.5, -93), 19, 0.7)
-	makePathSlab(
-		battleZone,
-		"BattleLandingBluePath",
-		Vector3.new(-9, 12.7, -114),
-		Vector3.new(15, 0.55, 42),
-		0,
-		PALETTE.cyan
-	)
-	makePathSlab(
-		battleZone,
-		"BattleLandingRedPath",
-		Vector3.new(9, 12.72, -114),
-		Vector3.new(15, 0.55, 42),
-		0,
-		PALETTE.red
-	)
-	makeGateway(
-		battleZone,
-		"BattleArenaGate",
-		Vector3.new(0, 16.4, -137),
-		0,
-		Color3.fromRGB(44, 178, 255),
-		Color3.fromRGB(255, 88, 88),
-		"BATTLE"
-	)
-	local battlePad = makePortal(
-		battleZone,
-		"BattlePortal",
-		Vector3.new(0, 15.4, -110),
-		Color3.fromRGB(44, 178, 255),
-		Color3.fromRGB(255, 88, 88),
-		"BATTLE QUEUE",
-		"Casual matches"
-	)
-	battlePad.Name = "BattleQueuePad"
-	battlePad:SetAttribute("QueueMode", "Battle")
-	local battlePrompt = addPrompt(battlePad, "Join Queue", "Block Blast Battle")
-	local battleTitle, battleSubtitle = addStatusBillboard(
-		battlePad,
-		"QueueStatus",
-		"BATTLE QUEUE",
-		"0 queued - step here or use Hub UI"
-	)
-	queueVisuals.battlePad = battlePad
-	queueVisuals.battleTitle = battleTitle
-	queueVisuals.battleSubtitle = battleSubtitle
-	makePuzzleMonument(battleZone, "VersusBlockSculpture", Vector3.new(0, 16.2, -150), 1.05, {
-		{ offset = Vector3.new(-6, 0, 0), color = PALETTE.cyan, ry = 12 },
-		{ offset = Vector3.new(-2, 4.6, 0), color = PALETTE.cyan, ry = -16 },
-		{ offset = Vector3.new(2, 0, 0), color = PALETTE.red, ry = 18 },
-		{ offset = Vector3.new(6, 4.6, 0), color = PALETTE.red, ry = -12 },
-	})
-	makeFestivalFlags(
-		battleZone,
-		"BattleBunting",
-		Vector3.new(-32, 25, -94),
-		Vector3.new(32, 25, -94),
-		11
-	)
-	for index, side in { -1, 1 } do
-		makeLamp(
+	local battlePrompt = nil
+	if ExperienceConfig.isBattleVisible() then
+		local battleZone = makeZoneFolder(zones, "BattleRouteEndpoint")
+		fillTerrainBall(Vector3.new(0, 4, -116), 35, Enum.Material.Rock)
+		fillTerrainBall(Vector3.new(-12, 9, -109), 27, Enum.Material.Grass)
+		fillTerrainBall(Vector3.new(14, 9, -122), 28, Enum.Material.Grass)
+		fillTerrainBall(Vector3.new(0, -14, -116), 22, Enum.Material.Slate)
+		local battleLanding = makePart(
 			battleZone,
-			`BattleBridgeLamp{index}`,
-			Vector3.new(side * 17, 12.5, -94),
-			side < 0 and PALETTE.cyan or PALETTE.red
+			"BattleLandingSafeSurface",
+			Vector3.new(70, 1, 54),
+			Vector3.new(0, 12.1, -116),
+			PALETTE.grass,
+			Enum.Material.Grass,
+			{ transparency = 1 }
 		)
+		battleLanding.CanCollide = true
+		battleLanding.CanQuery = false
+		makeBridge(
+			parent,
+			"BattleBridge",
+			Vector3.new(0, 10, -65),
+			Vector3.new(0, 12.5, -93),
+			19,
+			0.7
+		)
+		makePathSlab(
+			battleZone,
+			"BattleLandingBluePath",
+			Vector3.new(-9, 12.7, -114),
+			Vector3.new(15, 0.55, 42),
+			0,
+			PALETTE.cyan
+		)
+		makePathSlab(
+			battleZone,
+			"BattleLandingRedPath",
+			Vector3.new(9, 12.72, -114),
+			Vector3.new(15, 0.55, 42),
+			0,
+			PALETTE.red
+		)
+		makeGateway(
+			battleZone,
+			"BattleArenaGate",
+			Vector3.new(0, 16.4, -137),
+			0,
+			Color3.fromRGB(44, 178, 255),
+			Color3.fromRGB(255, 88, 88),
+			"BATTLE"
+		)
+		local battlePad = makePortal(
+			battleZone,
+			"BattlePortal",
+			Vector3.new(0, 15.4, -110),
+			Color3.fromRGB(44, 178, 255),
+			Color3.fromRGB(255, 88, 88),
+			"BATTLE QUEUE",
+			"Casual matches"
+		)
+		battlePad.Name = "BattleQueuePad"
+		battlePad:SetAttribute("QueueMode", "Battle")
+		battlePrompt = addPrompt(battlePad, "Join Queue", "Block Blast Battle")
+		local battleTitle, battleSubtitle = addStatusBillboard(
+			battlePad,
+			"QueueStatus",
+			"BATTLE QUEUE",
+			"0 queued - step here or use Hub UI"
+		)
+		queueVisuals.battlePad = battlePad
+		queueVisuals.battleTitle = battleTitle
+		queueVisuals.battleSubtitle = battleSubtitle
+		makePuzzleMonument(battleZone, "VersusBlockSculpture", Vector3.new(0, 16.2, -150), 1.05, {
+			{ offset = Vector3.new(-6, 0, 0), color = PALETTE.cyan, ry = 12 },
+			{ offset = Vector3.new(-2, 4.6, 0), color = PALETTE.cyan, ry = -16 },
+			{ offset = Vector3.new(2, 0, 0), color = PALETTE.red, ry = 18 },
+			{ offset = Vector3.new(6, 4.6, 0), color = PALETTE.red, ry = -12 },
+		})
+		makeFestivalFlags(
+			battleZone,
+			"BattleBunting",
+			Vector3.new(-32, 25, -94),
+			Vector3.new(32, 25, -94),
+			11
+		)
+		for index, side in { -1, 1 } do
+			makeLamp(
+				battleZone,
+				`BattleBridgeLamp{index}`,
+				Vector3.new(side * 17, 12.5, -94),
+				side < 0 and PALETTE.cyan or PALETTE.red
+			)
+		end
 	end
 
-	local storyZone = makeZoneFolder(zones, "StoryRouteEndpoint")
-	fillTerrainBall(Vector3.new(112, 4, 80), 31, Enum.Material.Rock)
-	fillTerrainBall(Vector3.new(103, 9, 72), 24, Enum.Material.Grass)
-	fillTerrainBall(Vector3.new(124, 9, 88), 24, Enum.Material.Grass)
-	fillTerrainBall(Vector3.new(112, -13, 80), 18, Enum.Material.Slate)
-	local storyLanding = makePart(
-		storyZone,
-		"StoryLandingSafeSurface",
-		Vector3.new(60, 1, 48),
-		Vector3.new(112, 12.2, 80),
-		PALETTE.grass,
-		Enum.Material.Grass,
-		{ transparency = 1 }
-	)
-	storyLanding.CanCollide = true
-	storyLanding.CanQuery = false
-	makeBridge(
-		parent,
-		"StoryBridge",
-		Vector3.new(58, 10.1, 39),
-		Vector3.new(88, 12.8, 61),
-		15,
-		2.55
-	)
-	makePathSlab(
-		storyZone,
-		"StoryLandingGoldPath",
-		Vector3.new(112, 12.85, 80),
-		Vector3.new(20, 0.55, 42),
-		math.rad(-52),
-		PALETTE.gold
-	)
-	local storyPad = makePortal(
-		storyZone,
-		"StoryPortal",
-		Vector3.new(112, 15.3, 83),
-		PALETTE.purple,
-		PALETTE.gold,
-		"STORY MODE",
-		"Solo training"
-	)
-	storyPad.Name = "StoryQueuePad"
-	storyPad:SetAttribute("QueueMode", "Story")
-	local storyPrompt = addPrompt(storyPad, "Start", "Story Training")
-	local storyTitle, storySubtitle =
-		addStatusBillboard(storyPad, "StoryStatus", "STORY MODE", "Solo missions - safe practice")
-	queueVisuals.storyTitle = storyTitle
-	queueVisuals.storySubtitle = storySubtitle
-	makeRuinArch(
-		storyZone,
-		"AncientPuzzleArch",
-		Vector3.new(108, 15.2, 61),
-		math.rad(180),
-		PALETTE.gold
-	)
-	makeRuinArch(
-		storyZone,
-		"BrokenSideArchA",
-		Vector3.new(94, 14.2, 98),
-		math.rad(35),
-		PALETTE.purple
-	)
-	makeRuinArch(
-		storyZone,
-		"BrokenSideArchB",
-		Vector3.new(130, 14.2, 100),
-		math.rad(-35),
-		PALETTE.purple
-	)
-	for index = 1, 5 do
-		local angle = (math.pi * 2) * index / 7
-		local fragment = makePart(
+	local storyPrompt = nil
+	if ExperienceConfig.isStoryVisible() then
+		local storyZone = makeZoneFolder(zones, "StoryRouteEndpoint")
+		fillTerrainBall(Vector3.new(112, 4, 80), 31, Enum.Material.Rock)
+		fillTerrainBall(Vector3.new(103, 9, 72), 24, Enum.Material.Grass)
+		fillTerrainBall(Vector3.new(124, 9, 88), 24, Enum.Material.Grass)
+		fillTerrainBall(Vector3.new(112, -13, 80), 18, Enum.Material.Slate)
+		local storyLanding = makePart(
 			storyZone,
-			`FloatingStoryFragment{index}`,
-			Vector3.new(3.8, 2.2, 5.4),
-			Vector3.new(112 + math.cos(angle) * 18, 23 + (index % 3) * 2, 83 + math.sin(angle) * 15),
-			index % 2 == 0 and PALETTE.stone or PALETTE.marble,
-			Enum.Material.Marble,
-			{ canCollide = false }
+			"StoryLandingSafeSurface",
+			Vector3.new(60, 1, 48),
+			Vector3.new(112, 12.2, 80),
+			PALETTE.grass,
+			Enum.Material.Grass,
+			{ transparency = 1 }
 		)
-		fragment.CFrame *= CFrame.Angles(
-			math.rad(index * 12),
-			math.rad(index * 24),
-			math.rad(index * 7)
+		storyLanding.CanCollide = true
+		storyLanding.CanQuery = false
+		makeBridge(
+			parent,
+			"StoryBridge",
+			Vector3.new(58, 10.1, 39),
+			Vector3.new(88, 12.8, 61),
+			15,
+			2.55
 		)
-		queueSpin(fragment, 42 + index, Vector3.new(0, 1, 0))
+		makePathSlab(
+			storyZone,
+			"StoryLandingGoldPath",
+			Vector3.new(112, 12.85, 80),
+			Vector3.new(20, 0.55, 42),
+			math.rad(-52),
+			PALETTE.gold
+		)
+		local storyPad = makePortal(
+			storyZone,
+			"StoryPortal",
+			Vector3.new(112, 15.3, 83),
+			PALETTE.purple,
+			PALETTE.gold,
+			"STORY MODE",
+			"Solo training"
+		)
+		storyPad.Name = "StoryQueuePad"
+		storyPad:SetAttribute("QueueMode", "Story")
+		storyPrompt = addPrompt(storyPad, "Start", "Story Training")
+		local storyTitle, storySubtitle = addStatusBillboard(
+			storyPad,
+			"StoryStatus",
+			"STORY MODE",
+			"Solo missions - safe practice"
+		)
+		queueVisuals.storyTitle = storyTitle
+		queueVisuals.storySubtitle = storySubtitle
+		makeRuinArch(
+			storyZone,
+			"AncientPuzzleArch",
+			Vector3.new(108, 15.2, 61),
+			math.rad(180),
+			PALETTE.gold
+		)
+		makeRuinArch(
+			storyZone,
+			"BrokenSideArchA",
+			Vector3.new(94, 14.2, 98),
+			math.rad(35),
+			PALETTE.purple
+		)
+		makeRuinArch(
+			storyZone,
+			"BrokenSideArchB",
+			Vector3.new(130, 14.2, 100),
+			math.rad(-35),
+			PALETTE.purple
+		)
+		for index = 1, 5 do
+			local angle = (math.pi * 2) * index / 7
+			local fragment = makePart(
+				storyZone,
+				`FloatingStoryFragment{index}`,
+				Vector3.new(3.8, 2.2, 5.4),
+				Vector3.new(
+					112 + math.cos(angle) * 18,
+					23 + (index % 3) * 2,
+					83 + math.sin(angle) * 15
+				),
+				index % 2 == 0 and PALETTE.stone or PALETTE.marble,
+				Enum.Material.Marble,
+				{ canCollide = false }
+			)
+			fragment.CFrame *= CFrame.Angles(
+				math.rad(index * 12),
+				math.rad(index * 24),
+				math.rad(index * 7)
+			)
+			queueSpin(fragment, 42 + index, Vector3.new(0, 1, 0))
+		end
+		makeTree(storyZone, "GlowingStoryTree", Vector3.new(96, 12.8, 101), 0.95, PALETTE.purple)
+		makeLowPolyRock(
+			storyZone,
+			"StoryCliffRocks",
+			Vector3.new(132, 12.5, 67),
+			1,
+			PALETTE.stoneDark
+		)
+		makeLamp(storyZone, "StoryGoldLampA", Vector3.new(96, 12.8, 76), PALETTE.gold)
+		makeLamp(storyZone, "StoryGoldLampB", Vector3.new(128, 12.8, 79), PALETTE.gold)
 	end
-	makeTree(storyZone, "GlowingStoryTree", Vector3.new(96, 12.8, 101), 0.95, PALETTE.purple)
-	makeLowPolyRock(storyZone, "StoryCliffRocks", Vector3.new(132, 12.5, 67), 1, PALETTE.stoneDark)
-	makeLamp(storyZone, "StoryGoldLampA", Vector3.new(96, 12.8, 76), PALETTE.gold)
-	makeLamp(storyZone, "StoryGoldLampB", Vector3.new(128, 12.8, 79), PALETTE.gold)
 
 	return battlePrompt, storyPrompt
 end
@@ -1541,28 +1570,31 @@ local function buildBackground(parent)
 end
 
 local function buildHub(parent)
-	local _, _, spawn = buildMainIsland(parent)
+	local _, _, spawn, soloPrompt = buildMainIsland(parent)
 	local battlePrompt, storyPrompt = buildSideIslands(parent)
 	buildBackground(parent)
 
-	local battleSpawn = makePart(
-		parent,
-		"BattleArenaSpawn",
-		Vector3.new(14, 1, 14),
-		Vector3.new(0, 18, -172),
-		PALETTE.gold,
-		Enum.Material.SmoothPlastic
-	)
-	makeBridge(
-		parent,
-		"ArenaMainBridge",
-		Vector3.new(0, 15.2, -146),
-		Vector3.new(0, 10.6, -270),
-		13,
-		-1
-	)
+	local battleSpawn = nil
+	if ExperienceConfig.World.BuildBattleArenas then
+		battleSpawn = makePart(
+			parent,
+			"BattleArenaSpawn",
+			Vector3.new(14, 1, 14),
+			Vector3.new(0, 18, -172),
+			PALETTE.gold,
+			Enum.Material.SmoothPlastic
+		)
+		makeBridge(
+			parent,
+			"ArenaMainBridge",
+			Vector3.new(0, 15.2, -146),
+			Vector3.new(0, 10.6, -270),
+			13,
+			-1
+		)
+	end
 
-	return spawn, battlePrompt, storyPrompt, battleSpawn
+	return spawn, battlePrompt, storyPrompt, battleSpawn, soloPrompt
 end
 
 local function buildRecoveryPlatform(parent, hubSpawn)
@@ -1611,12 +1643,14 @@ function HubBuilder.build()
 	hub.Name = "BlockBlastHub"
 	hub.Parent = workspace
 
-	local spawn, battlePrompt, storyPrompt, battleSpawn = buildHub(hub)
+	local spawn, battlePrompt, storyPrompt, battleSpawn, soloPrompt = buildHub(hub)
 	local recoveryPlatform = buildRecoveryPlatform(hub, spawn)
 
 	local arenas = {}
-	for arenaIndex, arenaCenter in ARENA_CENTERS do
-		table.insert(arenas, buildArena(hub, arenaIndex, arenaCenter))
+	if ExperienceConfig.World.BuildBattleArenas then
+		for arenaIndex, arenaCenter in ARENA_CENTERS do
+			table.insert(arenas, buildArena(hub, arenaIndex, arenaCenter))
+		end
 	end
 
 	for _, item in animatedParts do
@@ -1644,13 +1678,14 @@ function HubBuilder.build()
 	return {
 		hub = hub,
 		spawn = spawn,
+		soloPrompt = soloPrompt,
 		battlePrompt = battlePrompt,
 		storyPrompt = storyPrompt,
 		battleSpawn = battleSpawn,
 		recoveryPlatform = recoveryPlatform,
 		arenas = arenas,
-		arenaSpawns = arenas[1].spawns,
-		arenaReturnPad = arenas[1].returnPad,
+		arenaSpawns = arenas[1] and arenas[1].spawns or {},
+		arenaReturnPad = arenas[1] and arenas[1].returnPad or nil,
 	}
 end
 
