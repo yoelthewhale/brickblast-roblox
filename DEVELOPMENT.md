@@ -2,6 +2,86 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day32 Visual Cleanup - 2026-08-09
+
+### Completed
+
+- Used the user-provided Day31 Play-mode aerial screenshot as the visual source of truth.
+- Confirmed the Day31 fallback fix worked, but the real hub composition still failed due to oversized world text, visible safety planes, repeated procedural debris, weak destination spacing, and arena label clutter.
+- Focused only on hub composition cleanup; did not redesign screen UI, rename the game, add monetization, change DataStores, or rewrite gameplay.
+- Tightened all `BillboardGui` behavior in `src/server/world/HubBuilder.luau`:
+  - default destination labels reduced from `250x88` to `170x62`
+  - `AlwaysOnTop` disabled
+  - `MaxDistance = 105` for primary labels
+  - blank subtitles hide their secondary label
+  - status labels reduced to `190x66`
+  - status labels limited to `MaxDistance = 55`
+- Removed duplicated arena/player world billboards:
+  - `PlayerSpawnA` no longer shows `PLAYER A / Your board`
+  - `PlayerSpawnB` no longer shows `PLAYER B / Your board`
+  - `ReturnHubPad` no longer shows `HUB / Return after match`
+  - `BattleArenaSpawn` no longer shows `ARENAS / Match starts here`
+- Kept essential close-range queue status labels on `BattleQueuePad` and `StoryQueuePad`.
+- Identified the visible translucent square as safety/recovery-style geometry, primarily the large `VoidRecoveryPlatform` and hidden safe walk/landing surfaces seen from aerial distance.
+- Changed `VoidRecoveryPlatform` transparency from `0.9` to `1` while preserving collision/touch recovery behavior.
+- Kept central and route safe surfaces invisible with collision enabled for reliable traversal.
+- Reduced procedural clutter:
+  - cloud banks reduced from 18 to 7
+  - floating rocks reduced from 12 small evenly distributed pieces to 5 larger framing pieces
+  - distant skyline silhouettes reduced from 7 to 4 and moved farther out
+  - removed global `DistantBirds` and `DriftingLeaves` particle anchors that produced repeated white clusters around the view
+- Improved central island composition:
+  - enlarged the terrain island mass
+  - added additional cliff blocks/terrace mass
+  - enlarged the invisible safe upper surface to match the wider hub footprint
+  - repositioned trees, flowers, benches, and waterfalls around a wider plaza perimeter
+- Improved Brick Core dominance:
+  - shortened the world title to `BRICK CORE`
+  - enlarged the pedestal, upper pedestal, pillars, crown, core blocks, and energy beam
+  - kept glow/particles restrained instead of depending on huge text
+- Improved Battle route readability:
+  - moved the Battle endpoint farther from the central island
+  - enlarged the temporary Battle landing island
+  - widened Battle route/landing lanes
+  - moved the Battle gate, queue pad, bunting, lamps, and versus sculpture into a clearer route sequence
+- Improved Story route readability:
+  - moved the Story endpoint farther out and enlarged it
+  - lengthened the Story bridge and path
+  - moved the Story portal, arches, tree, rocks, fragments, and lamps to reduce overlap
+- Moved match arenas farther from the social hub by changing `ARENA_CENTERS` from roughly `z=-210` to roughly `z=-430`.
+- Built `BlockBlastBattle-Day32.rbxl`.
+
+### World Label Audit
+
+- `addBillboard` primary labels: now medium range, smaller size, no AlwaysOnTop.
+- `BattleQueuePad.QueueStatus`: retained close-range queue status only.
+- `StoryQueuePad.StoryStatus`: retained close-range Story status only.
+- `HubSpawn.Label`: retained as a modest `BRICK CORE` label with no subtitle.
+- `BattlePortal.Label` and `StoryPortal.Label`: retained through `makePortal` but distance-limited by the helper.
+- Route banners and gate/arch SurfaceGui labels: retained as local environmental signage.
+- Arena scoreboard SurfaceGui text: retained on the arena object, but arenas were moved away from the hub view.
+- Arena spawn/return BillboardGui labels: removed.
+
+### Current State
+
+- Technical validation passes locally.
+- Visual approval still requires real Studio screenshots from Day32.
+- Press F8 in Studio Play mode to hide the custom screen HUD before reviewing the map.
+
+### Required Manual Views
+
+1. Normal spawn view facing the Brick Core.
+2. Plaza view facing the Battle entrance.
+3. Plaza view facing the Story entrance.
+4. Three-quarter aerial view.
+5. Extreme aerial diagnostic view to confirm world labels no longer overlap.
+
+### Known Visual Risks
+
+- The hub is still source-generated from Terrain and Parts, not a hand-authored Studio art scene or imported environment kit.
+- The central terrain may still need more authored terrace shaping after player-height screenshots.
+- Battle and Story endpoints are improved temporary platforms, not final full destination islands.
+
 ## Day31 Runtime Map Mismatch Fix - 2026-08-09
 
 ### Completed

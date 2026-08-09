@@ -3,9 +3,9 @@ local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 
 local ARENA_CENTERS = {
-	Vector3.new(0, 8, -210),
-	Vector3.new(135, 8, -205),
-	Vector3.new(-135, 8, -205),
+	Vector3.new(0, 8, -430),
+	Vector3.new(190, 8, -440),
+	Vector3.new(-190, 8, -440),
 }
 
 local PALETTE = {
@@ -127,39 +127,44 @@ end
 local function addBillboard(part, title, subtitle, offset)
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "Label"
-	billboard.Size = UDim2.fromOffset(250, 88)
-	billboard.StudsOffset = offset or Vector3.new(0, 5.2, 0)
-	billboard.AlwaysOnTop = true
+	billboard.Size = UDim2.fromOffset(170, subtitle == "" and 42 or 62)
+	billboard.StudsOffset = offset or Vector3.new(0, 4.4, 0)
+	billboard.AlwaysOnTop = false
+	billboard.MaxDistance = 105
 	billboard.Parent = part
 
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.BackgroundTransparency = 1
-	titleLabel.Size = UDim2.fromScale(1, 0.58)
+	titleLabel.Size = subtitle == "" and UDim2.fromScale(1, 1) or UDim2.fromScale(1, 0.62)
 	titleLabel.Font = Enum.Font.GothamBlack
 	titleLabel.Text = title
 	titleLabel.TextColor3 = PALETTE.text
-	titleLabel.TextStrokeTransparency = 0.35
+	titleLabel.TextStrokeTransparency = 0.42
 	titleLabel.TextScaled = true
 	titleLabel.Parent = billboard
 
 	local subtitleLabel = Instance.new("TextLabel")
 	subtitleLabel.BackgroundTransparency = 1
-	subtitleLabel.Position = UDim2.fromScale(0, 0.58)
-	subtitleLabel.Size = UDim2.fromScale(1, 0.42)
+	subtitleLabel.Position = UDim2.fromScale(0, 0.62)
+	subtitleLabel.Size = UDim2.fromScale(1, 0.38)
 	subtitleLabel.Font = Enum.Font.GothamBold
 	subtitleLabel.Text = subtitle
 	subtitleLabel.TextColor3 = Color3.fromRGB(235, 248, 255)
-	subtitleLabel.TextStrokeTransparency = 0.45
+	subtitleLabel.TextStrokeTransparency = 0.52
 	subtitleLabel.TextScaled = true
+	subtitleLabel.Visible = subtitle ~= ""
 	subtitleLabel.Parent = billboard
+
+	return billboard, titleLabel, subtitleLabel
 end
 
 local function addStatusBillboard(part, name, title, subtitle, offset)
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = name
-	billboard.Size = UDim2.fromOffset(290, 96)
-	billboard.StudsOffset = offset or Vector3.new(0, 7, 0)
-	billboard.AlwaysOnTop = true
+	billboard.Size = UDim2.fromOffset(190, 66)
+	billboard.StudsOffset = offset or Vector3.new(0, 5.8, 0)
+	billboard.AlwaysOnTop = false
+	billboard.MaxDistance = 55
 	billboard.Parent = part
 
 	local titleLabel = Instance.new("TextLabel")
@@ -169,7 +174,7 @@ local function addStatusBillboard(part, name, title, subtitle, offset)
 	titleLabel.Font = Enum.Font.GothamBlack
 	titleLabel.Text = title
 	titleLabel.TextColor3 = PALETTE.text
-	titleLabel.TextStrokeTransparency = 0.25
+	titleLabel.TextStrokeTransparency = 0.4
 	titleLabel.TextScaled = true
 	titleLabel.Parent = billboard
 
@@ -181,7 +186,7 @@ local function addStatusBillboard(part, name, title, subtitle, offset)
 	subtitleLabel.Font = Enum.Font.GothamBold
 	subtitleLabel.Text = subtitle
 	subtitleLabel.TextColor3 = Color3.fromRGB(235, 248, 255)
-	subtitleLabel.TextStrokeTransparency = 0.35
+	subtitleLabel.TextStrokeTransparency = 0.55
 	subtitleLabel.TextScaled = true
 	subtitleLabel.Parent = billboard
 
@@ -875,16 +880,16 @@ local function buildMainIsland(parent)
 	local island = makeZoneFolder(parent, "CentralHubIsland")
 
 	local terrainBlobs = {
-		{ center = Vector3.new(0, 1, 0), radius = 47, material = Enum.Material.Rock },
-		{ center = Vector3.new(-24, 5, 6), radius = 31, material = Enum.Material.Ground },
-		{ center = Vector3.new(22, 5, -3), radius = 34, material = Enum.Material.Ground },
-		{ center = Vector3.new(0, 8, 24), radius = 29, material = Enum.Material.Grass },
-		{ center = Vector3.new(0, 8, -26), radius = 34, material = Enum.Material.Grass },
-		{ center = Vector3.new(-34, 7, -12), radius = 24, material = Enum.Material.Grass },
-		{ center = Vector3.new(35, 7, 10), radius = 25, material = Enum.Material.Grass },
-		{ center = Vector3.new(-9, -11, 2), radius = 30, material = Enum.Material.Slate },
-		{ center = Vector3.new(12, -21, -3), radius = 20, material = Enum.Material.Rock },
-		{ center = Vector3.new(0, -33, 0), radius = 11, material = Enum.Material.Slate },
+		{ center = Vector3.new(0, 0, 0), radius = 54, material = Enum.Material.Rock },
+		{ center = Vector3.new(-32, 5, 8), radius = 34, material = Enum.Material.Ground },
+		{ center = Vector3.new(29, 5, -5), radius = 37, material = Enum.Material.Ground },
+		{ center = Vector3.new(0, 7, 30), radius = 35, material = Enum.Material.Grass },
+		{ center = Vector3.new(0, 8, -32), radius = 39, material = Enum.Material.Grass },
+		{ center = Vector3.new(-45, 7, -16), radius = 25, material = Enum.Material.Grass },
+		{ center = Vector3.new(45, 7, 14), radius = 27, material = Enum.Material.Grass },
+		{ center = Vector3.new(-16, -13, 2), radius = 35, material = Enum.Material.Slate },
+		{ center = Vector3.new(14, -25, -6), radius = 24, material = Enum.Material.Rock },
+		{ center = Vector3.new(0, -41, 0), radius = 12, material = Enum.Material.Slate },
 	}
 	for _, blob in terrainBlobs do
 		fillTerrainBall(blob.center, blob.radius, blob.material)
@@ -892,10 +897,12 @@ local function buildMainIsland(parent)
 
 	for index, cliff in
 		{
-			{ pos = Vector3.new(-49, -4, -10), size = Vector3.new(12, 24, 34), rot = 0.25 },
-			{ pos = Vector3.new(49, -3, 8), size = Vector3.new(11, 25, 32), rot = -0.3 },
-			{ pos = Vector3.new(-19, -7, -47), size = Vector3.new(36, 25, 11), rot = 0.1 },
-			{ pos = Vector3.new(23, -6, 48), size = Vector3.new(36, 22, 12), rot = -0.1 },
+			{ pos = Vector3.new(-58, -5, -12), size = Vector3.new(15, 30, 42), rot = 0.25 },
+			{ pos = Vector3.new(58, -4, 10), size = Vector3.new(14, 31, 40), rot = -0.3 },
+			{ pos = Vector3.new(-24, -8, -57), size = Vector3.new(44, 30, 14), rot = 0.1 },
+			{ pos = Vector3.new(29, -7, 58), size = Vector3.new(43, 27, 14), rot = -0.1 },
+			{ pos = Vector3.new(-39, -2, 39), size = Vector3.new(20, 18, 18), rot = 0.7 },
+			{ pos = Vector3.new(39, -1, -37), size = Vector3.new(19, 18, 18), rot = -0.65 },
 		}
 	do
 		fillTerrainBlock(cliff.pos, cliff.size, Enum.Material.Rock, cliff.rot)
@@ -911,7 +918,7 @@ local function buildMainIsland(parent)
 	local walkSurface = makePart(
 		island,
 		"CentralHubSafeWalkSurface",
-		Vector3.new(108, 1, 98),
+		Vector3.new(122, 1, 112),
 		Vector3.new(0, 8.15, 0),
 		PALETTE.grass,
 		Enum.Material.Grass,
@@ -937,7 +944,7 @@ local function buildMainIsland(parent)
 	spawn.CanTouch = false
 	spawn.CanQuery = true
 	spawn.Parent = island
-	addBillboard(spawn, "BRICK CORE HUB", "Choose your route")
+	addBillboard(spawn, "BRICK CORE", "")
 
 	local plaza = makeZoneFolder(island, "LayeredCentralPlaza")
 	for radiusIndex, radius in { 17, 27, 38 } do
@@ -971,7 +978,7 @@ local function buildMainIsland(parent)
 	local coreBase = makePart(
 		plaza,
 		"BrickCoreLowerPedestal",
-		Vector3.new(30, 2.4, 30),
+		Vector3.new(36, 2.8, 36),
 		Vector3.new(0, 10, 0),
 		PALETTE.marble,
 		Enum.Material.Marble
@@ -980,8 +987,8 @@ local function buildMainIsland(parent)
 	local upperBase = makePart(
 		plaza,
 		"BrickCoreUpperPedestal",
-		Vector3.new(20, 2.2, 20),
-		Vector3.new(0, 12.2, 0),
+		Vector3.new(25, 2.6, 25),
+		Vector3.new(0, 12.5, 0),
 		PALETTE.stone,
 		Enum.Material.Marble
 	)
@@ -993,8 +1000,8 @@ local function buildMainIsland(parent)
 		local column = makePart(
 			coreFrame,
 			`CoreFramePillar{index}`,
-			Vector3.new(2.8, 14, 2.8),
-			CFrame.new(Vector3.new(math.cos(angle) * 12, 19, math.sin(angle) * 12))
+			Vector3.new(3.2, 19, 3.2),
+			CFrame.new(Vector3.new(math.cos(angle) * 14, 21.5, math.sin(angle) * 14))
 				* CFrame.Angles(0, -angle, 0),
 			index % 2 == 0 and PALETTE.stoneDark or PALETTE.marble,
 			Enum.Material.Marble,
@@ -1006,8 +1013,8 @@ local function buildMainIsland(parent)
 	makePart(
 		coreFrame,
 		"CoreTopCrown",
-		Vector3.new(21, 2.2, 21),
-		Vector3.new(0, 27.5, 0),
+		Vector3.new(27, 2.6, 27),
+		Vector3.new(0, 32.5, 0),
 		PALETTE.gold,
 		Enum.Material.Metal,
 		{ canCollide = false, shape = Enum.PartType.Cylinder }
@@ -1017,31 +1024,31 @@ local function buildMainIsland(parent)
 		{
 			name = "CoreCenterCyan",
 			offset = Vector3.new(0, 0, 0),
-			size = Vector3.new(8, 8, 8),
+			size = Vector3.new(11, 11, 11),
 			color = PALETTE.cyan,
 		},
 		{
 			name = "CoreLeftBlue",
-			offset = Vector3.new(-7.4, 0, 0),
-			size = Vector3.new(6, 6, 6),
+			offset = Vector3.new(-10.2, 0, 0),
+			size = Vector3.new(8, 8, 8),
 			color = Color3.fromRGB(45, 151, 255),
 		},
 		{
 			name = "CoreRightPurple",
-			offset = Vector3.new(7.4, 0, 0),
-			size = Vector3.new(6, 6, 6),
+			offset = Vector3.new(10.2, 0, 0),
+			size = Vector3.new(8, 8, 8),
 			color = PALETTE.purple,
 		},
 		{
 			name = "CoreTopGold",
-			offset = Vector3.new(0, 7.2, 0),
-			size = Vector3.new(5.6, 5.6, 5.6),
+			offset = Vector3.new(0, 10.2, 0),
+			size = Vector3.new(7.2, 7.2, 7.2),
 			color = PALETTE.gold,
 		},
 		{
 			name = "CoreFrontGreen",
-			offset = Vector3.new(0, 0, -7.4),
-			size = Vector3.new(5.8, 5.8, 5.8),
+			offset = Vector3.new(0, 0, -10.2),
+			size = Vector3.new(7.6, 7.6, 7.6),
 			color = PALETTE.grass,
 		},
 	}
@@ -1050,7 +1057,7 @@ local function buildMainIsland(parent)
 			coreFrame,
 			block.name,
 			block.size,
-			Vector3.new(0, 20, 0) + block.offset,
+			Vector3.new(0, 22.5, 0) + block.offset,
 			block.color,
 			index == 1 and Enum.Material.Neon or Enum.Material.SmoothPlastic,
 			{ canCollide = false }
@@ -1065,8 +1072,8 @@ local function buildMainIsland(parent)
 	local beam = makeNeon(
 		coreFrame,
 		"ControlledCoreBeam",
-		Vector3.new(2.2, 58, 2.2),
-		Vector3.new(0, 54, 0),
+		Vector3.new(2.8, 70, 2.8),
+		Vector3.new(0, 63, 0),
 		PALETTE.purple,
 		0.76
 	)
@@ -1078,16 +1085,16 @@ local function buildMainIsland(parent)
 	makePathSlab(
 		routeFolder,
 		"BattleRoute",
-		Vector3.new(0, 9.75, -38),
-		Vector3.new(20, 0.65, 54),
+		Vector3.new(0, 9.75, -46),
+		Vector3.new(24, 0.65, 62),
 		0,
 		PALETTE.stone
 	)
 	makePathSlab(
 		routeFolder,
 		"StoryRoute",
-		Vector3.new(39, 9.8, 23),
-		Vector3.new(18, 0.65, 50),
+		Vector3.new(48, 9.8, 28),
+		Vector3.new(20, 0.65, 58),
 		math.rad(-52),
 		PALETTE.stone
 	)
@@ -1095,7 +1102,7 @@ local function buildMainIsland(parent)
 		routeFolder,
 		"SpawnEntryPath",
 		Vector3.new(0, 9.7, 27),
-		Vector3.new(18, 0.65, 22),
+		Vector3.new(20, 0.65, 28),
 		0,
 		PALETTE.marble
 	)
@@ -1116,7 +1123,7 @@ local function buildMainIsland(parent)
 	makeBanner(
 		routeFolder,
 		"BattleDirectionalBanner",
-		Vector3.new(-16, 9.85, -56),
+		Vector3.new(-18, 9.85, -66),
 		math.rad(0),
 		PALETTE.cyan,
 		"BATTLE"
@@ -1124,7 +1131,7 @@ local function buildMainIsland(parent)
 	makeBanner(
 		routeFolder,
 		"StoryDirectionalBanner",
-		Vector3.new(54, 9.85, 38),
+		Vector3.new(65, 9.85, 45),
 		math.rad(-46),
 		PALETTE.purple,
 		"STORY"
@@ -1132,7 +1139,7 @@ local function buildMainIsland(parent)
 	makeGateway(
 		routeFolder,
 		"BattleRouteGate",
-		Vector3.new(0, 13.4, -62),
+		Vector3.new(0, 13.4, -72),
 		0,
 		PALETTE.cyan,
 		PALETTE.red,
@@ -1141,18 +1148,18 @@ local function buildMainIsland(parent)
 	makeRuinArch(
 		routeFolder,
 		"StoryRouteTempleArch",
-		Vector3.new(59, 12.8, 42),
+		Vector3.new(72, 12.8, 51),
 		math.rad(-52),
 		PALETTE.gold
 	)
 
 	for index, treeData in
 		{
-			{ pos = Vector3.new(-39, 9.5, 27), scale = 1.2 },
-			{ pos = Vector3.new(33, 9.5, -28), scale = 1 },
-			{ pos = Vector3.new(-37, 9.4, -24), scale = 0.9 },
-			{ pos = Vector3.new(18, 9.6, 40), scale = 0.95 },
-			{ pos = Vector3.new(-17, 9.6, 43), scale = 0.85 },
+			{ pos = Vector3.new(-45, 9.5, 31), scale = 1.35 },
+			{ pos = Vector3.new(41, 9.5, -31), scale = 1.15 },
+			{ pos = Vector3.new(-43, 9.4, -28), scale = 1 },
+			{ pos = Vector3.new(25, 9.6, 48), scale = 1.1 },
+			{ pos = Vector3.new(-24, 9.6, 49), scale = 0.95 },
 		}
 	do
 		makeTree(
@@ -1163,12 +1170,12 @@ local function buildMainIsland(parent)
 			index % 2 == 0 and PALETTE.grassDark or PALETTE.leaf
 		)
 	end
-	makeFlowerPatch(island, Vector3.new(-27, 8.7, 17), 20, 12)
-	makeFlowerPatch(island, Vector3.new(26, 8.7, -20), 18, 10)
-	makeBench(island, "SpawnViewBenchA", Vector3.new(-14, 9.75, 37), math.rad(25))
-	makeBench(island, "SpawnViewBenchB", Vector3.new(18, 9.75, 36), math.rad(-20))
-	makeWaterfall(island, "SouthCliffWaterfall", Vector3.new(-47, 6, 24))
-	makeWaterfall(island, "EastCliffWaterfall", Vector3.new(49, 6, -3))
+	makeFlowerPatch(island, Vector3.new(-32, 8.7, 21), 18, 12)
+	makeFlowerPatch(island, Vector3.new(33, 8.7, -24), 16, 10)
+	makeBench(island, "SpawnViewBenchA", Vector3.new(-17, 9.75, 43), math.rad(25))
+	makeBench(island, "SpawnViewBenchB", Vector3.new(22, 9.75, 42), math.rad(-20))
+	makeWaterfall(island, "SouthCliffWaterfall", Vector3.new(-55, 6, 28))
+	makeWaterfall(island, "EastCliffWaterfall", Vector3.new(57, 6, -5))
 
 	addParticles(coreBase, "PlazaGoldDust", PALETTE.gold, 1.1, 2.4, 2, 38)
 
@@ -1179,42 +1186,42 @@ local function buildSideIslands(parent)
 	local zones = makeZoneFolder(parent, "Day30RouteEndpoints")
 
 	local battleZone = makeZoneFolder(zones, "BattleRouteEndpoint")
-	fillTerrainBall(Vector3.new(0, 4, -96), 29, Enum.Material.Rock)
-	fillTerrainBall(Vector3.new(-9, 9, -91), 22, Enum.Material.Grass)
-	fillTerrainBall(Vector3.new(11, 9, -101), 23, Enum.Material.Grass)
-	fillTerrainBall(Vector3.new(0, -12, -96), 17, Enum.Material.Slate)
+	fillTerrainBall(Vector3.new(0, 4, -116), 35, Enum.Material.Rock)
+	fillTerrainBall(Vector3.new(-12, 9, -109), 27, Enum.Material.Grass)
+	fillTerrainBall(Vector3.new(14, 9, -122), 28, Enum.Material.Grass)
+	fillTerrainBall(Vector3.new(0, -14, -116), 22, Enum.Material.Slate)
 	local battleLanding = makePart(
 		battleZone,
 		"BattleLandingSafeSurface",
-		Vector3.new(58, 1, 46),
-		Vector3.new(0, 12.1, -96),
+		Vector3.new(70, 1, 54),
+		Vector3.new(0, 12.1, -116),
 		PALETTE.grass,
 		Enum.Material.Grass,
 		{ transparency = 1 }
 	)
 	battleLanding.CanCollide = true
 	battleLanding.CanQuery = false
-	makeBridge(parent, "BattleBridge", Vector3.new(0, 10, -54), Vector3.new(0, 12.5, -76), 17, 0.7)
+	makeBridge(parent, "BattleBridge", Vector3.new(0, 10, -65), Vector3.new(0, 12.5, -93), 19, 0.7)
 	makePathSlab(
 		battleZone,
 		"BattleLandingBluePath",
-		Vector3.new(-8, 12.7, -94),
-		Vector3.new(14, 0.55, 38),
+		Vector3.new(-9, 12.7, -114),
+		Vector3.new(15, 0.55, 42),
 		0,
 		PALETTE.cyan
 	)
 	makePathSlab(
 		battleZone,
 		"BattleLandingRedPath",
-		Vector3.new(8, 12.72, -94),
-		Vector3.new(14, 0.55, 38),
+		Vector3.new(9, 12.72, -114),
+		Vector3.new(15, 0.55, 42),
 		0,
 		PALETTE.red
 	)
 	makeGateway(
 		battleZone,
 		"BattleArenaGate",
-		Vector3.new(0, 16.4, -113),
+		Vector3.new(0, 16.4, -137),
 		0,
 		Color3.fromRGB(44, 178, 255),
 		Color3.fromRGB(255, 88, 88),
@@ -1223,7 +1230,7 @@ local function buildSideIslands(parent)
 	local battlePad = makePortal(
 		battleZone,
 		"BattlePortal",
-		Vector3.new(0, 15.4, -90),
+		Vector3.new(0, 15.4, -110),
 		Color3.fromRGB(44, 178, 255),
 		Color3.fromRGB(255, 88, 88),
 		"BATTLE QUEUE",
@@ -1241,7 +1248,7 @@ local function buildSideIslands(parent)
 	queueVisuals.battlePad = battlePad
 	queueVisuals.battleTitle = battleTitle
 	queueVisuals.battleSubtitle = battleSubtitle
-	makePuzzleMonument(battleZone, "VersusBlockSculpture", Vector3.new(0, 16.2, -124), 1.05, {
+	makePuzzleMonument(battleZone, "VersusBlockSculpture", Vector3.new(0, 16.2, -150), 1.05, {
 		{ offset = Vector3.new(-6, 0, 0), color = PALETTE.cyan, ry = 12 },
 		{ offset = Vector3.new(-2, 4.6, 0), color = PALETTE.cyan, ry = -16 },
 		{ offset = Vector3.new(2, 0, 0), color = PALETTE.red, ry = 18 },
@@ -1250,29 +1257,29 @@ local function buildSideIslands(parent)
 	makeFestivalFlags(
 		battleZone,
 		"BattleBunting",
-		Vector3.new(-27, 25, -74),
-		Vector3.new(27, 25, -74),
+		Vector3.new(-32, 25, -94),
+		Vector3.new(32, 25, -94),
 		11
 	)
 	for index, side in { -1, 1 } do
 		makeLamp(
 			battleZone,
 			`BattleBridgeLamp{index}`,
-			Vector3.new(side * 16, 12.5, -76),
+			Vector3.new(side * 17, 12.5, -94),
 			side < 0 and PALETTE.cyan or PALETTE.red
 		)
 	end
 
 	local storyZone = makeZoneFolder(zones, "StoryRouteEndpoint")
-	fillTerrainBall(Vector3.new(86, 4, 62), 26, Enum.Material.Rock)
-	fillTerrainBall(Vector3.new(79, 9, 56), 20, Enum.Material.Grass)
-	fillTerrainBall(Vector3.new(96, 9, 67), 19, Enum.Material.Grass)
-	fillTerrainBall(Vector3.new(86, -12, 62), 15, Enum.Material.Slate)
+	fillTerrainBall(Vector3.new(112, 4, 80), 31, Enum.Material.Rock)
+	fillTerrainBall(Vector3.new(103, 9, 72), 24, Enum.Material.Grass)
+	fillTerrainBall(Vector3.new(124, 9, 88), 24, Enum.Material.Grass)
+	fillTerrainBall(Vector3.new(112, -13, 80), 18, Enum.Material.Slate)
 	local storyLanding = makePart(
 		storyZone,
 		"StoryLandingSafeSurface",
-		Vector3.new(50, 1, 42),
-		Vector3.new(86, 12.2, 62),
+		Vector3.new(60, 1, 48),
+		Vector3.new(112, 12.2, 80),
 		PALETTE.grass,
 		Enum.Material.Grass,
 		{ transparency = 1 }
@@ -1282,23 +1289,23 @@ local function buildSideIslands(parent)
 	makeBridge(
 		parent,
 		"StoryBridge",
-		Vector3.new(43, 10.1, 31),
-		Vector3.new(67, 12.8, 47),
-		13,
+		Vector3.new(58, 10.1, 39),
+		Vector3.new(88, 12.8, 61),
+		15,
 		2.55
 	)
 	makePathSlab(
 		storyZone,
 		"StoryLandingGoldPath",
-		Vector3.new(86, 12.85, 62),
-		Vector3.new(18, 0.55, 36),
+		Vector3.new(112, 12.85, 80),
+		Vector3.new(20, 0.55, 42),
 		math.rad(-52),
 		PALETTE.gold
 	)
 	local storyPad = makePortal(
 		storyZone,
 		"StoryPortal",
-		Vector3.new(86, 15.3, 65),
+		Vector3.new(112, 15.3, 83),
 		PALETTE.purple,
 		PALETTE.gold,
 		"STORY MODE",
@@ -1314,21 +1321,21 @@ local function buildSideIslands(parent)
 	makeRuinArch(
 		storyZone,
 		"AncientPuzzleArch",
-		Vector3.new(82, 15.2, 45),
+		Vector3.new(108, 15.2, 61),
 		math.rad(180),
 		PALETTE.gold
 	)
 	makeRuinArch(
 		storyZone,
 		"BrokenSideArchA",
-		Vector3.new(70, 14.2, 78),
+		Vector3.new(94, 14.2, 98),
 		math.rad(35),
 		PALETTE.purple
 	)
 	makeRuinArch(
 		storyZone,
 		"BrokenSideArchB",
-		Vector3.new(102, 14.2, 78),
+		Vector3.new(130, 14.2, 100),
 		math.rad(-35),
 		PALETTE.purple
 	)
@@ -1338,7 +1345,7 @@ local function buildSideIslands(parent)
 			storyZone,
 			`FloatingStoryFragment{index}`,
 			Vector3.new(3.8, 2.2, 5.4),
-			Vector3.new(86 + math.cos(angle) * 18, 23 + (index % 3) * 2, 65 + math.sin(angle) * 15),
+			Vector3.new(112 + math.cos(angle) * 18, 23 + (index % 3) * 2, 83 + math.sin(angle) * 15),
 			index % 2 == 0 and PALETTE.stone or PALETTE.marble,
 			Enum.Material.Marble,
 			{ canCollide = false }
@@ -1350,10 +1357,10 @@ local function buildSideIslands(parent)
 		)
 		queueSpin(fragment, 42 + index, Vector3.new(0, 1, 0))
 	end
-	makeTree(storyZone, "GlowingStoryTree", Vector3.new(70, 12.8, 81), 0.9, PALETTE.purple)
-	makeLowPolyRock(storyZone, "StoryCliffRocks", Vector3.new(104, 12.5, 51), 1, PALETTE.stoneDark)
-	makeLamp(storyZone, "StoryGoldLampA", Vector3.new(70, 12.8, 58), PALETTE.gold)
-	makeLamp(storyZone, "StoryGoldLampB", Vector3.new(102, 12.8, 61), PALETTE.gold)
+	makeTree(storyZone, "GlowingStoryTree", Vector3.new(96, 12.8, 101), 0.95, PALETTE.purple)
+	makeLowPolyRock(storyZone, "StoryCliffRocks", Vector3.new(132, 12.5, 67), 1, PALETTE.stoneDark)
+	makeLamp(storyZone, "StoryGoldLampA", Vector3.new(96, 12.8, 76), PALETTE.gold)
+	makeLamp(storyZone, "StoryGoldLampB", Vector3.new(128, 12.8, 79), PALETTE.gold)
 
 	return battlePrompt, storyPrompt
 end
@@ -1418,7 +1425,6 @@ local function buildArena(parent, arenaIndex, arenaCenter)
 		PALETTE.cyan,
 		Enum.Material.Neon
 	)
-	addBillboard(leftSpawn, "PLAYER A", "Your board")
 	local rightSpawn = makePart(
 		arena,
 		"PlayerSpawnB",
@@ -1427,7 +1433,6 @@ local function buildArena(parent, arenaIndex, arenaCenter)
 		PALETTE.pink,
 		Enum.Material.Neon
 	)
-	addBillboard(rightSpawn, "PLAYER B", "Your board")
 	local returnPad = makePart(
 		arena,
 		"ReturnHubPad",
@@ -1436,7 +1441,6 @@ local function buildArena(parent, arenaIndex, arenaCenter)
 		PALETTE.gold,
 		Enum.Material.SmoothPlastic
 	)
-	addBillboard(returnPad, "HUB", "Return after match")
 
 	for index = 1, 8 do
 		local angle = (math.pi * 2) * index / 8
@@ -1472,9 +1476,9 @@ local function buildBackground(parent)
 	scenery.Name = "DistantFloatingScenery"
 	scenery.Parent = parent
 
-	for index = 1, 18 do
-		local angle = (math.pi * 2) * index / 18
-		local radius = 145 + (index % 4) * 28
+	for index = 1, 7 do
+		local angle = (math.pi * 2) * index / 7
+		local radius = 190 + (index % 3) * 38
 		makeCloud(
 			scenery,
 			`CloudBank{index}`,
@@ -1487,13 +1491,13 @@ local function buildBackground(parent)
 		)
 	end
 
-	for index = 1, 12 do
-		local angle = (math.pi * 2) * index / 12
+	for index = 1, 5 do
+		local angle = (math.pi * 2) * index / 5 + 0.22
 		local rock = makePart(
 			scenery,
 			`FloatingRock{index}`,
-			Vector3.new(8 + index % 4, 6 + index % 3, 8 + index % 5),
-			Vector3.new(math.cos(angle) * 120, 12 + (index % 5) * 6, math.sin(angle) * 135 - 60),
+			Vector3.new(16 + index % 4, 10 + index % 3, 15 + index % 5),
+			Vector3.new(math.cos(angle) * 155, 9 + (index % 4) * 9, math.sin(angle) * 165 - 70),
 			PALETTE.stoneDark,
 			Enum.Material.Rock,
 			{ canCollide = false }
@@ -1502,10 +1506,10 @@ local function buildBackground(parent)
 		queueSpin(rock, 48 + index, Vector3.new(0, 1, 0))
 	end
 
-	for index = 1, 7 do
-		local angle = (math.pi * 2) * index / 7 + 0.35
+	for index = 1, 4 do
+		local angle = (math.pi * 2) * index / 4 + 0.35
 		local base =
-			Vector3.new(math.cos(angle) * 205, -8 + (index % 3) * 5, math.sin(angle) * 190 - 80)
+			Vector3.new(math.cos(angle) * 245, -10 + (index % 3) * 7, math.sin(angle) * 230 - 105)
 		local silhouette = makeZoneFolder(scenery, `DistantPuzzleKingdomSilhouette{index}`)
 		local island = makePart(
 			silhouette,
@@ -1534,36 +1538,6 @@ local function buildBackground(parent)
 			)
 		end
 	end
-
-	local birdAnchor = makePart(
-		scenery,
-		"BirdParticleAnchor",
-		Vector3.new(1, 1, 1),
-		Vector3.new(0, 60, -35),
-		PALETTE.cloud,
-		Enum.Material.SmoothPlastic,
-		{
-			canCollide = false,
-			canQuery = false,
-			transparency = 1,
-		}
-	)
-	addParticles(birdAnchor, "DistantBirds", PALETTE.cloud, 1.2, 6, 10, 70)
-
-	local leavesAnchor = makePart(
-		scenery,
-		"LeavesParticleAnchor",
-		Vector3.new(1, 1, 1),
-		Vector3.new(0, 28, 0),
-		PALETTE.grass,
-		Enum.Material.SmoothPlastic,
-		{
-			canCollide = false,
-			canQuery = false,
-			transparency = 1,
-		}
-	)
-	addParticles(leavesAnchor, "DriftingLeaves", PALETTE.grass, 2.2, 5, 4, 80)
 end
 
 local function buildHub(parent)
@@ -1575,16 +1549,15 @@ local function buildHub(parent)
 		parent,
 		"BattleArenaSpawn",
 		Vector3.new(14, 1, 14),
-		Vector3.new(0, 18, -126),
+		Vector3.new(0, 18, -172),
 		PALETTE.gold,
 		Enum.Material.SmoothPlastic
 	)
-	addBillboard(battleSpawn, "ARENAS", "Match starts here")
 	makeBridge(
 		parent,
 		"ArenaMainBridge",
-		Vector3.new(0, 15.2, -114),
-		Vector3.new(0, 10.6, -166),
+		Vector3.new(0, 15.2, -146),
+		Vector3.new(0, 10.6, -270),
 		13,
 		-1
 	)
@@ -1601,7 +1574,7 @@ local function buildRecoveryPlatform(parent, hubSpawn)
 		PALETTE.cloud,
 		Enum.Material.SmoothPlastic,
 		{
-			transparency = 0.9,
+			transparency = 1,
 		}
 	)
 	platform.CanCollide = true
