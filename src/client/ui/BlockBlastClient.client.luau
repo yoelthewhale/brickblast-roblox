@@ -206,6 +206,17 @@ gui.Name = "BlockBlastBattleGui"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
+if RunService:IsStudio() then
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if processed then
+			return
+		end
+		if input.KeyCode == Enum.KeyCode.F8 then
+			gui.Enabled = not gui.Enabled
+		end
+	end)
+end
+
 pcall(function()
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 end)

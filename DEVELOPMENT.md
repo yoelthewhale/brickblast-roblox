@@ -2,6 +2,71 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day30 Visual Correction - 2026-08-09
+
+### Completed
+
+- Treated the user-provided Day29 Play-mode screenshot as the source of truth and marked Day29 as visually rejected.
+- Identified the main visual failure: the generated world still read as one flat green rectangular plate, detached gray plates, scattered glowing cubes, and prototype primitive decoration instead of a polished floating hub.
+- Preserved Day28 UI work and Day29 build/commit; did not overwrite `BlockBlastBattle-Day28.rbxl` or `BlockBlastBattle-Day29.rbxl`.
+- Replaced the Day29 multi-zone spread with a focused Day30 central hub checkpoint in `src/server/world/HubBuilder.luau`.
+- Added native Roblox Terrain generation for the central island mass so the hub has an irregular floating-land silhouette, rock underside, cliff layering, and grass/ground transitions instead of a visible rectangular base.
+- Added a hidden safe walk surface inside the hub island to keep spawn and traversal reliable while terrain provides the visible landform.
+- Rebuilt the central plaza as layered circular stone/marble flooring with radial mosaic stones, benches, flowers, trees, lamps, and two controlled waterfalls.
+- Rebuilt the Brick Core as a stronger landmark with a two-stage pedestal, six marble/stone frame pillars, a metal crown, clustered colored core blocks, a controlled vertical beam, light, and sparse particles.
+- Reduced Day29 clutter by removing unused rainbow trail, balloon, block statue, and shop-stall helper functions.
+- Collapsed the side-island work into two polished route starts only:
+  - Battle route: blue/red path language, bridge, landing terrain, gate, preserved `BattleQueuePad`, queue prompt, status billboard, bunting, lamps, and versus sculpture.
+  - Story route: purple/gold path language, bridge, landing terrain, preserved `StoryQueuePad`, queue prompt, status billboard, ruin arches, floating fragments, tree, rocks, and lamps.
+- Added a Studio-only F8 custom-HUD inspection toggle in `src/client/ui/BlockBlastClient.client.luau`. This is gated by `RunService:IsStudio()` and is not a normal production player control.
+- Built `BlockBlastBattle-Day30.rbxl`.
+
+### Day29 Elements Replaced
+
+- Replaced the visible flat main island plate with source-generated terrain blobs and hidden gameplay support.
+- Removed the weak full spread of Shop/Cosmetics, Guide/Settings, and Leaderboard side islands from this checkpoint so the visual budget can focus on a single approved central hub.
+- Replaced the simple glowing cube-style core with a framed Brick Core landmark.
+- Retained core gameplay contracts temporarily: `HubSpawn`, `BattleQueuePad`, `StoryQueuePad`, queue prompts, and recovery behavior.
+
+### Asset Workflow
+
+- No Creator Store or third-party assets were imported.
+- No external asset IDs were used.
+- No imported scripts, LocalScripts, ModuleScripts, loaders, untrusted requires, or asset hierarchies were added.
+- Day30 uses reproducible Rojo source plus native Roblox Terrain generation; primitive Parts are limited to collision safety, plaza architecture, pads, gates, bridges, and readable gameplay surfaces.
+
+### Current State
+
+- Validation passes locally.
+- Studio visual approval is still not complete because Codex could not capture reliable Play-mode screenshots from Roblox Studio in this session.
+- `BlockBlastBattle-Day30.rbxl` should be opened locally for inspection.
+- Press F8 in Studio Play mode to hide/show the custom HUD while reviewing the map.
+
+### Required Manual Screenshots
+
+Please capture these from `BlockBlastBattle-Day30.rbxl`:
+
+1. Normal spawn view.
+2. Plaza facing the Brick Core.
+3. Three-quarter aerial view.
+
+### Known Risks
+
+- Terrain generation is runtime-authored by `HubBuilder`; visual quality must be verified in Studio because Rojo build validation cannot prove camera composition.
+- Hidden safe walk surfaces are intentionally used for reliability; they should remain invisible but need Studio confirmation.
+- The UI remains visually rejected from the screenshot and still needs its own later checkpoint. Day30 intentionally did not redesign it beyond the Studio-only F8 inspection toggle.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with `0 errors`, `0 warnings`, `0 parse errors`.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day30.rbxl` passed.
+- `git diff --check` passed with line-ending warnings only.
+
+### Next Priority
+
+- Review Day30 visually from the three required Studio screenshots and tune the central hub scale/composition before building remaining destination islands.
+
 ## Day29 Source Map Rescue - 2026-08-09
 
 ### Completed

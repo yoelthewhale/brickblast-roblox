@@ -161,6 +161,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - 2026-08-02 Day 25: Added the free UI asset pipeline, centralized uploaded image placeholders in `UIAssets.luau`, wired HUD badges to use real ImageLabels when IDs exist, and documented the free Figma/RoImport/quarantine workflow.
 - 2026-08-02 Day 28: Implemented the selected UI concept direction with native Roblox GUI components: Option B-style hub/resource/navigation HUD, Option B-style purple/navy shop shell, Option C-style dark/light inventory shell, disabled duplicate legacy Home panel visibility, restyled battle shell, and built `BlockBlastBattle-Day28.rbxl`.
 - 2026-08-09 Day 29: Backed up the likely manually edited Day28 place, moved map rescue work into reproducible `HubBuilder` source, added reusable map prefabs, reorganized the hub into Battle, Story, Shop/Cosmetics, Guide/Settings, and Leaderboard zones, added stronger central plaza routes/landmarks/background silhouettes, and built `BlockBlastBattle-Day29.rbxl`.
+- 2026-08-09 Day 30: Marked Day29 visually rejected from the real Play-mode screenshot, replaced the flat central plate with source-generated Terrain land mass, rebuilt the central plaza and Brick Core landmark, reduced the side-island spread to Battle and Story route endpoints, added a Studio-only F8 custom-HUD inspection toggle, and built `BlockBlastBattle-Day30.rbxl`.
 
 ## UI Direction References
 
@@ -168,6 +169,20 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Roblox BedWars style: active match HUD should stay minimal and leave the center of the screen clear.
 - Recommended direction for Block Blast Battle: simulator-style lobby and shop screens, BedWars-style gameplay focus with only board, timer/status, hand controls, and return/minimize actions.
 - Current selected implementation direction: Option B for hub navigation and shop, Option C for battle and inventory/cosmetics, with Option A's simplified large-button thinking only for compact/mobile navigation.
+
+## Day30 Visual Review Focus
+
+- Open `BlockBlastBattle-Day30.rbxl` locally and press Play.
+- Press F8 during Studio Play mode to hide/show the custom HUD for map inspection.
+- Capture a normal spawn-view screenshot.
+- Capture a plaza-facing-Brick-Core screenshot.
+- Capture a three-quarter aerial screenshot.
+- Confirm the hub no longer reads as a flat rectangular green plate.
+- Confirm the Brick Core reads as the dominant landmark from spawn and route entrances.
+- Confirm Battle and Story pads retain prompt behavior and remain reachable.
+- Confirm the hidden safe walk surfaces do not visibly cover the terrain.
+- Confirm the new terrain island has no spawn holes, route gaps, or camera-blocking decoration.
+- Do not redesign the remaining Shop/Guide/Leaderboard islands until the central hub direction is visually approved.
 
 ## Day17 Custom Lab And Hub Validation Focus
 
