@@ -2,6 +2,68 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day29 Source Map Rescue - 2026-08-09
+
+### Completed
+
+- Identified the most likely manually edited Studio file as `BlockBlastBattle-Day28.rbxl` because it was modified after the clean Day28 checkpoint and grew from the clean build size to `246157` bytes.
+- Backed up that file to `backups/BlockBlastBattle-Day28-manual-studio-backup-2026-08-09.rbxl` before replacing or rebuilding anything.
+- Preserved the Day28 UI work; no Day28 HUD, shop UI, inventory UI, remotes, economy, product IDs, DataStores, or gameplay systems were redesigned.
+- Reworked the runtime-generated hub in `src/server/world/HubBuilder.luau` toward a cohesive `Colorful floating puzzle kingdom` direction.
+- Added reusable source prefabs/helpers for:
+  - named zone folders
+  - path slabs
+  - low-poly rock clusters
+  - lamps
+  - banners
+  - ruin arches
+  - shop stalls
+  - puzzle monuments
+  - battle gateways
+- Reorganized the generated hub into named zones:
+  - `BattleIslandZone`
+  - `StoryIslandZone`
+  - `ShopCosmeticsDistrict`
+  - `GuideSettingsZone`
+  - `LeaderboardVistaZone`
+- Upgraded the central island with clearer route paths, directional banners, route lamps, and a more deliberate welcome puzzle landmark around the existing Block Core.
+- Redesigned the Battle island with a blue/red competitive gate, clearer BattleQueuePad framing, blue/red lane treatment, banners, and versus puzzle sculpture while preserving the `BattleQueuePad` name and queue prompt.
+- Redesigned the Story island with purple/gold ruins, arch structures, floating fragments, lamps, and the preserved `StoryQueuePad` prompt.
+- Added a distinct Shop/Cosmetics district with purple/gold boutique stalls, display pedestals, runway path, balloons, and signage without creating fake functional purchases.
+- Added a quieter Guide/Settings practice island and a leaderboard vista.
+- Added distant floating kingdom silhouettes to the background scenery for depth, with collisions disabled.
+- Built `BlockBlastBattle-Day29.rbxl` without overwriting Day28.
+
+### Manual Import Audit
+
+- The likely manually edited file was backed up, but Codex could not inspect binary `.rbxl` DataModel contents in this session without Roblox Studio/MCP control or a trusted `.rbxl` parser.
+- No external Creator Store assets or asset IDs were imported during this checkpoint.
+- No third-party scripts were added to source.
+- The final Day29 map source of truth is `HubBuilder.luau`, so the redesigned hub will survive future Rojo builds.
+
+### Performance Notes
+
+- Runtime hub generation remains mostly native Roblox Parts, but the new helpers use varied cylinders, balls, slabs, arches, stalls, lamps, banners, and grouped prefabs instead of unrelated manually imported assets.
+- Decorative foliage, rocks, lamps, banners, distant silhouettes, floating fragments, and display props are non-collidable.
+- Gameplay-critical platforms, bridge decks, spawn, queue pads, arena decks, and recovery platform remain collidable.
+- Static Rojo place file counts do not include the runtime-generated hub; the generated map expands when `HubBuilder.build()` runs in Studio.
+- Source-generation deltas from Day28 to Day29:
+  - `makePart` call sites: `49` to `65`
+  - `makeNeon` call sites: `11` to `13`
+  - `addParticles` call sites: `9` to `7`
+  - `addLight` call sites: `5` to `6`
+
+### Current State
+
+- New local build: `BlockBlastBattle-Day29.rbxl`
+- Temporary XML count build: `BlockBlastBattle-Day29-count.rbxlx`
+- Backup of likely manual Studio edit: `backups/BlockBlastBattle-Day28-manual-studio-backup-2026-08-09.rbxl`
+- Visual verification remains manual because Codex still cannot reliably capture/control Studio Play mode in this session.
+
+### Next Priority
+
+Open `BlockBlastBattle-Day29.rbxl` in Roblox Studio, press Play, and verify spawn, central plaza sightlines, all bridges, Battle queue, Story prompt, Shop/Cosmetics area, active battle entry/return, and low/mobile graphics readability from the player camera.
+
 ## Day28 Selected UI Concept Implementation - 2026-08-02
 
 ### Completed

@@ -73,6 +73,9 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Test Day23 Option A spawn HUD and bottom Play cluster | High | Playtest | Bear / Codex | 2026-08-09 |
 | Test Day28 selected Option B/C UI implementation in Studio | High | Playtest | Bear / Codex | 2026-08-09 |
 | Capture Day28 hub, shop, inventory, queue, battle, and mobile UI screenshots | High | Playtest | Bear / Codex | 2026-08-09 |
+| Playtest Day29 colorful floating puzzle kingdom map from player camera | High | Playtest | Bear / Codex | 2026-08-09 |
+| Verify Day29 BattleQueuePad and StoryQueuePad prompts are unobstructed | High | Playtest | Bear / Codex | 2026-08-09 |
+| Walk Day29 bridges and inspect decorative collision/snags | High | Playtest | Bear / Codex | 2026-08-09 |
 | Produce final approved custom UI icons after Day28 layout approval | Medium | Ready | Codex | 2026-08-10 |
 | Expand Custom Lab into saved block preset editor | Medium | Ready | Codex | 2026-08-10 |
 | Continue UI/gameplay animation polish after Day17 review | Medium | Ready | Codex | 2026-08-10 |
@@ -89,6 +92,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Day15 HUD requires manual safe-area verification against Roblox chat/topbar/mobile controls | High | Playtest | Bear / Codex | 2026-08-08 |
 | Roblox Studio may open under the wrong signed-in account if Studio is still logged into cousin account | High | Known | Bear | 2026-08-09 |
 | Day28 selected UI needs manual Play-mode screenshot verification because Codex cannot capture Studio screenshots in this session | High | Playtest | Bear / Codex | 2026-08-09 |
+| Day29 manual Studio import contents could not be binary-inspected by Codex; backup preserved before source rebuild | Medium | Known | Codex | 2026-08-09 |
 
 ## Playtest Checklist
 
@@ -156,6 +160,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - 2026-08-02 Day 23: Converted the default HUD toward the selected Option A concept with upper-left stats, a bottom-center green Play button, compact Shop/Quests/Settings buttons, state-aware queue text, and built `BlockBlastBattle-Day23.rbxl`.
 - 2026-08-02 Day 25: Added the free UI asset pipeline, centralized uploaded image placeholders in `UIAssets.luau`, wired HUD badges to use real ImageLabels when IDs exist, and documented the free Figma/RoImport/quarantine workflow.
 - 2026-08-02 Day 28: Implemented the selected UI concept direction with native Roblox GUI components: Option B-style hub/resource/navigation HUD, Option B-style purple/navy shop shell, Option C-style dark/light inventory shell, disabled duplicate legacy Home panel visibility, restyled battle shell, and built `BlockBlastBattle-Day28.rbxl`.
+- 2026-08-09 Day 29: Backed up the likely manually edited Day28 place, moved map rescue work into reproducible `HubBuilder` source, added reusable map prefabs, reorganized the hub into Battle, Story, Shop/Cosmetics, Guide/Settings, and Leaderboard zones, added stronger central plaza routes/landmarks/background silhouettes, and built `BlockBlastBattle-Day29.rbxl`.
 
 ## UI Direction References
 

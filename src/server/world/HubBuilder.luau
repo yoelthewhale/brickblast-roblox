@@ -635,6 +635,261 @@ local function makePortal(parent, name, center, primary, secondary, title, subti
 	return pad
 end
 
+local function makeZoneFolder(parent, name)
+	local folder = Instance.new("Folder")
+	folder.Name = name
+	folder.Parent = parent
+	return folder
+end
+
+local function makePathSlab(parent, name, center, size, rotation, color)
+	local slab = makePart(
+		parent,
+		name,
+		size,
+		CFrame.new(center) * CFrame.Angles(0, rotation or 0, 0),
+		color or PALETTE.stone,
+		Enum.Material.Cobblestone,
+		{ canCollide = false }
+	)
+	slab.Transparency = 0.04
+	return slab
+end
+
+local function makeLowPolyRock(parent, name, center, scale, color)
+	local cluster = makeZoneFolder(parent, name)
+	local rockColor = color or PALETTE.stoneDark
+	for index, offset in
+		{
+			Vector3.new(0, 0, 0),
+			Vector3.new(2.4, 0.8, 0.7),
+			Vector3.new(-2, 0.6, -0.5),
+			Vector3.new(0.6, 1.6, -1.8),
+		}
+	do
+		local rock = makePart(
+			cluster,
+			`RockFacet{index}`,
+			Vector3.new(5.5, 3.6, 4.8) * scale * (0.85 + index * 0.06),
+			center + offset * scale,
+			index % 2 == 0 and rockColor or PALETTE.stone,
+			Enum.Material.Rock,
+			{ canCollide = false, shape = Enum.PartType.Ball }
+		)
+		rock.CFrame *= CFrame.Angles(
+			math.rad(index * 13),
+			math.rad(index * 29),
+			math.rad(index * 7)
+		)
+	end
+	return cluster
+end
+
+local function makeLamp(parent, name, center, color)
+	local lamp = makeZoneFolder(parent, name)
+	makePart(
+		lamp,
+		"Post",
+		Vector3.new(0.9, 6.4, 0.9),
+		center + Vector3.new(0, 3.2, 0),
+		PALETTE.wood,
+		Enum.Material.Wood,
+		{ canCollide = false }
+	)
+	local cap = makePart(
+		lamp,
+		"Cap",
+		Vector3.new(3.1, 0.55, 3.1),
+		center + Vector3.new(0, 6.7, 0),
+		PALETTE.stoneDark,
+		Enum.Material.Slate,
+		{ canCollide = false }
+	)
+	local glow = makeNeon(
+		lamp,
+		"Glow",
+		Vector3.new(2.1, 2.1, 2.1),
+		center + Vector3.new(0, 5.55, 0),
+		color or PALETTE.gold,
+		0.16
+	)
+	glow.Shape = Enum.PartType.Ball
+	addLight(glow, color or PALETTE.gold, 0.35, 10)
+	cap.CanCollide = false
+	return lamp
+end
+
+local function makeBanner(parent, name, center, rotation, color, label)
+	local banner = makeZoneFolder(parent, name)
+	local cframe = CFrame.new(center) * CFrame.Angles(0, rotation or 0, 0)
+	makePart(
+		banner,
+		"Pole",
+		Vector3.new(0.8, 9, 0.8),
+		cframe * CFrame.new(0, 4.5, 0),
+		PALETTE.wood,
+		Enum.Material.Wood,
+		{ canCollide = false }
+	)
+	local cloth = makePart(
+		banner,
+		"Cloth",
+		Vector3.new(5.2, 4, 0.25),
+		cframe * CFrame.new(2.7, 6.4, 0),
+		color,
+		Enum.Material.SmoothPlastic,
+		{ canCollide = false }
+	)
+	addSurfaceText(cloth, label or "", Enum.NormalId.Front, PALETTE.text)
+	return banner
+end
+
+local function makeRuinArch(parent, name, center, rotation, accent)
+	local arch = makeZoneFolder(parent, name)
+	local cframe = CFrame.new(center) * CFrame.Angles(0, rotation or 0, 0)
+	for side, x in { Left = -5.8, Right = 5.8 } do
+		makePart(
+			arch,
+			`{side}ColumnBase`,
+			Vector3.new(3.8, 2.2, 3.8),
+			cframe * CFrame.new(x, 1.1, 0),
+			PALETTE.stone,
+			Enum.Material.Marble,
+			{ canCollide = false }
+		)
+		makePart(
+			arch,
+			`{side}Column`,
+			Vector3.new(2.4, 11, 2.4),
+			cframe * CFrame.new(x, 7.5, 0),
+			PALETTE.marble,
+			Enum.Material.Marble,
+			{ canCollide = false }
+		)
+	end
+	makePart(
+		arch,
+		"ArchTop",
+		Vector3.new(15, 2.6, 3.2),
+		cframe * CFrame.new(0, 14.3, 0),
+		PALETTE.marble,
+		Enum.Material.Marble,
+		{ canCollide = false }
+	)
+	makeNeon(
+		arch,
+		"RunicAccent",
+		Vector3.new(13.2, 0.35, 0.35),
+		cframe * CFrame.new(0, 12.4, -1.75),
+		accent or PALETTE.cyan,
+		0.18
+	)
+	return arch
+end
+
+local function makeShopStall(parent, name, center, rotation, accent, title)
+	local stall = makeZoneFolder(parent, name)
+	local cframe = CFrame.new(center) * CFrame.Angles(0, rotation or 0, 0)
+	makePart(
+		stall,
+		"Counter",
+		Vector3.new(15, 4, 7),
+		cframe * CFrame.new(0, 2, 0),
+		PALETTE.wood,
+		Enum.Material.Wood,
+		{ canCollide = false }
+	)
+	makePart(
+		stall,
+		"BackWall",
+		Vector3.new(15, 8, 1),
+		cframe * CFrame.new(0, 6, 3.4),
+		Color3.fromRGB(82, 45, 145),
+		Enum.Material.SmoothPlastic,
+		{ canCollide = false }
+	)
+	local awning = makePart(
+		stall,
+		"Awning",
+		Vector3.new(17, 1.2, 9),
+		cframe * CFrame.new(0, 10.3, 0.2),
+		accent,
+		Enum.Material.SmoothPlastic,
+		{ canCollide = false }
+	)
+	awning.CFrame *= CFrame.Angles(math.rad(-7), 0, 0)
+	addSurfaceText(awning, title or "SHOP", Enum.NormalId.Front, PALETTE.text)
+	for index = 1, 4 do
+		makePart(
+			stall,
+			`DisplayBlock{index}`,
+			Vector3.new(2.6, 2.6, 2.6),
+			cframe * CFrame.new(-5.4 + index * 3.6, 5.3, -1.6),
+			BLOCK_COLORS[((index - 1) % #BLOCK_COLORS) + 1],
+			Enum.Material.SmoothPlastic,
+			{ canCollide = false }
+		)
+	end
+	return stall
+end
+
+local function makePuzzleMonument(parent, name, center, scale, colors)
+	local monument = makeZoneFolder(parent, name)
+	for index, data in colors do
+		local block = makePart(
+			monument,
+			`MonumentBlock{index}`,
+			Vector3.new(4.5, 4.5, 4.5) * scale,
+			center + data.offset * scale,
+			data.color,
+			Enum.Material.SmoothPlastic,
+			{ canCollide = false }
+		)
+		block.CFrame *= CFrame.Angles(
+			math.rad(data.rx or 0),
+			math.rad(data.ry or 0),
+			math.rad(data.rz or 0)
+		)
+	end
+	return monument
+end
+
+local function makeGateway(parent, name, center, rotation, leftColor, rightColor, title)
+	local gate = makeZoneFolder(parent, name)
+	local cframe = CFrame.new(center) * CFrame.Angles(0, rotation or 0, 0)
+	for side, x in { Blue = -7, Red = 7 } do
+		local color = side == "Blue" and leftColor or rightColor
+		makePart(
+			gate,
+			`{side}Tower`,
+			Vector3.new(4.5, 18, 4.5),
+			cframe * CFrame.new(x, 9, 0),
+			color,
+			Enum.Material.SmoothPlastic,
+			{ canCollide = false }
+		)
+		makeNeon(
+			gate,
+			`{side}TopGlow`,
+			Vector3.new(5.2, 1, 5.2),
+			cframe * CFrame.new(x, 18.6, 0),
+			color,
+			0.2
+		)
+	end
+	local sign = makePart(
+		gate,
+		"GateSign",
+		Vector3.new(20, 4, 1.2),
+		cframe * CFrame.new(0, 17.5, -0.2),
+		PALETTE.stoneDark,
+		Enum.Material.Slate,
+		{ canCollide = false }
+	)
+	addSurfaceText(sign, title, Enum.NormalId.Front, PALETTE.gold)
+	return gate
+end
+
 local function configureLighting()
 	Lighting.Technology = Enum.Technology.Future
 	Lighting.GlobalShadows = false
@@ -792,6 +1047,93 @@ local function buildMainIsland(parent)
 	end
 	makeRainbowBlockTrail(island, "RainbowPlazaTrail", Vector3.new(0, 7.95, 0), 24, 18, 0)
 	makeRainbowBlockTrail(island, "OuterCandyTrail", Vector3.new(0, 7.9, 0), 51, 28, 0)
+
+	local routeFolder = makeZoneFolder(island, "PlazaRoutesAndLandmarks")
+	makePathSlab(
+		routeFolder,
+		"BattleRoute",
+		Vector3.new(0, 8.1, -31),
+		Vector3.new(16, 0.45, 42),
+		0,
+		PALETTE.stone
+	)
+	makePathSlab(
+		routeFolder,
+		"ShopRoute",
+		Vector3.new(-28, 8.12, 27),
+		Vector3.new(14, 0.45, 36),
+		math.rad(-43),
+		PALETTE.stone
+	)
+	makePathSlab(
+		routeFolder,
+		"StoryRoute",
+		Vector3.new(28, 8.13, 27),
+		Vector3.new(14, 0.45, 36),
+		math.rad(43),
+		PALETTE.stone
+	)
+	makePathSlab(
+		routeFolder,
+		"GuideRoute",
+		Vector3.new(-35, 8.14, -9),
+		Vector3.new(12, 0.45, 28),
+		math.rad(78),
+		PALETTE.marble
+	)
+	makePathSlab(
+		routeFolder,
+		"LeaderboardRoute",
+		Vector3.new(35, 8.15, -9),
+		Vector3.new(12, 0.45, 28),
+		math.rad(-78),
+		PALETTE.marble
+	)
+
+	for index, lampData in
+		{
+			{ pos = Vector3.new(-15, 8.2, -28), color = PALETTE.cyan },
+			{ pos = Vector3.new(15, 8.2, -28), color = PALETTE.red },
+			{ pos = Vector3.new(-29, 8.2, 24), color = PALETTE.purple },
+			{ pos = Vector3.new(29, 8.2, 24), color = PALETTE.gold },
+			{ pos = Vector3.new(-41, 8.2, -7), color = PALETTE.orange },
+			{ pos = Vector3.new(41, 8.2, -7), color = PALETTE.gold },
+		}
+	do
+		makeLamp(routeFolder, `RouteLamp{index}`, lampData.pos, lampData.color)
+	end
+
+	makeBanner(
+		routeFolder,
+		"BattleDirectionalBanner",
+		Vector3.new(-12, 8.3, -48),
+		math.rad(0),
+		PALETTE.cyan,
+		"BATTLE"
+	)
+	makeBanner(
+		routeFolder,
+		"StoryDirectionalBanner",
+		Vector3.new(42, 8.3, 38),
+		math.rad(-46),
+		PALETTE.purple,
+		"STORY"
+	)
+	makeBanner(
+		routeFolder,
+		"ShopDirectionalBanner",
+		Vector3.new(-42, 8.3, 38),
+		math.rad(46),
+		PALETTE.gold,
+		"SHOP"
+	)
+	makePuzzleMonument(routeFolder, "SpawnWelcomePuzzleCrown", Vector3.new(16, 10, 45), 0.78, {
+		{ offset = Vector3.new(0, 0, 0), color = PALETTE.cyan, ry = 12 },
+		{ offset = Vector3.new(4.2, 0, 0), color = PALETTE.gold, ry = -8 },
+		{ offset = Vector3.new(-4.2, 0, 0), color = PALETTE.purple, ry = 15 },
+		{ offset = Vector3.new(0, 4.2, 0), color = PALETTE.pink, ry = 22 },
+	})
+
 	makeBalloonCluster(island, "SpawnBalloonClusterWest", Vector3.new(-44, 8.2, 8), 7)
 	makeBalloonCluster(island, "SpawnBalloonClusterEast", Vector3.new(44, 8.2, 10), 7)
 	makeFestivalFlags(
@@ -845,82 +1187,27 @@ local function buildMainIsland(parent)
 end
 
 local function buildSideIslands(parent)
-	local training, trainingTop =
-		makeIsland(parent, "TrainingIsland", Vector3.new(-92, 11, -18), 31, PALETTE.orange)
-	makeBridge(
-		parent,
-		"TrainingBridge",
-		Vector3.new(-42, 8.1, -8),
-		Vector3.new(-66, 12, -15),
-		11,
-		1
-	)
-	addBillboard(trainingTop, "TRAINING", "Practice combos", Vector3.new(0, 8, 0))
-	for index = 1, 4 do
-		local dummy = makePart(
-			training,
-			`TrainingDummy{index}`,
-			Vector3.new(4, 8, 4),
-			Vector3.new(-108 + index * 8, 16, -23),
-			PALETTE.orange,
-			Enum.Material.SmoothPlastic
-		)
-		addParticles(dummy, `PracticePop{index}`, BLOCK_COLORS[index], 1.4, 1.1, 1.5, 28)
-	end
-	makePart(
-		training,
-		"SandboxCrates",
-		Vector3.new(12, 5, 8),
-		Vector3.new(-84, 14.5, 3),
-		PALETTE.wood,
-		Enum.Material.Wood
-	)
-	makeRainbowBlockTrail(training, "TrainingComboTrail", Vector3.new(-92, 14, -18), 20, 14, 0)
-	makeFestivalFlags(
-		training,
-		"TrainingFlags",
-		Vector3.new(-116, 23, -5),
-		Vector3.new(-72, 23, -5),
-		9
-	)
+	local zones = makeZoneFolder(parent, "HubZones")
 
-	local leaderboard, leaderboardTop =
-		makeIsland(parent, "LeaderboardIsland", Vector3.new(92, 12, -16), 33, PALETTE.gold)
-	makeBridge(
-		parent,
-		"LeaderboardBridge",
-		Vector3.new(42, 8.1, -8),
-		Vector3.new(66, 12.2, -15),
-		11,
-		1
+	local battleZone = makeZoneFolder(zones, "BattleIslandZone")
+	local battleIsland, battleTop =
+		makeIsland(battleZone, "BattleIsland", Vector3.new(0, 13, -86), 42, PALETTE.cyan)
+	makeBridge(parent, "BattleBridge", Vector3.new(0, 8.1, -47), Vector3.new(0, 13.2, -48), 15, 1.4)
+	makeGateway(
+		battleIsland,
+		"BattleArenaGate",
+		Vector3.new(0, 16.8, -101),
+		0,
+		Color3.fromRGB(44, 178, 255),
+		Color3.fromRGB(255, 88, 88),
+		"BATTLE"
 	)
-	local board = makePart(
-		leaderboard,
-		"LeaderboardWall",
-		Vector3.new(32, 18, 2),
-		Vector3.new(92, 23, -33),
-		PALETTE.marble,
-		Enum.Material.Marble
-	)
-	addSurfaceText(board, "TOP PLAYERS", Enum.NormalId.Front, PALETTE.gold)
-	makeBlockStatue(leaderboard, "TrophyStatues", Vector3.new(80, 15, 3), {
-		{ offset = Vector3.new(0, 0, 0), color = PALETTE.gold },
-		{ offset = Vector3.new(0, 4, 0), color = PALETTE.gold },
-		{ offset = Vector3.new(-4, 0, 0), color = PALETTE.gold },
-		{ offset = Vector3.new(4, 0, 0), color = PALETTE.gold },
-	})
-	addBillboard(leaderboardTop, "LEADERBOARDS", "Wins and scores", Vector3.new(0, 8, 0))
-	makeBalloonCluster(leaderboard, "TrophyBalloons", Vector3.new(106, 14.4, 4), 6)
-
-	local portalIsland, portalTop =
-		makeIsland(parent, "PortalIsland", Vector3.new(0, 13, -82), 38, PALETTE.purple)
-	makeBridge(parent, "PortalBridge", Vector3.new(0, 8.1, -45), Vector3.new(0, 13.2, -48), 13, 1.5)
 	local battlePad = makePortal(
-		portalIsland,
+		battleIsland,
 		"BattlePortal",
-		Vector3.new(0, 16, -82),
-		PALETTE.cyan,
-		PALETTE.pink,
+		Vector3.new(0, 16.2, -78),
+		Color3.fromRGB(44, 178, 255),
+		Color3.fromRGB(255, 88, 88),
 		"BATTLE QUEUE",
 		"Casual matches"
 	)
@@ -936,42 +1223,60 @@ local function buildSideIslands(parent)
 	queueVisuals.battlePad = battlePad
 	queueVisuals.battleTitle = battleTitle
 	queueVisuals.battleSubtitle = battleSubtitle
-	makeRainbowBlockTrail(portalIsland, "PortalColorRunway", Vector3.new(0, 16.2, -82), 28, 18, 0)
-	makeFestivalFlags(
-		portalIsland,
-		"PortalModeFlags",
-		Vector3.new(-28, 30, -94),
-		Vector3.new(28, 30, -94),
-		11
+	makePathSlab(
+		battleIsland,
+		"BattleBlueLane",
+		Vector3.new(-9, 16.95, -82),
+		Vector3.new(12, 0.35, 36),
+		0,
+		PALETTE.cyan
 	)
-	for index, portalData in
-		{
-			{ name = "RankedPortal", x = -22, title = "RANKED", color = PALETTE.gold },
-			{ name = "DuelsPortal", x = 22, title = "DUELS", color = PALETTE.cyan },
-			{ name = "EventsPortal", x = 0, title = "EVENTS", color = PALETTE.purple },
-		}
-	do
-		local pad = makePart(
-			portalIsland,
-			portalData.name,
-			Vector3.new(12, 1, 10),
-			Vector3.new(portalData.x, 15.8, -102 + index * 6),
-			portalData.color,
-			Enum.Material.SmoothPlastic
+	makePathSlab(
+		battleIsland,
+		"BattleRedLane",
+		Vector3.new(9, 16.96, -82),
+		Vector3.new(12, 0.35, 36),
+		0,
+		PALETTE.red
+	)
+	for index = 1, 6 do
+		local x = index % 2 == 0 and -28 or 28
+		local z = -112 + index * 8
+		makeBanner(
+			battleIsland,
+			`BattleBanner{index}`,
+			Vector3.new(x, 17.1, z),
+			x < 0 and math.rad(90) or math.rad(-90),
+			index % 2 == 0 and PALETTE.cyan or PALETTE.red,
+			index % 2 == 0 and "BLUE" or "RED"
 		)
-		addBillboard(pad, portalData.title, "Coming soon", Vector3.new(0, 4.8, 0))
 	end
-	portalTop.Name = "PortalIslandTop"
+	makePuzzleMonument(battleIsland, "VersusBlockSculpture", Vector3.new(0, 20, -119), 1, {
+		{ offset = Vector3.new(-6, 0, 0), color = PALETTE.cyan, ry = 12 },
+		{ offset = Vector3.new(-2, 4.6, 0), color = PALETTE.cyan, ry = -16 },
+		{ offset = Vector3.new(2, 0, 0), color = PALETTE.red, ry = 18 },
+		{ offset = Vector3.new(6, 4.6, 0), color = PALETTE.red, ry = -12 },
+	})
+	makeFestivalFlags(
+		battleIsland,
+		"BattleBunting",
+		Vector3.new(-31, 29, -68),
+		Vector3.new(31, 29, -68),
+		13
+	)
+	addBillboard(battleTop, "BATTLE ISLAND", "Competitive puzzle arena", Vector3.new(0, 8, 0))
+	battleTop.Name = "BattleIslandTop"
 
+	local storyZone = makeZoneFolder(zones, "StoryIslandZone")
 	local storyIsland, storyTop =
-		makeIsland(parent, "StoryIsland", Vector3.new(74, 17, 70), 28, PALETTE.purple)
-	makeBridge(parent, "StoryBridge", Vector3.new(34, 8.1, 34), Vector3.new(55, 16.2, 55), 10, 3)
+		makeIsland(storyZone, "StoryIsland", Vector3.new(84, 17, 68), 32, PALETTE.purple)
+	makeBridge(parent, "StoryBridge", Vector3.new(35, 8.1, 32), Vector3.new(61, 16.2, 52), 12, 2.8)
 	local storyPad = makePortal(
 		storyIsland,
 		"StoryPortal",
-		Vector3.new(74, 20, 70),
+		Vector3.new(84, 20.2, 70),
 		PALETTE.purple,
-		PALETTE.cyan,
+		PALETTE.gold,
 		"STORY MODE",
 		"Solo training"
 	)
@@ -982,84 +1287,195 @@ local function buildSideIslands(parent)
 		addStatusBillboard(storyPad, "StoryStatus", "STORY MODE", "Solo missions - safe practice")
 	queueVisuals.storyTitle = storyTitle
 	queueVisuals.storySubtitle = storySubtitle
-	makeTree(storyIsland, "GlowingStoryTree", Vector3.new(59, 19, 83), 0.9, PALETTE.purple)
-	makeBalloonCluster(storyIsland, "StoryMagicBalloons", Vector3.new(87, 19, 83), 5)
+	makeRuinArch(
+		storyIsland,
+		"AncientPuzzleArch",
+		Vector3.new(84, 20, 50),
+		math.rad(180),
+		PALETTE.gold
+	)
+	makeRuinArch(
+		storyIsland,
+		"BrokenSideArchA",
+		Vector3.new(62, 19, 80),
+		math.rad(35),
+		PALETTE.purple
+	)
+	makeRuinArch(
+		storyIsland,
+		"BrokenSideArchB",
+		Vector3.new(106, 19, 82),
+		math.rad(-35),
+		PALETTE.purple
+	)
+	for index = 1, 7 do
+		local angle = (math.pi * 2) * index / 7
+		local fragment = makePart(
+			storyIsland,
+			`FloatingStoryFragment{index}`,
+			Vector3.new(3.8, 2.2, 5.4),
+			Vector3.new(84 + math.cos(angle) * 21, 28 + (index % 3) * 2, 70 + math.sin(angle) * 18),
+			index % 2 == 0 and PALETTE.stone or PALETTE.marble,
+			Enum.Material.Marble,
+			{ canCollide = false }
+		)
+		fragment.CFrame *= CFrame.Angles(
+			math.rad(index * 12),
+			math.rad(index * 24),
+			math.rad(index * 7)
+		)
+		queueSpin(fragment, 42 + index, Vector3.new(0, 1, 0))
+	end
+	makeTree(storyIsland, "GlowingStoryTree", Vector3.new(65, 19, 88), 0.95, PALETTE.purple)
+	makeLowPolyRock(
+		storyIsland,
+		"StoryCliffRocks",
+		Vector3.new(102, 18.5, 54),
+		1.1,
+		PALETTE.stoneDark
+	)
+	makeLamp(storyIsland, "StoryGoldLampA", Vector3.new(67, 19, 62), PALETTE.gold)
+	makeLamp(storyIsland, "StoryGoldLampB", Vector3.new(101, 19, 62), PALETTE.gold)
 	storyTop.Name = "StoryIslandTop"
 
-	local vipIsland, vipTop =
-		makeIsland(parent, "VIPIsland", Vector3.new(-80, 18, 72), 29, PALETTE.gold)
-	makeBridge(parent, "VIPBridge", Vector3.new(-34, 8.1, 34), Vector3.new(-57, 17.2, 55), 10, 3)
-	local fountain = makePart(
-		vipIsland,
-		"VIPFountain",
-		Vector3.new(18, 2, 18),
-		Vector3.new(-80, 20, 72),
+	local shopZone = makeZoneFolder(zones, "ShopCosmeticsDistrict")
+	local shopIsland, shopTop =
+		makeIsland(shopZone, "ShopCosmeticsIsland", Vector3.new(-84, 17, 68), 34, PALETTE.gold)
+	makeBridge(parent, "ShopBridge", Vector3.new(-35, 8.1, 32), Vector3.new(-61, 16.2, 52), 12, 2.8)
+	makeShopStall(
+		shopIsland,
+		"ShopBoutique",
+		Vector3.new(-94, 20.2, 62),
+		math.rad(20),
+		PALETTE.purple,
+		"SHOP"
+	)
+	makeShopStall(
+		shopIsland,
+		"CosmeticDisplayStall",
+		Vector3.new(-72, 20.2, 82),
+		math.rad(-145),
+		PALETTE.gold,
+		"STYLE"
+	)
+	local runway = makePathSlab(
+		shopIsland,
+		"CosmeticRunway",
+		Vector3.new(-84, 20.8, 70),
+		Vector3.new(16, 0.35, 38),
+		math.rad(36),
+		Color3.fromRGB(118, 58, 202)
+	)
+	runway.Transparency = 0.02
+	for index = 1, 5 do
+		local pedestal = makePart(
+			shopIsland,
+			`CosmeticPedestal{index}`,
+			Vector3.new(5, 1.8, 5),
+			Vector3.new(-106 + index * 8, 21.1, 50 + (index % 2) * 5),
+			PALETTE.marble,
+			Enum.Material.Marble,
+			{ canCollide = false, shape = Enum.PartType.Cylinder }
+		)
+		local display = makePart(
+			shopIsland,
+			`CosmeticBlockPreview{index}`,
+			Vector3.new(3.2, 3.2, 3.2),
+			pedestal.Position + Vector3.new(0, 3, 0),
+			BLOCK_COLORS[((index - 1) % #BLOCK_COLORS) + 1],
+			Enum.Material.SmoothPlastic,
+			{ canCollide = false }
+		)
+		queueSpin(display, 24 + index, Vector3.new(0, 1, 0))
+	end
+	makeBalloonCluster(shopIsland, "ShopBalloons", Vector3.new(-65, 20, 54), 6)
+	makeLamp(shopIsland, "ShopLampA", Vector3.new(-108, 19, 78), PALETTE.purple)
+	makeLamp(shopIsland, "ShopLampB", Vector3.new(-62, 19, 58), PALETTE.gold)
+	addBillboard(shopTop, "SHOP & STYLE", "Open the HUD buttons", Vector3.new(0, 8, 0))
+	shopTop.Name = "ShopCosmeticsIslandTop"
+
+	local guideZone = makeZoneFolder(zones, "GuideSettingsZone")
+	local guideIsland, guideTop =
+		makeIsland(guideZone, "GuideSettingsIsland", Vector3.new(-96, 11, -20), 28, PALETTE.orange)
+	makeBridge(parent, "GuideBridge", Vector3.new(-43, 8.1, -8), Vector3.new(-70, 12, -15), 10, 1)
+	makePart(
+		guideIsland,
+		"PracticeBoardExample",
+		Vector3.new(24, 1, 18),
+		Vector3.new(-96, 14.2, -24),
 		PALETTE.marble,
-		Enum.Material.Marble
+		Enum.Material.Marble,
+		{ canCollide = false }
 	)
-	fountain.Shape = Enum.PartType.Cylinder
-	local water = makeNeon(
-		vipIsland,
-		"FountainWater",
-		Vector3.new(12, 0.6, 12),
-		Vector3.new(-80, 21.5, 72),
-		PALETTE.water,
-		0.25
-	)
-	water.Shape = Enum.PartType.Cylinder
-	addParticles(water, "FountainMist", PALETTE.cloud, 2.5, 1.2, 2, 45)
-	for index = 1, 3 do
-		makeTree(
-			vipIsland,
-			`VIPPalm{index}`,
-			Vector3.new(-98 + index * 9, 20, 88),
-			0.75,
-			PALETTE.grass
+	for index = 1, 9 do
+		local row = math.floor((index - 1) / 3)
+		local column = (index - 1) % 3
+		makePart(
+			guideIsland,
+			`PracticeTile{index}`,
+			Vector3.new(4.8, 0.7, 4.8),
+			Vector3.new(-102 + column * 6, 15, -28 + row * 6),
+			index % 4 == 0 and PALETTE.cyan or PALETTE.stone,
+			Enum.Material.SmoothPlastic,
+			{ canCollide = false }
 		)
 	end
-	addBillboard(vipTop, "VIP ISLAND", "Gold lounge", Vector3.new(0, 8, 0))
-	makeRainbowBlockTrail(vipIsland, "VIPGoldPartyTrail", Vector3.new(-80, 20.8, 72), 21, 12, 0)
-	vipTop.Name = "VIPIslandTop"
+	makeGateway(
+		guideIsland,
+		"SettingsUtilityKiosk",
+		Vector3.new(-82, 14, -5),
+		math.rad(-35),
+		PALETTE.orange,
+		PALETTE.gold,
+		"GUIDE"
+	)
+	makeLowPolyRock(
+		guideIsland,
+		"GuideRockCluster",
+		Vector3.new(-114, 12.5, -8),
+		0.9,
+		PALETTE.stoneDark
+	)
+	makeLamp(guideIsland, "GuideLamp", Vector3.new(-91, 12.5, 5), PALETTE.orange)
+	addBillboard(guideTop, "GUIDE", "Practice and settings", Vector3.new(0, 8, 0))
+	guideTop.Name = "GuideSettingsIslandTop"
 
-	local secret, secretTop =
-		makeIsland(parent, "SecretsIsland", Vector3.new(0, -3, 95), 22, PALETTE.cyan)
+	local leaderboardZone = makeZoneFolder(zones, "LeaderboardVistaZone")
+	local leaderboard, leaderboardTop = makeIsland(
+		leaderboardZone,
+		"LeaderboardVistaIsland",
+		Vector3.new(96, 12, -18),
+		30,
+		PALETTE.gold
+	)
 	makeBridge(
 		parent,
-		"SecretLowerBridge",
-		Vector3.new(0, 7.7, 48),
-		Vector3.new(0, -1.8, 73),
-		8,
-		-1
+		"LeaderboardBridge",
+		Vector3.new(43, 8.1, -8),
+		Vector3.new(70, 12.2, -15),
+		10,
+		1
 	)
-	addBillboard(secretTop, "SECRET CAVE", "Explore below", Vector3.new(0, 8, 0))
-	makePart(
-		secret,
-		"CaveMouth",
-		Vector3.new(14, 8, 2),
-		Vector3.new(0, 0.5, 75),
-		PALETTE.stoneDark,
-		Enum.Material.Rock
+	local board = makePart(
+		leaderboard,
+		"LeaderboardWall",
+		Vector3.new(34, 18, 2),
+		Vector3.new(96, 23, -35),
+		PALETTE.marble,
+		Enum.Material.Marble,
+		{ canCollide = false }
 	)
-	makePart(
-		secret,
-		"SecretChest",
-		Vector3.new(7, 4, 5),
-		Vector3.new(0, 0.8, 103),
-		PALETTE.gold,
-		Enum.Material.Wood
-	)
-	for index = 1, 5 do
-		makePart(
-			secret,
-			`ObbyStep{index}`,
-			Vector3.new(8, 1, 8),
-			Vector3.new(-18 + index * 9, 0.5 + index * 0.8, 82 + index * 3),
-			BLOCK_COLORS[index],
-			Enum.Material.SmoothPlastic
-		)
-	end
-	makeFestivalFlags(secret, "SecretCaveFlags", Vector3.new(-18, 8, 92), Vector3.new(18, 8, 92), 7)
-	secretTop.Name = "SecretsIslandTop"
+	addSurfaceText(board, "TOP PLAYERS", Enum.NormalId.Front, PALETTE.gold)
+	makePuzzleMonument(leaderboard, "TrophyPuzzleMonument", Vector3.new(84, 15, 2), 0.9, {
+		{ offset = Vector3.new(0, 0, 0), color = PALETTE.gold },
+		{ offset = Vector3.new(0, 4.5, 0), color = PALETTE.gold },
+		{ offset = Vector3.new(-4.5, 0, 0), color = PALETTE.cyan },
+		{ offset = Vector3.new(4.5, 0, 0), color = PALETTE.purple },
+	})
+	makeLamp(leaderboard, "LeaderboardLampA", Vector3.new(76, 14, -8), PALETTE.gold)
+	makeLamp(leaderboard, "LeaderboardLampB", Vector3.new(116, 14, -8), PALETTE.gold)
+	addBillboard(leaderboardTop, "LEADERBOARDS", "Wins and scores", Vector3.new(0, 8, 0))
+	leaderboardTop.Name = "LeaderboardVistaIslandTop"
 
 	return battlePrompt, storyPrompt
 end
@@ -1206,6 +1622,39 @@ local function buildBackground(parent)
 		)
 		rock.CFrame *= CFrame.Angles(math.rad(index * 11), math.rad(index * 19), 0)
 		queueSpin(rock, 48 + index, Vector3.new(0, 1, 0))
+	end
+
+	for index = 1, 7 do
+		local angle = (math.pi * 2) * index / 7 + 0.35
+		local base =
+			Vector3.new(math.cos(angle) * 205, -8 + (index % 3) * 5, math.sin(angle) * 190 - 80)
+		local silhouette = makeZoneFolder(scenery, `DistantPuzzleKingdomSilhouette{index}`)
+		local island = makePart(
+			silhouette,
+			"FarIslandBase",
+			Vector3.new(34 + index * 2, 2, 25 + index),
+			base,
+			Color3.fromRGB(91, 129, 151),
+			Enum.Material.Slate,
+			{ canCollide = false, transparency = 0.28, shape = Enum.PartType.Cylinder }
+		)
+		island.CFrame *= CFrame.Angles(0, angle, math.rad(90))
+		for towerIndex = 1, 3 do
+			makePart(
+				silhouette,
+				`FarTower{towerIndex}`,
+				Vector3.new(5, 12 + towerIndex * 3, 5),
+				base
+					+ Vector3.new(
+						-9 + towerIndex * 8,
+						7 + towerIndex * 1.5,
+						(towerIndex % 2 == 0 and 5 or -3)
+					),
+				Color3.fromRGB(99, 144, 171),
+				Enum.Material.Slate,
+				{ canCollide = false, transparency = 0.32 }
+			)
+		end
 	end
 
 	local birdAnchor = makePart(
