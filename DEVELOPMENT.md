@@ -2,6 +2,86 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day36.4 Intentional Toybox Personality and Visual Stopping Point - 2026-08-10
+
+### Completed
+
+- Final checkpoint for today's map work; no Day36.5 or Day37 work was started.
+- Focused only on controlled toybox personality restoration after Day36.3 overcorrected into an empty, flat, dark skeleton.
+- Preserved locked Day36.3 successes:
+  - `HubSpawn` remains at `CFrame.new(0, 8.1, 78)`.
+  - Spawn still faces negative Z.
+  - `SoloPlayPad` remains at `Vector3.new(0, 6.65, 15)`.
+  - `SoloPlayPad`, `QueueMode = Solo`, prompt behavior, and Solo Puzzle start behavior remain intact.
+  - The debris ring, old platform `BorderStud` loop, cobblestone tile ring, skyline towers, cloud banks, oversized arches, random flowers/trees/lamps, route arrows, and yellow crossbar were not restored.
+- Reworked the Day36.3 giant dark rectangle into a more deliberate connected playset silhouette:
+  - replaced `ToyPlaysetMainFoundation` with named connected foundation masses for center, spawn connector, spawn landing, left activity, right activity, and rear activity areas
+  - used lighter cheerful blues and purples instead of one dominant dark slab
+  - added large cream/yellow edge lips to make the sidewalls read as layered toy construction
+- Improved the spawn entrance:
+  - widened the primary spawn-to-PLAY walkway from `28` to `32` studs
+  - added two low `SpawnWelcome*Marker` blocks outside the direct camera line
+  - added spawn foundation lips so the entrance feels attached to the toy set instead of a runway
+- Finished the PLAY plaza as the hero landmark:
+  - added `ToyPlazaCyanRing` beneath the warm round plaza for a controlled cyan outline
+  - added cyan side stage blocks beside the PLAY pad
+  - added a small supported PLAY sign structure with left/right supports and a gold support bar
+  - lowered the PLAY billboard offset from `Vector3.new(0, 10.5, 0)` to `Vector3.new(0, 6.2, 0)` so it is less floaty while still raised above the pad
+- Made surviving attractions more readable without adding new attractions:
+  - Machine: added a compact back wall and gold cap owned by the machine zone
+  - Bounce: added a red/white spring-base motif around the existing bounce pad
+  - Launcher: added a light green launcher base owned by the launcher zone
+  - Spinner: added a small purple guard owned by the spinner zone
+  - Moving platform: added a short gold track base below the moving platform
+  - Slide: kept Day36.3's compact slide, with no long rails restored
+- Added one minimal background/atmosphere prop:
+  - `RearToyBackdrop*` forms create a low-contrast distant toy backdrop behind the playset, separated from the playable route
+  - no skyline tower loop, cloud bank loop, or bright structure behind PLAY was restored
+- Source-level active toybox BasePart estimate:
+  - Day36.3: about 85 BaseParts
+  - Day36.4: about 115 BaseParts
+  - hard cap was 200; Day36.4 stays well below it
+- Built `BlockBlastBattle-Day36-4.rbxl`.
+
+### Current State
+
+- Day36.4 is intended as today's visual stopping point: cleaner than Day36.2, more cheerful and readable than Day36.3.
+- The active map still needs Yoel runtime screenshot proof because source inspection is not visual proof.
+- Battle and Story remain absent from the active toybox hub path.
+
+### Known Issues
+
+- Codex did not capture Studio screenshots in this session.
+- The hub still uses native Parts/Cylinders, so it may still fall short of the polished toybox concept art until a later asset/material pass is approved.
+
+### Required Manual Checks
+
+1. Open `BlockBlastBattle-Day36-4.rbxl`.
+2. Press Play without touching the camera and capture the immediate spawn view.
+3. Confirm spawn is unobstructed, aimed toward PLAY, and the PLAY sign is readable.
+4. Reset and confirm the same spawn reveal.
+5. Walk from spawn to PLAY and confirm the route feels direct but less runway-like.
+6. Capture a ground-level PLAY view.
+7. Inspect the machine, slide, bounce, launcher, button, spinner, and moving platform zones.
+8. Confirm every attraction looks owned by its platform and secondary to PLAY.
+9. Capture a central attraction view and a complete aerial view with F8 HUD hide.
+10. Confirm the foundation no longer reads as one giant dark rectangle.
+11. Confirm the debris ring, blue overhead beams, floating rails, and yellow route crossbar did not return.
+12. Test fall recovery.
+13. Confirm Battle and Story remain absent.
+
+### Deferred
+
+- Next session should begin from Yoel's Day36.4 runtime screenshots and either approve the stopping point or make one specific visual correction.
+- Larger polish should wait for an approved art/asset direction rather than adding random Parts.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with 0 errors and 0 warnings; Selene used its cached Roblox standard library after failing to generate a fresh API dump.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day36-4.rbxl` passed.
+- `git diff --check` passed with the repo's existing LF-to-CRLF working-copy warning.
+
 ## Day36.3 Runtime Debris Tracing and Structural Simplification - 2026-08-10
 
 ### Completed

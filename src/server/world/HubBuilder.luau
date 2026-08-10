@@ -1895,19 +1895,99 @@ local function buildToyboxHub(parent)
 
 	makeToyBlock(
 		hub,
-		"ToyPlaysetMainFoundation",
-		Vector3.new(0, 2.45, 10),
-		Vector3.new(92, 5.2, 108),
-		Color3.fromRGB(64, 105, 145),
+		"ToyPlaysetCenterFoundation",
+		Vector3.new(0, 2.45, 8),
+		Vector3.new(74, 5.2, 76),
+		Color3.fromRGB(93, 148, 190),
 		{ studs = false }
 	)
 	makeToyBlock(
 		hub,
-		"ToyPlaysetSpawnFoundation",
-		Vector3.new(0, 3.05, 72),
-		Vector3.new(42, 4, 40),
-		Color3.fromRGB(71, 111, 151),
+		"ToyPlaysetSpawnConnectorFoundation",
+		Vector3.new(0, 2.85, 51),
+		Vector3.new(34, 4.4, 40),
+		Color3.fromRGB(100, 160, 205),
 		{ studs = false }
+	)
+	makeToyBlock(
+		hub,
+		"ToyPlaysetSpawnLandingFoundation",
+		Vector3.new(0, 3.05, 76),
+		Vector3.new(44, 4, 32),
+		Color3.fromRGB(111, 173, 214),
+		{ studs = false }
+	)
+	makeToyBlock(
+		hub,
+		"ToyPlaysetLeftActivityFoundation",
+		Vector3.new(-35, 2.3, 15),
+		Vector3.new(34, 4.5, 42),
+		Color3.fromRGB(138, 111, 178),
+		{ studs = false }
+	)
+	makeToyBlock(
+		hub,
+		"ToyPlaysetRightActivityFoundation",
+		Vector3.new(35, 2.3, 16),
+		Vector3.new(34, 4.5, 46),
+		Color3.fromRGB(91, 163, 138),
+		{ studs = false }
+	)
+	makeToyBlock(
+		hub,
+		"ToyPlaysetRearActivityFoundation",
+		Vector3.new(14, 2.35, -36),
+		Vector3.new(54, 4.7, 32),
+		Color3.fromRGB(104, 132, 185),
+		{ studs = false }
+	)
+	makeToyBlock(
+		hub,
+		"ToyFoundationFrontCreamLip",
+		Vector3.new(0, 5.45, 47),
+		Vector3.new(74, 2, 4),
+		Color3.fromRGB(244, 236, 210),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"ToyFoundationRearCreamLip",
+		Vector3.new(0, 5.45, -30),
+		Vector3.new(74, 2, 4),
+		Color3.fromRGB(244, 236, 210),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"ToyFoundationLeftCreamLip",
+		Vector3.new(-39, 5.45, 8),
+		Vector3.new(4, 2, 74),
+		Color3.fromRGB(244, 236, 210),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"ToyFoundationRightCreamLip",
+		Vector3.new(39, 5.45, 8),
+		Vector3.new(4, 2, 74),
+		Color3.fromRGB(244, 236, 210),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"SpawnFoundationFrontLip",
+		Vector3.new(0, 5.4, 57),
+		Vector3.new(44, 1.8, 4),
+		Color3.fromRGB(250, 223, 156),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"SpawnFoundationBackLip",
+		Vector3.new(0, 5.4, 92),
+		Vector3.new(44, 1.8, 4),
+		Color3.fromRGB(250, 223, 156),
+		{ studs = false, canCollide = false }
 	)
 
 	makeToyDiskPlatform(
@@ -1959,7 +2039,7 @@ local function buildToyboxHub(parent)
 		hub,
 		"SpawnToPlayPath",
 		Vector3.new(0, 6.15, 47),
-		Vector3.new(28, 1.1, 56),
+		Vector3.new(32, 1.1, 56),
 		PALETTE.marble,
 		PALETTE.waterDeep
 	)
@@ -2001,10 +2081,20 @@ local function buildToyboxHub(parent)
 		"RoundPuzzlePlaza",
 		Vector3.new(58, 1.2, 58),
 		Vector3.new(0, 5.75, 8),
-		Color3.fromRGB(222, 222, 215),
+		Color3.fromRGB(237, 232, 216),
 		Enum.Material.SmoothPlastic,
 		{ shape = Enum.PartType.Cylinder }
 	)
+	makePart(
+		hub,
+		"ToyPlazaCyanRing",
+		Vector3.new(64, 0.7, 64),
+		Vector3.new(0, 5.38, 8),
+		Color3.fromRGB(62, 203, 230),
+		Enum.Material.SmoothPlastic,
+		{ shape = Enum.PartType.Cylinder, canCollide = false }
+	)
+
 	local spawnDeck = makePart(
 		hub,
 		"ToyboxSafeSpawnDeck",
@@ -2031,6 +2121,22 @@ local function buildToyboxHub(parent)
 		Vector3.new(0, 4.75, 78),
 		PALETTE.orange,
 		Enum.Material.SmoothPlastic
+	)
+	makeToyBlock(
+		hub,
+		"SpawnWelcomeLeftMarker",
+		Vector3.new(-18, 7.2, 65),
+		Vector3.new(4, 3, 4),
+		Color3.fromRGB(255, 218, 94),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"SpawnWelcomeRightMarker",
+		Vector3.new(18, 7.2, 65),
+		Vector3.new(4, 3, 4),
+		Color3.fromRGB(255, 218, 94),
+		{ studs = false, canCollide = false }
 	)
 
 	local spawn = Instance.new("SpawnLocation")
@@ -2074,13 +2180,119 @@ local function buildToyboxHub(parent)
 		PALETTE.orange,
 		Enum.Material.SmoothPlastic
 	)
-	addBillboard(playPad, "PLAY", "Solo Puzzle", Vector3.new(0, 10.5, 0))
+	makeToyBlock(
+		hub,
+		"PlayStageCyanSideLeft",
+		Vector3.new(-22, 5.45, 15),
+		Vector3.new(4, 3.2, 26),
+		PALETTE.cyan,
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"PlayStageCyanSideRight",
+		Vector3.new(22, 5.45, 15),
+		Vector3.new(4, 3.2, 26),
+		PALETTE.cyan,
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"PlaySignLeftSupport",
+		Vector3.new(-14, 10, 4),
+		Vector3.new(2, 7, 2),
+		Color3.fromRGB(245, 245, 238),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"PlaySignRightSupport",
+		Vector3.new(14, 10, 4),
+		Vector3.new(2, 7, 2),
+		Color3.fromRGB(245, 245, 238),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"PlaySignSupportBar",
+		Vector3.new(0, 13.1, 4),
+		Vector3.new(31, 2, 2),
+		PALETTE.gold,
+		{ studs = false, canCollide = false }
+	)
+	addBillboard(playPad, "PLAY", "Solo Puzzle", Vector3.new(0, 6.2, 0))
 
 	makeToyboxMachine(hub)
 	makeToyboxSlide(hub, "BlueToySlide", Vector3.new(38, 18, -51), 24, Color3.fromRGB(44, 170, 255))
 	makeBouncePad(hub, "RedSpringBouncePad", Vector3.new(-38, 7.2, 32), PALETTE.red)
 	makeLauncher(hub, "GreenLauncherPad", Vector3.new(38, 7.15, 38))
 	makePressButton(hub, "PurpleSpinnerButton", Vector3.new(34, 7.3, -4), PALETTE.purple)
+	makeToyBlock(
+		hub,
+		"MachineStationBackWall",
+		Vector3.new(36, 8.2, -30),
+		Vector3.new(24, 7, 2),
+		Color3.fromRGB(244, 217, 151),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"MachineStationGoldCap",
+		Vector3.new(36, 12, -30),
+		Vector3.new(26, 2, 4),
+		PALETTE.gold,
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"BounceSpringBase",
+		Vector3.new(-38, 5.9, 32),
+		Vector3.new(24, 2, 24),
+		Color3.fromRGB(255, 193, 187),
+		{ studs = false }
+	)
+	makePart(
+		hub,
+		"BounceSpringCoilA",
+		Vector3.new(17, 1.3, 17),
+		Vector3.new(-38, 8.6, 32),
+		Color3.fromRGB(255, 247, 240),
+		Enum.Material.SmoothPlastic,
+		{ shape = Enum.PartType.Cylinder, canCollide = false }
+	)
+	makePart(
+		hub,
+		"BounceSpringCoilB",
+		Vector3.new(13, 1.3, 13),
+		Vector3.new(-38, 10.4, 32),
+		PALETTE.red,
+		Enum.Material.SmoothPlastic,
+		{ shape = Enum.PartType.Cylinder, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"LauncherArrowBase",
+		Vector3.new(38, 5.95, 28),
+		Vector3.new(20, 2, 8),
+		Color3.fromRGB(226, 245, 211),
+		{ studs = false }
+	)
+	makeToyBlock(
+		hub,
+		"SpinnerPurpleGuard",
+		Vector3.new(-34, 5.9, -18),
+		Vector3.new(24, 2, 6),
+		Color3.fromRGB(202, 175, 244),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"MoverTrackBase",
+		Vector3.new(-20, 6.4, -35),
+		Vector3.new(32, 1.4, 12),
+		Color3.fromRGB(245, 226, 161),
+		{ studs = false }
+	)
 	makeToyRail(hub, "LeftSpawnRail", -22, -8, 63, 9.4, PALETTE.cyan)
 	makeToyRail(hub, "RightSpawnRail", 8, 22, 63, 9.4, PALETTE.cyan)
 	makeToyFence(
@@ -2151,6 +2363,39 @@ local function buildToyboxHub(parent)
 			task.wait(2.8)
 		end
 	end)
+
+	makeToyBlock(
+		hub,
+		"RearToyBackdropBase",
+		Vector3.new(0, 12, -82),
+		Vector3.new(48, 10, 4),
+		Color3.fromRGB(113, 168, 208),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"RearToyBackdropTop",
+		Vector3.new(0, 18, -82),
+		Vector3.new(36, 4, 4),
+		Color3.fromRGB(244, 215, 132),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"RearToyBackdropLeftDot",
+		Vector3.new(-18, 19.8, -79),
+		Vector3.new(5, 5, 2),
+		Color3.fromRGB(255, 128, 128),
+		{ studs = false, canCollide = false }
+	)
+	makeToyBlock(
+		hub,
+		"RearToyBackdropRightDot",
+		Vector3.new(18, 19.8, -79),
+		Vector3.new(5, 5, 2),
+		Color3.fromRGB(80, 220, 245),
+		{ studs = false, canCollide = false }
+	)
 
 	return spawn, nil, nil, nil, soloPrompt
 end
