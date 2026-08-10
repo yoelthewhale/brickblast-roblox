@@ -2,6 +2,97 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day36.3 Runtime Debris Tracing and Structural Simplification - 2026-08-10
+
+### Completed
+
+- Focused only on Day36.3 runtime debris tracing and subtraction-first hub cleanup; no UI, gameplay, DataStore, monetization, leaderboard, rename, or Day37 work was done.
+- Preserved the locked runtime transforms and behavior:
+  - `HubSpawn` remains at `CFrame.new(0, 8.1, 78)`.
+  - Spawn still faces the default forward direction toward negative Z.
+  - `SoloPlayPad` remains at `Vector3.new(0, 6.65, 15)`.
+  - The spawn-to-PLAY horizontal relationship remains roughly 63 studs straight forward.
+  - `SoloPlayPad`, `QueueMode = Solo`, the existing prompt, and Solo Puzzle start behavior remain intact.
+- Traced the Day36.2 debris ring to active generators other than `ScatteredToyBrick*`:
+  - `makeToyDiskPlatform()` generated 16 `BorderStud` toy blocks around every disk platform; with 7 disk platforms this created 112 loose-looking gray/gold perimeter blocks.
+  - `ToyboxStoneTile*` generated 12 brown/cobblestone surface fragments around the central plaza.
+  - `ToyboxRoundLamp*`, `ToyFlower*`, `ToyTree*`, cloud puffs, skyline towers/caps, and arch studs added small repeated pieces around the map.
+  - `BlueToySlide` generated 7 large raised blue segments and 2 long rails, which likely read as overhead beams.
+  - `PlazaNorthGold`, `PlazaSouthGold`, `PlayPathArrow`, and `MovingPuzzlePlatform` created yellow route-crossing pieces.
+- Removed the active debris generators instead of hiding their Parts:
+  - all disk `BorderStud` generation
+  - `ToyboxStoneTile*`
+  - plaza gold trim bars
+  - route arrows
+  - toy arches and their studded columns/beams
+  - high-score facade
+  - trees, lamps, flowers, cloud banks, and skyline towers/caps
+  - unused helper functions that only supported the removed clutter
+- Replaced the Day36.2 foundation fragments with two clean foundation masses:
+  - `ToyPlaysetMainFoundation`
+  - `ToyPlaysetSpawnFoundation`
+- Reduced active platform masses:
+  - removed separate `SpawnEntranceIsland` and `ScoreboardIsland`
+  - kept compact central, machine, fun, launch, and slide platform pads
+  - pulled attraction pads inward so they sit on the main foundation silhouette
+- Standardized the route:
+  - kept the main spawn-to-PLAY walkway as the consistent primary path
+  - shortened secondary walkways and ensured they terminate at compact attraction zones
+  - renamed the rear route from `PlayToScoresPath` to `PlayToRearAttractionsPath`
+- Improved PLAY readability:
+  - removed the `ToyboxPlayArch` that could compete with or obscure PLAY
+  - raised the world PLAY billboard from `Vector3.new(0, 7.2, 0)` to `Vector3.new(0, 10.5, 0)`
+  - kept the cyan PLAY pad as the strongest visual accent
+- Simplified attraction presentation:
+  - compacted `BlockDropMachine` and reduced internal visible blocks from 10 to 4
+  - compacted `BlueToySlide` from 7 segments plus 2 rails to 4 shorter segments and no long rails
+  - moved bounce, launcher, button, spinner, and moving platform closer to the main foundation
+  - shrank `ToyboxSpinnerPlatform` and `MovingPuzzlePlatform`
+- Source-level generated BasePart estimate:
+  - Day36.2 active toybox path: about 366 BaseParts
+  - Day36.3 active toybox path: about 85 BaseParts
+  - estimated reduction: about 281 BaseParts
+- Built `BlockBlastBattle-Day36-3.rbxl`.
+
+### Current State
+
+- The active hub is intentionally much simpler and should be easier to judge in Studio.
+- Battle and Story remain absent from the active toybox hub return path.
+- The active toybox path now contains no generators named `BorderStud`, `ToyboxStoneTile`, `ToyboxColorZone`, `ScatteredToyBrick`, `ToySkyline`, `ToyboxCloud`, `ToyTree`, `ToyFlower`, `ToyboxRoundLamp`, `ToyboxPlayArch`, `ToyboxScoresArch`, `ToyboxFidgetArch`, `PlazaNorthGold`, `PlazaSouthGold`, `HighScoresFace`, `PlayPathArrow`, or `SpawnPathArrow`.
+
+### Known Issues
+
+- Codex did not have Roblox Studio screenshot automation in this session, so Day36.3 still requires Yoel's runtime screenshots.
+- Source inspection confirms generator removal and geometry reduction, but source inspection is not visual proof.
+
+### Required Manual Checks
+
+1. Open `BlockBlastBattle-Day36-3.rbxl`.
+2. Press Play and capture the immediate spawn view without moving the camera.
+3. Confirm PLAY remains visible and the raised PLAY lettering is not hidden by the cyan pad.
+4. Reset and confirm the same spawn view.
+5. Walk from spawn to PLAY and confirm the route is uninterrupted.
+6. Capture a normal ground-level PLAY view.
+7. Walk to bounce, launcher, button, spinner, moving platform, slide, and machine zones.
+8. Confirm all secondary paths terminate at real attractions.
+9. Capture a complete aerial view with F8 HUD hide.
+10. Confirm no ring of loose gray/yellow/brown/rainbow debris remains.
+11. Confirm no large blue overhead beams or yellow crossbar dominate the route.
+12. Test fall recovery.
+13. Confirm Battle and Story remain absent.
+
+### Deferred
+
+- If Day36.3 still looks too plain, the next approved visual pass should use better art direction and assets, not more random Parts.
+- Later work should restore any desired leaderboard/signage only after the core toy playset silhouette is approved.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with 0 errors and 0 warnings; Selene used its cached Roblox standard library after failing to generate a fresh API dump.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day36-3.rbxl` passed.
+- `git diff --check` passed with the repo's existing LF-to-CRLF working-copy warning.
+
 ## Day36.2 Toy Playset Foundation Cohesion - 2026-08-10
 
 ### Completed

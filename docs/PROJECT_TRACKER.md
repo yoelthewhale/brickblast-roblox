@@ -36,6 +36,8 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Capture Day36.1 spawn, central player-height, and aerial map screenshots | High | Playtest | Bear / Codex | 2026-08-10 |
 | Validate Day36.2 cohesive toy playset foundation and cleaned route | High | Playtest | Bear / Codex | 2026-08-10 |
 | Capture Day36.2 spawn, player-height plaza, attraction, and aerial screenshots | High | Playtest | Bear / Codex | 2026-08-10 |
+| Validate Day36.3 runtime debris removal and simplified playset silhouette | High | Playtest | Bear / Codex | 2026-08-10 |
+| Capture Day36.3 spawn, PLAY ground-level, attraction, and aerial screenshots | High | Playtest | Bear / Codex | 2026-08-10 |
 | Upload Day35 local PNG candidates and enter returned Roblox asset IDs | High | Ready | Bear / Codex | 2026-08-11 |
 | Refine Day35 toybox density, bevels, and glossy panel assets after screenshot review | High | Ready | Codex | 2026-08-11 |
 | Add server/global/weekly solo score leaderboards | High | Ready | Codex | 2026-08-10 |
@@ -108,6 +110,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Day36 map/spawn correction requires manual Studio proof because no Studio MCP/screenshot tooling was available | High | Playtest | Bear / Codex | 2026-08-10 |
 | Day36 runtime screenshots showed sideways cylinder foundations obstructing spawn | High | Playtest | Codex | 2026-08-10 |
 | Day36.2 foundation cohesion requires manual Studio proof because Codex could not capture Play-mode screenshots here | High | Playtest | Bear / Codex | 2026-08-10 |
+| Day36.3 debris removal requires manual Studio proof because Codex could not capture Play-mode screenshots here | High | Playtest | Bear / Codex | 2026-08-10 |
 | Legacy Battle/Story internal names remain in some remotes and modules after Solo pivot | Medium | Known | Codex | 2026-08-11 |
 | Original `.rbxl` file may stay locked while Studio has it open | Medium | Known | Bear / Codex | 2026-07-29 |
 | Need confirm Rojo plugin connects to Day 2 place | High | Playtest | Bear / Codex | 2026-07-29 |
@@ -122,7 +125,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 ## Playtest Checklist
 
 - Start Rojo server from VS Code or `start-rojo.ps1`.
-- Open `BlockBlastBattle-Day36-2.rbxl` in Roblox Studio for the current toy playset cohesion checkpoint.
+- Open `BlockBlastBattle-Day36-3.rbxl` in Roblox Studio for the current runtime debris and structure checkpoint.
 - Before pressing Play or publishing, confirm Roblox Studio's top-right account says `CAPTINNINJATACO`.
 - Press Play and confirm the character lands on the raised safe solo spawn plaza, not inside Terrain or rock.
 - Reset the character and confirm respawn returns to the same safe plaza.
@@ -135,7 +138,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Clear a row/column and confirm line-clear score/feedback.
 - Trigger out-of-moves and confirm the result panel shows score, coins, XP, best score, and `Play Again`.
 - Press `Play Again` and confirm a fresh Solo run starts.
-- Capture the Day36.2 spawn, player-height plaza, attraction, and aerial screenshots listed in `DEVELOPMENT.md`.
+- Capture the Day36.3 spawn, PLAY ground-level, attraction, and aerial screenshots listed in `DEVELOPMENT.md`.
 - Compare the spawn view and map composition against the official toybox map reference.
 - Connect the Rojo plugin to `localhost:34872`.
 - Confirm the loading splash appears briefly and fades after game state arrives.
