@@ -2,6 +2,91 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day36.2 Toy Playset Foundation Cohesion - 2026-08-10
+
+### Completed
+
+- Focused only on the Day36.2 map-foundation cohesion checkpoint; no UI, gameplay, leaderboard, monetization, or new-attraction work was done.
+- Preserved the Day36.1 spawn correction:
+  - `HubSpawn` remains at `CFrame.new(0, 8.1, 78)`.
+  - The spawn faces the default forward direction toward negative Z.
+  - `SoloPlayPad` remains centered at `Vector3.new(0, 6.65, 15)`, keeping the straight spawn-to-PLAY route at roughly 63 studs.
+  - The `SoloPlayPad` name, `QueueMode = Solo` attribute, prompt, and billboard remain intact.
+- Classified the active toybox footprint:
+  - essential gameplay zones: spawn, PLAY, `SoloPlayPad`, fall recovery, and attraction interactables
+  - necessary connectors: spawn-to-PLAY path and secondary routes to scores, machine, fun, and launch areas
+  - useful visual structures: scoreboard, machine, slide, bounce pad, launcher, press button, spinner, moving platform, trees, lamps, flowers, clouds, and muted skyline
+  - redundant/noisy decoration: four large `ToyboxColorZone*` floor patches, excess plaza tiles, side gold plaza trim, several detached fences, excess flowers/lamps/trees, and bright skyline towers
+  - loose debris: all 12 `ScatteredToyBrick*` objects
+- Built a shared shaped foundation using thick toy-plastic pieces:
+  - `ToyPlaysetFoundationSpine`
+  - `ToyPlaysetFoundationCrossbar`
+  - `ToyPlaysetRearFoundationStep`
+- Consolidated platform layout:
+  - reduced oversized spawn, scoreboard, machine, fun, launch, and slide island radii
+  - overlapped major pads with wider foundation pieces so the hub reads as one constructed playset instead of separate thin floating disks
+  - widened the main spawn-to-PLAY path and used the same marble/water-deep treatment for the main route
+- Cleaned the central plaza:
+  - reduced the round plaza diameter
+  - removed large colored floor-zone rectangles
+  - reduced radial stone tiles from 30 to 12
+  - removed the secondary PLAY path arrow
+  - kept one clear forward arrow on the main route
+- Integrated PLAY into a thicker built platform:
+  - kept the cyan PLAY surface as the primary focal accent
+  - widened the white lip and orange base beneath it so it reads as a constructed button assembly rather than a plain slab
+- Reduced the yellow machine's dominance:
+  - moved it farther right/rear
+  - reduced its base from `32x14x22` to `24x10x16`
+  - reduced internal floating blocks from 22 to 10
+  - kept the machine button and animation behavior functional
+- Removed all loose outer `ScatteredToyBrick*` debris.
+- Cleaned boundaries:
+  - tightened spawn rails/fences
+  - removed detached Fun Zone and Launch back fences
+  - kept the Score back fence as a real rear-edge safety/readability boundary
+- Simplified decoration and background:
+  - reduced trees from 6 to 4
+  - reduced lamps from 14 to 10
+  - reduced flowers from 20 to 14
+  - reduced skyline towers from 4 to 3, moved them farther back, and muted their colors
+- Built `BlockBlastBattle-Day36-2.rbxl`.
+
+### Current State
+
+- The newest build artifact is `BlockBlastBattle-Day36-2.rbxl`.
+- Source/math inspection confirms the spawn-to-PLAY horizontal vector remains `(0, 0, -63)`, so the initial route direction is preserved.
+- Battle and Story remain absent from the active toybox hub path.
+
+### Known Issues
+
+- Roblox Studio runtime screenshots were not captured by Codex in this session; Yoel must visually verify Day36.2 in Play mode.
+- The hub still uses native Roblox Parts and Cylinders, so it will not perfectly match the high-fidelity concept art without later mesh/material/asset polish.
+
+### Required Manual Checks
+
+1. Open `BlockBlastBattle-Day36-2.rbxl`.
+2. Press Play without moving the camera and confirm PLAY is still visible immediately.
+3. Confirm the spawn platform is unobstructed and still faces the PLAY route.
+4. Walk straight from spawn to PLAY and verify the route reads as one consistent main path.
+5. Capture spawn, player-height plaza, and aerial screenshots with F8 HUD hide.
+6. Confirm the hub reads as one cohesive toy playset, not detached thin platforms.
+7. Confirm all attraction mechanics still function: bounce, launcher, press button, spinner, moving platform, and slide.
+8. Confirm loose edge debris is gone and rails/fences end cleanly.
+9. Confirm fall recovery still returns to the safe hub spawn.
+
+### Deferred
+
+- Do not start Day37 until Day36.2 screenshots confirm the foundation cohesion direction is acceptable.
+- Later visual polish should focus on high-quality mesh/material treatment and screenshot-based composition tuning.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with 0 errors and 0 warnings; Selene used its cached Roblox standard library after failing to generate a fresh API dump.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day36-2.rbxl` passed.
+- `git diff --check` passed with the repo's existing LF-to-CRLF working-copy warning.
+
 ## Day36.1 Runtime Map and Spawn Correction - 2026-08-10
 
 ### Completed
