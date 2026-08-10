@@ -2,6 +2,66 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day36.1 Runtime Map and Spawn Correction - 2026-08-10
+
+### Completed
+
+- Focused only on the runtime map/spawn failures Yoel reported from Day36.
+- Identified the giant dark cylinder source:
+  - Day36 `makeToyDiskPlatform()` created cylinder Parts for playset foundations.
+  - The function rotated both base and top cylinders by 90 degrees, turning intended flat platforms into huge sideways barrels.
+  - Active fidget cylinders for bounce, launcher, press button, plaza, and spinner had the same unnecessary flat-pad rotation pattern.
+- Removed the active toybox cylinder rotations so platform/fidget cylinders render as flat pads instead of camera-blocking barrels.
+- Reduced the visual dominance of legitimate platform foundations:
+  - lowered foundation heights
+  - changed giant dark foundation colors to softer toy-blue, purple, green, tan, and gold support colors
+  - kept dark values limited to smaller trim/support roles
+- Simplified the Day36 layout:
+  - removed the four low outer `MainFloor*` trim blocks that no longer matched the invisible backing floor
+  - reduced loose `ScatteredToyBrick*` count from 24 to 12
+  - removed secondary Fun Zone and Machine arrows
+  - reduced the skyline from 7 bright towers to 4 lower-contrast background towers
+- Clarified the spawn-to-PLAY route:
+  - spawn remains at `CFrame.new(0, 8.1, 78)`, facing default forward toward negative Z
+  - PLAY remains centered at approximately `Vector3.new(0, 6.65, 15)`
+  - route distance is roughly 63 studs straight forward along negative Z
+  - kept only the main route arrows from spawn and PLAY
+- Made PLAY more recognizable:
+  - reduced the cyan pad from `40x24` to `34x20`
+  - changed the overhead billboard title from `SOLO PUZZLE` to `PLAY`
+  - kept `SoloPlayPad`, its `QueueMode = Solo` attribute, and the existing prompt behavior
+- Built `BlockBlastBattle-Day36-1.rbxl`.
+
+### Current State
+
+- Day36.1 should remove the giant dark cylinder obstruction shown in Yoel's Day36 runtime screenshots.
+- The map should be less crowded than Day36 while preserving the larger toy-playset direction.
+- No puzzle UI, mobile UI, leaderboard, gameplay, monetization, DataStore, or new attraction work was done.
+
+### Known Issues
+
+- Studio runtime verification was not available to Codex in this session; Yoel still needs to confirm the immediate spawn view in Play mode.
+- Remaining visual polish depends on screenshots from `BlockBlastBattle-Day36-1.rbxl`.
+
+### Required Manual Checks
+
+1. Open `BlockBlastBattle-Day36-1.rbxl`.
+2. Press Play without moving the camera and confirm no giant dark cylinder blocks the view.
+3. Confirm PLAY is visible from spawn.
+4. Reset and confirm the same spawn reveal.
+5. Walk straight from spawn to PLAY and confirm the path is obvious.
+6. Capture spawn view, central player-height view, and aerial view with F8 HUD hide.
+7. Confirm no large cylinders pass through player platforms.
+8. Confirm fall recovery still returns to the hub.
+9. Confirm Battle and Story prompts/routes remain absent.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with 0 errors and 0 warnings; Selene used its cached Roblox standard library after failing to generate a fresh API dump.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day36-1.rbxl` passed.
+- `git diff --check` passed with the repo's existing LF-to-CRLF working-copy warning.
+
 ## Day36 Map and Spawn Correction - 2026-08-10
 
 ### Completed
