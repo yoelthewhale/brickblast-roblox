@@ -2,6 +2,69 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day36 Map and Spawn Correction - 2026-08-10
+
+### Completed
+
+- Focused only on the active toybox hub map/spawn path in `src/server/world/HubBuilder.luau`.
+- Identified the Day35 floating debris source:
+  - `buildToyboxHub()` called the older `buildBackground(hub)` helper.
+  - `buildBackground()` generates `FloatingRock*`, slate/stone distant silhouettes, and floating scenery originally intended for the fantasy island direction.
+- Removed that obsolete background call from the active toybox hub path.
+- Kept the old `buildBackground()` function only for the inactive legacy/non-toybox route.
+- Converted `ToyboxMainPlayFloor` into invisible, non-colliding metadata/safety backing so it no longer renders as the huge pale slab.
+- Added a designed playset layout:
+  - `CentralPlaysetIsland`
+  - `SpawnEntranceIsland`
+  - `ScoreboardIsland`
+  - `MachineIsland`
+  - `FunZoneIsland`
+  - `LaunchIsland`
+  - `SlideTowerIsland`
+- Added deliberate thick walkways:
+  - `SpawnToPlayPath`
+  - `PlayToScoresPath`
+  - `PlayToMachinePath`
+  - `PlayToFunPath`
+  - `PlayToLaunchPath`
+- Moved the player spawn to `CFrame.new(0, 8.1, 78)` facing down the main path toward the PLAY attraction.
+- Moved the obstructing spawn lip away from the immediate spawn camera line.
+- Raised the plaza, tiles, trees, flowers, lamps, bounce pad, launcher, spinner, moving platform, and slide staging onto the new platform heights so they no longer read as floating loose pieces.
+- Added perimeter rails/fences, path arrows, toy skyline towers, and stronger zone framing.
+- Reduced washed-out lighting by enabling global shadows, lowering brightness/exposure, reducing bloom, and increasing contrast slightly.
+- Preserved the active `SoloPlayPad`, safe `HubSpawn`, invisible void recovery platform, Solo-first feature flags, and disabled Battle/Story state.
+- Built `BlockBlastBattle-Day36.rbxl`.
+
+### Current State
+
+- Day36 should open with a cleaner spawn entrance and a more cohesive toy-playground composition than Day35.
+- Studio automation was still unavailable in this session, so the new spawn presentation and map view are source/build verified only.
+- The active hub no longer intentionally displays the old floating fantasy rocks or slate silhouettes.
+
+### Known Issues
+
+- Needs manual Studio Play-mode screenshots from spawn, ground-level map view, and aerial F8 view.
+- The design still uses native Parts/Cylinders rather than custom meshes, so the final toybox polish will depend on screenshot review.
+- Puzzle UI, mobile UI, leaderboards, gameplay balance, and new modes were intentionally untouched.
+
+### Required Manual Checks
+
+1. Open `BlockBlastBattle-Day36.rbxl`.
+2. Press Play and confirm the player spawns on the entrance island facing the PLAY path.
+3. Confirm no large prop blocks the camera immediately after spawn.
+4. Reset and confirm respawn returns to the same staged view.
+5. Walk from spawn to PLAY, then to high scores, machine, bounce pad, launcher, press button, spinner, moving platform, and slide.
+6. Walk off several edges and confirm invisible fall recovery returns to the hub without showing recovery geometry.
+7. Use F8 to hide HUD and capture spawn, player-height, and aerial screenshots.
+8. Confirm Battle and Story prompts/routes remain absent.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with 0 errors and 0 warnings; Selene used its cached Roblox standard library after failing to generate a fresh API dump.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day36.rbxl` passed.
+- `git diff --check` passed with the repo's existing LF-to-CRLF working-copy warning.
+
 ## Day35 Visual Proof and Matching Pass - 2026-08-10
 
 ### Day34 Mismatch List
