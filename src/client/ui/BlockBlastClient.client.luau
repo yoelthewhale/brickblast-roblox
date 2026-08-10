@@ -110,7 +110,7 @@ local pulseHandSlot = nil
 local DEFAULT_WINDOW_POSITION = UDim2.new(0.5, -500, 0.5, 0)
 local DEFAULT_WINDOW_SIZE = Vector2.new(1000, 650)
 local MIN_WINDOW_SIZE = Vector2.new(380, 540)
-local MAX_WINDOW_SIZE = Vector2.new(1180, 760)
+local MAX_WINDOW_SIZE = Vector2.new(1240, 820)
 local COMPACT_WINDOW_WIDTH = 700
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -938,7 +938,7 @@ root.AnchorPoint = Vector2.new(0, 0.5)
 root.Position = DEFAULT_WINDOW_POSITION
 root.Size = UDim2.fromOffset(DEFAULT_WINDOW_SIZE.X, DEFAULT_WINDOW_SIZE.Y)
 root.BackgroundColor3 = Color3.fromRGB(10, 17, 34)
-root.BackgroundTransparency = 0.02
+root.BackgroundTransparency = 0.12
 root.BorderSizePixel = 0
 root.Visible = false
 root.Parent = gui
@@ -947,12 +947,12 @@ UITheme.panel(root, {
 	bottomColor = Color3.fromRGB(5, 10, 20),
 	strokeColor = Color3.fromRGB(47, 199, 255),
 	strokeTransparency = 0.16,
-	radius = 30,
+	radius = 34,
 })
-root.BackgroundTransparency = 0.22
+root.BackgroundTransparency = 0.28
 local rootStroke = root:FindFirstChildOfClass("UIStroke")
 if rootStroke then
-	rootStroke.Thickness = 5
+	rootStroke.Thickness = 6
 end
 
 rootScale = Instance.new("UIScale")
@@ -1357,7 +1357,7 @@ UITheme.text(title, "title")
 local scoreCard = Instance.new("Frame")
 scoreCard.Name = "ScoreCard"
 scoreCard.Position = UDim2.fromOffset(22, 72)
-scoreCard.Size = UDim2.fromOffset(210, 142)
+scoreCard.Size = UDim2.fromOffset(210, 170)
 scoreCard.Parent = root
 UITheme.panel(scoreCard, {
 	color = Color3.fromRGB(12, 28, 52),
@@ -1375,7 +1375,7 @@ scoreLabel.Size = UDim2.new(1, -28, 0, 58)
 scoreLabel.Font = Enum.Font.GothamBlack
 scoreLabel.Text = "0"
 scoreLabel.TextColor3 = Color3.fromRGB(255, 222, 72)
-scoreLabel.TextSize = 42
+scoreLabel.TextSize = 50
 scoreLabel.TextXAlignment = Enum.TextXAlignment.Center
 scoreLabel.TextStrokeColor3 = Color3.fromRGB(42, 28, 10)
 scoreLabel.TextStrokeTransparency = 0.35
@@ -1384,7 +1384,7 @@ scoreLabel.Parent = scoreCard
 bestScoreLabel = Instance.new("TextLabel")
 bestScoreLabel.BackgroundTransparency = 1
 bestScoreLabel.Position = UDim2.fromOffset(18, 82)
-bestScoreLabel.Size = UDim2.new(1, -36, 0, 28)
+bestScoreLabel.Size = UDim2.new(1, -36, 0, 34)
 bestScoreLabel.Font = Enum.Font.GothamBlack
 bestScoreLabel.Text = "BEST 0"
 bestScoreLabel.TextColor3 = Color3.fromRGB(63, 205, 255)
@@ -1396,7 +1396,7 @@ comboBadgeLabel = Instance.new("TextLabel")
 comboBadgeLabel.BackgroundTransparency = 0.08
 comboBadgeLabel.BackgroundColor3 = Color3.fromRGB(118, 45, 220)
 comboBadgeLabel.Position = UDim2.fromOffset(22, 232)
-comboBadgeLabel.Size = UDim2.fromOffset(210, 96)
+comboBadgeLabel.Size = UDim2.fromOffset(210, 108)
 comboBadgeLabel.Font = Enum.Font.GothamBlack
 comboBadgeLabel.Text = "COMBO\nx1"
 comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1412,7 +1412,7 @@ coinChipLabel.AnchorPoint = Vector2.new(1, 0)
 coinChipLabel.BackgroundTransparency = 0.02
 coinChipLabel.BackgroundColor3 = Color3.fromRGB(11, 27, 51)
 coinChipLabel.Position = UDim2.new(1, -170, 0, 20)
-coinChipLabel.Size = UDim2.fromOffset(150, 46)
+coinChipLabel.Size = UDim2.fromOffset(170, 50)
 coinChipLabel.Font = Enum.Font.GothamBlack
 coinChipLabel.Text = "0 Coins  +"
 coinChipLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1490,10 +1490,11 @@ local boardFrame = Instance.new("Frame")
 boardFrame.Position = UDim2.fromOffset(24, 104)
 boardFrame.Size = UDim2.fromOffset(304, 304)
 boardFrame.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
-boardFrame.BackgroundTransparency = 0.02
+boardFrame.BackgroundTransparency = 0
 boardFrame.Parent = root
-UITheme.corner(boardFrame, 20)
-UITheme.stroke(boardFrame, Color3.fromRGB(39, 178, 255), 5, 0.05)
+UITheme.corner(boardFrame, 24)
+UITheme.stroke(boardFrame, Color3.fromRGB(39, 178, 255), 7, 0.02)
+UITheme.gradient(boardFrame, Color3.fromRGB(14, 35, 68), Color3.fromRGB(4, 13, 28), 90)
 local boardPadding = Instance.new("UIPadding")
 boardPadding.PaddingTop = UDim.new(0, 16)
 boardPadding.PaddingBottom = UDim.new(0, 16)
@@ -1519,6 +1520,7 @@ for y = 1, Config.BoardSize do
 		button.Parent = boardFrame
 		UITheme.corner(button, 8)
 		UITheme.stroke(button, Color3.fromRGB(36, 59, 94), 2, 0.12)
+		UITheme.gradient(button, Color3.fromRGB(31, 43, 66), Color3.fromRGB(13, 24, 45), 90)
 
 		local scale = Instance.new("UIScale")
 		scale.Scale = 1
@@ -1567,10 +1569,11 @@ local side = Instance.new("Frame")
 side.Position = UDim2.fromOffset(360, 104)
 side.Size = UDim2.fromOffset(256, 304)
 side.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
-side.BackgroundTransparency = 0.06
+side.BackgroundTransparency = 0.02
 side.Parent = root
 UITheme.corner(side, 26)
-UITheme.stroke(side, Color3.fromRGB(39, 178, 255), 4, 0.08)
+UITheme.stroke(side, Color3.fromRGB(39, 178, 255), 5, 0.04)
+UITheme.gradient(side, Color3.fromRGB(11, 31, 59), Color3.fromRGB(4, 13, 28), 90)
 
 statusLabel = Instance.new("TextLabel")
 statusLabel.BackgroundTransparency = 1
@@ -1661,10 +1664,11 @@ leaderboardLabel.TextColor3 = Color3.fromRGB(245, 247, 251)
 leaderboardLabel.TextSize = 16
 leaderboardLabel.TextXAlignment = Enum.TextXAlignment.Left
 leaderboardLabel.TextYAlignment = Enum.TextYAlignment.Top
-leaderboardLabel.Parent = side
+leaderboardLabel.Parent = root
 UITheme.text(leaderboardLabel, "muted")
 UITheme.corner(leaderboardLabel, 18)
-UITheme.stroke(leaderboardLabel, Color3.fromRGB(39, 178, 255), 3, 0.14)
+UITheme.stroke(leaderboardLabel, Color3.fromRGB(39, 178, 255), 4, 0.08)
+UITheme.gradient(leaderboardLabel, Color3.fromRGB(12, 31, 57), Color3.fromRGB(6, 14, 29), 90)
 
 returnHubButton = Instance.new("TextButton")
 returnHubButton.Position = UDim2.fromOffset(360, 390)
@@ -1750,122 +1754,136 @@ applyWindowLayout = function()
 	local width = windowSize.X
 	local height = windowSize.Y
 	local compact = width < COMPACT_WINDOW_WIDTH
-	local leftPadding = compact and 16 or 24
-	local topPadding = compact and 112 or 88
-	local bottomPadding = compact and 190 or 56
-	local gap = compact and 12 or 22
-	local sideColumnWidth = compact and width - (leftPadding * 2) or 260
-	local scoreColumnWidth = compact and 0 or 230
-	local boardLimitByHeight = compact and (height - topPadding - bottomPadding)
-		or (height - topPadding - bottomPadding)
+	local leftPadding = compact and 14 or 24
+	local topPadding = compact and 118 or 72
+	local gap = compact and 12 or 20
+	local scoreColumnWidth = compact and 0 or 220
+	local leaderboardWidth = compact and 0 or 230
+	local trayHeight = compact and 156 or 128
+	local boardLimitByHeight = compact and (height - topPadding - trayHeight - 78)
+		or (height - topPadding - trayHeight - 70)
 	local boardLimitByWidth = compact and (width - (leftPadding * 2))
-		or (width - scoreColumnWidth - sideColumnWidth - (leftPadding * 2) - gap * 2)
-	local boardPixels =
-		clampNumber(math.min(boardLimitByHeight, boardLimitByWidth), 260, compact and 480 or 520)
+		or (width - scoreColumnWidth - leaderboardWidth - (leftPadding * 2) - gap * 2)
+	local boardPixels = clampNumber(
+		math.min(boardLimitByHeight, boardLimitByWidth),
+		compact and 300 or 420,
+		compact and 520 or 520
+	)
 	local innerBoardPixels = boardPixels - 32
 	local cellPixels =
 		math.floor((innerBoardPixels - ((Config.BoardSize - 1) * 4)) / Config.BoardSize)
 	innerBoardPixels = (cellPixels * Config.BoardSize) + ((Config.BoardSize - 1) * 4)
 	boardPixels = innerBoardPixels + 32
 
-	boardFrame.Position = UDim2.fromOffset(
-		compact and math.floor((width - boardPixels) / 2) or leftPadding + scoreColumnWidth + gap,
-		topPadding
-	)
+	local boardX = compact and math.floor((width - boardPixels) / 2)
+		or leftPadding + scoreColumnWidth + gap
+	local boardY = topPadding
+	boardFrame.Position = UDim2.fromOffset(boardX, boardY)
 	boardFrame.Size = UDim2.fromOffset(boardPixels, boardPixels)
 	boardLayout.CellSize = UDim2.fromOffset(cellPixels, cellPixels)
 	boardLayout.CellPadding = UDim2.fromOffset(4, 4)
 
+	title.Visible = not compact
+	progressionLabel.Visible = not compact
+	timerLabel.Visible = not compact
+	matchInfoLabel.Visible = not compact
+
 	if scoreCard then
-		scoreCard.Position = compact and UDim2.new(0.5, -135, 0, 22) or UDim2.fromOffset(22, 72)
-		scoreCard.Size = compact and UDim2.fromOffset(270, 74) or UDim2.fromOffset(210, 142)
+		scoreCard.Position = compact and UDim2.new(0.5, -160, 0, 22) or UDim2.fromOffset(22, 118)
+		scoreCard.Size = compact and UDim2.fromOffset(320, 84) or UDim2.fromOffset(210, 174)
 	end
-	scoreLabel.Size = compact and UDim2.new(1, -28, 0, 42) or UDim2.new(1, -28, 0, 58)
-	scoreLabel.TextSize = compact and 40 or 42
+	scoreLabel.Position = compact and UDim2.fromOffset(14, 10) or UDim2.fromOffset(14, 18)
+	scoreLabel.Size = compact and UDim2.new(1, -28, 0, 46) or UDim2.new(1, -28, 0, 66)
+	scoreLabel.TextSize = compact and 48 or 52
 	if bestScoreLabel then
-		bestScoreLabel.Position = compact and UDim2.fromOffset(18, 48) or UDim2.fromOffset(18, 82)
-		bestScoreLabel.TextSize = compact and 17 or 20
+		bestScoreLabel.Position = compact and UDim2.fromOffset(18, 54) or UDim2.fromOffset(18, 94)
+		bestScoreLabel.TextSize = compact and 18 or 20
 	end
 	if coinChipLabel then
-		coinChipLabel.Position = compact and UDim2.fromOffset(16, 22) or UDim2.new(1, -170, 0, 20)
+		coinChipLabel.Position = compact and UDim2.fromOffset(16, 20) or UDim2.new(1, -190, 0, 20)
 		coinChipLabel.AnchorPoint = compact and Vector2.new(0, 0) or Vector2.new(1, 0)
-		coinChipLabel.Size = compact and UDim2.fromOffset(112, 42) or UDim2.fromOffset(150, 46)
-		coinChipLabel.TextSize = compact and 15 or 20
+		coinChipLabel.Size = compact and UDim2.fromOffset(104, 42) or UDim2.fromOffset(170, 50)
+		coinChipLabel.TextSize = compact and 14 or 20
 	end
 
-	local boardX = compact and math.floor((width - boardPixels) / 2)
-		or leftPadding + scoreColumnWidth + gap
-	local sideX = compact and leftPadding or boardX + boardPixels + gap
-	local sideY = compact and topPadding + boardPixels + gap or topPadding
-	local sideWidth = compact and width - (leftPadding * 2) or sideColumnWidth
-	local sideHeight = compact and 148 or boardPixels
+	local sideX = compact and leftPadding or boardX
+	local sideY = compact and boardY + boardPixels + gap or boardY + boardPixels + gap
+	local sideWidth = compact and width - (leftPadding * 2) or boardPixels
+	local sideHeight = trayHeight
 	side.Position = UDim2.fromOffset(sideX, sideY)
 	side.Size = UDim2.fromOffset(sideWidth, sideHeight)
-	statusLabel.Size = UDim2.fromOffset(sideWidth, 28)
-	statusLabel.TextSize = compact and 16 or 20
+	statusLabel.Position = UDim2.fromOffset(compact and 12 or 18, compact and 10 or 12)
+	statusLabel.Size = UDim2.fromOffset(sideWidth - (compact and 24 or 36), 28)
+	statusLabel.TextSize = compact and 15 or 20
+	statusLabel.TextXAlignment = compact and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left
 
 	if bestScoreLabel then
-		bestScoreLabel.Visible = not compact
+		bestScoreLabel.Visible = true
 	end
 	if comboBadgeLabel then
-		comboBadgeLabel.Position = compact and UDim2.new(1, -154, 0, topPadding + 8)
-			or UDim2.fromOffset(22, 232)
-		comboBadgeLabel.Size = compact and UDim2.fromOffset(132, 74) or UDim2.fromOffset(210, 96)
-		comboBadgeLabel.TextSize = compact and 22 or 28
+		comboBadgeLabel.Position = compact and UDim2.new(1, -148, 0, 23)
+			or UDim2.fromOffset(22, 318)
+		comboBadgeLabel.Size = compact and UDim2.fromOffset(130, 76) or UDim2.fromOffset(210, 108)
+		comboBadgeLabel.TextSize = compact and 22 or 30
 	end
 
-	local slotHeight = compact and 96
-		or clampNumber(math.floor((boardPixels - 112) / Config.InventorySize), 52, 72)
+	local slotHeight = compact and 104 or 78
 	for slot, button in handButtons do
-		local buttonWidth = sideWidth
-		if compact then
-			buttonWidth =
-				math.floor((sideWidth - ((Config.InventorySize - 1) * 8)) / Config.InventorySize)
-			button.Position = UDim2.fromOffset((slot - 1) * (buttonWidth + 8), 38)
-		else
-			button.Position = UDim2.fromOffset(0, 38 + (slot - 1) * (slotHeight + 8))
-		end
+		local buttonWidth =
+			math.floor((sideWidth - 32 - ((Config.InventorySize - 1) * 14)) / Config.InventorySize)
+		button.Position =
+			UDim2.fromOffset(16 + (slot - 1) * (buttonWidth + 14), compact and 42 or 44)
 		button.Size = UDim2.fromOffset(buttonWidth, slotHeight)
 
 		local preview = handPreviews[slot]
+		preview.Size = compact and UDim2.fromOffset(74, 74) or UDim2.fromOffset(58, 58)
 		preview.Position = UDim2.fromOffset(
-			compact and math.max(6, math.floor((buttonWidth - 44) / 2)) or 12,
-			compact and 4 or math.max(6, math.floor((slotHeight - 44) / 2))
+			math.max(6, math.floor((buttonWidth - preview.Size.X.Offset) / 2)),
+			compact and 8 or 8
 		)
 
 		local label = button:FindFirstChild("Label")
 		if label and label:IsA("TextLabel") then
-			label.Position = UDim2.fromOffset(compact and 4 or 70, compact and 34 or 0)
-			label.Size = UDim2.fromOffset(
-				compact and math.max(60, buttonWidth - 8) or math.max(90, sideWidth - 82),
-				compact and 16 or slotHeight
-			)
-			label.TextSize = compact and 10 or sideWidth < 220 and 14 or 17
-			label.TextXAlignment = compact and Enum.TextXAlignment.Center
-				or Enum.TextXAlignment.Left
+			label.Position = UDim2.fromOffset(4, compact and 80 or 64)
+			label.Size = UDim2.fromOffset(math.max(60, buttonWidth - 8), compact and 18 or 16)
+			label.TextSize = compact and 11 or 12
+			label.TextXAlignment = Enum.TextXAlignment.Center
 		end
 	end
 
-	local leaderboardY = compact and 92 or 38 + (Config.InventorySize * (slotHeight + 8)) + 2
-	leaderboardLabel.Position = UDim2.fromOffset(0, leaderboardY)
-	leaderboardLabel.Size =
-		UDim2.fromOffset(sideWidth, compact and 42 or math.max(84, boardPixels - leaderboardY))
-	leaderboardLabel.TextSize = compact and 14 or 16
+	if leaderboardLabel then
+		leaderboardLabel.Visible = true
+		if compact then
+			leaderboardLabel.Position = UDim2.fromOffset(leftPadding, sideY + sideHeight + 10)
+			leaderboardLabel.Size = UDim2.fromOffset(width - (leftPadding * 2), 48)
+			leaderboardLabel.TextSize = 13
+		else
+			leaderboardLabel.Position = UDim2.fromOffset(boardX + boardPixels + gap, 118)
+			leaderboardLabel.Size = UDim2.fromOffset(leaderboardWidth, 310)
+			leaderboardLabel.TextSize = 16
+		end
+	end
 
-	local bottomY = height - 42
+	local bottomY = compact and height - 42 or 448
 	local actionWidth = compact and math.floor((width - (leftPadding * 2) - 8) / 2)
-		or math.floor((sideWidth - 8) / 2)
-	returnHubButton.Position = UDim2.fromOffset(compact and leftPadding or sideX, bottomY)
+		or math.floor((leaderboardWidth - 8) / 2)
+	returnHubButton.Position =
+		UDim2.fromOffset(compact and leftPadding or boardX + boardPixels + gap, bottomY)
 	returnHubButton.Size = UDim2.fromOffset(actionWidth, 32)
-	playAgainButton.Position =
-		UDim2.fromOffset((compact and leftPadding or sideX) + actionWidth + 8, bottomY)
+	playAgainButton.Position = UDim2.fromOffset(
+		(compact and leftPadding or boardX + boardPixels + gap) + actionWidth + 8,
+		bottomY
+	)
 	playAgainButton.Size = UDim2.fromOffset(actionWidth, 32)
 
 	local customY = bottomY - 38
-	rotatePieceButton.Position = UDim2.fromOffset(compact and leftPadding or sideX, customY)
+	rotatePieceButton.Position =
+		UDim2.fromOffset(compact and leftPadding or boardX + boardPixels + gap, customY)
 	rotatePieceButton.Size = UDim2.fromOffset(actionWidth, 32)
-	rerollPieceButton.Position =
-		UDim2.fromOffset((compact and leftPadding or sideX) + actionWidth + 8, customY)
+	rerollPieceButton.Position = UDim2.fromOffset(
+		(compact and leftPadding or boardX + boardPixels + gap) + actionWidth + 8,
+		customY
+	)
 	rerollPieceButton.Size = UDim2.fromOffset(actionWidth, 32)
 	resizeHandle.Position = UDim2.new(1, -12, 1, -10)
 end
@@ -2088,16 +2106,34 @@ renderBoard = function()
 	for y = 1, Config.BoardSize do
 		for x = 1, Config.BoardSize do
 			local value = currentState.board[y][x]
+			local cell = cells[y][x]
 			if value == false then
-				cells[y][x].BackgroundColor3 = customization.boardEmptyColor
+				cell.BackgroundColor3 = customization.boardEmptyColor
 			elseif value == "garbage" then
-				cells[y][x].BackgroundColor3 = Config.Colors.Garbage
+				cell.BackgroundColor3 = Config.Colors.Garbage
 			elseif typeof(value) == "Color3" then
-				cells[y][x].BackgroundColor3 = value
+				cell.BackgroundColor3 = value
 			else
-				cells[y][x].BackgroundColor3 = Config.Colors.Filled
+				cell.BackgroundColor3 = Config.Colors.Filled
 			end
-			local stroke = cells[y][x]:FindFirstChildOfClass("UIStroke")
+			local gradient = cell:FindFirstChildOfClass("UIGradient")
+			if gradient then
+				local baseColor = cell.BackgroundColor3
+				gradient.Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(
+						0,
+						baseColor:Lerp(
+							Color3.fromRGB(255, 255, 255),
+							value == false and 0.06 or 0.22
+						)
+					),
+					ColorSequenceKeypoint.new(
+						1,
+						baseColor:Lerp(Color3.fromRGB(0, 0, 0), value == false and 0.1 or 0.18)
+					),
+				})
+			end
+			local stroke = cell:FindFirstChildOfClass("UIStroke")
 			if stroke then
 				stroke.Color = value == false and Color3.fromRGB(38, 61, 97)
 					or Color3.fromRGB(255, 255, 255)
@@ -2158,9 +2194,10 @@ local function renderShapePreview(preview, shape)
 
 	local width = maxX - minX + 1
 	local height = maxY - minY + 1
-	local tileSize = math.floor(math.min(40 / width, 40 / height))
-	local offsetX = math.floor((44 - width * tileSize) / 2)
-	local offsetY = math.floor((44 - height * tileSize) / 2)
+	local previewSize = math.max(44, math.min(preview.AbsoluteSize.X, preview.AbsoluteSize.Y))
+	local tileSize = math.floor(math.min((previewSize - 6) / width, (previewSize - 6) / height))
+	local offsetX = math.floor((previewSize - width * tileSize) / 2)
+	local offsetY = math.floor((previewSize - height * tileSize) / 2)
 
 	for _, cell in shape.cells do
 		local tile = Instance.new("Frame")

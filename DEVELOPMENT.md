@@ -2,6 +2,76 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day35 Visual Proof and Matching Pass - 2026-08-10
+
+### Day34 Mismatch List
+
+- Image 1 map: Day34 still depended on one broad rectangular toy floor, sparse props, and primitive scattered bricks instead of the dense toybox plaza shown in the reference.
+- Image 1 map: the PLAY pad, high-score wall, fidget toys, and machine existed, but the central composition did not yet read like a cohesive front-page Roblox toy playground.
+- Image 2 PC UI: Day34 had the correct data connections, but the board, score, hand tray, and server leaderboard still behaved like one resizable utility window rather than the deliberate score-left / board-center / leaderboard-right composition.
+- Image 3 mobile UI: Day34 compact mode was mostly a scaled desktop layout; the piece tray and best-score hierarchy were not sufficiently mobile-first.
+- Visual assets: no Day34 PNGs were created, uploaded, or wired into Roblox asset IDs.
+- Runtime proof: Studio MCP/screenshot automation was not available in this Codex session, so Day34 visual inspection remains manual.
+
+### Completed
+
+- Rebuilt the active toybox hub composition in `src/server/world/HubBuilder.luau` without restoring Battle/Story:
+  - reduced the empty main floor footprint
+  - added a raised circular puzzle plaza with colored trims
+  - added stronger spawn and PLAY staging
+  - added `ToyboxPlayArch`, `ToyboxScoresArch`, and `ToyboxFidgetArch`
+  - added rail details, colorful trees, flower balls, denser toy bricks, and more lamps
+  - reused the high-score wall, block-drop machine, slide, bounce pad, launcher, press button, spinner, moving platform, and cloud scenery
+  - added distant background scenery through the toybox path so the hub has more depth
+- Polished existing fidget interactions in source:
+  - bounce pad now has per-character cooldown, particles, and sound
+  - launcher now has per-character cooldown, particles, and sound
+  - pressable button now has particles and sound
+  - existing spinner, moving platform, and slide remain active
+- Reworked the Solo puzzle HUD in `src/client/ui/BlockBlastClient.client.luau`:
+  - desktop layout now uses a large central board, left score/combo column, bottom three-piece tray, and right current-server leaderboard card
+  - mobile compact layout now keeps score/best at the top, board central, larger touch-friendly piece previews below, and a compact leaderboard strip
+  - board cells now keep glossy per-color gradients so placed pieces remain bright
+  - piece previews scale from their actual container size instead of a fixed 44px box
+- Created reproducible Day35 local PNG exports in `assets/ui/day35/`:
+  - `panel-shine-512x256.png`
+  - `combo-burst-512.png`
+  - `toy-block-pattern-512.png`
+  - `rank-medals-512x192.png`
+- Added `tools/design/generate_day35_assets.py` as the source generator for those exported PNGs.
+- Built `BlockBlastBattle-Day35.rbxl`.
+
+### Current State
+
+- Day35 is a visible source/build correction checkpoint over Day34, not a Studio-proven final match.
+- Real gameplay data remains connected for score, best score, coins, combo, and current-server scores.
+- Battle and Story remain absent from the active hub flow.
+- The new PNGs are local Roblox-ready upload candidates only; the active UI still uses native Roblox fallback components until asset IDs are uploaded and mapped.
+
+### Known Issues
+
+- Studio Play-mode screenshots were not captured because no Studio MCP or screen-capture control was exposed to this session.
+- The map still uses Roblox-native Parts rather than custom meshes, so it will not yet match the concept image's bevel/render quality exactly.
+- The PC and mobile UI are closer in layout but still need in-Studio screenshot comparison against the references.
+- Global and weekly leaderboards remain intentionally out of scope for Day35.
+
+### Required Manual Screenshots
+
+1. Open `BlockBlastBattle-Day35.rbxl`.
+2. Capture normal spawn view facing the PLAY pad.
+3. Capture a three-quarter aerial map view with the HUD hidden using F8.
+4. Start Solo and capture the desktop puzzle UI.
+5. Capture a line-clear/combo moment.
+6. Capture out-of-moves/results and Play Again.
+7. Capture a phone portrait emulation view with the board and pieces visible.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with 0 errors and 0 warnings; Selene used its cached Roblox standard library after failing to generate a fresh API dump.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day35.rbxl` passed.
+- `git diff --check` passed with the repo's existing LF-to-CRLF working-copy warnings.
+
 ## Day34 Reference Reconstruction - 2026-08-09
 
 ### Completed

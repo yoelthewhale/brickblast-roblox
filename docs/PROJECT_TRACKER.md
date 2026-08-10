@@ -28,7 +28,10 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Validate Day33 out-of-moves results, rewards, best score, and Play Again | High | Playtest | Bear / Codex | 2026-08-10 |
 | Validate Day34 toybox map against the three approved references | High | Playtest | Bear / Codex | 2026-08-10 |
 | Capture Day34 PC and mobile puzzle UI screenshots for comparison | High | Playtest | Bear / Codex | 2026-08-10 |
-| Refine Day34 toybox density, bevels, and glossy panel assets | High | Ready | Codex | 2026-08-11 |
+| Validate Day35 toybox map against the three approved references | High | Playtest | Bear / Codex | 2026-08-10 |
+| Capture Day35 PC and mobile puzzle UI screenshots for comparison | High | Playtest | Bear / Codex | 2026-08-10 |
+| Upload Day35 local PNG candidates and enter returned Roblox asset IDs | High | Ready | Bear / Codex | 2026-08-11 |
+| Refine Day35 toybox density, bevels, and glossy panel assets after screenshot review | High | Ready | Codex | 2026-08-11 |
 | Add server/global/weekly solo score leaderboards | High | Ready | Codex | 2026-08-10 |
 | Polish solo board UX, placement feedback, and result presentation | High | Ready | Codex | 2026-08-10 |
 | Create final non-infringing solo puzzle brand direction | Medium | Ready | Bear / Codex | 2026-08-11 |
@@ -95,6 +98,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | --- | --- | --- | --- | --- |
 | Day33 requires real Roblox Studio Play-mode proof for spawn safety and Solo start | High | Playtest | Bear / Codex | 2026-08-10 |
 | Day34 visual match requires manual Studio screenshots because Codex could not capture Play-mode images here | High | Playtest | Bear / Codex | 2026-08-10 |
+| Day35 visual proof still requires manual Studio screenshots because Studio MCP/screenshot tooling was unavailable | High | Playtest | Bear / Codex | 2026-08-10 |
 | Legacy Battle/Story internal names remain in some remotes and modules after Solo pivot | Medium | Known | Codex | 2026-08-11 |
 | Original `.rbxl` file may stay locked while Studio has it open | Medium | Known | Bear / Codex | 2026-07-29 |
 | Need confirm Rojo plugin connects to Day 2 place | High | Playtest | Bear / Codex | 2026-07-29 |
@@ -109,7 +113,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 ## Playtest Checklist
 
 - Start Rojo server from VS Code or `start-rojo.ps1`.
-- Open `BlockBlastBattle-Day34.rbxl` in Roblox Studio for the current toybox visual checkpoint.
+- Open `BlockBlastBattle-Day35.rbxl` in Roblox Studio for the current toybox visual checkpoint.
 - Before pressing Play or publishing, confirm Roblox Studio's top-right account says `CAPTINNINJATACO`.
 - Press Play and confirm the character lands on the raised safe solo spawn plaza, not inside Terrain or rock.
 - Reset the character and confirm respawn returns to the same safe plaza.
@@ -122,8 +126,8 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Clear a row/column and confirm line-clear score/feedback.
 - Trigger out-of-moves and confirm the result panel shows score, coins, XP, best score, and `Play Again`.
 - Press `Play Again` and confirm a fresh Solo run starts.
-- Capture the seven Day34 screenshots listed in `DEVELOPMENT.md`.
-- Compare the spawn view, PC UI, and mobile UI against the three Day34 references.
+- Capture the seven Day35 screenshots listed in `DEVELOPMENT.md`.
+- Compare the spawn view, PC UI, and mobile UI against the three official Day35 references.
 - Connect the Rojo plugin to `localhost:34872`.
 - Confirm the loading splash appears briefly and fades after game state arrives.
 - Press Play and confirm the hub appears.
