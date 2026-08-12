@@ -15,6 +15,7 @@ local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
 local ExperienceConfig = require(GameShared.ExperienceConfig)
 local Grid = require(GameShared.Grid)
+local ArcadeUI = require(script.Parent.ArcadeUI)
 local CosmeticPanel = require(script.Parent.CosmeticPanel)
 local HUDController = require(script.Parent.HUDController)
 local HomePanel = require(script.Parent.HomePanel)
@@ -62,12 +63,15 @@ local bestScoreLabel = nil
 local comboBadgeLabel = nil
 local coinStatLabel = nil
 local coinChipLabel = nil
+local rankStatLabel = nil
 local timerLabel = nil
 local progressionLabel = nil
 local matchInfoLabel = nil
 local statusLabel = nil
 local leaderboardLabel = nil
+local leaderboardRows = {}
 local customizeButton = nil
+local closeWorkspaceButton = nil
 local resetLayoutButton = nil
 local returnHubButton = nil
 local playAgainButton = nil
@@ -946,17 +950,15 @@ root.BackgroundTransparency = 0.06
 root.BorderSizePixel = 0
 root.Visible = false
 root.Parent = gui
-UITheme.panel(root, {
-	color = Color3.fromRGB(8, 18, 35),
-	bottomColor = Color3.fromRGB(5, 10, 20),
-	strokeColor = Color3.fromRGB(47, 199, 255),
-	strokeTransparency = 0.16,
+ArcadeUI.Panel(root, {
 	radius = 34,
+	rimColor = ArcadeUI.Color.rimBright,
+	strokeThickness = 5,
 })
 root.BackgroundTransparency = 0.06
 local rootStroke = root:FindFirstChildOfClass("UIStroke")
 if rootStroke then
-	rootStroke.Thickness = 6
+	rootStroke.Thickness = 5
 end
 
 rootScale = Instance.new("UIScale")
@@ -1191,7 +1193,8 @@ customizeButton.Text = "Theme: Ocean"
 customizeButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 customizeButton.TextSize = 14
 customizeButton.Parent = root
-styleButton(customizeButton, "primary")
+ArcadeUI.Button(customizeButton, Color3.fromRGB(37, 107, 188))
+UITheme.attachButtonFeedback(customizeButton, isUiReducedMotion)
 markInteractive(customizeButton)
 
 resetLayoutButton = Instance.new("TextButton")
@@ -1205,8 +1208,29 @@ resetLayoutButton.Text = "Reset Layout"
 resetLayoutButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 resetLayoutButton.TextSize = 13
 resetLayoutButton.Parent = root
-styleButton(resetLayoutButton, "secondary")
+ArcadeUI.Button(resetLayoutButton, Color3.fromRGB(32, 55, 91))
+UITheme.attachButtonFeedback(resetLayoutButton, isUiReducedMotion)
 markInteractive(resetLayoutButton)
+
+closeWorkspaceButton = Instance.new("TextButton")
+closeWorkspaceButton.AnchorPoint = Vector2.new(1, 0)
+closeWorkspaceButton.Position = UDim2.new(1, -26, 0, 18)
+closeWorkspaceButton.Size = UDim2.fromOffset(44, 38)
+closeWorkspaceButton.BackgroundColor3 = Color3.fromRGB(215, 43, 54)
+closeWorkspaceButton.BorderSizePixel = 0
+closeWorkspaceButton.Font = Enum.Font.GothamBlack
+closeWorkspaceButton.Text = "X"
+closeWorkspaceButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeWorkspaceButton.TextSize = 20
+closeWorkspaceButton.Parent = root
+ArcadeUI.Button(closeWorkspaceButton, Color3.fromRGB(215, 43, 54))
+UITheme.attachButtonFeedback(closeWorkspaceButton, isUiReducedMotion)
+markInteractive(closeWorkspaceButton)
+
+closeWorkspaceButton.Activated:Connect(function()
+	playSound("Button")
+	queueEvent:FireServer("LeaveBattle")
+end)
 
 applyBoardSkin = function()
 	local theme = themePresets[themeIndex]
@@ -1277,19 +1301,37 @@ title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = root
 UITheme.text(title, "title")
 
+for dotIndex = 1, 5 do
+	local gripDot = Instance.new("Frame")
+	gripDot.Name = `TitleGripDot{dotIndex}`
+	gripDot.BackgroundColor3 = Color3.fromRGB(67, 123, 194)
+	gripDot.BorderSizePixel = 0
+	gripDot.Position = UDim2.new(0.5, -34 + (dotIndex - 1) * 17, 0, 32)
+	gripDot.Size = UDim2.fromOffset(9, 9)
+	gripDot.Active = false
+	gripDot.Parent = root
+	UITheme.corner(gripDot, 9)
+	UITheme.stroke(gripDot, Color3.fromRGB(5, 12, 24), 1, 0.25)
+end
+
 local scoreCard = Instance.new("Frame")
 scoreCard.Name = "ScoreCard"
 scoreCard.Position = UDim2.fromOffset(22, 72)
 scoreCard.Size = UDim2.fromOffset(210, 170)
 scoreCard.Parent = root
-UITheme.panel(scoreCard, {
-	color = Color3.fromRGB(12, 28, 52),
-	bottomColor = Color3.fromRGB(5, 14, 30),
-	strokeColor = Color3.fromRGB(35, 173, 244),
-	strokeTransparency = 0.04,
-	strokeThickness = 4,
-	radius = 20,
-})
+ArcadeUI.StatCard(scoreCard)
+
+local scoreHeading = Instance.new("TextLabel")
+scoreHeading.BackgroundTransparency = 1
+scoreHeading.Position = UDim2.fromOffset(16, 12)
+scoreHeading.Size = UDim2.new(1, -32, 0, 26)
+scoreHeading.Font = Enum.Font.GothamBlack
+scoreHeading.Text = "SCORE"
+scoreHeading.TextColor3 = Color3.fromRGB(255, 255, 255)
+scoreHeading.TextSize = 22
+scoreHeading.TextXAlignment = Enum.TextXAlignment.Center
+scoreHeading.Parent = scoreCard
+ArcadeUI.Text(scoreHeading)
 
 scoreLabel = Instance.new("TextLabel")
 scoreLabel.BackgroundTransparency = 1
@@ -1297,12 +1339,22 @@ scoreLabel.Position = UDim2.fromOffset(14, 16)
 scoreLabel.Size = UDim2.new(1, -28, 0, 58)
 scoreLabel.Font = Enum.Font.GothamBlack
 scoreLabel.Text = "0"
-scoreLabel.TextColor3 = Color3.fromRGB(255, 222, 72)
+scoreLabel.TextColor3 = ArcadeUI.Color.score
 scoreLabel.TextSize = 50
 scoreLabel.TextXAlignment = Enum.TextXAlignment.Center
 scoreLabel.TextStrokeColor3 = Color3.fromRGB(42, 28, 10)
 scoreLabel.TextStrokeTransparency = 0.35
 scoreLabel.Parent = scoreCard
+ArcadeUI.Text(scoreLabel, "score")
+
+local scoreDivider = Instance.new("Frame")
+scoreDivider.BackgroundColor3 = ArcadeUI.Color.rim
+scoreDivider.BackgroundTransparency = 0.28
+scoreDivider.BorderSizePixel = 0
+scoreDivider.Position = UDim2.new(0, 24, 0, 92)
+scoreDivider.Size = UDim2.new(1, -48, 0, 3)
+scoreDivider.Parent = scoreCard
+UITheme.corner(scoreDivider, 3)
 
 bestScoreLabel = Instance.new("TextLabel")
 bestScoreLabel.BackgroundTransparency = 1
@@ -1310,14 +1362,15 @@ bestScoreLabel.Position = UDim2.fromOffset(18, 82)
 bestScoreLabel.Size = UDim2.new(1, -36, 0, 34)
 bestScoreLabel.Font = Enum.Font.GothamBlack
 bestScoreLabel.Text = "BEST 0"
-bestScoreLabel.TextColor3 = Color3.fromRGB(63, 205, 255)
+bestScoreLabel.TextColor3 = ArcadeUI.Color.best
 bestScoreLabel.TextSize = 20
 bestScoreLabel.TextXAlignment = Enum.TextXAlignment.Center
 bestScoreLabel.Parent = scoreCard
+ArcadeUI.Text(bestScoreLabel, "best")
 
 comboBadgeLabel = Instance.new("TextLabel")
 comboBadgeLabel.BackgroundTransparency = 0.08
-comboBadgeLabel.BackgroundColor3 = Color3.fromRGB(118, 45, 220)
+comboBadgeLabel.BackgroundColor3 = ArcadeUI.Color.inner
 comboBadgeLabel.Position = UDim2.fromOffset(22, 232)
 comboBadgeLabel.Size = UDim2.fromOffset(210, 108)
 comboBadgeLabel.Font = Enum.Font.GothamBlack
@@ -1327,8 +1380,21 @@ comboBadgeLabel.TextSize = 28
 comboBadgeLabel.TextStrokeColor3 = Color3.fromRGB(31, 9, 69)
 comboBadgeLabel.TextStrokeTransparency = 0.2
 comboBadgeLabel.Parent = root
-UITheme.corner(comboBadgeLabel, 22)
-UITheme.stroke(comboBadgeLabel, Color3.fromRGB(244, 212, 255), 4, 0.03)
+ArcadeUI.StatCard(comboBadgeLabel)
+ArcadeUI.Text(comboBadgeLabel, "combo")
+
+for sparkleIndex = 1, 4 do
+	local sparkle = Instance.new("Frame")
+	sparkle.Name = `ComboSparkle{sparkleIndex}`
+	sparkle.BackgroundColor3 = sparkleIndex % 2 == 0 and ArcadeUI.Color.gold
+		or ArcadeUI.Color.rimBright
+	sparkle.BorderSizePixel = 0
+	sparkle.Position = UDim2.fromOffset(26 + sparkleIndex * 36, sparkleIndex % 2 == 0 and 24 or 76)
+	sparkle.Size = UDim2.fromOffset(7, 7)
+	sparkle.Active = false
+	sparkle.Parent = comboBadgeLabel
+	UITheme.corner(sparkle, 7)
+end
 
 coinStatLabel = Instance.new("TextLabel")
 coinStatLabel.BackgroundTransparency = 0.04
@@ -1342,9 +1408,23 @@ coinStatLabel.TextSize = 26
 coinStatLabel.TextStrokeColor3 = Color3.fromRGB(42, 28, 10)
 coinStatLabel.TextStrokeTransparency = 0.35
 coinStatLabel.Parent = root
-UITheme.corner(coinStatLabel, 22)
-UITheme.stroke(coinStatLabel, Color3.fromRGB(255, 207, 64), 4, 0.04)
-UITheme.gradient(coinStatLabel, Color3.fromRGB(16, 36, 68), Color3.fromRGB(6, 15, 31), 90)
+ArcadeUI.StatCard(coinStatLabel)
+ArcadeUI.Text(coinStatLabel, "gold")
+
+rankStatLabel = Instance.new("TextLabel")
+rankStatLabel.BackgroundTransparency = 0.04
+rankStatLabel.BackgroundColor3 = Color3.fromRGB(11, 27, 51)
+rankStatLabel.Position = UDim2.fromOffset(22, 482)
+rankStatLabel.Size = UDim2.fromOffset(210, 76)
+rankStatLabel.Font = Enum.Font.GothamBlack
+rankStatLabel.Text = "TROPHY\nRANK --"
+rankStatLabel.TextColor3 = ArcadeUI.Color.gold
+rankStatLabel.TextSize = 22
+rankStatLabel.TextStrokeColor3 = Color3.fromRGB(42, 28, 10)
+rankStatLabel.TextStrokeTransparency = 0.35
+rankStatLabel.Parent = root
+ArcadeUI.StatCard(rankStatLabel)
+ArcadeUI.Text(rankStatLabel, "gold")
 
 coinChipLabel = Instance.new("TextLabel")
 coinChipLabel.AnchorPoint = Vector2.new(1, 0)
@@ -1357,8 +1437,7 @@ coinChipLabel.Text = "0 Coins  +"
 coinChipLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 coinChipLabel.TextSize = 20
 coinChipLabel.Parent = root
-UITheme.corner(coinChipLabel, 18)
-UITheme.stroke(coinChipLabel, Color3.fromRGB(34, 173, 244), 3, 0.08)
+ArcadeUI.Button(coinChipLabel, Color3.fromRGB(13, 37, 69))
 
 timerLabel = Instance.new("TextLabel")
 timerLabel.AnchorPoint = Vector2.new(1, 0)
@@ -1432,9 +1511,11 @@ boardFrame.Size = UDim2.fromOffset(304, 304)
 boardFrame.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
 boardFrame.BackgroundTransparency = 0
 boardFrame.Parent = root
-UITheme.corner(boardFrame, 24)
-UITheme.stroke(boardFrame, Color3.fromRGB(39, 178, 255), 7, 0.02)
-UITheme.gradient(boardFrame, Color3.fromRGB(14, 35, 68), Color3.fromRGB(4, 13, 28), 90)
+ArcadeUI.Panel(boardFrame, {
+	radius = 28,
+	rimColor = ArcadeUI.Color.rimBright,
+	strokeThickness = 6,
+})
 local boardPadding = Instance.new("UIPadding")
 boardPadding.PaddingTop = UDim.new(0, 16)
 boardPadding.PaddingBottom = UDim.new(0, 16)
@@ -1459,9 +1540,7 @@ for y = 1, Config.BoardSize do
 		button.AutoButtonColor = false
 		button.Parent = boardFrame
 		markInteractive(button)
-		UITheme.corner(button, 8)
-		UITheme.stroke(button, Color3.fromRGB(36, 59, 94), 2, 0.12)
-		UITheme.gradient(button, Color3.fromRGB(31, 43, 66), Color3.fromRGB(13, 24, 45), 90)
+		ArcadeUI.BoardCell(button)
 
 		local scale = Instance.new("UIScale")
 		scale.Scale = 1
@@ -1512,9 +1591,11 @@ side.Size = UDim2.fromOffset(256, 304)
 side.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
 side.BackgroundTransparency = 0.02
 side.Parent = root
-UITheme.corner(side, 26)
-UITheme.stroke(side, Color3.fromRGB(39, 178, 255), 5, 0.04)
-UITheme.gradient(side, Color3.fromRGB(11, 31, 59), Color3.fromRGB(4, 13, 28), 90)
+ArcadeUI.Panel(side, {
+	radius = 26,
+	rimColor = ArcadeUI.Color.rimBright,
+	strokeThickness = 5,
+})
 
 statusLabel = Instance.new("TextLabel")
 statusLabel.BackgroundTransparency = 1
@@ -1550,7 +1631,8 @@ for slot = 1, Config.InventorySize do
 	button.TextSize = 18
 	button.Text = ""
 	button.Parent = side
-	styleButton(button, "secondary")
+	ArcadeUI.PieceSlot(button)
+	UITheme.attachButtonFeedback(button, isUiReducedMotion)
 	markInteractive(button)
 	local buttonStroke = button:FindFirstChildOfClass("UIStroke")
 	if buttonStroke then
@@ -1597,8 +1679,8 @@ for slot = 1, Config.InventorySize do
 end
 
 leaderboardLabel = Instance.new("TextLabel")
-leaderboardLabel.BackgroundColor3 = Color3.fromRGB(10, 27, 52)
-leaderboardLabel.BackgroundTransparency = 0.05
+leaderboardLabel.BackgroundColor3 = ArcadeUI.Color.inner
+leaderboardLabel.BackgroundTransparency = 0.02
 leaderboardLabel.Position = UDim2.fromOffset(0, 242)
 leaderboardLabel.Size = UDim2.fromOffset(256, 56)
 leaderboardLabel.Font = Enum.Font.GothamBlack
@@ -1608,10 +1690,90 @@ leaderboardLabel.TextXAlignment = Enum.TextXAlignment.Left
 leaderboardLabel.TextYAlignment = Enum.TextYAlignment.Top
 leaderboardLabel.Parent = root
 markInteractive(leaderboardLabel)
-UITheme.text(leaderboardLabel, "muted")
-UITheme.corner(leaderboardLabel, 18)
-UITheme.stroke(leaderboardLabel, Color3.fromRGB(39, 178, 255), 4, 0.08)
-UITheme.gradient(leaderboardLabel, Color3.fromRGB(12, 31, 57), Color3.fromRGB(6, 14, 29), 90)
+ArcadeUI.Panel(leaderboardLabel, {
+	radius = 24,
+	rimColor = ArcadeUI.Color.rim,
+	strokeThickness = 4,
+})
+
+local leaderboardHeading = Instance.new("TextLabel")
+leaderboardHeading.Name = "Heading"
+leaderboardHeading.BackgroundTransparency = 1
+leaderboardHeading.Position = UDim2.fromOffset(48, 16)
+leaderboardHeading.Size = UDim2.new(1, -64, 0, 32)
+leaderboardHeading.Font = Enum.Font.GothamBlack
+leaderboardHeading.Text = "SERVER TOP"
+leaderboardHeading.TextColor3 = Color3.fromRGB(255, 255, 255)
+leaderboardHeading.TextSize = 24
+leaderboardHeading.TextXAlignment = Enum.TextXAlignment.Left
+leaderboardHeading.Parent = leaderboardLabel
+ArcadeUI.Text(leaderboardHeading)
+
+for barIndex = 1, 3 do
+	local signalBar = Instance.new("Frame")
+	signalBar.Name = `SignalBar{barIndex}`
+	signalBar.BackgroundColor3 = ArcadeUI.Color.best
+	signalBar.BorderSizePixel = 0
+	signalBar.Position = UDim2.fromOffset(22 + (barIndex - 1) * 9, 34 - barIndex * 5)
+	signalBar.Size = UDim2.fromOffset(6, 8 + barIndex * 5)
+	signalBar.Active = false
+	signalBar.Parent = leaderboardLabel
+	UITheme.corner(signalBar, 3)
+end
+
+for rowIndex = 1, 7 do
+	local row = ArcadeUI.LeaderboardRow(leaderboardLabel, rowIndex)
+	row.Position = UDim2.fromOffset(18, 58 + (rowIndex - 1) * 39)
+
+	local rank = Instance.new("TextLabel")
+	rank.Name = "Rank"
+	rank.BackgroundTransparency = 1
+	rank.Position = UDim2.fromOffset(8, 0)
+	rank.Size = UDim2.fromOffset(38, 38)
+	rank.Font = Enum.Font.GothamBlack
+	rank.Text = tostring(rowIndex)
+	rank.TextSize = 20
+	rank.TextXAlignment = Enum.TextXAlignment.Center
+	rank.Parent = row
+	ArcadeUI.Text(rank, rowIndex == 1 and "gold" or rowIndex == 2 and "muted" or "best")
+
+	local avatar = Instance.new("Frame")
+	avatar.Name = "Avatar"
+	avatar.BackgroundColor3 = Color3.fromRGB(32, 73, 118)
+	avatar.BorderSizePixel = 0
+	avatar.Position = UDim2.fromOffset(48, 5)
+	avatar.Size = UDim2.fromOffset(28, 28)
+	avatar.Active = false
+	avatar.Parent = row
+	UITheme.corner(avatar, 8)
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "Name"
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Position = UDim2.fromOffset(84, 0)
+	nameLabel.Size = UDim2.fromOffset(130, 38)
+	nameLabel.Font = Enum.Font.GothamBlack
+	nameLabel.Text = "--"
+	nameLabel.TextSize = 14
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	nameLabel.Parent = row
+	ArcadeUI.Text(nameLabel)
+
+	local score = Instance.new("TextLabel")
+	score.Name = "Score"
+	score.BackgroundTransparency = 1
+	score.Position = UDim2.fromOffset(206, 0)
+	score.Size = UDim2.fromOffset(86, 38)
+	score.Font = Enum.Font.GothamBlack
+	score.Text = "--"
+	score.TextSize = 15
+	score.TextXAlignment = Enum.TextXAlignment.Right
+	score.Parent = row
+	ArcadeUI.Text(score, rowIndex <= 3 and "gold" or "best")
+
+	leaderboardRows[rowIndex] = row
+end
 
 returnHubButton = Instance.new("TextButton")
 returnHubButton.Position = UDim2.fromOffset(360, 390)
@@ -1734,20 +1896,26 @@ applyWindowLayout = function()
 	matchInfoLabel.TextSize = 14
 
 	if customizeButton then
-		customizeButton.Position = UDim2.new(1, -26, 0, 18)
-		customizeButton.Size = UDim2.fromOffset(138, 38)
-		customizeButton.TextSize = 14
+		customizeButton.Position = UDim2.new(1, -224, 0, 18)
+		customizeButton.Size = UDim2.fromOffset(126, 38)
+		customizeButton.TextSize = 12
 	end
 	if coinChipLabel then
 		coinChipLabel.AnchorPoint = Vector2.new(1, 0)
-		coinChipLabel.Position = UDim2.new(1, -320, 0, 18)
-		coinChipLabel.Size = UDim2.fromOffset(150, 38)
-		coinChipLabel.TextSize = 18
+		coinChipLabel.Position = UDim2.new(1, -360, 0, 18)
+		coinChipLabel.Size = UDim2.fromOffset(126, 38)
+		coinChipLabel.TextSize = 15
 	end
 	if resetLayoutButton then
-		resetLayoutButton.Position = UDim2.new(1, -164, 0, 18)
-		resetLayoutButton.Size = UDim2.fromOffset(132, 38)
-		resetLayoutButton.TextSize = 13
+		resetLayoutButton.Position = UDim2.new(1, -90, 0, 18)
+		resetLayoutButton.Size = UDim2.fromOffset(54, 38)
+		resetLayoutButton.Text = "Reset"
+		resetLayoutButton.TextSize = 11
+	end
+	if closeWorkspaceButton then
+		closeWorkspaceButton.Position = UDim2.new(1, -26, 0, 18)
+		closeWorkspaceButton.Size = UDim2.fromOffset(44, 38)
+		closeWorkspaceButton.TextSize = 20
 	end
 	if resizeHandle then
 		resizeHandle.Position = UDim2.new(1, -18, 1, -18)
@@ -1769,6 +1937,9 @@ applyWindowLayout = function()
 	coinStatLabel.Position = UDim2.fromOffset(leftX, 390)
 	coinStatLabel.Size = UDim2.fromOffset(220, 78)
 	coinStatLabel.TextSize = 26
+	rankStatLabel.Position = UDim2.fromOffset(leftX, 484)
+	rankStatLabel.Size = UDim2.fromOffset(220, 78)
+	rankStatLabel.TextSize = 22
 
 	boardFrame.Position = UDim2.fromOffset(centerX, 88)
 	boardFrame.Size = UDim2.fromOffset(boardPixels, boardPixels)
@@ -1902,6 +2073,7 @@ title.InputBegan:Connect(startWorkspaceDrag)
 scoreCard.InputBegan:Connect(startWorkspaceDrag)
 comboBadgeLabel.InputBegan:Connect(startWorkspaceDrag)
 coinStatLabel.InputBegan:Connect(startWorkspaceDrag)
+rankStatLabel.InputBegan:Connect(startWorkspaceDrag)
 side.InputBegan:Connect(startWorkspaceDrag)
 resizeHandle.InputBegan:Connect(startWorkspaceResize)
 
@@ -2030,19 +2202,46 @@ local function playBoardDiff(previous, nextBoard)
 	end
 end
 
+local function clearGlossyBlocks(parent)
+	for _, child in parent:GetChildren() do
+		if child.Name == "GlossyBlock" or child.Name == "GlossyBlockShadow" then
+			child:Destroy()
+		end
+	end
+end
+
+local function setCellGloss(cell, color, state)
+	clearGlossyBlocks(cell)
+
+	if state == "empty" then
+		cell.BackgroundColor3 = customization.boardEmptyColor
+		return
+	end
+
+	cell.BackgroundColor3 = state == "invalid" and Color3.fromRGB(82, 25, 37)
+		or Color3.fromRGB(10, 24, 47)
+	ArcadeUI.GlossyBlock(
+		cell,
+		color,
+		UDim2.new(1, -6, 1, -6),
+		UDim2.fromOffset(3, 3),
+		"GlossyBlock"
+	)
+end
+
 renderBoard = function()
 	for y = 1, Config.BoardSize do
 		for x = 1, Config.BoardSize do
 			local value = currentState.board[y][x]
 			local cell = cells[y][x]
 			if value == false then
-				cell.BackgroundColor3 = customization.boardEmptyColor
+				setCellGloss(cell, customization.boardEmptyColor, "empty")
 			elseif value == "garbage" then
-				cell.BackgroundColor3 = Config.Colors.Garbage
+				setCellGloss(cell, Config.Colors.Garbage, "filled")
 			elseif typeof(value) == "Color3" then
-				cell.BackgroundColor3 = value
+				setCellGloss(cell, value, "filled")
 			else
-				cell.BackgroundColor3 = Config.Colors.Filled
+				setCellGloss(cell, Config.Colors.Filled, "filled")
 			end
 			local gradient = cell:FindFirstChildOfClass("UIGradient")
 			if gradient then
@@ -2084,8 +2283,13 @@ renderBoard = function()
 		local x = hoverX + cell.X
 		local y = hoverY + cell.Y
 		if x >= 1 and x <= Config.BoardSize and y >= 1 and y <= Config.BoardSize then
-			cells[y][x].BackgroundColor3 = canPlace and shape.color or Config.Colors.PreviewInvalid
-			local stroke = cells[y][x]:FindFirstChildOfClass("UIStroke")
+			local previewCell = cells[y][x]
+			setCellGloss(
+				previewCell,
+				canPlace and shape.color or Config.Colors.PreviewInvalid,
+				canPlace and "preview" or "invalid"
+			)
+			local stroke = previewCell:FindFirstChildOfClass("UIStroke")
 			if stroke then
 				stroke.Color = canPlace and Color3.fromRGB(255, 255, 255)
 					or Color3.fromRGB(255, 105, 105)
@@ -2128,17 +2332,16 @@ local function renderShapePreview(preview, shape)
 	local offsetY = math.floor((previewSize - height * tileSize) / 2)
 
 	for _, cell in shape.cells do
-		local tile = Instance.new("Frame")
-		tile.Size = UDim2.fromOffset(tileSize - 3, tileSize - 3)
-		tile.Position = UDim2.fromOffset(
-			offsetX + (cell.X - minX) * tileSize,
-			offsetY + (cell.Y - minY) * tileSize
+		ArcadeUI.GlossyBlock(
+			preview,
+			shape.color,
+			UDim2.fromOffset(tileSize - 3, tileSize - 3),
+			UDim2.fromOffset(
+				offsetX + (cell.X - minX) * tileSize,
+				offsetY + (cell.Y - minY) * tileSize
+			),
+			"GlossyBlock"
 		)
-		tile.BackgroundColor3 = shape.color
-		tile.BorderSizePixel = 0
-		tile.Parent = preview
-		UITheme.corner(tile, 5)
-		UITheme.stroke(tile, shape.color:Lerp(Color3.fromRGB(255, 255, 255), 0.4), 1, 0.25)
 	end
 end
 
@@ -2206,30 +2409,98 @@ renderHand = function()
 			label.Text = shapeText(shape)
 		end
 		renderShapePreview(handPreviews[slot], shape)
-		button.BackgroundColor3 = selectedSlot == slot and customization.accentColor
-			or Color3.fromRGB(31, 38, 52)
+		button.BackgroundColor3 = selectedSlot == slot and Color3.fromRGB(18, 71, 126)
+			or shape and ArcadeUI.Color.inner
+			or Color3.fromRGB(28, 34, 46)
+		button.BackgroundTransparency = shape and 0 or 0.32
+		local stroke = button:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Color = selectedSlot == slot and ArcadeUI.Color.rimBright
+				or shape and Color3.fromRGB(33, 103, 177)
+				or Color3.fromRGB(78, 84, 96)
+			stroke.Thickness = selectedSlot == slot and 4 or 2
+			stroke.Transparency = shape and 0.08 or 0.45
+		end
 	end
 end
 
 local function renderLeaderboard(leaderboard)
-	local lines = { "SERVER TOP" }
+	local currentRank = nil
 
-	for index, entry in leaderboard do
-		if index > 7 then
-			break
+	for index, row in leaderboardRows do
+		local entry = leaderboard and leaderboard[index]
+		row.Visible = entry ~= nil
+		if not entry then
+			continue
 		end
-		local name = entry.name or "Player"
-		local localMarker = entry.userId == player.UserId or name == player.Name
-		local label = localMarker and "YOU" or name
-		table.insert(lines, `{index}. {label}    {entry.score or 0}`)
+
+		local isLocalPlayer = entry.userId == player.UserId or entry.name == player.Name
+		if isLocalPlayer then
+			currentRank = index
+		end
+
+		local rowStroke = row:FindFirstChildOfClass("UIStroke")
+		if rowStroke then
+			rowStroke.Color = isLocalPlayer and ArcadeUI.Color.rimBright
+				or index == 1 and ArcadeUI.Color.gold
+				or index == 2 and ArcadeUI.Color.silver
+				or index == 3 and ArcadeUI.Color.bronze
+				or Color3.fromRGB(31, 90, 151)
+			rowStroke.Thickness = isLocalPlayer and 3 or 1
+			rowStroke.Transparency = isLocalPlayer and 0 or 0.28
+		end
+
+		local rank = row:FindFirstChild("Rank")
+		if rank and rank:IsA("TextLabel") then
+			rank.Text = index <= 3 and tostring(index) or tostring(index)
+			rank.TextColor3 = index == 1 and ArcadeUI.Color.gold
+				or index == 2 and ArcadeUI.Color.silver
+				or index == 3 and ArcadeUI.Color.bronze
+				or ArcadeUI.Color.text
+		end
+
+		local avatar = row:FindFirstChild("Avatar")
+		if avatar and avatar:IsA("Frame") then
+			avatar.BackgroundColor3 = isLocalPlayer and Color3.fromRGB(254, 230, 122)
+				or Color3.fromRGB(32, 73, 118)
+		end
+
+		local nameLabel = row:FindFirstChild("Name")
+		if nameLabel and nameLabel:IsA("TextLabel") then
+			nameLabel.Text = isLocalPlayer and "You" or entry.name or "Player"
+			nameLabel.TextColor3 = isLocalPlayer and ArcadeUI.Color.gold or ArcadeUI.Color.text
+		end
+
+		local score = row:FindFirstChild("Score")
+		if score and score:IsA("TextLabel") then
+			score.Text = tostring(entry.score or 0)
+			score.TextColor3 = index <= 3 and ArcadeUI.Color.gold or ArcadeUI.Color.best
+		end
 	end
 
-	if #lines == 1 then
-		table.insert(lines, "")
-		table.insert(lines, "Finish a run to appear here.")
+	if leaderboardLabel then
+		local emptyLabel = leaderboardLabel:FindFirstChild("Empty")
+		if not emptyLabel then
+			emptyLabel = Instance.new("TextLabel")
+			emptyLabel.Name = "Empty"
+			emptyLabel.BackgroundTransparency = 1
+			emptyLabel.Position = UDim2.fromOffset(24, 108)
+			emptyLabel.Size = UDim2.new(1, -48, 0, 64)
+			emptyLabel.Font = Enum.Font.GothamBold
+			emptyLabel.Text = "Finish a run to appear here."
+			emptyLabel.TextColor3 = ArcadeUI.Color.muted
+			emptyLabel.TextSize = 16
+			emptyLabel.TextWrapped = true
+			emptyLabel.Parent = leaderboardLabel
+		end
+		emptyLabel.Visible = not leaderboard or leaderboard[1] == nil
 	end
 
-	leaderboardLabel.Text = table.concat(lines, "\n")
+	if rankStatLabel then
+		rankStatLabel.Text = currentRank and `TROPHY\nRANK #{currentRank}` or "TROPHY\nRANK --"
+	end
+
+	leaderboardLabel.Text = ""
 end
 
 local function renderProgression()

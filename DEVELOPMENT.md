@@ -2,6 +2,61 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day37.2 PC Arcade UI Visual Rebuild - 2026-08-12
+
+### Completed
+
+- Continued from commit `52e9c39` without amending Day37 or Day37.1.
+- Kept locked Day37.1 interaction behavior: safe-area dragging, drag blockers, proportional resize, Reset Layout, screen clamping, Return Hub, Play Again, and board input wiring remain intact.
+- Added `src/client/ui/ArcadeUI.luau` for reusable Roblox-native arcade styling:
+  - molded navy panels
+  - arcade text styling
+  - arcade buttons
+  - stat cards
+  - glossy blocks
+  - board cells
+  - piece slots
+  - leaderboard rows
+- Restyled `PCPuzzleWorkspace` into a darker rounded arcade shell with layered blue rim, top highlight, slim draggable title, centered grip dots, and a close button that uses the existing server leave flow.
+- Rebuilt the left stats stack with arcade-styled score/best, combo, coins, and honest rank card.
+- Restyled the 8x8 board with a thick navy bezel, cyan-blue rim, quieter empty cells, and glossy child blocks for filled/preview/invalid cells.
+- Restyled the three-piece tray into one wide arcade panel with three piece slots and code-rendered glossy previews.
+- Replaced the old single text Server Top label with code-native rows that render real leaderboard entries, highlight the local player, and show an honest empty state.
+- Preserved real data bindings for score, best score, combo, coins, derived current-server rank, board state, pieces, selected piece, and Server Top entries.
+- Built `BlockBlastBattle-Day37-2.rbxl`.
+
+### Current State
+
+- Day37.2 is ready for visual inspection in Roblox Studio.
+- No runtime Studio screenshot was captured by Codex in this environment.
+- The UI is still Roblox-native, not a pasted flat image, so it should remain interactive after dragging and resizing.
+
+### Known Issues
+
+- Avatar thumbnails in Server Top are represented by code-native avatar placeholders; no external image assets or thumbnail APIs were added in Day37.2.
+- The UI is visually closer to the references but still lacks true bitmap-level beveled art polish.
+- Manual Studio proof is required for final appearance, clipping checks, resize extremes, and piece placement after resizing.
+
+### Required Manual Checks
+
+1. Open `BlockBlastBattle-Day37-2.rbxl`.
+2. Start Solo Puzzle and capture the default PC workspace.
+3. Compare the outer frame, left stat cards, board, piece tray, and Server Top against the attached arcade references.
+4. Drag from safe areas and confirm interactive controls still block dragging.
+5. Resize to minimum and maximum and confirm no clipping or overlap.
+6. Place all three pieces after moving and resizing.
+7. Confirm glossy preview and invalid placement states remain aligned with board cells.
+8. Confirm score, best, combo, coins, and Server Top rows update from real gameplay.
+9. Use Reset Layout.
+10. Use Close/Return Hub, reopen Solo Puzzle, and confirm no duplicate HUD or input handlers.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with 0 errors and 0 warnings; Selene used its cached Roblox standard library after failing to generate a fresh API dump.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day37-2.rbxl` passed.
+- `git diff --check` passed with the repo's existing LF-to-CRLF working-copy warning.
+
 ## Day37.1 PC Window Dragging and Resizing - 2026-08-12
 
 ### Completed
