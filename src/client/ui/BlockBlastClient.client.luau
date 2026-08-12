@@ -68,10 +68,12 @@ local matchInfoLabel = nil
 local statusLabel = nil
 local leaderboardLabel = nil
 local customizeButton = nil
+local resetLayoutButton = nil
 local returnHubButton = nil
 local playAgainButton = nil
 local rotatePieceButton = nil
 local rerollPieceButton = nil
+local resizeHandle = nil
 local banner = nil
 local diagnosticsPanel = nil
 local diagnosticsLabel = nil
@@ -103,8 +105,12 @@ local pulseHandSlot = nil
 
 local DEFAULT_WINDOW_POSITION = UDim2.new(0.5, 0, 0.5, 18)
 local DEFAULT_WINDOW_SIZE = Vector2.new(1120, 650)
+local DEFAULT_WORKSPACE_SCALE = 1
+local MIN_WORKSPACE_SCALE = 0.78
+local MAX_WORKSPACE_SCALE = 1.22
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local workspaceScale = DEFAULT_WORKSPACE_SCALE
 
 local function isUiReducedMotion()
 	return reducedMotion
@@ -114,6 +120,11 @@ local function styleButton(button, variant)
 	UITheme.button(button, variant)
 	UITheme.attachButtonFeedback(button, isUiReducedMotion)
 	return button
+end
+
+local function markInteractive(guiObject)
+	guiObject:SetAttribute("BlocksWorkspaceDrag", true)
+	return guiObject
 end
 
 local themePresets = {
@@ -371,7 +382,12 @@ local function applyUiScale()
 	)
 	local nextScale = automaticScale * uiScale
 	if rootScale then
-		rootScale.Scale = math.clamp(math.min(nextScale, rootFitScale), 0.72, 1.12)
+		local lowerBound = math.min(MIN_WORKSPACE_SCALE, rootFitScale)
+		rootScale.Scale = math.clamp(
+			math.min(nextScale * workspaceScale, rootFitScale),
+			lowerBound,
+			MAX_WORKSPACE_SCALE
+		)
 	end
 	if homePanelController then
 		homePanelController:RefreshResponsiveLayout(screenSize, nextScale)
@@ -1176,6 +1192,21 @@ customizeButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 customizeButton.TextSize = 14
 customizeButton.Parent = root
 styleButton(customizeButton, "primary")
+markInteractive(customizeButton)
+
+resetLayoutButton = Instance.new("TextButton")
+resetLayoutButton.AnchorPoint = Vector2.new(1, 0)
+resetLayoutButton.Position = UDim2.new(1, -174, 0, 18)
+resetLayoutButton.Size = UDim2.fromOffset(126, 38)
+resetLayoutButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+resetLayoutButton.BorderSizePixel = 0
+resetLayoutButton.Font = Enum.Font.GothamBold
+resetLayoutButton.Text = "Reset Layout"
+resetLayoutButton.TextColor3 = Color3.fromRGB(245, 247, 251)
+resetLayoutButton.TextSize = 13
+resetLayoutButton.Parent = root
+styleButton(resetLayoutButton, "secondary")
+markInteractive(resetLayoutButton)
 
 applyBoardSkin = function()
 	local theme = themePresets[themeIndex]
@@ -1222,6 +1253,14 @@ customizeButton.Activated:Connect(function()
 	applyTheme()
 	playSound("Button")
 	saveSettings()
+end)
+
+resetLayoutButton.Activated:Connect(function()
+	playSound("Button")
+	workspaceScale = DEFAULT_WORKSPACE_SCALE
+	root.Position = DEFAULT_WINDOW_POSITION
+	applyUiScale()
+	clampWindowToScreen()
 end)
 
 local title = Instance.new("TextButton")
@@ -1387,6 +1426,7 @@ local function selectFirstAvailablePiece()
 end
 
 local boardFrame = Instance.new("Frame")
+boardFrame:SetAttribute("BlocksWorkspaceDrag", true)
 boardFrame.Position = UDim2.fromOffset(24, 104)
 boardFrame.Size = UDim2.fromOffset(304, 304)
 boardFrame.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
@@ -1418,6 +1458,7 @@ for y = 1, Config.BoardSize do
 		button.Text = ""
 		button.AutoButtonColor = false
 		button.Parent = boardFrame
+		markInteractive(button)
 		UITheme.corner(button, 8)
 		UITheme.stroke(button, Color3.fromRGB(36, 59, 94), 2, 0.12)
 		UITheme.gradient(button, Color3.fromRGB(31, 43, 66), Color3.fromRGB(13, 24, 45), 90)
@@ -1510,6 +1551,7 @@ for slot = 1, Config.InventorySize do
 	button.Text = ""
 	button.Parent = side
 	styleButton(button, "secondary")
+	markInteractive(button)
 	local buttonStroke = button:FindFirstChildOfClass("UIStroke")
 	if buttonStroke then
 		buttonStroke.Thickness = 3
@@ -1565,6 +1607,7 @@ leaderboardLabel.TextSize = 16
 leaderboardLabel.TextXAlignment = Enum.TextXAlignment.Left
 leaderboardLabel.TextYAlignment = Enum.TextYAlignment.Top
 leaderboardLabel.Parent = root
+markInteractive(leaderboardLabel)
 UITheme.text(leaderboardLabel, "muted")
 UITheme.corner(leaderboardLabel, 18)
 UITheme.stroke(leaderboardLabel, Color3.fromRGB(39, 178, 255), 4, 0.08)
@@ -1581,6 +1624,7 @@ returnHubButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 returnHubButton.TextSize = 14
 returnHubButton.Parent = root
 styleButton(returnHubButton, "secondary")
+markInteractive(returnHubButton)
 
 playAgainButton = Instance.new("TextButton")
 playAgainButton.Position = UDim2.fromOffset(492, 390)
@@ -1594,6 +1638,7 @@ playAgainButton.TextSize = 14
 playAgainButton.Visible = false
 playAgainButton.Parent = root
 styleButton(playAgainButton, "primary")
+markInteractive(playAgainButton)
 
 rotatePieceButton = Instance.new("TextButton")
 rotatePieceButton.Position = UDim2.fromOffset(360, 352)
@@ -1607,6 +1652,7 @@ rotatePieceButton.TextSize = 14
 rotatePieceButton.Visible = false
 rotatePieceButton.Parent = root
 styleButton(rotatePieceButton, "primary")
+markInteractive(rotatePieceButton)
 
 rerollPieceButton = Instance.new("TextButton")
 rerollPieceButton.Position = UDim2.fromOffset(492, 352)
@@ -1620,6 +1666,23 @@ rerollPieceButton.TextSize = 14
 rerollPieceButton.Visible = false
 rerollPieceButton.Parent = root
 styleButton(rerollPieceButton, "primary")
+markInteractive(rerollPieceButton)
+
+resizeHandle = Instance.new("TextButton")
+resizeHandle.Name = "WorkspaceResizeHandle"
+resizeHandle.AnchorPoint = Vector2.new(1, 1)
+resizeHandle.Position = UDim2.new(1, -18, 1, -18)
+resizeHandle.Size = UDim2.fromOffset(38, 38)
+resizeHandle.BackgroundColor3 = Color3.fromRGB(12, 32, 61)
+resizeHandle.BorderSizePixel = 0
+resizeHandle.Font = Enum.Font.GothamBlack
+resizeHandle.Text = "Resize"
+resizeHandle.TextColor3 = Color3.fromRGB(245, 247, 251)
+resizeHandle.TextSize = 11
+resizeHandle.Parent = root
+styleButton(resizeHandle, "secondary")
+UITheme.stroke(resizeHandle, Color3.fromRGB(47, 199, 255), 3, 0.06)
+markInteractive(resizeHandle)
 
 local function clampNumber(value, minimum, maximum)
 	return math.max(minimum, math.min(maximum, value))
@@ -1677,9 +1740,18 @@ applyWindowLayout = function()
 	end
 	if coinChipLabel then
 		coinChipLabel.AnchorPoint = Vector2.new(1, 0)
-		coinChipLabel.Position = UDim2.new(1, -174, 0, 18)
-		coinChipLabel.Size = UDim2.fromOffset(170, 38)
+		coinChipLabel.Position = UDim2.new(1, -320, 0, 18)
+		coinChipLabel.Size = UDim2.fromOffset(150, 38)
 		coinChipLabel.TextSize = 18
+	end
+	if resetLayoutButton then
+		resetLayoutButton.Position = UDim2.new(1, -164, 0, 18)
+		resetLayoutButton.Size = UDim2.fromOffset(132, 38)
+		resetLayoutButton.TextSize = 13
+	end
+	if resizeHandle then
+		resizeHandle.Position = UDim2.new(1, -18, 1, -18)
+		resizeHandle.Size = UDim2.fromOffset(50, 34)
 	end
 
 	scoreCard.Position = UDim2.fromOffset(leftX, 92)
@@ -1789,30 +1861,49 @@ rerollPieceButton.Activated:Connect(function()
 end)
 
 local draggingWindow = false
+local resizingWindow = false
 local inputStartPosition = nil
 local windowStartPosition = nil
+local resizeStartScale = nil
 
-local function stopWorkspaceDrag()
+local function stopWorkspaceInteraction()
 	draggingWindow = false
+	resizingWindow = false
 	inputStartPosition = nil
 	windowStartPosition = nil
+	resizeStartScale = nil
 end
 
-title.InputBegan:Connect(function(input)
+local function startWorkspaceDrag(input)
 	if input.UserInputType ~= Enum.UserInputType.MouseButton1 or not root.Visible then
 		return
 	end
 
 	draggingWindow = true
+	resizingWindow = false
 	inputStartPosition = input.Position
 	windowStartPosition = root.Position
-end)
+end
 
-title.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		stopWorkspaceDrag()
+local function startWorkspaceResize(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1 or not root.Visible then
+		return
 	end
-end)
+
+	resizingWindow = true
+	draggingWindow = false
+	inputStartPosition = input.Position
+	windowStartPosition = root.Position
+	resizeStartScale = workspaceScale
+end
+
+root.InputBegan:Connect(startWorkspaceDrag)
+title.InputBegan:Connect(startWorkspaceDrag)
+scoreCard.InputBegan:Connect(startWorkspaceDrag)
+comboBadgeLabel.InputBegan:Connect(startWorkspaceDrag)
+coinStatLabel.InputBegan:Connect(startWorkspaceDrag)
+side.InputBegan:Connect(startWorkspaceDrag)
+resizeHandle.InputBegan:Connect(startWorkspaceResize)
 
 UserInputService.InputChanged:Connect(function(input)
 	if input.UserInputType ~= Enum.UserInputType.MouseMovement then
@@ -1828,12 +1919,19 @@ UserInputService.InputChanged:Connect(function(input)
 			windowStartPosition.Y.Offset + delta.Y
 		)
 		clampWindowToScreen()
+	elseif resizingWindow and inputStartPosition and resizeStartScale then
+		local delta = input.Position - inputStartPosition
+		local averageDelta = (delta.X + delta.Y) / 2
+		local nextScale = resizeStartScale + (averageDelta / 520)
+		workspaceScale = clampNumber(nextScale, MIN_WORKSPACE_SCALE, MAX_WORKSPACE_SCALE)
+		applyUiScale()
+		clampWindowToScreen()
 	end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		stopWorkspaceDrag()
+		stopWorkspaceInteraction()
 	end
 end)
 
@@ -2224,7 +2322,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	currentState = nextState
 
 	if not currentState then
-		stopWorkspaceDrag()
+		stopWorkspaceInteraction()
 		root.Visible = false
 		rotatePieceButton.Visible = false
 		rerollPieceButton.Visible = false

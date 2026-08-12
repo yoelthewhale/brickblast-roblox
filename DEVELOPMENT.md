@@ -2,6 +2,51 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day37.1 PC Window Dragging and Resizing - 2026-08-12
+
+### Completed
+
+- Continued from commit `8b0f80b` without amending Day37.
+- Kept the hub map frozen; no world, map, lighting, scenery, gameplay rules, scoring, DataStore, receipt, cosmetic, or mobile work was changed.
+- Expanded PC Solo Puzzle workspace dragging beyond the title bar:
+  - `PCPuzzleWorkspace` background can start dragging.
+  - Score, combo, coin, and piece-tray panel backgrounds can start dragging.
+  - Board cells, piece buttons, action buttons, leaderboard panel, reset button, theme button, and resize handle are marked as interactive blockers.
+- Added a bottom-right `WorkspaceResizeHandle`.
+- Implemented proportional resize by adjusting a workspace-level scale value instead of stretching individual panels.
+- Added `Reset Layout`, which restores the default centered position and default workspace scale without touching score, board state, or the active run.
+- Preserved the existing board-cell buttons and Roblox UI absolute positioning, so hover and placement continue to use the actual cell controls after moving or resizing.
+- Built `BlockBlastBattle-Day37-1.rbxl`.
+
+### Current State
+
+- Day37.1 is ready for PC drag-and-resize inspection in Studio.
+- Runtime Studio testing and screenshots were not captured by Codex in this environment.
+
+### Known Issues
+
+- Manual Studio proof is still required for drag-from-empty-space behavior, resize edge cases, and board placement after resizing.
+- Resizing is intentionally PC mouse only; touch, gamepad, saved size, minimize, maximize, and mobile-specific behavior remain out of scope.
+
+### Required Manual Checks
+
+1. Open `BlockBlastBattle-Day37-1.rbxl`.
+2. Start Solo Puzzle and drag from the title bar.
+3. Drag from empty workspace background, score/combo/coins panel background, and empty piece-tray background.
+4. Confirm board cells, piece buttons, Return Hub, Play Again, Theme, Reset Layout, leaderboard, and resize handle do not drag the workspace.
+5. Resize smaller and larger from the bottom-right handle.
+6. Drag and resize against all four screen edges and confirm the workspace remains recoverable.
+7. After moving and resizing, place all three pieces and confirm hover/preview/placement remain aligned.
+8. Use Reset Layout and confirm only position/scale reset.
+9. Return Hub, reopen Solo Puzzle, and confirm no duplicate input behavior.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with 0 errors and 0 warnings; Selene used its cached Roblox standard library after failing to generate a fresh API dump.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day37-1.rbxl` passed.
+- `git diff --check` passed with the repo's existing LF-to-CRLF working-copy warning.
+
 ## Day37 PC Puzzle Workspace Foundation - 2026-08-12
 
 ### Completed

@@ -43,6 +43,9 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Validate Day37 draggable PC puzzle workspace in Studio | High | Playtest | Bear / Codex | 2026-08-12 |
 | Capture Day37 default and dragged PC puzzle workspace screenshots | High | Playtest | Bear / Codex | 2026-08-12 |
 | Confirm Day37 board and piece controls do not drag the workspace | High | Playtest | Bear / Codex | 2026-08-12 |
+| Validate Day37.1 PC workspace drag from safe empty areas | High | Playtest | Bear / Codex | 2026-08-12 |
+| Validate Day37.1 proportional resize and Reset Layout | High | Playtest | Bear / Codex | 2026-08-12 |
+| Confirm Day37.1 piece placement remains aligned after move and resize | High | Playtest | Bear / Codex | 2026-08-12 |
 | Upload Day35 local PNG candidates and enter returned Roblox asset IDs | High | Ready | Bear / Codex | 2026-08-11 |
 | Refine Day35 toybox density, bevels, and glossy panel assets after screenshot review | High | Ready | Codex | 2026-08-11 |
 | Add server/global/weekly solo score leaderboards | High | Ready | Codex | 2026-08-10 |
@@ -118,6 +121,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Day36.3 debris removal requires manual Studio proof because Codex could not capture Play-mode screenshots here | High | Playtest | Bear / Codex | 2026-08-10 |
 | Day36.4 visual stopping point requires manual Studio proof because Codex could not capture Play-mode screenshots here | High | Playtest | Bear / Codex | 2026-08-11 |
 | Day37 draggable PC puzzle workspace requires manual Studio proof because Codex could not capture Play-mode screenshots here | High | Playtest | Bear / Codex | 2026-08-12 |
+| Day37.1 resize and safe-area drag behavior requires manual Studio proof because Codex could not capture Play-mode screenshots here | High | Playtest | Bear / Codex | 2026-08-12 |
 | Legacy Battle/Story internal names remain in some remotes and modules after Solo pivot | Medium | Known | Codex | 2026-08-11 |
 | Original `.rbxl` file may stay locked while Studio has it open | Medium | Known | Bear / Codex | 2026-07-29 |
 | Need confirm Rojo plugin connects to Day 2 place | High | Playtest | Bear / Codex | 2026-07-29 |
@@ -132,7 +136,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 ## Playtest Checklist
 
 - Start Rojo server from VS Code or `start-rojo.ps1`.
-- Open `BlockBlastBattle-Day37.rbxl` in Roblox Studio for the current PC puzzle workspace checkpoint.
+- Open `BlockBlastBattle-Day37-1.rbxl` in Roblox Studio for the current PC drag-and-resize checkpoint.
 - Before pressing Play or publishing, confirm Roblox Studio's top-right account says `CAPTINNINJATACO`.
 - Press Play and confirm the character lands on the raised safe solo spawn plaza, not inside Terrain or rock.
 - Reset the character and confirm respawn returns to the same safe plaza.
@@ -145,8 +149,8 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 - Clear a row/column and confirm line-clear score/feedback.
 - Trigger out-of-moves and confirm the result panel shows score, coins, XP, best score, and `Play Again`.
 - Press `Play Again` and confirm a fresh Solo run starts.
-- Capture the Day37 default PC puzzle workspace and dragged workspace screenshots listed in `DEVELOPMENT.md`.
-- Confirm the Day37 workspace opens centered, drags only from the title bar, and keeps board/piece placement functional.
+- Capture the Day37.1 default, dragged, resized-smaller, and resized-larger PC puzzle workspace screenshots listed in `DEVELOPMENT.md`.
+- Confirm the Day37.1 workspace drags from safe empty areas, resizes proportionally, resets layout, and keeps board/piece placement functional.
 - Connect the Rojo plugin to `localhost:34872`.
 - Confirm the loading splash appears briefly and fades after game state arrives.
 - Press Play and confirm the hub appears.
