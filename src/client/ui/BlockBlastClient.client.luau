@@ -1377,11 +1377,12 @@ comboBadgeLabel.Font = Enum.Font.GothamBlack
 comboBadgeLabel.Text = "COMBO\nx1"
 comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 comboBadgeLabel.TextSize = 28
-comboBadgeLabel.TextStrokeColor3 = Color3.fromRGB(31, 9, 69)
-comboBadgeLabel.TextStrokeTransparency = 0.2
+comboBadgeLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+comboBadgeLabel.TextStrokeTransparency = 0.05
 comboBadgeLabel.Parent = root
 ArcadeUI.StatCard(comboBadgeLabel)
 ArcadeUI.Text(comboBadgeLabel, "combo")
+comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 
 for sparkleIndex = 1, 4 do
 	local sparkle = Instance.new("Frame")
@@ -1405,11 +1406,12 @@ coinStatLabel.Font = Enum.Font.GothamBlack
 coinStatLabel.Text = "COINS\n0"
 coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
 coinStatLabel.TextSize = 26
-coinStatLabel.TextStrokeColor3 = Color3.fromRGB(42, 28, 10)
-coinStatLabel.TextStrokeTransparency = 0.35
+coinStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+coinStatLabel.TextStrokeTransparency = 0.08
 coinStatLabel.Parent = root
 ArcadeUI.StatCard(coinStatLabel)
 ArcadeUI.Text(coinStatLabel, "gold")
+coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
 
 rankStatLabel = Instance.new("TextLabel")
 rankStatLabel.BackgroundTransparency = 0.04
@@ -1420,11 +1422,12 @@ rankStatLabel.Font = Enum.Font.GothamBlack
 rankStatLabel.Text = "TROPHY\nRANK --"
 rankStatLabel.TextColor3 = ArcadeUI.Color.gold
 rankStatLabel.TextSize = 22
-rankStatLabel.TextStrokeColor3 = Color3.fromRGB(42, 28, 10)
-rankStatLabel.TextStrokeTransparency = 0.35
+rankStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+rankStatLabel.TextStrokeTransparency = 0.08
 rankStatLabel.Parent = root
 ArcadeUI.StatCard(rankStatLabel)
 ArcadeUI.Text(rankStatLabel, "gold")
+rankStatLabel.TextColor3 = ArcadeUI.Color.gold
 
 coinChipLabel = Instance.new("TextLabel")
 coinChipLabel.AnchorPoint = Vector2.new(1, 0)
@@ -1510,6 +1513,7 @@ boardFrame.Position = UDim2.fromOffset(24, 104)
 boardFrame.Size = UDim2.fromOffset(304, 304)
 boardFrame.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
 boardFrame.BackgroundTransparency = 0
+boardFrame.ClipsDescendants = true
 boardFrame.Parent = root
 ArcadeUI.Panel(boardFrame, {
 	radius = 28,
@@ -1872,12 +1876,12 @@ applyWindowLayout = function()
 	local leftX = 24
 	local centerX = 284
 	local rightX = 744
-	local boardPixels = 420
-	local innerBoardPixels = boardPixels - 32
-	local cellPixels =
-		math.floor((innerBoardPixels - ((Config.BoardSize - 1) * 4)) / Config.BoardSize)
-	innerBoardPixels = (cellPixels * Config.BoardSize) + ((Config.BoardSize - 1) * 4)
-	boardPixels = innerBoardPixels + 32
+	local boardPaddingPixels = 18
+	local boardCellPadding = 4
+	local cellPixels = 45
+	local innerBoardPixels = (cellPixels * Config.BoardSize)
+		+ ((Config.BoardSize - 1) * boardCellPadding)
+	local boardPixels = innerBoardPixels + (boardPaddingPixels * 2)
 
 	title.Visible = true
 	title.Position = UDim2.fromOffset(24, 16)
@@ -1934,20 +1938,30 @@ applyWindowLayout = function()
 	comboBadgeLabel.Position = UDim2.fromOffset(leftX, 262)
 	comboBadgeLabel.Size = UDim2.fromOffset(220, 112)
 	comboBadgeLabel.TextSize = 30
+	comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	comboBadgeLabel.TextStrokeTransparency = 0.05
 	coinStatLabel.Position = UDim2.fromOffset(leftX, 390)
 	coinStatLabel.Size = UDim2.fromOffset(220, 78)
 	coinStatLabel.TextSize = 26
+	coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
+	coinStatLabel.TextStrokeTransparency = 0.08
 	rankStatLabel.Position = UDim2.fromOffset(leftX, 484)
 	rankStatLabel.Size = UDim2.fromOffset(220, 78)
 	rankStatLabel.TextSize = 22
+	rankStatLabel.TextColor3 = ArcadeUI.Color.gold
+	rankStatLabel.TextStrokeTransparency = 0.08
 
 	boardFrame.Position = UDim2.fromOffset(centerX, 88)
 	boardFrame.Size = UDim2.fromOffset(boardPixels, boardPixels)
 	boardLayout.CellSize = UDim2.fromOffset(cellPixels, cellPixels)
-	boardLayout.CellPadding = UDim2.fromOffset(4, 4)
+	boardLayout.CellPadding = UDim2.fromOffset(boardCellPadding, boardCellPadding)
+	boardPadding.PaddingTop = UDim.new(0, boardPaddingPixels)
+	boardPadding.PaddingBottom = UDim.new(0, boardPaddingPixels)
+	boardPadding.PaddingLeft = UDim.new(0, boardPaddingPixels)
+	boardPadding.PaddingRight = UDim.new(0, boardPaddingPixels)
 
 	local sideWidth = boardPixels
-	side.Position = UDim2.fromOffset(centerX, 530)
+	side.Position = UDim2.fromOffset(centerX, 548)
 	side.Size = UDim2.fromOffset(sideWidth, 98)
 	statusLabel.Position = UDim2.fromOffset(18, 10)
 	statusLabel.Size = UDim2.fromOffset(sideWidth - 36, 24)

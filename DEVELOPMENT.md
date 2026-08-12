@@ -2,6 +2,50 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day37.2.1 PC UI Layout Bug Fix - 2026-08-12
+
+### Completed
+
+- Continued from commit `a75efb9` without amending Day37.2.
+- Inspected Yoel's runtime screenshot and fixed only the visible layout/contrast bugs reported.
+- Traced the extra visible board cells to layout overflow, not logical board generation:
+  - the board still creates cells only through `for y = 1, Config.BoardSize` and `for x = 1, Config.BoardSize`
+  - Day37.2 board math used a board frame that did not clip descendants
+  - glossy cell children and shadows could visibly extend below the board surface
+  - the piece tray began too close to the board, making the overflow read as extra cells behind the tray
+- Fixed board sizing math:
+  - cell size is `45`
+  - padding between cells is `4`
+  - board padding is `18`
+  - visible board size is `(8 * 45) + (7 * 4) + (2 * 18) = 424`
+- Added `boardFrame.ClipsDescendants = true` as a safety boundary after fixing the frame sizing math.
+- Moved the piece tray lower to create clean spacing below the board at default, minimum, and maximum workspace scale.
+- Fixed Combo, Coins, and Rank card contrast by forcing readable final text colors and stroke transparency after arcade helper styling and during layout refresh.
+- Built `BlockBlastBattle-Day37-2-1.rbxl`.
+
+### Current State
+
+- Day37.2.1 should show exactly 8 visible board rows and 8 visible board columns, with no cells leaking below the board.
+- The logical board remains exactly 8x8 and gameplay code was not changed.
+- Runtime Studio verification is still required because Codex could not capture a Play-mode screenshot here.
+
+### Required Manual Checks
+
+1. Open `BlockBlastBattle-Day37-2-1.rbxl`.
+2. Start Solo Puzzle and confirm exactly 64 visible cells.
+3. Confirm no board cell or glossy shadow appears beneath the board or behind the piece tray.
+4. Resize to `0.78x`, default, and `1.22x` and confirm board/tray spacing stays clean.
+5. Confirm Combo, Coins, and Rank text remain readable.
+6. Move and resize the workspace, then place pieces.
+7. Return Hub and reopen Solo Puzzle.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with 0 errors and 0 warnings; Selene used its cached Roblox standard library after failing to generate a fresh API dump.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day37-2-1.rbxl` passed.
+- `git diff --check` passed with the repo's existing LF-to-CRLF working-copy warning.
+
 ## Day37.2 PC Arcade UI Visual Rebuild - 2026-08-12
 
 ### Completed
