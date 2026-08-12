@@ -1,4 +1,5 @@
 local Players = game:GetService("Players")
+local GuiService = game:GetService("GuiService")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -59,6 +60,7 @@ local customization = {
 local scoreLabel = nil
 local bestScoreLabel = nil
 local comboBadgeLabel = nil
+local coinStatLabel = nil
 local coinChipLabel = nil
 local timerLabel = nil
 local progressionLabel = nil
@@ -70,13 +72,6 @@ local returnHubButton = nil
 local playAgainButton = nil
 local rotatePieceButton = nil
 local rerollPieceButton = nil
-local minimizeButton = nil
-local resetLayoutButton = nil
-local resizeHandle = nil
-local battleDock = nil
-local dockStatusLabel = nil
-local openBoardButton = nil
-local dockReturnButton = nil
 local banner = nil
 local diagnosticsPanel = nil
 local diagnosticsLabel = nil
@@ -97,7 +92,6 @@ local tutorialManuallyOpened = false
 local cosmeticPreviewSnapshot = nil
 local root = nil
 local rootScale = nil
-local dockScale = nil
 local bannerScale = nil
 local clampWindowToScreen = nil
 local applyWindowLayout = nil
@@ -107,11 +101,8 @@ local renderHand = nil
 local renderDiagnostics = nil
 local pulseHandSlot = nil
 
-local DEFAULT_WINDOW_POSITION = UDim2.new(0.5, -500, 0.5, 0)
-local DEFAULT_WINDOW_SIZE = Vector2.new(1000, 650)
-local MIN_WINDOW_SIZE = Vector2.new(380, 540)
-local MAX_WINDOW_SIZE = Vector2.new(1240, 820)
-local COMPACT_WINDOW_WIDTH = 700
+local DEFAULT_WINDOW_POSITION = UDim2.new(0.5, 0, 0.5, 18)
+local DEFAULT_WINDOW_SIZE = Vector2.new(1120, 650)
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
@@ -363,25 +354,21 @@ end
 
 local function applyUiScale()
 	local screenSize = gui.AbsoluteSize
-	if root and screenSize.X < 620 and root.Size.X.Offset > COMPACT_WINDOW_WIDTH then
-		local compactWidth =
-			math.clamp(screenSize.X - 24, MIN_WINDOW_SIZE.X, COMPACT_WINDOW_WIDTH - 1)
-		local compactHeight = math.clamp(screenSize.Y - 64, MIN_WINDOW_SIZE.Y, MAX_WINDOW_SIZE.Y)
-		root.Size = UDim2.fromOffset(compactWidth, compactHeight)
-		if applyWindowLayout then
-			applyWindowLayout()
-		end
-	end
-
 	local automaticScale = 1
-	if screenSize.X < 720 or screenSize.Y < 560 then
-		automaticScale = 0.86
-	elseif screenSize.X < 980 then
-		automaticScale = 0.88
+	if screenSize.X < 1180 or screenSize.Y < 720 then
+		automaticScale = 0.92
+	elseif screenSize.X < 1366 then
+		automaticScale = 0.96
 	end
 
-	local rootFitScale = math.min(1, (screenSize.X - 16) / math.max(1, root.Size.X.Offset))
-	local dockFitScale = math.min(1, (screenSize.X - 16) / 260)
+	local _, bottomRightInset = GuiService:GetGuiInset()
+	local usableWidth = math.max(1, screenSize.X - 32)
+	local usableHeight = math.max(1, screenSize.Y - bottomRightInset.Y - 32)
+	local rootFitScale = math.min(
+		1,
+		usableWidth / math.max(1, root.Size.X.Offset),
+		usableHeight / math.max(1, root.Size.Y.Offset)
+	)
 	local nextScale = automaticScale * uiScale
 	if rootScale then
 		rootScale.Scale = math.clamp(math.min(nextScale, rootFitScale), 0.72, 1.12)
@@ -389,8 +376,8 @@ local function applyUiScale()
 	if homePanelController then
 		homePanelController:RefreshResponsiveLayout(screenSize, nextScale)
 	end
-	if dockScale then
-		dockScale.Scale = math.clamp(math.min(nextScale, dockFitScale), 0.78, 1.12)
+	if clampWindowToScreen then
+		clampWindowToScreen()
 	end
 	if bannerScale then
 		bannerScale.Scale = math.max(0.82, nextScale)
@@ -806,7 +793,7 @@ hudController = HUDController.new(gui, {
 		play = function()
 			if currentState then
 				root.Visible = true
-				battleDock.Visible = false
+				clampWindowToScreen()
 				return
 			end
 			if
@@ -934,11 +921,12 @@ hudController = HUDController.new(gui, {
 })
 
 root = Instance.new("Frame")
-root.AnchorPoint = Vector2.new(0, 0.5)
+root.Name = "PCPuzzleWorkspace"
+root.AnchorPoint = Vector2.new(0.5, 0.5)
 root.Position = DEFAULT_WINDOW_POSITION
 root.Size = UDim2.fromOffset(DEFAULT_WINDOW_SIZE.X, DEFAULT_WINDOW_SIZE.Y)
 root.BackgroundColor3 = Color3.fromRGB(10, 17, 34)
-root.BackgroundTransparency = 0.12
+root.BackgroundTransparency = 0.06
 root.BorderSizePixel = 0
 root.Visible = false
 root.Parent = gui
@@ -949,7 +937,7 @@ UITheme.panel(root, {
 	strokeTransparency = 0.16,
 	radius = 34,
 })
-root.BackgroundTransparency = 0.28
+root.BackgroundTransparency = 0.06
 local rootStroke = root:FindFirstChildOfClass("UIStroke")
 if rootStroke then
 	rootStroke.Thickness = 6
@@ -958,61 +946,6 @@ end
 rootScale = Instance.new("UIScale")
 rootScale.Scale = 1
 rootScale.Parent = root
-
-battleDock = Instance.new("Frame")
-battleDock.Position = UDim2.fromOffset(18, 88)
-battleDock.Size = UDim2.fromOffset(260, 116)
-battleDock.BackgroundColor3 = Color3.fromRGB(13, 22, 43)
-battleDock.BackgroundTransparency = 0.02
-battleDock.BorderSizePixel = 0
-battleDock.Visible = false
-battleDock.Parent = gui
-UITheme.panel(battleDock, {
-	color = Color3.fromRGB(13, 22, 43),
-	bottomColor = Color3.fromRGB(7, 12, 25),
-	strokeColor = Color3.fromRGB(48, 190, 255),
-	strokeTransparency = 0.04,
-})
-
-dockScale = Instance.new("UIScale")
-dockScale.Scale = 1
-dockScale.Parent = battleDock
-
-dockStatusLabel = Instance.new("TextLabel")
-dockStatusLabel.BackgroundTransparency = 1
-dockStatusLabel.Position = UDim2.fromOffset(14, 10)
-dockStatusLabel.Size = UDim2.fromOffset(232, 36)
-dockStatusLabel.Font = Enum.Font.GothamBold
-dockStatusLabel.Text = "Solo run active"
-dockStatusLabel.TextColor3 = Color3.fromRGB(245, 247, 251)
-dockStatusLabel.TextSize = 16
-dockStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-dockStatusLabel.TextWrapped = true
-dockStatusLabel.Parent = battleDock
-
-openBoardButton = Instance.new("TextButton")
-openBoardButton.Position = UDim2.fromOffset(14, 58)
-openBoardButton.Size = UDim2.fromOffset(110, 38)
-openBoardButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
-openBoardButton.BorderSizePixel = 0
-openBoardButton.Font = Enum.Font.GothamBold
-openBoardButton.Text = "Open Board"
-openBoardButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-openBoardButton.TextSize = 14
-openBoardButton.Parent = battleDock
-styleButton(openBoardButton, "primary")
-
-dockReturnButton = Instance.new("TextButton")
-dockReturnButton.Position = UDim2.fromOffset(136, 58)
-dockReturnButton.Size = UDim2.fromOffset(110, 38)
-dockReturnButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
-dockReturnButton.BorderSizePixel = 0
-dockReturnButton.Font = Enum.Font.GothamBold
-dockReturnButton.Text = "Return Hub"
-dockReturnButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-dockReturnButton.TextSize = 14
-dockReturnButton.Parent = battleDock
-styleButton(dockReturnButton, "secondary")
 
 local function nextUnlockedIndex(currentIndex, itemCount, isUnlocked)
 	for offset = 1, itemCount do
@@ -1244,32 +1177,6 @@ customizeButton.TextSize = 14
 customizeButton.Parent = root
 styleButton(customizeButton, "primary")
 
-minimizeButton = Instance.new("TextButton")
-minimizeButton.AnchorPoint = Vector2.new(1, 0)
-minimizeButton.Position = UDim2.new(1, -172, 0, 16)
-minimizeButton.Size = UDim2.fromOffset(86, 34)
-minimizeButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
-minimizeButton.BorderSizePixel = 0
-minimizeButton.Font = Enum.Font.GothamBold
-minimizeButton.Text = "Hide"
-minimizeButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-minimizeButton.TextSize = 14
-minimizeButton.Parent = root
-styleButton(minimizeButton, "secondary")
-
-resetLayoutButton = Instance.new("TextButton")
-resetLayoutButton.AnchorPoint = Vector2.new(1, 0)
-resetLayoutButton.Position = UDim2.new(1, -266, 0, 16)
-resetLayoutButton.Size = UDim2.fromOffset(86, 34)
-resetLayoutButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
-resetLayoutButton.BorderSizePixel = 0
-resetLayoutButton.Font = Enum.Font.GothamBold
-resetLayoutButton.Text = "Reset"
-resetLayoutButton.TextColor3 = Color3.fromRGB(245, 247, 251)
-resetLayoutButton.TextSize = 14
-resetLayoutButton.Parent = root
-styleButton(resetLayoutButton, "secondary")
-
 applyBoardSkin = function()
 	local theme = themePresets[themeIndex]
 	local boardSkin = Config.BoardSkins[boardSkinIndex] or Config.BoardSkins[1]
@@ -1299,13 +1206,10 @@ local function applyTheme()
 	customization.panelColor = theme.panel
 	customization.accentColor = theme.accent
 	root.BackgroundColor3 = theme.panel
-	battleDock.BackgroundColor3 = theme.panel
-	openBoardButton.BackgroundColor3 = theme.accent
 	customizeButton.BackgroundColor3 = theme.accent
 	if homePanelController then
 		homePanelController:ApplyTheme(theme)
 	end
-	resetLayoutButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
 	customizeButton.Text = `Theme: {theme.name}`
 	applyBoardSkin()
 end
@@ -1320,34 +1224,14 @@ customizeButton.Activated:Connect(function()
 	saveSettings()
 end)
 
-local function setBattleBoardVisible(visible)
-	root.Visible = visible
-	battleDock.Visible = currentState ~= nil and not visible
-	setHubPanelVisible(currentState == nil and not hubManuallyClosed)
-end
-
-minimizeButton.Activated:Connect(function()
-	playSound("Button")
-	setBattleBoardVisible(false)
-end)
-
-openBoardButton.Activated:Connect(function()
-	playSound("Button")
-	setBattleBoardVisible(true)
-end)
-
-dockReturnButton.Activated:Connect(function()
-	playSound("Button")
-	queueEvent:FireServer("LeaveBattle")
-end)
-
 local title = Instance.new("TextButton")
+title.Name = "WorkspaceDragHandle"
 title.BackgroundTransparency = 1
 title.Position = UDim2.fromOffset(24, 18)
-title.Size = UDim2.fromOffset(210, 36)
+title.Size = UDim2.fromOffset(530, 42)
 title.AutoButtonColor = false
-title.Font = Enum.Font.GothamBold
-title.Text = "Solo Puzzle"
+title.Font = Enum.Font.GothamBlack
+title.Text = "SOLO PUZZLE WORKSPACE"
 title.TextColor3 = Color3.fromRGB(245, 247, 251)
 title.TextSize = 22
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -1406,6 +1290,22 @@ comboBadgeLabel.TextStrokeTransparency = 0.2
 comboBadgeLabel.Parent = root
 UITheme.corner(comboBadgeLabel, 22)
 UITheme.stroke(comboBadgeLabel, Color3.fromRGB(244, 212, 255), 4, 0.03)
+
+coinStatLabel = Instance.new("TextLabel")
+coinStatLabel.BackgroundTransparency = 0.04
+coinStatLabel.BackgroundColor3 = Color3.fromRGB(11, 27, 51)
+coinStatLabel.Position = UDim2.fromOffset(22, 356)
+coinStatLabel.Size = UDim2.fromOffset(210, 76)
+coinStatLabel.Font = Enum.Font.GothamBlack
+coinStatLabel.Text = "COINS\n0"
+coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
+coinStatLabel.TextSize = 26
+coinStatLabel.TextStrokeColor3 = Color3.fromRGB(42, 28, 10)
+coinStatLabel.TextStrokeTransparency = 0.35
+coinStatLabel.Parent = root
+UITheme.corner(coinStatLabel, 22)
+UITheme.stroke(coinStatLabel, Color3.fromRGB(255, 207, 64), 4, 0.04)
+UITheme.gradient(coinStatLabel, Color3.fromRGB(16, 36, 68), Color3.fromRGB(6, 15, 31), 90)
 
 coinChipLabel = Instance.new("TextLabel")
 coinChipLabel.AnchorPoint = Vector2.new(1, 0)
@@ -1721,171 +1621,136 @@ rerollPieceButton.Visible = false
 rerollPieceButton.Parent = root
 styleButton(rerollPieceButton, "primary")
 
-resizeHandle = Instance.new("TextButton")
-resizeHandle.AnchorPoint = Vector2.new(1, 1)
-resizeHandle.Position = UDim2.new(1, -12, 1, -10)
-resizeHandle.Size = UDim2.fromOffset(72, 24)
-resizeHandle.BackgroundColor3 = Color3.fromRGB(31, 38, 52)
-resizeHandle.BorderSizePixel = 0
-resizeHandle.Font = Enum.Font.GothamBold
-resizeHandle.Text = "Resize"
-resizeHandle.TextColor3 = Color3.fromRGB(245, 247, 251)
-resizeHandle.TextSize = 12
-resizeHandle.Parent = root
-styleButton(resizeHandle, "secondary")
-
 local function clampNumber(value, minimum, maximum)
 	return math.max(minimum, math.min(maximum, value))
 end
 
 clampWindowToScreen = function()
 	local screenSize = gui.AbsoluteSize
-	local windowSize = root.AbsoluteSize
-	local xOffset =
-		clampNumber(root.Position.X.Offset, 8, math.max(8, screenSize.X - windowSize.X - 8))
-	local yCenter = (screenSize.Y * root.Position.Y.Scale) + root.Position.Y.Offset
-	local yOffset =
-		clampNumber(yCenter, 24 + (windowSize.Y / 2), screenSize.Y - 24 - (windowSize.Y / 2))
-	root.Position = UDim2.new(0, xOffset, 0, yOffset)
+	local topLeftInset, bottomRightInset = GuiService:GetGuiInset()
+	local scale = rootScale and rootScale.Scale or 1
+	local scaledSize = Vector2.new(root.Size.X.Offset * scale, root.Size.Y.Offset * scale)
+	local halfWidth = scaledSize.X / 2
+	local halfHeight = scaledSize.Y / 2
+	local rawX = (screenSize.X * root.Position.X.Scale) + root.Position.X.Offset
+	local rawY = (screenSize.Y * root.Position.Y.Scale) + root.Position.Y.Offset
+	local minX = math.min(screenSize.X - 24, halfWidth + 16)
+	local maxX = math.max(minX, screenSize.X - halfWidth - 16)
+	local minY = math.min(screenSize.Y - 24, topLeftInset.Y + halfHeight + 16)
+	local maxY = math.max(minY, screenSize.Y - bottomRightInset.Y - halfHeight - 16)
+
+	root.Position = UDim2.fromOffset(clampNumber(rawX, minX, maxX), clampNumber(rawY, minY, maxY))
 end
 
 applyWindowLayout = function()
-	local windowSize = root.AbsoluteSize
-	local width = windowSize.X
-	local height = windowSize.Y
-	local compact = width < COMPACT_WINDOW_WIDTH
-	local leftPadding = compact and 14 or 24
-	local topPadding = compact and 118 or 72
-	local gap = compact and 12 or 20
-	local scoreColumnWidth = compact and 0 or 220
-	local leaderboardWidth = compact and 0 or 230
-	local trayHeight = compact and 156 or 128
-	local boardLimitByHeight = compact and (height - topPadding - trayHeight - 78)
-		or (height - topPadding - trayHeight - 70)
-	local boardLimitByWidth = compact and (width - (leftPadding * 2))
-		or (width - scoreColumnWidth - leaderboardWidth - (leftPadding * 2) - gap * 2)
-	local boardPixels = clampNumber(
-		math.min(boardLimitByHeight, boardLimitByWidth),
-		compact and 300 or 420,
-		compact and 520 or 520
-	)
+	local width = DEFAULT_WINDOW_SIZE.X
+	local leftX = 24
+	local centerX = 284
+	local rightX = 744
+	local boardPixels = 420
 	local innerBoardPixels = boardPixels - 32
 	local cellPixels =
 		math.floor((innerBoardPixels - ((Config.BoardSize - 1) * 4)) / Config.BoardSize)
 	innerBoardPixels = (cellPixels * Config.BoardSize) + ((Config.BoardSize - 1) * 4)
 	boardPixels = innerBoardPixels + 32
 
-	local boardX = compact and math.floor((width - boardPixels) / 2)
-		or leftPadding + scoreColumnWidth + gap
-	local boardY = topPadding
-	boardFrame.Position = UDim2.fromOffset(boardX, boardY)
+	title.Visible = true
+	title.Position = UDim2.fromOffset(24, 16)
+	title.Size = UDim2.fromOffset(520, 42)
+	title.TextSize = 22
+	progressionLabel.Visible = true
+
+	progressionLabel.Position = UDim2.fromOffset(26, 50)
+	progressionLabel.Size = UDim2.fromOffset(470, 20)
+	progressionLabel.TextSize = 14
+	timerLabel.Visible = false
+	matchInfoLabel.Visible = true
+	matchInfoLabel.AnchorPoint = Vector2.new(1, 0)
+	matchInfoLabel.Position = UDim2.new(1, -26, 0, 62)
+	matchInfoLabel.Size = UDim2.fromOffset(250, 24)
+	matchInfoLabel.TextSize = 14
+
+	if customizeButton then
+		customizeButton.Position = UDim2.new(1, -26, 0, 18)
+		customizeButton.Size = UDim2.fromOffset(138, 38)
+		customizeButton.TextSize = 14
+	end
+	if coinChipLabel then
+		coinChipLabel.AnchorPoint = Vector2.new(1, 0)
+		coinChipLabel.Position = UDim2.new(1, -174, 0, 18)
+		coinChipLabel.Size = UDim2.fromOffset(170, 38)
+		coinChipLabel.TextSize = 18
+	end
+
+	scoreCard.Position = UDim2.fromOffset(leftX, 92)
+	scoreCard.Size = UDim2.fromOffset(220, 154)
+	scoreLabel.Position = UDim2.fromOffset(14, 18)
+	scoreLabel.Size = UDim2.new(1, -28, 0, 60)
+	scoreLabel.TextSize = 48
+	bestScoreLabel.Position = UDim2.fromOffset(18, 94)
+	bestScoreLabel.Size = UDim2.new(1, -36, 0, 34)
+	bestScoreLabel.TextSize = 20
+
+	comboBadgeLabel.Position = UDim2.fromOffset(leftX, 262)
+	comboBadgeLabel.Size = UDim2.fromOffset(220, 112)
+	comboBadgeLabel.TextSize = 30
+	coinStatLabel.Position = UDim2.fromOffset(leftX, 390)
+	coinStatLabel.Size = UDim2.fromOffset(220, 78)
+	coinStatLabel.TextSize = 26
+
+	boardFrame.Position = UDim2.fromOffset(centerX, 88)
 	boardFrame.Size = UDim2.fromOffset(boardPixels, boardPixels)
 	boardLayout.CellSize = UDim2.fromOffset(cellPixels, cellPixels)
 	boardLayout.CellPadding = UDim2.fromOffset(4, 4)
 
-	title.Visible = not compact
-	progressionLabel.Visible = not compact
-	timerLabel.Visible = not compact
-	matchInfoLabel.Visible = not compact
+	local sideWidth = boardPixels
+	side.Position = UDim2.fromOffset(centerX, 530)
+	side.Size = UDim2.fromOffset(sideWidth, 98)
+	statusLabel.Position = UDim2.fromOffset(18, 10)
+	statusLabel.Size = UDim2.fromOffset(sideWidth - 36, 24)
+	statusLabel.TextSize = 18
+	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-	if scoreCard then
-		scoreCard.Position = compact and UDim2.new(0.5, -160, 0, 22) or UDim2.fromOffset(22, 118)
-		scoreCard.Size = compact and UDim2.fromOffset(320, 84) or UDim2.fromOffset(210, 174)
-	end
-	scoreLabel.Position = compact and UDim2.fromOffset(14, 10) or UDim2.fromOffset(14, 18)
-	scoreLabel.Size = compact and UDim2.new(1, -28, 0, 46) or UDim2.new(1, -28, 0, 66)
-	scoreLabel.TextSize = compact and 48 or 52
-	if bestScoreLabel then
-		bestScoreLabel.Position = compact and UDim2.fromOffset(18, 54) or UDim2.fromOffset(18, 94)
-		bestScoreLabel.TextSize = compact and 18 or 20
-	end
-	if coinChipLabel then
-		coinChipLabel.Position = compact and UDim2.fromOffset(16, 20) or UDim2.new(1, -190, 0, 20)
-		coinChipLabel.AnchorPoint = compact and Vector2.new(0, 0) or Vector2.new(1, 0)
-		coinChipLabel.Size = compact and UDim2.fromOffset(104, 42) or UDim2.fromOffset(170, 50)
-		coinChipLabel.TextSize = compact and 14 or 20
-	end
-
-	local sideX = compact and leftPadding or boardX
-	local sideY = compact and boardY + boardPixels + gap or boardY + boardPixels + gap
-	local sideWidth = compact and width - (leftPadding * 2) or boardPixels
-	local sideHeight = trayHeight
-	side.Position = UDim2.fromOffset(sideX, sideY)
-	side.Size = UDim2.fromOffset(sideWidth, sideHeight)
-	statusLabel.Position = UDim2.fromOffset(compact and 12 or 18, compact and 10 or 12)
-	statusLabel.Size = UDim2.fromOffset(sideWidth - (compact and 24 or 36), 28)
-	statusLabel.TextSize = compact and 15 or 20
-	statusLabel.TextXAlignment = compact and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left
-
-	if bestScoreLabel then
-		bestScoreLabel.Visible = true
-	end
-	if comboBadgeLabel then
-		comboBadgeLabel.Position = compact and UDim2.new(1, -148, 0, 23)
-			or UDim2.fromOffset(22, 318)
-		comboBadgeLabel.Size = compact and UDim2.fromOffset(130, 76) or UDim2.fromOffset(210, 108)
-		comboBadgeLabel.TextSize = compact and 22 or 30
-	end
-
-	local slotHeight = compact and 104 or 78
+	local slotHeight = 54
 	for slot, button in handButtons do
 		local buttonWidth =
 			math.floor((sideWidth - 32 - ((Config.InventorySize - 1) * 14)) / Config.InventorySize)
-		button.Position =
-			UDim2.fromOffset(16 + (slot - 1) * (buttonWidth + 14), compact and 42 or 44)
+		button.Position = UDim2.fromOffset(16 + (slot - 1) * (buttonWidth + 14), 38)
 		button.Size = UDim2.fromOffset(buttonWidth, slotHeight)
 
 		local preview = handPreviews[slot]
-		preview.Size = compact and UDim2.fromOffset(74, 74) or UDim2.fromOffset(58, 58)
-		preview.Position = UDim2.fromOffset(
-			math.max(6, math.floor((buttonWidth - preview.Size.X.Offset) / 2)),
-			compact and 8 or 8
-		)
+		preview.Size = UDim2.fromOffset(44, 44)
+		preview.Position =
+			UDim2.fromOffset(math.max(6, math.floor((buttonWidth - preview.Size.X.Offset) / 2)), 5)
 
 		local label = button:FindFirstChild("Label")
 		if label and label:IsA("TextLabel") then
-			label.Position = UDim2.fromOffset(4, compact and 80 or 64)
-			label.Size = UDim2.fromOffset(math.max(60, buttonWidth - 8), compact and 18 or 16)
-			label.TextSize = compact and 11 or 12
+			label.Position = UDim2.fromOffset(4, 38)
+			label.Size = UDim2.fromOffset(math.max(60, buttonWidth - 8), 14)
+			label.TextSize = 10
 			label.TextXAlignment = Enum.TextXAlignment.Center
 		end
 	end
 
 	if leaderboardLabel then
 		leaderboardLabel.Visible = true
-		if compact then
-			leaderboardLabel.Position = UDim2.fromOffset(leftPadding, sideY + sideHeight + 10)
-			leaderboardLabel.Size = UDim2.fromOffset(width - (leftPadding * 2), 48)
-			leaderboardLabel.TextSize = 13
-		else
-			leaderboardLabel.Position = UDim2.fromOffset(boardX + boardPixels + gap, 118)
-			leaderboardLabel.Size = UDim2.fromOffset(leaderboardWidth, 310)
-			leaderboardLabel.TextSize = 16
-		end
+		leaderboardLabel.Position = UDim2.fromOffset(rightX, 118)
+		leaderboardLabel.Size = UDim2.fromOffset(336, 342)
+		leaderboardLabel.TextSize = 18
 	end
 
-	local bottomY = compact and height - 42 or 448
-	local actionWidth = compact and math.floor((width - (leftPadding * 2) - 8) / 2)
-		or math.floor((leaderboardWidth - 8) / 2)
-	returnHubButton.Position =
-		UDim2.fromOffset(compact and leftPadding or boardX + boardPixels + gap, bottomY)
-	returnHubButton.Size = UDim2.fromOffset(actionWidth, 32)
-	playAgainButton.Position = UDim2.fromOffset(
-		(compact and leftPadding or boardX + boardPixels + gap) + actionWidth + 8,
-		bottomY
-	)
-	playAgainButton.Size = UDim2.fromOffset(actionWidth, 32)
+	local actionWidth = 164
+	returnHubButton.Position = UDim2.fromOffset(rightX, 484)
+	returnHubButton.Size = UDim2.fromOffset(actionWidth, 42)
+	playAgainButton.Position = UDim2.fromOffset(rightX + actionWidth + 12, 484)
+	playAgainButton.Size = UDim2.fromOffset(actionWidth, 42)
 
-	local customY = bottomY - 38
-	rotatePieceButton.Position =
-		UDim2.fromOffset(compact and leftPadding or boardX + boardPixels + gap, customY)
-	rotatePieceButton.Size = UDim2.fromOffset(actionWidth, 32)
-	rerollPieceButton.Position = UDim2.fromOffset(
-		(compact and leftPadding or boardX + boardPixels + gap) + actionWidth + 8,
-		customY
-	)
-	rerollPieceButton.Size = UDim2.fromOffset(actionWidth, 32)
-	resizeHandle.Position = UDim2.new(1, -12, 1, -10)
+	rotatePieceButton.Position = UDim2.fromOffset(rightX, 536)
+	rotatePieceButton.Size = UDim2.fromOffset(actionWidth, 40)
+	rerollPieceButton.Position = UDim2.fromOffset(rightX + actionWidth + 12, 536)
+	rerollPieceButton.Size = UDim2.fromOffset(actionWidth, 40)
+
+	root.Size = UDim2.fromOffset(width, DEFAULT_WINDOW_SIZE.Y)
 end
 
 returnHubButton.Activated:Connect(function()
@@ -1923,25 +1788,18 @@ rerollPieceButton.Activated:Connect(function()
 	requestSelectedHandAction("Reroll")
 end)
 
-resetLayoutButton.Activated:Connect(function()
-	playSound("Button")
-	root.Position = DEFAULT_WINDOW_POSITION
-	root.Size = UDim2.fromOffset(DEFAULT_WINDOW_SIZE.X, DEFAULT_WINDOW_SIZE.Y)
-	applyUiScale()
-	applyWindowLayout()
-end)
-
 local draggingWindow = false
-local resizingWindow = false
 local inputStartPosition = nil
 local windowStartPosition = nil
-local windowStartSize = nil
+
+local function stopWorkspaceDrag()
+	draggingWindow = false
+	inputStartPosition = nil
+	windowStartPosition = nil
+end
 
 title.InputBegan:Connect(function(input)
-	if
-		input.UserInputType ~= Enum.UserInputType.MouseButton1
-		and input.UserInputType ~= Enum.UserInputType.Touch
-	then
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1 or not root.Visible then
 		return
 	end
 
@@ -1950,24 +1808,14 @@ title.InputBegan:Connect(function(input)
 	windowStartPosition = root.Position
 end)
 
-resizeHandle.InputBegan:Connect(function(input)
-	if
-		input.UserInputType ~= Enum.UserInputType.MouseButton1
-		and input.UserInputType ~= Enum.UserInputType.Touch
-	then
-		return
+title.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		stopWorkspaceDrag()
 	end
-
-	resizingWindow = true
-	inputStartPosition = input.Position
-	windowStartSize = root.AbsoluteSize
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-	if
-		input.UserInputType ~= Enum.UserInputType.MouseMovement
-		and input.UserInputType ~= Enum.UserInputType.Touch
-	then
+	if input.UserInputType ~= Enum.UserInputType.MouseMovement then
 		return
 	end
 
@@ -1980,31 +1828,13 @@ UserInputService.InputChanged:Connect(function(input)
 			windowStartPosition.Y.Offset + delta.Y
 		)
 		clampWindowToScreen()
-	elseif resizingWindow and inputStartPosition and windowStartSize then
-		local delta = input.Position - inputStartPosition
-		local nextWidth =
-			clampNumber(windowStartSize.X + delta.X, MIN_WINDOW_SIZE.X, MAX_WINDOW_SIZE.X)
-		local nextHeight =
-			clampNumber(windowStartSize.Y + delta.Y, MIN_WINDOW_SIZE.Y, MAX_WINDOW_SIZE.Y)
-		root.Size = UDim2.fromOffset(nextWidth, nextHeight)
-		applyWindowLayout()
-		clampWindowToScreen()
 	end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-	if
-		input.UserInputType ~= Enum.UserInputType.MouseButton1
-		and input.UserInputType ~= Enum.UserInputType.Touch
-	then
-		return
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		stopWorkspaceDrag()
 	end
-
-	draggingWindow = false
-	resizingWindow = false
-	inputStartPosition = nil
-	windowStartPosition = nil
-	windowStartSize = nil
 end)
 
 local function cloneBoard(board)
@@ -2291,11 +2121,14 @@ local function renderLeaderboard(leaderboard)
 			break
 		end
 		local name = entry.name or "Player"
-		table.insert(lines, `#{index} {name}: {entry.score or 0}`)
+		local localMarker = entry.userId == player.UserId or name == player.Name
+		local label = localMarker and "YOU" or name
+		table.insert(lines, `{index}. {label}    {entry.score or 0}`)
 	end
 
 	if #lines == 1 then
-		table.insert(lines, "Start a run to rank here")
+		table.insert(lines, "")
+		table.insert(lines, "Finish a run to appear here.")
 	end
 
 	leaderboardLabel.Text = table.concat(lines, "\n")
@@ -2317,6 +2150,9 @@ local function renderProgression()
 		`{titleName} | Level {level and level.Value or 1} | {coins and coins.Value or 0} coins | {xp and xp.Value or 0} XP | {storyStars and storyStars.Value or 0} stars | {cleared} cleared`
 	if coinChipLabel then
 		coinChipLabel.Text = `{coins and coins.Value or 0} Coins  +`
+	end
+	if coinStatLabel then
+		coinStatLabel.Text = `COINS\n{coins and coins.Value or 0}`
 	end
 	if hudController then
 		hudController:UpdateProgression()
@@ -2388,8 +2224,8 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	currentState = nextState
 
 	if not currentState then
+		stopWorkspaceDrag()
 		root.Visible = false
-		battleDock.Visible = false
 		rotatePieceButton.Visible = false
 		rerollPieceButton.Visible = false
 		if hudController then
@@ -2402,8 +2238,11 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		return
 	end
 
-	if not root.Visible and not battleDock.Visible then
+	if not root.Visible then
+		root.Position = DEFAULT_WINDOW_POSITION
 		root.Visible = true
+		applyUiScale()
+		clampWindowToScreen()
 	end
 	if hudController then
 		hudController:UpdateGameState(currentState)
@@ -2416,11 +2255,10 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	storyPanelController:Hide()
 	setHubPanelVisible(false)
 	updateTutorialVisibility()
-	battleDock.Visible = not root.Visible
-	title.Text = currentState.mode == "Story" and "Story Training"
-		or currentState.mode == "Custom" and "Custom Lab"
-		or currentState.mode == "Solo" and "Solo Puzzle"
-		or "Block Blast Battle"
+	title.Text = currentState.mode == "Story" and "STORY TRAINING WORKSPACE"
+		or currentState.mode == "Custom" and "CUSTOM LAB WORKSPACE"
+		or currentState.mode == "Solo" and "SOLO PUZZLE WORKSPACE"
+		or "BLOCK BLAST BATTLE WORKSPACE"
 	scoreLabel.Text = tostring(currentState.score)
 	if bestScoreLabel then
 		bestScoreLabel.Text = `BEST {currentState.bestScore or 0}`
@@ -2443,13 +2281,6 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	timerLabel.TextColor3 = currentState.suddenDeath and Color3.fromRGB(255, 110, 110)
 		or currentState.timeLeft and currentState.timeLeft <= 15 and Color3.fromRGB(255, 207, 102)
 		or Color3.fromRGB(193, 201, 215)
-	dockStatusLabel.Text = currentState.message
-		or currentState.mode == "Story" and storyGoalText(currentState)
-		or currentState.mode == "Solo" and `Solo score: {currentState.score}`
-		or currentState.comboStreak and currentState.comboStreak > 1 and `Combo x{currentState.comboStreak} | Score: {currentState.score}`
-		or currentState.suddenDeath and `Sudden death | Score: {currentState.score} | {currentState.timeLeft or "--"}s`
-		or currentState.alive and `Arena {currentState.arenaIndex or "--"} | Score: {currentState.score} | {currentState.timeLeft or "--"}s`
-		or "Out of moves - returning"
 	playAgainButton.Text = currentState.mode == "Story" and "Replay" or "Play Again"
 	playAgainButton.Visible = not currentState.alive and currentState.mode ~= "Custom"
 	rotatePieceButton.Visible = currentState.mode == "Custom" and currentState.alive

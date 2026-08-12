@@ -2,6 +2,65 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day37 PC Puzzle Workspace Foundation - 2026-08-12
+
+### Completed
+
+- Froze the hub map completely for this checkpoint; `src/server/world/HubBuilder.luau`, world geometry, lighting, attractions, and scenery were not modified.
+- Refactored the active Solo Puzzle interface into one named `PCPuzzleWorkspace` root in `src/client/ui/BlockBlastClient.client.luau`.
+- Removed the old duplicate active-run dock, minimize, reset-layout, and resize controls from the Solo Puzzle surface.
+- Rebuilt the PC composition toward the locked reference:
+  - left column for current score, best score, combo, and real coin count
+  - centered board with the existing board cells and placement logic
+  - three available pieces in a tray directly beneath the board
+  - right-side server score panel using the existing session leaderboard data
+  - top currency/theme controls with the world still visible behind the workspace
+- Added mouse-only workspace dragging from the title bar:
+  - dragging begins only on `WorkspaceDragHandle`
+  - board cells, pieces, buttons, and leaderboard do not start window dragging
+  - releasing the mouse or closing the puzzle stops dragging
+  - reopening an active run does not create new drag connections
+- Added screen clamping that uses `GuiService:GetGuiInset()` and the active `UIScale` so the workspace remains recoverable at desktop edges.
+- Preserved existing gameplay bindings for selecting pieces, placing pieces, blocked-placement feedback, scoring, combo display, best score, coins, server scores, Play Again, and Return Hub.
+- Built `BlockBlastBattle-Day37.rbxl`.
+
+### Current State
+
+- Day37 is a PC workspace foundation, not a final art pass.
+- The Solo Puzzle UI should now open as one centered arcade-style workspace and move as a single unit from the title bar.
+- No Roblox Studio Play-mode screenshots or drag tests were captured by Codex in this session.
+
+### Known Issues
+
+- Runtime verification is still required in Roblox Studio because Studio automation was not available here.
+- The left column does not show rank yet because the current Day37 scope did not add a persistent/global rank backend.
+- Final glossy block art, mobile layout, touch dragging, gamepad dragging, resizing, saved window position, and leaderboard backend expansion are intentionally deferred.
+
+### Required Manual Checks
+
+1. Open `BlockBlastBattle-Day37.rbxl`.
+2. Confirm Studio is signed into `CAPTINNINJATACO`.
+3. Press Play and start Solo Puzzle from the PLAY button or `SoloPlayPad`.
+4. Confirm the puzzle workspace opens centered.
+5. Drag only from the `SOLO PUZZLE WORKSPACE` title bar and confirm the full interface moves together.
+6. Try dragging from the board, piece tray, server-top panel, and action buttons; confirm the workspace does not move.
+7. Place legal and illegal pieces and confirm dragging never places pieces by itself.
+8. Drag the workspace into each screen edge and confirm the title/workspace remains recoverable.
+9. Return to the hub, start Solo Puzzle again, and confirm no duplicate active puzzle HUD or drag behavior appears.
+10. Capture a default PC puzzle screenshot and a dragged-position screenshot for Day37 review.
+
+### Deferred
+
+- Day38 should start only after Yoel inspects Day37 in Studio and confirms the PC workspace direction.
+- Next likely work: polish board cells/piece tray visuals, add stronger selected/valid/invalid placement states, then handle separate mobile UI.
+
+### Validation
+
+- `.\tools\stylua.exe src` passed.
+- `.\tools\selene.exe src` passed with 0 errors and 0 warnings; Selene used its cached Roblox standard library after failing to generate a fresh API dump.
+- `.\tools\rojo.exe build default.project.json --output BlockBlastBattle-Day37.rbxl` passed.
+- `git diff --check` passed with the repo's existing LF-to-CRLF working-copy warning.
+
 ## Day36.4 Intentional Toybox Personality and Visual Stopping Point - 2026-08-10
 
 ### Completed
