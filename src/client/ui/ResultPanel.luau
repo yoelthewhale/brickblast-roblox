@@ -2,6 +2,7 @@ local GuiService = game:GetService("GuiService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
+local ArcadeUI = require(script.Parent.ArcadeUI)
 local UITheme = require(script.Parent.UITheme)
 
 local ResultPanel = {}
@@ -23,21 +24,28 @@ function ResultPanel.new(gui, queueEvent, options)
 	end
 
 	local panel = Instance.new("Frame")
-	panel.AnchorPoint = Vector2.new(0.5, 0)
-	panel.Position = UDim2.fromScale(0.5, 0.18)
-	panel.Size = UDim2.fromOffset(500, 252)
+	panel.AnchorPoint = Vector2.new(1, 0.5)
+	panel.Position = UDim2.new(1, -112, 0.5, 88)
+	panel.Size = UDim2.fromOffset(344, 214)
+	panel.BackgroundColor3 = ArcadeUI.Color.inner
+	panel.BackgroundTransparency = 0.04
+	panel.BorderSizePixel = 0
 	panel.Visible = false
 	panel.ZIndex = 35
 	panel.Parent = gui
-	UITheme.panel(panel, { color = UITheme.Color.panelRaised, bottomColor = UITheme.Color.panel })
+	ArcadeUI.Panel(panel, {
+		radius = 26,
+		rimColor = ArcadeUI.Color.rimBright,
+		strokeThickness = 4,
+	})
 	self.panel = panel
 
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.BackgroundTransparency = 1
 	titleLabel.Position = UDim2.fromOffset(18, 14)
-	titleLabel.Size = UDim2.fromOffset(410, 32)
+	titleLabel.Size = UDim2.fromOffset(268, 30)
 	titleLabel.Text = "Run Complete"
-	titleLabel.TextSize = 24
+	titleLabel.TextSize = 22
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	titleLabel.TextWrapped = true
 	titleLabel.ZIndex = 36
@@ -46,16 +54,16 @@ function ResultPanel.new(gui, queueEvent, options)
 	self.titleLabel = titleLabel
 
 	local closeButton = Instance.new("TextButton")
-	closeButton.Position = UDim2.new(1, -52, 0, 12)
-	closeButton.Size = UDim2.fromOffset(36, 36)
+	closeButton.Position = UDim2.new(1, -48, 0, 12)
+	closeButton.Size = UDim2.fromOffset(34, 34)
 	closeButton.ZIndex = 36
 	closeButton.Parent = panel
 	UITheme.closeButton(closeButton)
 	UITheme.attachButtonFeedback(closeButton, self.isReducedMotion)
 
 	local summaryCard = Instance.new("Frame")
-	summaryCard.Position = UDim2.fromOffset(18, 58)
-	summaryCard.Size = UDim2.fromOffset(464, 64)
+	summaryCard.Position = UDim2.fromOffset(18, 54)
+	summaryCard.Size = UDim2.fromOffset(308, 58)
 	summaryCard.ZIndex = 36
 	summaryCard.Parent = panel
 	UITheme.card(summaryCard, { color = UITheme.Color.panelSoft, strokeTransparency = 0.38 })
@@ -75,8 +83,8 @@ function ResultPanel.new(gui, queueEvent, options)
 	self.summaryLabel = summaryLabel
 
 	local rewardCard = Instance.new("Frame")
-	rewardCard.Position = UDim2.fromOffset(18, 134)
-	rewardCard.Size = UDim2.fromOffset(464, 46)
+	rewardCard.Position = UDim2.fromOffset(18, 122)
+	rewardCard.Size = UDim2.fromOffset(308, 38)
 	rewardCard.ZIndex = 36
 	rewardCard.Parent = panel
 	UITheme.card(rewardCard, {
@@ -100,10 +108,10 @@ function ResultPanel.new(gui, queueEvent, options)
 
 	local progressLabel = Instance.new("TextLabel")
 	progressLabel.BackgroundTransparency = 1
-	progressLabel.Position = UDim2.fromOffset(18, 190)
-	progressLabel.Size = UDim2.fromOffset(290, 22)
+	progressLabel.Position = UDim2.fromOffset(18, 166)
+	progressLabel.Size = UDim2.fromOffset(142, 20)
 	progressLabel.Text = "Best score: 0"
-	progressLabel.TextSize = 14
+	progressLabel.TextSize = 12
 	progressLabel.TextWrapped = true
 	progressLabel.TextXAlignment = Enum.TextXAlignment.Left
 	progressLabel.ZIndex = 36
@@ -113,10 +121,10 @@ function ResultPanel.new(gui, queueEvent, options)
 
 	local unlockLabel = Instance.new("TextLabel")
 	unlockLabel.BackgroundTransparency = 1
-	unlockLabel.Position = UDim2.fromOffset(18, 214)
-	unlockLabel.Size = UDim2.fromOffset(290, 24)
+	unlockLabel.Position = UDim2.fromOffset(18, 186)
+	unlockLabel.Size = UDim2.fromOffset(142, 18)
 	unlockLabel.Text = "Next unlock: keep playing"
-	unlockLabel.TextSize = 13
+	unlockLabel.TextSize = 10
 	unlockLabel.TextWrapped = true
 	unlockLabel.TextXAlignment = Enum.TextXAlignment.Left
 	unlockLabel.TextYAlignment = Enum.TextYAlignment.Top
@@ -126,10 +134,10 @@ function ResultPanel.new(gui, queueEvent, options)
 	self.unlockLabel = unlockLabel
 
 	local replayButton = Instance.new("TextButton")
-	replayButton.Position = UDim2.fromOffset(326, 200)
-	replayButton.Size = UDim2.fromOffset(156, 38)
+	replayButton.Position = UDim2.fromOffset(174, 168)
+	replayButton.Size = UDim2.fromOffset(152, 36)
 	replayButton.Text = "Play Again"
-	replayButton.TextSize = 14
+	replayButton.TextSize = 13
 	replayButton.ZIndex = 36
 	replayButton.Parent = panel
 	UITheme.button(replayButton, "primary")
@@ -196,20 +204,20 @@ function ResultPanel:Show(result, message, won)
 		or duration and `Best score: {bestScore} | Combo x{math.max(1, highestCombo)} | {duration}s`
 		or `Best score: {bestScore} | Combo x{math.max(1, highestCombo)}`
 	self.unlockLabel.Text = nextUnlockText
-	self.panel.BackgroundColor3 = won and Color3.fromRGB(13, 55, 39) or UITheme.Color.panelRaised
+	self.panel.BackgroundColor3 = won and Color3.fromRGB(12, 45, 42) or ArcadeUI.Color.inner
 	self.panel.Visible = true
 	if UserInputService.GamepadEnabled then
 		GuiService.SelectedObject = self.replayButton
 	end
 
 	if self.isReducedMotion() then
-		self.panel.Position = UDim2.fromScale(0.5, 0.18)
+		self.panel.Position = UDim2.new(1, -112, 0.5, 88)
 		return
 	end
 
-	self.panel.Position = UDim2.fromScale(0.5, 0.14)
+	self.panel.Position = UDim2.new(1, -112, 0.5, 62)
 	TweenService:Create(self.panel, SOFT_TWEEN, {
-		Position = UDim2.fromScale(0.5, 0.18),
+		Position = UDim2.new(1, -112, 0.5, 88),
 	}):Play()
 end
 

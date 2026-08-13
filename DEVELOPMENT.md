@@ -2,6 +2,36 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day37.3 Reference-Quality PC UI Polish - 2026-08-13
+
+### Completed
+
+- Continued from commit `b32e28d` after Yoel approved the corrected 8x8 board hierarchy.
+- Kept `BoardGridContainer` locked with one `UIPadding`, one `UIGridLayout`, and exactly 64 direct cell buttons.
+- Reduced the root workspace shell opacity so the toybox world remains visible behind the PC puzzle UI.
+- Rebalanced the header into a target-like control row with real coin chip, theme, Settings, Help, Reset, and Close controls.
+- Added functional PC Settings and Help buttons using existing settings/info and tutorial systems.
+- Improved code-native glossy block depth with contained shadows, bevel/stroke layers, highlights, and a subtle embossed symbol.
+- Enlarged tray previews and reduced technical label dominance while preserving piece selection and drag blockers.
+- Added cached real Roblox avatar thumbnail loading for Server Top rows using `Players:GetUserThumbnailAsync`; no fake rows are generated.
+- Restyled the result/Play Again popup into the same arcade panel language and moved it to the lower-right area.
+- Built `BlockBlastBattle-Day37-3.rbxl`.
+
+### Current State
+
+- Source/build validation passes.
+- Runtime Studio screenshots were not captured in this session, so Yoel still needs to approve the visual match in Studio.
+- The board hierarchy remains guarded by the existing one-time validation warning.
+
+### Required Manual Checks
+
+1. Open `BlockBlastBattle-Day37-3.rbxl` and start Solo Puzzle.
+2. Confirm the board still has exactly 8 rows and 8 columns and no decorative grid sibling appears.
+3. Confirm Settings, Help, Reset, Close, Return Hub, Play Again, and piece selection remain functional.
+4. Confirm Server Top shows real player thumbnails or safe placeholders without fake entries.
+5. Trigger game over and confirm the lower-right result panel fits and Play Again starts a clean run.
+6. Drag and resize at minimum/default/maximum scale and place pieces after each change.
+
 ## Day37.2.1 PC UI Layout Bug Fix - 2026-08-12
 
 ### Completed

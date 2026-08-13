@@ -79,9 +79,13 @@ local actionsPanel = nil
 local boardGridContainer = nil
 local leaderboardLabel = nil
 local leaderboardRows = {}
+local thumbnailCache = {}
+local thumbnailRequestToken = 0
 local customizeButton = nil
 local closeWorkspaceButton = nil
 local resetLayoutButton = nil
+local settingsButton = nil
+local helpButton = nil
 local returnHubButton = nil
 local playAgainButton = nil
 local rotatePieceButton = nil
@@ -233,6 +237,55 @@ local function enforceStatTextContrast()
 		rankStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 		rankStatLabel.TextStrokeTransparency = 0.08
 	end
+end
+
+local function makeTopControl(name, text, color)
+	local button = Instance.new("TextButton")
+	button.Name = name
+	button.AnchorPoint = Vector2.new(1, 0)
+	button.BackgroundColor3 = color or Color3.fromRGB(12, 32, 61)
+	button.BorderSizePixel = 0
+	button.Font = Enum.Font.GothamBlack
+	button.Text = text
+	button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button.TextSize = 22
+	button.Parent = workspaceHeader
+	ArcadeUI.Button(button, button.BackgroundColor3)
+	UITheme.attachButtonFeedback(button, isUiReducedMotion)
+	markInteractive(button)
+	return button
+end
+
+local function requestLeaderboardThumbnail(userId, imageLabel, token)
+	if typeof(userId) ~= "number" or userId <= 0 then
+		return
+	end
+
+	local cached = thumbnailCache[userId]
+	if cached then
+		imageLabel.Image = cached
+		imageLabel.Visible = true
+		return
+	end
+
+	task.spawn(function()
+		local ok, content = pcall(function()
+			return Players:GetUserThumbnailAsync(
+				userId,
+				Enum.ThumbnailType.HeadShot,
+				Enum.ThumbnailSize.Size100x100
+			)
+		end)
+		if not ok or typeof(content) ~= "string" or token ~= thumbnailRequestToken then
+			return
+		end
+
+		thumbnailCache[userId] = content
+		if imageLabel.Parent then
+			imageLabel.Image = content
+			imageLabel.Visible = true
+		end
+	end)
 end
 
 local themePresets = {
@@ -1060,9 +1113,17 @@ ArcadeUI.Panel(root, {
 	strokeThickness = 5,
 })
 root.BackgroundTransparency = 0.06
+root.BackgroundTransparency = 0.42
+root.BackgroundTransparency = 0.72
 local rootStroke = root:FindFirstChildOfClass("UIStroke")
 if rootStroke then
 	rootStroke.Thickness = 5
+	rootStroke.Transparency = 0.42
+end
+removeDirectGradients(root)
+local rootHighlight = root:FindFirstChild("ArcadeTopHighlight")
+if rootHighlight and rootHighlight:IsA("GuiObject") then
+	rootHighlight.Visible = false
 end
 
 rootScale = Instance.new("UIScale")
@@ -1384,6 +1445,25 @@ markInteractive(closeWorkspaceButton)
 closeWorkspaceButton.Activated:Connect(function()
 	playSound("Button")
 	queueEvent:FireServer("LeaveBattle")
+end)
+
+settingsButton = makeTopControl("WorkspaceSettingsButton", "SET", Color3.fromRGB(24, 49, 86))
+settingsButton.TextSize = 13
+settingsButton.Activated:Connect(function()
+	playSound("Button")
+	hudController:OpenInfoPanel("Settings", {
+		reducedMotion and "Motion: Reduced" or "Motion: Full",
+		soundEnabled and `Sound: {math.floor(soundVolume * 100)}%` or "Sound: Off",
+		"Use Reset to restore the puzzle workspace layout.",
+	})
+end)
+
+helpButton = makeTopControl("WorkspaceHelpButton", "?", Color3.fromRGB(24, 49, 86))
+helpButton.TextSize = 22
+helpButton.Activated:Connect(function()
+	tutorialManuallyOpened = true
+	updateTutorialVisibility()
+	playSound("Button")
 end)
 
 applyBoardSkin = function()
@@ -1963,6 +2043,17 @@ for rowIndex = 1, 7 do
 	avatar.Parent = row
 	UITheme.corner(avatar, 8)
 
+	local avatarImage = Instance.new("ImageLabel")
+	avatarImage.Name = "AvatarImage"
+	avatarImage.BackgroundTransparency = 1
+	avatarImage.Position = UDim2.fromOffset(2, 2)
+	avatarImage.Size = UDim2.new(1, -4, 1, -4)
+	avatarImage.Image = ""
+	avatarImage.Visible = false
+	avatarImage.Active = false
+	avatarImage.Parent = avatar
+	UITheme.corner(avatarImage, 7)
+
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Name = "Name"
 	nameLabel.BackgroundTransparency = 1
@@ -2130,32 +2221,40 @@ applyWindowLayout = function()
 	progressionLabel.TextSize = 12
 	timerLabel.Visible = true
 	timerLabel.AnchorPoint = Vector2.new(0, 0)
-	timerLabel.Position = UDim2.fromOffset(480, 16)
-	timerLabel.Size = UDim2.fromOffset(120, 28)
-	timerLabel.TextSize = 14
+	timerLabel.Position = UDim2.fromOffset(376, 17)
+	timerLabel.Size = UDim2.fromOffset(92, 26)
+	timerLabel.TextSize = 13
 	timerLabel.TextXAlignment = Enum.TextXAlignment.Center
 	matchInfoLabel.Visible = true
 	matchInfoLabel.AnchorPoint = Vector2.new(1, 0)
-	matchInfoLabel.Position = UDim2.new(1, -276, 0, 17)
-	matchInfoLabel.Size = UDim2.fromOffset(190, 26)
-	matchInfoLabel.TextSize = 12
+	matchInfoLabel.Position = UDim2.new(1, -500, 0, 17)
+	matchInfoLabel.Size = UDim2.fromOffset(162, 26)
+	matchInfoLabel.TextSize = 11
 
 	if customizeButton then
-		customizeButton.Position = UDim2.new(1, -394, 0, 12)
-		customizeButton.Size = UDim2.fromOffset(132, 36)
+		customizeButton.Position = UDim2.new(1, -318, 0, 12)
+		customizeButton.Size = UDim2.fromOffset(128, 36)
 		customizeButton.TextSize = 12
 	end
 	if coinChipLabel then
 		coinChipLabel.AnchorPoint = Vector2.new(1, 0)
-		coinChipLabel.Position = UDim2.new(1, -536, 0, 12)
-		coinChipLabel.Size = UDim2.fromOffset(132, 36)
+		coinChipLabel.Position = UDim2.new(1, -456, 0, 12)
+		coinChipLabel.Size = UDim2.fromOffset(128, 36)
 		coinChipLabel.TextSize = 15
 	end
+	if settingsButton then
+		settingsButton.Position = UDim2.new(1, -178, 0, 12)
+		settingsButton.Size = UDim2.fromOffset(44, 36)
+	end
+	if helpButton then
+		helpButton.Position = UDim2.new(1, -126, 0, 12)
+		helpButton.Size = UDim2.fromOffset(44, 36)
+	end
 	if resetLayoutButton then
-		resetLayoutButton.Position = UDim2.new(1, -88, 0, 12)
-		resetLayoutButton.Size = UDim2.fromOffset(54, 36)
+		resetLayoutButton.Position = UDim2.new(1, -230, 0, 12)
+		resetLayoutButton.Size = UDim2.fromOffset(44, 36)
 		resetLayoutButton.Text = "Reset"
-		resetLayoutButton.TextSize = 11
+		resetLayoutButton.TextSize = 10
 	end
 	if closeWorkspaceButton then
 		closeWorkspaceButton.Position = UDim2.new(1, -22, 0, 12)
@@ -2226,15 +2325,15 @@ applyWindowLayout = function()
 		button.Size = UDim2.fromOffset(buttonWidth, slotHeight)
 
 		local preview = handPreviews[slot]
-		preview.Size = UDim2.fromOffset(54, 54)
+		preview.Size = UDim2.fromOffset(60, 60)
 		preview.Position =
-			UDim2.fromOffset(math.max(8, math.floor((buttonWidth - preview.Size.X.Offset) / 2)), 4)
+			UDim2.fromOffset(math.max(8, math.floor((buttonWidth - preview.Size.X.Offset) / 2)), 1)
 
 		local label = button:FindFirstChild("Label")
 		if label and label:IsA("TextLabel") then
-			label.Position = UDim2.fromOffset(6, 44)
+			label.Position = UDim2.fromOffset(6, 46)
 			label.Size = UDim2.fromOffset(math.max(60, buttonWidth - 8), 14)
-			label.TextSize = 11
+			label.TextSize = 10
 			label.TextXAlignment = Enum.TextXAlignment.Center
 		end
 	end
@@ -2729,6 +2828,9 @@ end
 
 local function renderLeaderboard(leaderboard)
 	local currentRank = nil
+	thumbnailRequestToken += 1
+	local leaderboardToken = thumbnailRequestToken
+	local visibleCount = 0
 
 	for index, row in leaderboardRows do
 		local entry = leaderboard and leaderboard[index]
@@ -2736,6 +2838,7 @@ local function renderLeaderboard(leaderboard)
 		if not entry then
 			continue
 		end
+		visibleCount += 1
 
 		local isLocalPlayer = entry.userId == player.UserId or entry.name == player.Name
 		if isLocalPlayer then
@@ -2766,6 +2869,12 @@ local function renderLeaderboard(leaderboard)
 		if avatar and avatar:IsA("Frame") then
 			avatar.BackgroundColor3 = isLocalPlayer and Color3.fromRGB(254, 230, 122)
 				or Color3.fromRGB(32, 73, 118)
+			local avatarImage = avatar:FindFirstChild("AvatarImage")
+			if avatarImage and avatarImage:IsA("ImageLabel") then
+				avatarImage.Image = ""
+				avatarImage.Visible = false
+				requestLeaderboardThumbnail(entry.userId, avatarImage, leaderboardToken)
+			end
 		end
 
 		local nameLabel = row:FindFirstChild("Name")
@@ -2790,13 +2899,13 @@ local function renderLeaderboard(leaderboard)
 			emptyLabel.Position = UDim2.fromOffset(24, 108)
 			emptyLabel.Size = UDim2.new(1, -48, 0, 64)
 			emptyLabel.Font = Enum.Font.GothamBold
-			emptyLabel.Text = "Finish a run to appear here."
+			emptyLabel.Text = "More players will appear here."
 			emptyLabel.TextColor3 = ArcadeUI.Color.muted
 			emptyLabel.TextSize = 16
 			emptyLabel.TextWrapped = true
 			emptyLabel.Parent = leaderboardLabel
 		end
-		emptyLabel.Visible = not leaderboard or leaderboard[1] == nil
+		emptyLabel.Visible = visibleCount <= 1
 	end
 
 	if rankStatLabel then

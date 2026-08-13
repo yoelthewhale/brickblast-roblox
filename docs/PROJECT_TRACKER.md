@@ -51,6 +51,9 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 | Confirm Day37.2 drag, resize, Reset Layout, and placement still work | High | Playtest | Bear / Codex | 2026-08-12 |
 | Validate Day37.2.1 board/tray spacing and 64 visible cells | High | Playtest | Bear / Codex | 2026-08-12 |
 | Confirm Day37.2.1 Combo, Coins, and Rank text contrast | High | Playtest | Bear / Codex | 2026-08-12 |
+| Validate Day37.3 reference-quality PC UI polish against target | High | Playtest | Bear / Codex | 2026-08-13 |
+| Confirm Day37.3 Server Top real thumbnails and no fake rows | High | Playtest | Bear / Codex | 2026-08-13 |
+| Confirm Day37.3 lower-right results and Play Again behavior | High | Playtest | Bear / Codex | 2026-08-13 |
 | Upload Day35 local PNG candidates and enter returned Roblox asset IDs | High | Ready | Bear / Codex | 2026-08-11 |
 | Refine Day35 toybox density, bevels, and glossy panel assets after screenshot review | High | Ready | Codex | 2026-08-11 |
 | Add server/global/weekly solo score leaderboards | High | Ready | Codex | 2026-08-10 |
@@ -208,6 +211,7 @@ This tracker mirrors the Tuesday.com board named `Game development`.
 
 - 2026-08-13 Day 37.2.2: Structurally rebuilt the PC Solo Puzzle workspace into one measured arcade-console layout with header/content columns, fixed board math from the actual 408px square grid area, contained glossy cell decorations, moved the tray fully inside the workspace, enforced readable left-card text, compacted Server Top, suppressed duplicate external gameplay HUD while playing, and built `BlockBlastBattle-Day37-2-2.rbxl`.
 - 2026-08-13 Day 37.2.3: Fixed the true 65th board-grid item by moving board-wide `ArcadeTopHighlight` decoration out of the `UIGridLayout` parent via a dedicated `BoardGridContainer`; added one-time grid hierarchy validation, coordinate attributes for the 64 cell buttons, RichText contrast fixes for left stats, and built `BlockBlastBattle-Day37-2-3.rbxl`.
+- 2026-08-13 Day 37.3: Polished the PC Solo Puzzle toward the arcade reference with a subtler transparent root, clearer top control row, functional Settings/Help controls, larger tray pieces, richer code-native glossy blocks, cached real Server Top avatar thumbnails, lower-right arcade result panel, and built `BlockBlastBattle-Day37-3.rbxl`.
 - 2026-08-09 Day 33: Pivoted the active product to Solo-first gameplay through `ExperienceConfig`, added a safe raised spawn plaza and Solo play portal, disabled Battle/Story routes/prompts/arenas from active generation, changed Play/Play Again to server-authoritative Solo runs, updated HUD copy/resources toward personal bests, and built `BlockBlastBattle-Day33.rbxl`.
 - 2026-08-09 Day 34: Saved the official three-image visual spec, switched the active hub to a cartoony toybox playground with working bounce/launcher/spinner/moving-platform/button interactions, restyled the puzzle UI toward the PC/mobile references, added current-server solo high scores, and built `BlockBlastBattle-Day34.rbxl`.
 - 2026-08-01 Day 4: Added finite-number settings hardening and built `BlockBlastBattle-Day4.rbxl` because Day 3 was locked by Studio.

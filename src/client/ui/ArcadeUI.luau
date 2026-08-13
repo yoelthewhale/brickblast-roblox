@@ -139,13 +139,13 @@ function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	local shadow = Instance.new("Frame")
 	shadow.Name = `{name or "Block"}Shadow`
 	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	shadow.BackgroundTransparency = 0.48
+	shadow.BackgroundTransparency = 0.42
 	shadow.BorderSizePixel = 0
-	shadow.Position = position + UDim2.fromOffset(3, 4)
+	shadow.Position = position + UDim2.fromOffset(3, 5)
 	shadow.Size = size
 	shadow.Active = false
 	shadow.Parent = parent
-	corner(shadow, 7)
+	corner(shadow, 9)
 
 	local block = Instance.new("Frame")
 	block.Name = name or "GlossyBlock"
@@ -155,25 +155,39 @@ function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	block.Size = size
 	block.Active = false
 	block.Parent = parent
-	corner(block, 7)
-	stroke(block, color:Lerp(Color3.fromRGB(255, 255, 255), 0.25), 1, 0.2)
+	corner(block, 9)
+	stroke(block, Color3.fromRGB(0, 0, 0), 2, 0.45)
+	stroke(block, color:Lerp(Color3.fromRGB(255, 255, 255), 0.38), 1, 0.1)
 	gradient(
 		block,
-		color:Lerp(Color3.fromRGB(255, 255, 255), 0.32),
-		color:Lerp(Color3.fromRGB(0, 0, 0), 0.18),
+		color:Lerp(Color3.fromRGB(255, 255, 255), 0.38),
+		color:Lerp(Color3.fromRGB(0, 0, 0), 0.16),
 		90
 	)
 
 	local shine = Instance.new("Frame")
 	shine.Name = "Shine"
 	shine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	shine.BackgroundTransparency = 0.56
+	shine.BackgroundTransparency = 0.42
 	shine.BorderSizePixel = 0
-	shine.Position = UDim2.new(0, 5, 0, 4)
-	shine.Size = UDim2.new(0.55, -5, 0, 5)
+	shine.Position = UDim2.new(0, 6, 0, 5)
+	shine.Size = UDim2.new(0.5, -5, 0, 6)
 	shine.Active = false
 	shine.Parent = block
 	corner(shine, 5)
+
+	local emboss = Instance.new("TextLabel")
+	emboss.Name = "Emboss"
+	emboss.BackgroundTransparency = 1
+	emboss.Position = UDim2.fromScale(0.22, 0.18)
+	emboss.Size = UDim2.fromScale(0.56, 0.58)
+	emboss.Font = Enum.Font.GothamBlack
+	emboss.Text = "+"
+	emboss.TextColor3 = color:Lerp(Color3.fromRGB(0, 0, 0), 0.28)
+	emboss.TextTransparency = 0.65
+	emboss.TextScaled = true
+	emboss.Active = false
+	emboss.Parent = block
 
 	return block
 end
