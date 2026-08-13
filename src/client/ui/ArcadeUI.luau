@@ -134,6 +134,8 @@ function ArcadeUI.StatCard(frame)
 end
 
 function ArcadeUI.GlossyBlock(parent, color, size, position, name)
+	parent.ClipsDescendants = true
+
 	local shadow = Instance.new("Frame")
 	shadow.Name = `{name or "Block"}Shadow`
 	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -179,6 +181,7 @@ end
 function ArcadeUI.BoardCell(button)
 	button.BorderSizePixel = 0
 	button.BackgroundColor3 = Color3.fromRGB(12, 29, 56)
+	button.ClipsDescendants = true
 	corner(button, 9)
 	stroke(button, Color3.fromRGB(47, 72, 112), 2, 0.18)
 	gradient(button, Color3.fromRGB(18, 39, 73), Color3.fromRGB(7, 17, 37), 90)

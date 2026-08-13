@@ -68,6 +68,14 @@ local timerLabel = nil
 local progressionLabel = nil
 local matchInfoLabel = nil
 local statusLabel = nil
+local workspaceHeader = nil
+local workspaceContent = nil
+local leftColumn = nil
+local centerColumn = nil
+local rightColumn = nil
+local boardStage = nil
+local trayStage = nil
+local actionsPanel = nil
 local leaderboardLabel = nil
 local leaderboardRows = {}
 local customizeButton = nil
@@ -112,6 +120,25 @@ local DEFAULT_WINDOW_SIZE = Vector2.new(1120, 650)
 local DEFAULT_WORKSPACE_SCALE = 1
 local MIN_WORKSPACE_SCALE = 0.78
 local MAX_WORKSPACE_SCALE = 1.22
+local WINDOW_LAYOUT = {
+	width = 1120,
+	height = 650,
+	outerPadding = 22,
+	headerHeight = 60,
+	headerGap = 16,
+	columnGap = 18,
+	leftWidth = 222,
+	centerWidth = 408,
+	rightWidth = 410,
+	statGap = 14,
+	boardPadding = 18,
+	boardGap = 5,
+	boardSize = 408,
+	boardStageHeight = 408,
+	trayGap = 14,
+	trayHeight = 104,
+	actionGap = 12,
+}
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local workspaceScale = DEFAULT_WORKSPACE_SCALE
@@ -129,6 +156,43 @@ end
 local function markInteractive(guiObject)
 	guiObject:SetAttribute("BlocksWorkspaceDrag", true)
 	return guiObject
+end
+
+local function makeWorkspaceContainer(
+	name,
+	parent,
+	backgroundColor,
+	radius,
+	rimColor,
+	strokeThickness
+)
+	local frame = Instance.new("Frame")
+	frame.Name = name
+	frame.BackgroundColor3 = backgroundColor or ArcadeUI.Color.inner
+	frame.BackgroundTransparency = 0.02
+	frame.BorderSizePixel = 0
+	frame.ClipsDescendants = true
+	frame.Parent = parent
+	ArcadeUI.InnerPanel(frame, {
+		radius = radius or 22,
+		rimColor = rimColor or Color3.fromRGB(28, 92, 161),
+		strokeThickness = strokeThickness or 2,
+	})
+	return frame
+end
+
+local function suppressExternalPuzzleHud(isPuzzleVisible)
+	if not hudController then
+		return
+	end
+
+	hudController:SetGameplayFocus(isPuzzleVisible)
+	if hudController.topBar then
+		hudController.topBar.Visible = false
+	end
+	if hudController.cancelQueueButton then
+		hudController.cancelQueueButton.Visible = false
+	end
 end
 
 local themePresets = {
@@ -965,6 +1029,56 @@ rootScale = Instance.new("UIScale")
 rootScale.Scale = 1
 rootScale.Parent = root
 
+workspaceHeader = makeWorkspaceContainer(
+	"WorkspaceHeader",
+	root,
+	Color3.fromRGB(9, 28, 56),
+	22,
+	ArcadeUI.Color.rimBright,
+	2
+)
+workspaceContent = Instance.new("Frame")
+workspaceContent.Name = "WorkspaceContent"
+workspaceContent.BackgroundTransparency = 1
+workspaceContent.BorderSizePixel = 0
+workspaceContent.Parent = root
+
+leftColumn = Instance.new("Frame")
+leftColumn.Name = "StatsColumn"
+leftColumn.BackgroundTransparency = 1
+leftColumn.BorderSizePixel = 0
+leftColumn.Parent = workspaceContent
+
+centerColumn = Instance.new("Frame")
+centerColumn.Name = "GameplayColumn"
+centerColumn.BackgroundTransparency = 1
+centerColumn.BorderSizePixel = 0
+centerColumn.Parent = workspaceContent
+
+rightColumn = Instance.new("Frame")
+rightColumn.Name = "LeaderboardColumn"
+rightColumn.BackgroundTransparency = 1
+rightColumn.BorderSizePixel = 0
+rightColumn.Parent = workspaceContent
+
+boardStage = Instance.new("Frame")
+boardStage.Name = "BoardStage"
+boardStage.BackgroundTransparency = 1
+boardStage.BorderSizePixel = 0
+boardStage.Parent = centerColumn
+
+trayStage = Instance.new("Frame")
+trayStage.Name = "PieceTrayStage"
+trayStage.BackgroundTransparency = 1
+trayStage.BorderSizePixel = 0
+trayStage.Parent = centerColumn
+
+actionsPanel = Instance.new("Frame")
+actionsPanel.Name = "WorkspaceActions"
+actionsPanel.BackgroundTransparency = 1
+actionsPanel.BorderSizePixel = 0
+actionsPanel.Parent = rightColumn
+
 local function nextUnlockedIndex(currentIndex, itemCount, isUnlocked)
 	for offset = 1, itemCount do
 		local nextIndex = ((currentIndex + offset - 1) % itemCount) + 1
@@ -1192,7 +1306,7 @@ customizeButton.Font = Enum.Font.GothamBold
 customizeButton.Text = "Theme: Ocean"
 customizeButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 customizeButton.TextSize = 14
-customizeButton.Parent = root
+customizeButton.Parent = workspaceHeader
 ArcadeUI.Button(customizeButton, Color3.fromRGB(37, 107, 188))
 UITheme.attachButtonFeedback(customizeButton, isUiReducedMotion)
 markInteractive(customizeButton)
@@ -1207,7 +1321,7 @@ resetLayoutButton.Font = Enum.Font.GothamBold
 resetLayoutButton.Text = "Reset Layout"
 resetLayoutButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 resetLayoutButton.TextSize = 13
-resetLayoutButton.Parent = root
+resetLayoutButton.Parent = workspaceHeader
 ArcadeUI.Button(resetLayoutButton, Color3.fromRGB(32, 55, 91))
 UITheme.attachButtonFeedback(resetLayoutButton, isUiReducedMotion)
 markInteractive(resetLayoutButton)
@@ -1222,7 +1336,7 @@ closeWorkspaceButton.Font = Enum.Font.GothamBlack
 closeWorkspaceButton.Text = "X"
 closeWorkspaceButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeWorkspaceButton.TextSize = 20
-closeWorkspaceButton.Parent = root
+closeWorkspaceButton.Parent = workspaceHeader
 ArcadeUI.Button(closeWorkspaceButton, Color3.fromRGB(215, 43, 54))
 UITheme.attachButtonFeedback(closeWorkspaceButton, isUiReducedMotion)
 markInteractive(closeWorkspaceButton)
@@ -1298,7 +1412,7 @@ title.Text = "SOLO PUZZLE WORKSPACE"
 title.TextColor3 = Color3.fromRGB(245, 247, 251)
 title.TextSize = 22
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = root
+title.Parent = workspaceHeader
 UITheme.text(title, "title")
 
 for dotIndex = 1, 5 do
@@ -1309,7 +1423,7 @@ for dotIndex = 1, 5 do
 	gripDot.Position = UDim2.new(0.5, -34 + (dotIndex - 1) * 17, 0, 32)
 	gripDot.Size = UDim2.fromOffset(9, 9)
 	gripDot.Active = false
-	gripDot.Parent = root
+	gripDot.Parent = workspaceHeader
 	UITheme.corner(gripDot, 9)
 	UITheme.stroke(gripDot, Color3.fromRGB(5, 12, 24), 1, 0.25)
 end
@@ -1318,7 +1432,7 @@ local scoreCard = Instance.new("Frame")
 scoreCard.Name = "ScoreCard"
 scoreCard.Position = UDim2.fromOffset(22, 72)
 scoreCard.Size = UDim2.fromOffset(210, 170)
-scoreCard.Parent = root
+scoreCard.Parent = leftColumn
 ArcadeUI.StatCard(scoreCard)
 
 local scoreHeading = Instance.new("TextLabel")
@@ -1379,7 +1493,7 @@ comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 comboBadgeLabel.TextSize = 28
 comboBadgeLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 comboBadgeLabel.TextStrokeTransparency = 0.05
-comboBadgeLabel.Parent = root
+comboBadgeLabel.Parent = leftColumn
 ArcadeUI.StatCard(comboBadgeLabel)
 ArcadeUI.Text(comboBadgeLabel, "combo")
 comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1408,7 +1522,7 @@ coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
 coinStatLabel.TextSize = 26
 coinStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 coinStatLabel.TextStrokeTransparency = 0.08
-coinStatLabel.Parent = root
+coinStatLabel.Parent = leftColumn
 ArcadeUI.StatCard(coinStatLabel)
 ArcadeUI.Text(coinStatLabel, "gold")
 coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
@@ -1424,7 +1538,7 @@ rankStatLabel.TextColor3 = ArcadeUI.Color.gold
 rankStatLabel.TextSize = 22
 rankStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 rankStatLabel.TextStrokeTransparency = 0.08
-rankStatLabel.Parent = root
+rankStatLabel.Parent = leftColumn
 ArcadeUI.StatCard(rankStatLabel)
 ArcadeUI.Text(rankStatLabel, "gold")
 rankStatLabel.TextColor3 = ArcadeUI.Color.gold
@@ -1439,7 +1553,7 @@ coinChipLabel.Font = Enum.Font.GothamBlack
 coinChipLabel.Text = "0 Coins  +"
 coinChipLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 coinChipLabel.TextSize = 20
-coinChipLabel.Parent = root
+coinChipLabel.Parent = workspaceHeader
 ArcadeUI.Button(coinChipLabel, Color3.fromRGB(13, 37, 69))
 
 timerLabel = Instance.new("TextLabel")
@@ -1452,7 +1566,7 @@ timerLabel.Text = "Time: --"
 timerLabel.TextColor3 = Color3.fromRGB(193, 201, 215)
 timerLabel.TextSize = 18
 timerLabel.TextXAlignment = Enum.TextXAlignment.Right
-timerLabel.Parent = root
+timerLabel.Parent = workspaceHeader
 UITheme.text(timerLabel, "muted")
 
 progressionLabel = Instance.new("TextLabel")
@@ -1464,7 +1578,7 @@ progressionLabel.Text = "Level 1 | 0 coins | 0 XP"
 progressionLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
 progressionLabel.TextSize = 14
 progressionLabel.TextXAlignment = Enum.TextXAlignment.Left
-progressionLabel.Parent = root
+progressionLabel.Parent = workspaceHeader
 UITheme.text(progressionLabel, "soft")
 
 matchInfoLabel = Instance.new("TextLabel")
@@ -1477,7 +1591,7 @@ matchInfoLabel.Text = "Beat your best score"
 matchInfoLabel.TextColor3 = Color3.fromRGB(153, 163, 179)
 matchInfoLabel.TextSize = 14
 matchInfoLabel.TextXAlignment = Enum.TextXAlignment.Right
-matchInfoLabel.Parent = root
+matchInfoLabel.Parent = workspaceHeader
 UITheme.text(matchInfoLabel, "soft")
 
 local function getSelectedShape()
@@ -1514,7 +1628,7 @@ boardFrame.Size = UDim2.fromOffset(304, 304)
 boardFrame.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
 boardFrame.BackgroundTransparency = 0
 boardFrame.ClipsDescendants = true
-boardFrame.Parent = root
+boardFrame.Parent = boardStage
 ArcadeUI.Panel(boardFrame, {
 	radius = 28,
 	rimColor = ArcadeUI.Color.rimBright,
@@ -1594,7 +1708,7 @@ side.Position = UDim2.fromOffset(360, 104)
 side.Size = UDim2.fromOffset(256, 304)
 side.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
 side.BackgroundTransparency = 0.02
-side.Parent = root
+side.Parent = trayStage
 ArcadeUI.Panel(side, {
 	radius = 26,
 	rimColor = ArcadeUI.Color.rimBright,
@@ -1692,7 +1806,7 @@ leaderboardLabel.TextColor3 = Color3.fromRGB(245, 247, 251)
 leaderboardLabel.TextSize = 16
 leaderboardLabel.TextXAlignment = Enum.TextXAlignment.Left
 leaderboardLabel.TextYAlignment = Enum.TextYAlignment.Top
-leaderboardLabel.Parent = root
+leaderboardLabel.Parent = rightColumn
 markInteractive(leaderboardLabel)
 ArcadeUI.Panel(leaderboardLabel, {
 	radius = 24,
@@ -1788,7 +1902,7 @@ returnHubButton.Font = Enum.Font.GothamBold
 returnHubButton.Text = "Return Hub"
 returnHubButton.TextColor3 = Color3.fromRGB(245, 247, 251)
 returnHubButton.TextSize = 14
-returnHubButton.Parent = root
+returnHubButton.Parent = actionsPanel
 styleButton(returnHubButton, "secondary")
 markInteractive(returnHubButton)
 
@@ -1802,7 +1916,7 @@ playAgainButton.Text = "Play Again"
 playAgainButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 playAgainButton.TextSize = 14
 playAgainButton.Visible = false
-playAgainButton.Parent = root
+playAgainButton.Parent = actionsPanel
 styleButton(playAgainButton, "primary")
 markInteractive(playAgainButton)
 
@@ -1816,7 +1930,7 @@ rotatePieceButton.Text = "Rotate"
 rotatePieceButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 rotatePieceButton.TextSize = 14
 rotatePieceButton.Visible = false
-rotatePieceButton.Parent = root
+rotatePieceButton.Parent = actionsPanel
 styleButton(rotatePieceButton, "primary")
 markInteractive(rotatePieceButton)
 
@@ -1830,7 +1944,7 @@ rerollPieceButton.Text = "Reroll"
 rerollPieceButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 rerollPieceButton.TextSize = 14
 rerollPieceButton.Visible = false
-rerollPieceButton.Parent = root
+rerollPieceButton.Parent = actionsPanel
 styleButton(rerollPieceButton, "primary")
 markInteractive(rerollPieceButton)
 
@@ -1872,53 +1986,82 @@ clampWindowToScreen = function()
 end
 
 applyWindowLayout = function()
-	local width = DEFAULT_WINDOW_SIZE.X
-	local leftX = 24
-	local centerX = 284
-	local rightX = 744
-	local boardPaddingPixels = 18
-	local boardCellPadding = 4
-	local cellPixels = 45
-	local innerBoardPixels = (cellPixels * Config.BoardSize)
+	local layout = WINDOW_LAYOUT
+	local contentY = layout.outerPadding + layout.headerHeight + layout.headerGap
+	local contentHeight = layout.height - contentY - layout.outerPadding
+	local gridSize = layout.boardSize
+	local boardPaddingPixels = layout.boardPadding
+	local boardCellPadding = layout.boardGap
+	local cellPixels = math.floor(
+		(gridSize - (2 * boardPaddingPixels) - ((Config.BoardSize - 1) * boardCellPadding))
+			/ Config.BoardSize
+	)
+	local usedBoardPixels = (cellPixels * Config.BoardSize)
 		+ ((Config.BoardSize - 1) * boardCellPadding)
-	local boardPixels = innerBoardPixels + (boardPaddingPixels * 2)
+		+ (2 * boardPaddingPixels)
+	local boardInset = math.floor((gridSize - usedBoardPixels) / 2)
 
 	title.Visible = true
-	title.Position = UDim2.fromOffset(24, 16)
-	title.Size = UDim2.fromOffset(520, 42)
+	title.Position = UDim2.fromOffset(20, 8)
+	title.Size = UDim2.fromOffset(260, 30)
 	title.TextSize = 22
 	progressionLabel.Visible = true
 
-	progressionLabel.Position = UDim2.fromOffset(26, 50)
-	progressionLabel.Size = UDim2.fromOffset(470, 20)
-	progressionLabel.TextSize = 14
-	timerLabel.Visible = false
+	workspaceHeader.Position = UDim2.fromOffset(layout.outerPadding, layout.outerPadding)
+	workspaceHeader.Size =
+		UDim2.fromOffset(layout.width - (layout.outerPadding * 2), layout.headerHeight)
+	workspaceContent.Position = UDim2.fromOffset(layout.outerPadding, contentY)
+	workspaceContent.Size =
+		UDim2.fromOffset(layout.width - (layout.outerPadding * 2), contentHeight)
+	leftColumn.Position = UDim2.fromOffset(0, 0)
+	leftColumn.Size = UDim2.fromOffset(layout.leftWidth, contentHeight)
+	centerColumn.Position = UDim2.fromOffset(layout.leftWidth + layout.columnGap, 0)
+	centerColumn.Size = UDim2.fromOffset(layout.centerWidth, contentHeight)
+	rightColumn.Position = UDim2.fromOffset(
+		layout.leftWidth + layout.columnGap + layout.centerWidth + layout.columnGap,
+		0
+	)
+	rightColumn.Size = UDim2.fromOffset(layout.rightWidth, contentHeight)
+	boardStage.Position = UDim2.fromOffset(0, 0)
+	boardStage.Size = UDim2.fromOffset(layout.centerWidth, layout.boardStageHeight)
+	trayStage.Position = UDim2.fromOffset(0, layout.boardStageHeight + layout.trayGap)
+	trayStage.Size = UDim2.fromOffset(layout.centerWidth, layout.trayHeight)
+
+	progressionLabel.Position = UDim2.fromOffset(20, 34)
+	progressionLabel.Size = UDim2.fromOffset(440, 18)
+	progressionLabel.TextSize = 12
+	timerLabel.Visible = true
+	timerLabel.AnchorPoint = Vector2.new(0, 0)
+	timerLabel.Position = UDim2.fromOffset(480, 16)
+	timerLabel.Size = UDim2.fromOffset(120, 28)
+	timerLabel.TextSize = 14
+	timerLabel.TextXAlignment = Enum.TextXAlignment.Center
 	matchInfoLabel.Visible = true
 	matchInfoLabel.AnchorPoint = Vector2.new(1, 0)
-	matchInfoLabel.Position = UDim2.new(1, -26, 0, 62)
-	matchInfoLabel.Size = UDim2.fromOffset(250, 24)
-	matchInfoLabel.TextSize = 14
+	matchInfoLabel.Position = UDim2.new(1, -276, 0, 17)
+	matchInfoLabel.Size = UDim2.fromOffset(190, 26)
+	matchInfoLabel.TextSize = 12
 
 	if customizeButton then
-		customizeButton.Position = UDim2.new(1, -224, 0, 18)
-		customizeButton.Size = UDim2.fromOffset(126, 38)
+		customizeButton.Position = UDim2.new(1, -394, 0, 12)
+		customizeButton.Size = UDim2.fromOffset(132, 36)
 		customizeButton.TextSize = 12
 	end
 	if coinChipLabel then
 		coinChipLabel.AnchorPoint = Vector2.new(1, 0)
-		coinChipLabel.Position = UDim2.new(1, -360, 0, 18)
-		coinChipLabel.Size = UDim2.fromOffset(126, 38)
+		coinChipLabel.Position = UDim2.new(1, -536, 0, 12)
+		coinChipLabel.Size = UDim2.fromOffset(132, 36)
 		coinChipLabel.TextSize = 15
 	end
 	if resetLayoutButton then
-		resetLayoutButton.Position = UDim2.new(1, -90, 0, 18)
-		resetLayoutButton.Size = UDim2.fromOffset(54, 38)
+		resetLayoutButton.Position = UDim2.new(1, -88, 0, 12)
+		resetLayoutButton.Size = UDim2.fromOffset(54, 36)
 		resetLayoutButton.Text = "Reset"
 		resetLayoutButton.TextSize = 11
 	end
 	if closeWorkspaceButton then
-		closeWorkspaceButton.Position = UDim2.new(1, -26, 0, 18)
-		closeWorkspaceButton.Size = UDim2.fromOffset(44, 38)
+		closeWorkspaceButton.Position = UDim2.new(1, -22, 0, 12)
+		closeWorkspaceButton.Size = UDim2.fromOffset(44, 36)
 		closeWorkspaceButton.TextSize = 20
 	end
 	if resizeHandle then
@@ -1926,8 +2069,8 @@ applyWindowLayout = function()
 		resizeHandle.Size = UDim2.fromOffset(50, 34)
 	end
 
-	scoreCard.Position = UDim2.fromOffset(leftX, 92)
-	scoreCard.Size = UDim2.fromOffset(220, 154)
+	scoreCard.Position = UDim2.fromOffset(0, 0)
+	scoreCard.Size = UDim2.fromOffset(layout.leftWidth, 150)
 	scoreLabel.Position = UDim2.fromOffset(14, 18)
 	scoreLabel.Size = UDim2.new(1, -28, 0, 60)
 	scoreLabel.TextSize = 48
@@ -1935,24 +2078,31 @@ applyWindowLayout = function()
 	bestScoreLabel.Size = UDim2.new(1, -36, 0, 34)
 	bestScoreLabel.TextSize = 20
 
-	comboBadgeLabel.Position = UDim2.fromOffset(leftX, 262)
-	comboBadgeLabel.Size = UDim2.fromOffset(220, 112)
-	comboBadgeLabel.TextSize = 30
+	comboBadgeLabel.Position = UDim2.fromOffset(0, 150 + layout.statGap)
+	comboBadgeLabel.Size = UDim2.fromOffset(layout.leftWidth, 104)
+	comboBadgeLabel.TextSize = 28
 	comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	comboBadgeLabel.TextTransparency = 0
+	comboBadgeLabel.BackgroundTransparency = 0.02
 	comboBadgeLabel.TextStrokeTransparency = 0.05
-	coinStatLabel.Position = UDim2.fromOffset(leftX, 390)
-	coinStatLabel.Size = UDim2.fromOffset(220, 78)
+	coinStatLabel.Position = UDim2.fromOffset(0, 150 + layout.statGap + 104 + layout.statGap)
+	coinStatLabel.Size = UDim2.fromOffset(layout.leftWidth, 86)
 	coinStatLabel.TextSize = 26
 	coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
+	coinStatLabel.TextTransparency = 0
+	coinStatLabel.BackgroundTransparency = 0.02
 	coinStatLabel.TextStrokeTransparency = 0.08
-	rankStatLabel.Position = UDim2.fromOffset(leftX, 484)
-	rankStatLabel.Size = UDim2.fromOffset(220, 78)
+	rankStatLabel.Position =
+		UDim2.fromOffset(0, 150 + layout.statGap + 104 + layout.statGap + 86 + layout.statGap)
+	rankStatLabel.Size = UDim2.fromOffset(layout.leftWidth, 86)
 	rankStatLabel.TextSize = 22
 	rankStatLabel.TextColor3 = ArcadeUI.Color.gold
+	rankStatLabel.TextTransparency = 0
+	rankStatLabel.BackgroundTransparency = 0.02
 	rankStatLabel.TextStrokeTransparency = 0.08
 
-	boardFrame.Position = UDim2.fromOffset(centerX, 88)
-	boardFrame.Size = UDim2.fromOffset(boardPixels, boardPixels)
+	boardFrame.Position = UDim2.fromOffset(boardInset, boardInset)
+	boardFrame.Size = UDim2.fromOffset(usedBoardPixels, usedBoardPixels)
 	boardLayout.CellSize = UDim2.fromOffset(cellPixels, cellPixels)
 	boardLayout.CellPadding = UDim2.fromOffset(boardCellPadding, boardCellPadding)
 	boardPadding.PaddingTop = UDim.new(0, boardPaddingPixels)
@@ -1960,54 +2110,85 @@ applyWindowLayout = function()
 	boardPadding.PaddingLeft = UDim.new(0, boardPaddingPixels)
 	boardPadding.PaddingRight = UDim.new(0, boardPaddingPixels)
 
-	local sideWidth = boardPixels
-	side.Position = UDim2.fromOffset(centerX, 548)
-	side.Size = UDim2.fromOffset(sideWidth, 98)
-	statusLabel.Position = UDim2.fromOffset(18, 10)
-	statusLabel.Size = UDim2.fromOffset(sideWidth - 36, 24)
-	statusLabel.TextSize = 18
+	local sideWidth = layout.centerWidth
+	side.Position = UDim2.fromOffset(0, 0)
+	side.Size = UDim2.fromOffset(sideWidth, layout.trayHeight)
+	statusLabel.Position = UDim2.fromOffset(18, 12)
+	statusLabel.Size = UDim2.fromOffset(sideWidth - 36, 22)
+	statusLabel.TextSize = 17
 	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-	local slotHeight = 54
+	local slotHeight = 62
 	for slot, button in handButtons do
 		local buttonWidth =
-			math.floor((sideWidth - 32 - ((Config.InventorySize - 1) * 14)) / Config.InventorySize)
-		button.Position = UDim2.fromOffset(16 + (slot - 1) * (buttonWidth + 14), 38)
+			math.floor((sideWidth - 36 - ((Config.InventorySize - 1) * 14)) / Config.InventorySize)
+		button.Position = UDim2.fromOffset(18 + (slot - 1) * (buttonWidth + 14), 38)
 		button.Size = UDim2.fromOffset(buttonWidth, slotHeight)
 
 		local preview = handPreviews[slot]
-		preview.Size = UDim2.fromOffset(44, 44)
+		preview.Size = UDim2.fromOffset(54, 54)
 		preview.Position =
-			UDim2.fromOffset(math.max(6, math.floor((buttonWidth - preview.Size.X.Offset) / 2)), 5)
+			UDim2.fromOffset(math.max(8, math.floor((buttonWidth - preview.Size.X.Offset) / 2)), 4)
 
 		local label = button:FindFirstChild("Label")
 		if label and label:IsA("TextLabel") then
-			label.Position = UDim2.fromOffset(4, 38)
+			label.Position = UDim2.fromOffset(6, 44)
 			label.Size = UDim2.fromOffset(math.max(60, buttonWidth - 8), 14)
-			label.TextSize = 10
+			label.TextSize = 11
 			label.TextXAlignment = Enum.TextXAlignment.Center
 		end
 	end
 
 	if leaderboardLabel then
 		leaderboardLabel.Visible = true
-		leaderboardLabel.Position = UDim2.fromOffset(rightX, 118)
-		leaderboardLabel.Size = UDim2.fromOffset(336, 342)
+		leaderboardLabel.Position = UDim2.fromOffset(0, 0)
+		leaderboardLabel.Size = UDim2.fromOffset(layout.rightWidth, 378)
 		leaderboardLabel.TextSize = 18
 	end
+	local activeLeaderboardHeading = leaderboardLabel and leaderboardLabel:FindFirstChild("Heading")
+	if activeLeaderboardHeading and activeLeaderboardHeading:IsA("TextLabel") then
+		activeLeaderboardHeading.Position = UDim2.fromOffset(52, 16)
+		activeLeaderboardHeading.Size = UDim2.new(1, -76, 0, 30)
+		activeLeaderboardHeading.TextSize = 22
+	end
+	for rowIndex, row in leaderboardRows do
+		row.Position = UDim2.fromOffset(16, 58 + (rowIndex - 1) * 42)
+		row.Size = UDim2.fromOffset(layout.rightWidth - 32, 38)
+		local nameLabel = row:FindFirstChild("Name")
+		if nameLabel and nameLabel:IsA("TextLabel") then
+			nameLabel.Position = UDim2.fromOffset(84, 0)
+			nameLabel.Size = UDim2.fromOffset(144, 38)
+			nameLabel.TextSize = 14
+		end
+		local score = row:FindFirstChild("Score")
+		if score and score:IsA("TextLabel") then
+			score.Position = UDim2.fromOffset(232, 0)
+			score.Size = UDim2.fromOffset(82, 38)
+			score.TextSize = 14
+		end
+	end
+	local emptyLabel = leaderboardLabel and leaderboardLabel:FindFirstChild("Empty")
+	if emptyLabel and emptyLabel:IsA("TextLabel") then
+		emptyLabel.Position = UDim2.fromOffset(24, 112)
+		emptyLabel.Size = UDim2.new(1, -48, 0, 72)
+		emptyLabel.TextSize = 15
+	end
 
-	local actionWidth = 164
-	returnHubButton.Position = UDim2.fromOffset(rightX, 484)
-	returnHubButton.Size = UDim2.fromOffset(actionWidth, 42)
-	playAgainButton.Position = UDim2.fromOffset(rightX + actionWidth + 12, 484)
-	playAgainButton.Size = UDim2.fromOffset(actionWidth, 42)
+	actionsPanel.Position = UDim2.fromOffset(0, 378 + layout.actionGap)
+	actionsPanel.Size = UDim2.fromOffset(layout.rightWidth, 112)
 
-	rotatePieceButton.Position = UDim2.fromOffset(rightX, 536)
-	rotatePieceButton.Size = UDim2.fromOffset(actionWidth, 40)
-	rerollPieceButton.Position = UDim2.fromOffset(rightX + actionWidth + 12, 536)
-	rerollPieceButton.Size = UDim2.fromOffset(actionWidth, 40)
+	local actionWidth = math.floor((layout.rightWidth - layout.actionGap) / 2)
+	returnHubButton.Position = UDim2.fromOffset(0, 0)
+	returnHubButton.Size = UDim2.fromOffset(actionWidth, 44)
+	playAgainButton.Position = UDim2.fromOffset(actionWidth + layout.actionGap, 0)
+	playAgainButton.Size = UDim2.fromOffset(actionWidth, 44)
 
-	root.Size = UDim2.fromOffset(width, DEFAULT_WINDOW_SIZE.Y)
+	rotatePieceButton.Position = UDim2.fromOffset(0, 56)
+	rotatePieceButton.Size = UDim2.fromOffset(actionWidth, 42)
+	rerollPieceButton.Position = UDim2.fromOffset(actionWidth + layout.actionGap, 56)
+	rerollPieceButton.Size = UDim2.fromOffset(actionWidth, 42)
+
+	root.Size = UDim2.fromOffset(layout.width, layout.height)
 end
 
 returnHubButton.Activated:Connect(function()
@@ -2083,6 +2264,14 @@ local function startWorkspaceResize(input)
 end
 
 root.InputBegan:Connect(startWorkspaceDrag)
+workspaceHeader.InputBegan:Connect(startWorkspaceDrag)
+workspaceContent.InputBegan:Connect(startWorkspaceDrag)
+leftColumn.InputBegan:Connect(startWorkspaceDrag)
+centerColumn.InputBegan:Connect(startWorkspaceDrag)
+rightColumn.InputBegan:Connect(startWorkspaceDrag)
+boardStage.InputBegan:Connect(startWorkspaceDrag)
+trayStage.InputBegan:Connect(startWorkspaceDrag)
+actionsPanel.InputBegan:Connect(startWorkspaceDrag)
 title.InputBegan:Connect(startWorkspaceDrag)
 scoreCard.InputBegan:Connect(startWorkspaceDrag)
 comboBadgeLabel.InputBegan:Connect(startWorkspaceDrag)
@@ -2381,7 +2570,7 @@ local function shapeText(shape)
 		return "Used"
 	end
 
-	return `{shape.id} ({#shape.cells} blocks)`
+	return "Ready"
 end
 
 local function storyGoalText(state)
@@ -2512,6 +2701,10 @@ local function renderLeaderboard(leaderboard)
 
 	if rankStatLabel then
 		rankStatLabel.Text = currentRank and `TROPHY\nRANK #{currentRank}` or "TROPHY\nRANK --"
+		rankStatLabel.TextColor3 = ArcadeUI.Color.gold
+		rankStatLabel.TextTransparency = 0
+		rankStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+		rankStatLabel.TextStrokeTransparency = 0.08
 	end
 
 	leaderboardLabel.Text = ""
@@ -2536,6 +2729,10 @@ local function renderProgression()
 	end
 	if coinStatLabel then
 		coinStatLabel.Text = `COINS\n{coins and coins.Value or 0}`
+		coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
+		coinStatLabel.TextTransparency = 0
+		coinStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+		coinStatLabel.TextStrokeTransparency = 0.08
 	end
 	if hudController then
 		hudController:UpdateProgression()
@@ -2612,6 +2809,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		rotatePieceButton.Visible = false
 		rerollPieceButton.Visible = false
 		if hudController then
+			suppressExternalPuzzleHud(false)
 			hudController:UpdateGameState(nil)
 		end
 		setHubPanelVisible(not hubManuallyClosed)
@@ -2629,6 +2827,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	end
 	if hudController then
 		hudController:UpdateGameState(currentState)
+		suppressExternalPuzzleHud(true)
 	end
 	if currentState.alive then
 		resultPanelController:Hide()
@@ -2638,10 +2837,10 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	storyPanelController:Hide()
 	setHubPanelVisible(false)
 	updateTutorialVisibility()
-	title.Text = currentState.mode == "Story" and "STORY TRAINING WORKSPACE"
-		or currentState.mode == "Custom" and "CUSTOM LAB WORKSPACE"
-		or currentState.mode == "Solo" and "SOLO PUZZLE WORKSPACE"
-		or "BLOCK BLAST BATTLE WORKSPACE"
+	title.Text = currentState.mode == "Story" and "STORY TRAINING"
+		or currentState.mode == "Custom" and "CUSTOM LAB"
+		or currentState.mode == "Solo" and "SOLO PUZZLE"
+		or "BLOCK BLAST BATTLE"
 	scoreLabel.Text = tostring(currentState.score)
 	if bestScoreLabel then
 		bestScoreLabel.Text = `BEST {currentState.bestScore or 0}`
@@ -2649,6 +2848,10 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	if comboBadgeLabel then
 		local combo = math.max(1, currentState.comboStreak or 1)
 		comboBadgeLabel.Text = `COMBO\nx{combo}`
+		comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		comboBadgeLabel.TextTransparency = 0
+		comboBadgeLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+		comboBadgeLabel.TextStrokeTransparency = 0.05
 		comboBadgeLabel.Visible = combo > 1 or currentState.mode == "Solo"
 	end
 	matchInfoLabel.Text = currentState.mode == "Story"

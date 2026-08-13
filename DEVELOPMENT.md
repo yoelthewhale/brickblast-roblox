@@ -1966,3 +1966,26 @@ Upload the seven PNGs in `assets/ui/icons`, paste the returned IDs into `UIAsset
 
 - Run the Roblox Studio local server stress-test checklist in `docs/MULTIPLAYER_STRESS_TEST.md`.
   This should happen next because the code now has enough matchmaking, rewards, persistence, story selection, and sudden-death behavior that real multi-client validation is more valuable than another local-only feature.
+## Session Update - 2026-08-13 Day37.2.2 PC Workspace Layout Rebuild
+
+### Completed
+
+- Rebuilt the PC Solo Puzzle workspace into a measured arcade-console hierarchy: header, content region, left stats column, center board/tray column, and right leaderboard/action column.
+- Replaced scattered panel offsets with named `WINDOW_LAYOUT` constants for shell size, padding, columns, board, tray, gaps, and action spacing.
+- Recomputed board cells from the actual square grid area: `floor((408 - 36 - 35) / 8) = 42`, producing a complete 407px used board inside the 408px board stage.
+- Kept exactly 64 logical `TextButton` cells from the existing 8x8 loop and constrained glossy block/shadow children inside each cell to prevent visual bleed.
+- Moved the piece tray fully below the board with a 14px measured gap and larger piece previews.
+- Forced final readable contrast for Combo, Coins, and Rank refresh paths instead of relying only on helper defaults.
+- Rebalanced Server Top into the right column with compact rows and functional actions directly beneath it.
+- Suppressed duplicate external HUD/gameplay status elements while the puzzle workspace is open and restored hub HUD focus on return.
+- Built `BlockBlastBattle-Day37-2-2.rbxl`.
+
+### Current State
+
+- Studio screenshot/runtime capture was not available in this session, so the checkpoint requires Yoel's visual approval in Roblox Studio.
+- Source validation confirms the board remains exactly 8x8 logically and the board/tray heights fit within the PC workspace at the shared workspace scale.
+- Existing drag, resize, Reset Layout, board placement, scoring, combo, coins, best score, Server Top, Return Hub, and Play Again code paths were preserved.
+
+### Next Priority
+
+- Open `BlockBlastBattle-Day37-2-2.rbxl` in Studio and inspect the PC Solo Puzzle at default, minimum, and maximum workspace scale. This is highest priority because the previous failure was visual/runtime layout mismatch, not a compile issue.
