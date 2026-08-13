@@ -1989,3 +1989,23 @@ Upload the seven PNGs in `assets/ui/icons`, paste the returned IDs into `UIAsset
 ### Next Priority
 
 - Open `BlockBlastBattle-Day37-2-2.rbxl` in Studio and inspect the PC Solo Puzzle at default, minimum, and maximum workspace scale. This is highest priority because the previous failure was visual/runtime layout mismatch, not a compile issue.
+
+## Session Update - 2026-08-13 Day37.2.3 Board Hierarchy Fix
+
+### Completed
+
+- Traced Yoel's reported 65th grid item to `ArcadeUI.Panel(boardFrame)`, which added `ArcadeTopHighlight` as a direct `Frame` child beside the `UIGridLayout` and 64 cells.
+- Added a dedicated `BoardGridContainer` inside `BoardFrame`; `BoardFrame` now owns board-wide rim/highlight decoration, while `BoardGridContainer` owns only `UIPadding`, `UIGridLayout`, and the 64 cell buttons.
+- Added one-time development validation that warns if the grid container has anything except 64 direct `GuiObject` cell buttons with unique in-bounds coordinates.
+- Stored `BoardX`, `BoardY`, and `IsBoardCell` attributes on each cell button and made placement/hover use those attributes.
+- Fixed the remaining left stat contrast by removing text-label gradients from Combo, Coins, and Rank labels and switching those labels to RichText headings/values.
+- Built `BlockBlastBattle-Day37-2-3.rbxl`.
+
+### Current State
+
+- Source validation confirms the grid-layout parent no longer receives board-wide decorative GuiObjects.
+- Studio runtime verification still needs Yoel because Studio screenshot capture/control was not available in this session.
+
+### Next Priority
+
+- Open `BlockBlastBattle-Day37-2-3.rbxl` in Studio and confirm the top-left cell is a normal square, no clickable cell appears below the board, and stat text is readable.

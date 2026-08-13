@@ -76,6 +76,7 @@ local rightColumn = nil
 local boardStage = nil
 local trayStage = nil
 local actionsPanel = nil
+local boardGridContainer = nil
 local leaderboardLabel = nil
 local leaderboardRows = {}
 local customizeButton = nil
@@ -192,6 +193,45 @@ local function suppressExternalPuzzleHud(isPuzzleVisible)
 	end
 	if hudController.cancelQueueButton then
 		hudController.cancelQueueButton.Visible = false
+	end
+end
+
+local function removeDirectGradients(guiObject)
+	for _, child in guiObject:GetChildren() do
+		if child:IsA("UIGradient") then
+			child:Destroy()
+		end
+	end
+end
+
+local function statRichText(heading, value, valueColorHex)
+	return `<font color="#FFFFFF">{heading}</font>\n<font color="{valueColorHex}">{value}</font>`
+end
+
+local function enforceStatTextContrast()
+	if comboBadgeLabel then
+		removeDirectGradients(comboBadgeLabel)
+		comboBadgeLabel.RichText = true
+		comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		comboBadgeLabel.TextTransparency = 0
+		comboBadgeLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+		comboBadgeLabel.TextStrokeTransparency = 0.05
+	end
+	if coinStatLabel then
+		removeDirectGradients(coinStatLabel)
+		coinStatLabel.RichText = true
+		coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
+		coinStatLabel.TextTransparency = 0
+		coinStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+		coinStatLabel.TextStrokeTransparency = 0.08
+	end
+	if rankStatLabel then
+		removeDirectGradients(rankStatLabel)
+		rankStatLabel.RichText = true
+		rankStatLabel.TextColor3 = ArcadeUI.Color.gold
+		rankStatLabel.TextTransparency = 0
+		rankStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+		rankStatLabel.TextStrokeTransparency = 0.08
 	end
 end
 
@@ -1488,7 +1528,7 @@ comboBadgeLabel.BackgroundColor3 = ArcadeUI.Color.inner
 comboBadgeLabel.Position = UDim2.fromOffset(22, 232)
 comboBadgeLabel.Size = UDim2.fromOffset(210, 108)
 comboBadgeLabel.Font = Enum.Font.GothamBlack
-comboBadgeLabel.Text = "COMBO\nx1"
+comboBadgeLabel.Text = statRichText("COMBO", "x1", "#DA49FF")
 comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 comboBadgeLabel.TextSize = 28
 comboBadgeLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
@@ -1496,7 +1536,6 @@ comboBadgeLabel.TextStrokeTransparency = 0.05
 comboBadgeLabel.Parent = leftColumn
 ArcadeUI.StatCard(comboBadgeLabel)
 ArcadeUI.Text(comboBadgeLabel, "combo")
-comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 
 for sparkleIndex = 1, 4 do
 	local sparkle = Instance.new("Frame")
@@ -1517,7 +1556,7 @@ coinStatLabel.BackgroundColor3 = Color3.fromRGB(11, 27, 51)
 coinStatLabel.Position = UDim2.fromOffset(22, 356)
 coinStatLabel.Size = UDim2.fromOffset(210, 76)
 coinStatLabel.Font = Enum.Font.GothamBlack
-coinStatLabel.Text = "COINS\n0"
+coinStatLabel.Text = statRichText("COINS", "0", "#FFECA0")
 coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
 coinStatLabel.TextSize = 26
 coinStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
@@ -1525,7 +1564,6 @@ coinStatLabel.TextStrokeTransparency = 0.08
 coinStatLabel.Parent = leftColumn
 ArcadeUI.StatCard(coinStatLabel)
 ArcadeUI.Text(coinStatLabel, "gold")
-coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
 
 rankStatLabel = Instance.new("TextLabel")
 rankStatLabel.BackgroundTransparency = 0.04
@@ -1533,7 +1571,7 @@ rankStatLabel.BackgroundColor3 = Color3.fromRGB(11, 27, 51)
 rankStatLabel.Position = UDim2.fromOffset(22, 482)
 rankStatLabel.Size = UDim2.fromOffset(210, 76)
 rankStatLabel.Font = Enum.Font.GothamBlack
-rankStatLabel.Text = "TROPHY\nRANK --"
+rankStatLabel.Text = statRichText("TROPHY", "RANK --", "#FFC629")
 rankStatLabel.TextColor3 = ArcadeUI.Color.gold
 rankStatLabel.TextSize = 22
 rankStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
@@ -1541,7 +1579,7 @@ rankStatLabel.TextStrokeTransparency = 0.08
 rankStatLabel.Parent = leftColumn
 ArcadeUI.StatCard(rankStatLabel)
 ArcadeUI.Text(rankStatLabel, "gold")
-rankStatLabel.TextColor3 = ArcadeUI.Color.gold
+enforceStatTextContrast()
 
 coinChipLabel = Instance.new("TextLabel")
 coinChipLabel.AnchorPoint = Vector2.new(1, 0)
@@ -1634,29 +1672,39 @@ ArcadeUI.Panel(boardFrame, {
 	rimColor = ArcadeUI.Color.rimBright,
 	strokeThickness = 6,
 })
+boardGridContainer = Instance.new("Frame")
+boardGridContainer.Name = "BoardGridContainer"
+boardGridContainer.BackgroundTransparency = 1
+boardGridContainer.BorderSizePixel = 0
+boardGridContainer.ClipsDescendants = true
+boardGridContainer.Parent = boardFrame
+
 local boardPadding = Instance.new("UIPadding")
 boardPadding.PaddingTop = UDim.new(0, 16)
 boardPadding.PaddingBottom = UDim.new(0, 16)
 boardPadding.PaddingLeft = UDim.new(0, 16)
 boardPadding.PaddingRight = UDim.new(0, 16)
-boardPadding.Parent = boardFrame
+boardPadding.Parent = boardGridContainer
 
 local boardLayout = Instance.new("UIGridLayout")
 boardLayout.CellSize = UDim2.fromOffset(35, 35)
 boardLayout.CellPadding = UDim2.fromOffset(3, 3)
 boardLayout.SortOrder = Enum.SortOrder.LayoutOrder
-boardLayout.Parent = boardFrame
+boardLayout.Parent = boardGridContainer
 
 for y = 1, Config.BoardSize do
 	for x = 1, Config.BoardSize do
 		local button = Instance.new("TextButton")
 		button.Name = `{x}_{y}`
+		button:SetAttribute("BoardX", x)
+		button:SetAttribute("BoardY", y)
+		button:SetAttribute("IsBoardCell", true)
 		button.LayoutOrder = (y - 1) * Config.BoardSize + x
 		button.BackgroundColor3 = Config.Colors.Empty
 		button.BorderSizePixel = 0
 		button.Text = ""
 		button.AutoButtonColor = false
-		button.Parent = boardFrame
+		button.Parent = boardGridContainer
 		markInteractive(button)
 		ArcadeUI.BoardCell(button)
 
@@ -1670,11 +1718,18 @@ for y = 1, Config.BoardSize do
 		cellScales[y][x] = scale
 
 		button.Activated:Connect(function()
+			local boardX = button:GetAttribute("BoardX")
+			local boardY = button:GetAttribute("BoardY")
 			if currentState and selectedSlot then
 				local shape = currentState.hand[selectedSlot]
-				if shape and Grid.canPlace(currentState.board, shape, x, y) then
+				if
+					shape
+					and typeof(boardX) == "number"
+					and typeof(boardY) == "number"
+					and Grid.canPlace(currentState.board, shape, boardX, boardY)
+				then
 					playSound("Place")
-					placeEvent:FireServer(selectedSlot, x, y)
+					placeEvent:FireServer(selectedSlot, boardX, boardY)
 				elseif shape then
 					statusLabel.Text = "That spot is blocked"
 					playSound("Blocked")
@@ -1684,15 +1739,18 @@ for y = 1, Config.BoardSize do
 		end)
 
 		button.MouseEnter:Connect(function()
-			hoverX = x
-			hoverY = y
+			hoverX = button:GetAttribute("BoardX")
+			hoverY = button:GetAttribute("BoardY")
 			if currentState then
 				renderBoard()
 			end
 		end)
 
 		button.MouseLeave:Connect(function()
-			if hoverX == x and hoverY == y then
+			if
+				hoverX == button:GetAttribute("BoardX")
+				and hoverY == button:GetAttribute("BoardY")
+			then
 				hoverX = nil
 				hoverY = nil
 				if currentState then
@@ -1702,6 +1760,46 @@ for y = 1, Config.BoardSize do
 		end)
 	end
 end
+
+local function validateBoardGridHierarchy()
+	local directGuiObjects = 0
+	local seenCoordinates = {}
+
+	for _, child in boardGridContainer:GetChildren() do
+		if child:IsA("GuiObject") then
+			directGuiObjects += 1
+			local isCell = child:IsA("TextButton") and child:GetAttribute("IsBoardCell") == true
+			local x = child:GetAttribute("BoardX")
+			local y = child:GetAttribute("BoardY")
+			local coordinateKey = `{tostring(x)}:{tostring(y)}`
+
+			if
+				not isCell
+				or typeof(x) ~= "number"
+				or typeof(y) ~= "number"
+				or x < 1
+				or x > Config.BoardSize
+				or y < 1
+				or y > Config.BoardSize
+				or seenCoordinates[coordinateKey]
+			then
+				warn(
+					`Invalid board grid child: {child.Name} ({child.ClassName}) at {coordinateKey}`
+				)
+			end
+
+			seenCoordinates[coordinateKey] = true
+		end
+	end
+
+	if directGuiObjects ~= Config.BoardSize * Config.BoardSize then
+		warn(
+			`BoardGridContainer expected {Config.BoardSize * Config.BoardSize} direct GuiObjects, found {directGuiObjects}`
+		)
+	end
+end
+
+validateBoardGridHierarchy()
 
 local side = Instance.new("Frame")
 side.Position = UDim2.fromOffset(360, 104)
@@ -2103,6 +2201,8 @@ applyWindowLayout = function()
 
 	boardFrame.Position = UDim2.fromOffset(boardInset, boardInset)
 	boardFrame.Size = UDim2.fromOffset(usedBoardPixels, usedBoardPixels)
+	boardGridContainer.Position = UDim2.fromScale(0, 0)
+	boardGridContainer.Size = UDim2.fromScale(1, 1)
 	boardLayout.CellSize = UDim2.fromOffset(cellPixels, cellPixels)
 	boardLayout.CellPadding = UDim2.fromOffset(boardCellPadding, boardCellPadding)
 	boardPadding.PaddingTop = UDim.new(0, boardPaddingPixels)
@@ -2700,11 +2800,9 @@ local function renderLeaderboard(leaderboard)
 	end
 
 	if rankStatLabel then
-		rankStatLabel.Text = currentRank and `TROPHY\nRANK #{currentRank}` or "TROPHY\nRANK --"
-		rankStatLabel.TextColor3 = ArcadeUI.Color.gold
-		rankStatLabel.TextTransparency = 0
-		rankStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-		rankStatLabel.TextStrokeTransparency = 0.08
+		rankStatLabel.Text =
+			statRichText("TROPHY", currentRank and `RANK #{currentRank}` or "RANK --", "#FFC629")
+		enforceStatTextContrast()
 	end
 
 	leaderboardLabel.Text = ""
@@ -2728,11 +2826,8 @@ local function renderProgression()
 		coinChipLabel.Text = `{coins and coins.Value or 0} Coins  +`
 	end
 	if coinStatLabel then
-		coinStatLabel.Text = `COINS\n{coins and coins.Value or 0}`
-		coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
-		coinStatLabel.TextTransparency = 0
-		coinStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-		coinStatLabel.TextStrokeTransparency = 0.08
+		coinStatLabel.Text = statRichText("COINS", tostring(coins and coins.Value or 0), "#FFECA0")
+		enforceStatTextContrast()
 	end
 	if hudController then
 		hudController:UpdateProgression()
@@ -2847,11 +2942,8 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	end
 	if comboBadgeLabel then
 		local combo = math.max(1, currentState.comboStreak or 1)
-		comboBadgeLabel.Text = `COMBO\nx{combo}`
-		comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-		comboBadgeLabel.TextTransparency = 0
-		comboBadgeLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-		comboBadgeLabel.TextStrokeTransparency = 0.05
+		comboBadgeLabel.Text = statRichText("COMBO", `x{combo}`, "#DA49FF")
+		enforceStatTextContrast()
 		comboBadgeLabel.Visible = combo > 1 or currentState.mode == "Solo"
 	end
 	matchInfoLabel.Text = currentState.mode == "Story"
