@@ -192,7 +192,7 @@ function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	return block
 end
 
-function ArcadeUI.RenderShapePreview(preview, shape)
+function ArcadeUI.RenderShapePreview(preview, shape, options)
 	for _, child in preview:GetChildren() do
 		child:Destroy()
 	end
@@ -220,10 +220,17 @@ function ArcadeUI.RenderShapePreview(preview, shape)
 	local offsetX = math.floor((previewSize - width * tileSize) / 2)
 	local offsetY = math.floor((previewSize - height * tileSize) / 2)
 
-	for _, cell in shape.cells do
+	for index, cell in shape.cells do
+		local blockColor = shape.color
+		if options and options.blockColor then
+			blockColor = options.blockColor
+		elseif options and options.blockColors then
+			blockColor = options.blockColors[((index - 1) % #options.blockColors) + 1]
+		end
+
 		ArcadeUI.GlossyBlock(
 			preview,
-			shape.color,
+			blockColor,
 			UDim2.fromOffset(tileSize - 3, tileSize - 3),
 			UDim2.fromOffset(
 				offsetX + (cell.X - minX) * tileSize,

@@ -15,7 +15,9 @@ local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
 local ExperienceConfig = require(GameShared.ExperienceConfig)
 local Grid = require(GameShared.Grid)
+local SoloLayout = require(GameShared.SoloLayout)
 local StageProgression = require(GameShared.StageProgression)
+local StageVisuals = require(GameShared.StageVisuals)
 local ArcadeUI = require(script.Parent.ArcadeUI)
 local CosmeticPanel = require(script.Parent.CosmeticPanel)
 local DeveloperPanel = require(script.Parent.DeveloperPanel)
@@ -127,33 +129,9 @@ local renderHand = nil
 local renderDiagnostics = nil
 local pulseHandSlot = nil
 
-local DEFAULT_WINDOW_POSITION = UDim2.new(0.5, 0, 0.5, 18)
-local DEFAULT_WINDOW_SIZE = Vector2.new(1120, 650)
-local DEFAULT_WORKSPACE_SCALE = 1
-local MIN_WORKSPACE_SCALE = 0.78
-local MAX_WORKSPACE_SCALE = 1.22
-local WINDOW_LAYOUT = {
-	width = 1120,
-	height = 650,
-	outerPadding = 22,
-	headerHeight = 60,
-	headerGap = 16,
-	columnGap = 18,
-	leftWidth = 222,
-	centerWidth = 408,
-	rightWidth = 410,
-	statGap = 14,
-	boardPadding = 18,
-	boardGap = 5,
-	boardSize = 408,
-	boardStageHeight = 408,
-	trayGap = 14,
-	trayHeight = 104,
-	actionGap = 12,
-}
+local WINDOW_LAYOUT = SoloLayout.calculate(Vector2.new(1280, 720), 36, 0, 1)
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-local workspaceScale = DEFAULT_WORKSPACE_SCALE
 
 local function isUiReducedMotion()
 	return reducedMotion
@@ -204,6 +182,16 @@ local function suppressExternalPuzzleHud(isPuzzleVisible)
 	end
 	if hudController.cancelQueueButton then
 		hudController.cancelQueueButton.Visible = false
+	end
+	local screenGui = player:FindFirstChild("PlayerGui")
+		and player.PlayerGui:FindFirstChild("BlockBlastBattleGui")
+	for _, name in
+		{ "ArcadeBrand", "TopResourceBar", "LeftArcadeNav", "RightArcadeNav", "TopQueueBanner" }
+	do
+		local item = screenGui and screenGui:FindFirstChild(name)
+		if item and item:IsA("GuiObject") then
+			item.Visible = not isPuzzleVisible
+		end
 	end
 end
 
@@ -540,28 +528,17 @@ local function applyUiScale()
 		automaticScale = 0.96
 	end
 
-	local _, bottomRightInset = GuiService:GetGuiInset()
-	local usableWidth = math.max(1, screenSize.X - 32)
-	local usableHeight = math.max(1, screenSize.Y - bottomRightInset.Y - 32)
-	local rootFitScale = math.min(
-		1,
-		usableWidth / math.max(1, root.Size.X.Offset),
-		usableHeight / math.max(1, root.Size.Y.Offset)
-	)
 	local nextScale = automaticScale * uiScale
+	local topLeftInset, bottomRightInset = GuiService:GetGuiInset()
+	WINDOW_LAYOUT = SoloLayout.calculate(screenSize, topLeftInset.Y, bottomRightInset.Y, nextScale)
 	if rootScale then
-		local lowerBound = math.min(MIN_WORKSPACE_SCALE, rootFitScale)
-		rootScale.Scale = math.clamp(
-			math.min(nextScale * workspaceScale, rootFitScale),
-			lowerBound,
-			MAX_WORKSPACE_SCALE
-		)
+		rootScale.Scale = 1
 	end
 	if homePanelController then
 		homePanelController:RefreshResponsiveLayout(screenSize, nextScale)
 	end
-	if clampWindowToScreen then
-		clampWindowToScreen()
+	if applyWindowLayout then
+		applyWindowLayout()
 	end
 	if bannerScale then
 		bannerScale.Scale = math.max(0.82, nextScale)
@@ -1106,26 +1083,25 @@ hudController = HUDController.new(gui, {
 
 root = Instance.new("Frame")
 root.Name = "PCPuzzleWorkspace"
-root.AnchorPoint = Vector2.new(0.5, 0.5)
-root.Position = DEFAULT_WINDOW_POSITION
-root.Size = UDim2.fromOffset(DEFAULT_WINDOW_SIZE.X, DEFAULT_WINDOW_SIZE.Y)
+root.AnchorPoint = Vector2.new(0, 0)
+root.Position = UDim2.fromOffset(0, 0)
+root.Size = UDim2.fromScale(1, 1)
 root.BackgroundColor3 = Color3.fromRGB(10, 17, 34)
-root.BackgroundTransparency = 0.06
+root.BackgroundTransparency = 0
 root.BorderSizePixel = 0
 root.Visible = false
+root.ZIndex = 1
 root.Parent = gui
 ArcadeUI.Panel(root, {
 	radius = 34,
 	rimColor = ArcadeUI.Color.rimBright,
 	strokeThickness = 5,
 })
-root.BackgroundTransparency = 0.06
-root.BackgroundTransparency = 0.42
-root.BackgroundTransparency = 0.72
+root.BackgroundTransparency = 0
 local rootStroke = root:FindFirstChildOfClass("UIStroke")
 if rootStroke then
 	rootStroke.Thickness = 5
-	rootStroke.Transparency = 0.42
+	rootStroke.Transparency = 1
 end
 removeDirectGradients(root)
 local rootHighlight = root:FindFirstChild("ArcadeTopHighlight")
@@ -1136,6 +1112,43 @@ end
 rootScale = Instance.new("UIScale")
 rootScale.Scale = 1
 rootScale.Parent = root
+
+stageUi.decorations = {}
+for decorIndex = 1, 6 do
+	local decor = Instance.new("Frame")
+	decor.Name = `StageBackdropAccent{decorIndex}`
+	decor.Active = false
+	decor.BackgroundTransparency = 0.72
+	decor.BorderSizePixel = 0
+	decor.ZIndex = 1
+	decor.Parent = root
+	UITheme.corner(decor, 28)
+	stageUi.decorations[decorIndex] = decor
+end
+
+stageUi.wash = Instance.new("Frame")
+stageUi.wash.Name = "StageTransitionWash"
+stageUi.wash.Active = false
+stageUi.wash.BackgroundTransparency = 1
+stageUi.wash.BorderSizePixel = 0
+stageUi.wash.Position = UDim2.fromScale(0, 0)
+stageUi.wash.Size = UDim2.fromScale(1, 1)
+stageUi.wash.ZIndex = 75
+stageUi.wash.Parent = root
+
+stageUi.notice = Instance.new("TextLabel")
+stageUi.notice.Name = "StageUpNotice"
+stageUi.notice.Active = false
+stageUi.notice.BackgroundTransparency = 1
+stageUi.notice.Font = Enum.Font.GothamBlack
+stageUi.notice.Text = ""
+stageUi.notice.TextColor3 = Color3.fromRGB(255, 255, 255)
+stageUi.notice.TextScaled = true
+stageUi.notice.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+stageUi.notice.TextStrokeTransparency = 0.45
+stageUi.notice.Visible = false
+stageUi.notice.ZIndex = 76
+stageUi.notice.Parent = root
 
 workspaceHeader = makeWorkspaceContainer(
 	"WorkspaceHeader",
@@ -1473,49 +1486,112 @@ helpButton.Activated:Connect(function()
 	playSound("Button")
 end)
 
--- Cosmetics keep broad theme identity and piece colors; gameplay stages control the Solo
--- board rim, empty-cell tint/outline, and stage progress display.
+local function activeStageVisual()
+	local stageState = currentState and currentState.stage
+	local hasSoloStage = currentState
+		and currentState.mode == "Solo"
+		and typeof(stageState) == "table"
+	return StageVisuals.presetForStage(hasSoloStage and stageState.currentStage or 1), hasSoloStage
+end
+
+local function applyStrokeColor(parent, color, transparency)
+	if not parent then
+		return
+	end
+
+	for _, child in parent:GetChildren() do
+		if child:IsA("UIStroke") then
+			child.Color = color
+			if transparency then
+				child.Transparency = transparency
+			end
+		end
+	end
+end
+
+local function styleSoloPanel(frame, preset, muted)
+	if not frame then
+		return
+	end
+
+	frame.BackgroundColor3 = muted and preset.panelMuted or preset.panel
+	frame.BackgroundTransparency = muted and 0.03 or 0
+	applyStrokeColor(frame, preset.panelBorder, 0.08)
+end
+
+-- Stage visuals own the active Solo world: background, panels, board, pieces, tray,
+-- leaderboard, and stage-transition colors. Cosmetic themes remain player-owned
+-- preferences outside Solo or where they do not conflict with the active stage.
 local function applyStagePalette()
 	local stageState = currentState and currentState.stage
 	local hasSoloStage = currentState
 		and currentState.mode == "Solo"
 		and typeof(stageState) == "table"
-	local palette = StageProgression.paletteForStage(hasSoloStage and stageState.currentStage or 1)
+	local preset = StageVisuals.presetForStage(hasSoloStage and stageState.currentStage or 1)
 	local boardSkin = Config.BoardSkins[boardSkinIndex] or Config.BoardSkins[1]
 	local theme = themePresets[themeIndex]
-	local emptyColor = if hasSoloStage then palette.empty else boardSkin.empty or theme.board
+	local emptyColor = if hasSoloStage then preset.boardEmpty else boardSkin.empty or theme.board
 	local outlineColor = if hasSoloStage
-		then palette.outline
+		then preset.boardOutline
 		else boardSkin.border or Color3.fromRGB(45, 55, 72)
-	local rimColor = if hasSoloStage then palette.rim else ArcadeUI.Color.rimBright
+	local rimColor = if hasSoloStage then preset.boardRim else ArcadeUI.Color.rimBright
 
 	customization.boardEmptyColor = emptyColor
+	if hasSoloStage then
+		root.BackgroundColor3 = preset.background
+		workspaceHeader.BackgroundColor3 = preset.panel
+		workspaceContent.BackgroundTransparency = 1
+		styleSoloPanel(stageUi.scoreCard, preset, false)
+		styleSoloPanel(comboBadgeLabel, preset, true)
+		styleSoloPanel(coinStatLabel, preset, false)
+		styleSoloPanel(rankStatLabel, preset, false)
+		styleSoloPanel(stageUi.side, preset, false)
+		styleSoloPanel(leaderboardLabel, preset, false)
+		stageUi.scoreHeading.TextColor3 = preset.panelText
+		scoreLabel.TextColor3 = preset.score
+		bestScoreLabel.TextColor3 = preset.stage
+		comboBadgeLabel.TextColor3 = preset.combo
+		coinStatLabel.TextColor3 = preset.accent
+		rankStatLabel.TextColor3 = preset.accent
+		statusLabel.TextColor3 = preset.panelText
+		progressionLabel.TextColor3 = preset.panelSubtleText
+		matchInfoLabel.TextColor3 = preset.panelSubtleText
+		timerLabel.TextColor3 = preset.panelSubtleText
+		stageUi.titleButton.TextColor3 = preset.panelText
+		customizeButton.BackgroundColor3 = preset.leaderboard
+		coinChipLabel.BackgroundColor3 = preset.panelMuted
+		coinChipLabel.TextColor3 = preset.panelText
+		returnHubButton.BackgroundColor3 = preset.leaderboard
+		playAgainButton.BackgroundColor3 = preset.stage
+		rotatePieceButton.BackgroundColor3 = preset.leaderboard
+		rerollPieceButton.BackgroundColor3 = preset.combo
+		for index, decor in stageUi.decorations do
+			decor.BackgroundColor3 = index % 2 == 0 and preset.backgroundAccent or preset.wash
+		end
+	end
 
 	if boardFrame then
-		for _, child in boardFrame:GetChildren() do
-			if child:IsA("UIStroke") then
-				child.Color = rimColor
-			end
-		end
+		boardFrame.BackgroundColor3 = hasSoloStage and preset.boardFrame
+			or Color3.fromRGB(8, 23, 45)
+		applyStrokeColor(boardFrame, rimColor, 0.04)
 	end
 
 	if stageUi.card then
 		stageUi.card.Visible = hasSoloStage
-		stageUi.card.BackgroundColor3 = palette.rim:Lerp(Color3.fromRGB(5, 13, 28), 0.62)
-		for _, child in stageUi.card:GetChildren() do
-			if child:IsA("UIStroke") then
-				child.Color = palette.rim
-			end
-		end
+		stageUi.card.BackgroundColor3 = preset.panel
+		applyStrokeColor(stageUi.card, preset.stage, 0)
 	end
 	if stageUi.fill then
-		stageUi.fill.BackgroundColor3 = palette.accent
+		stageUi.fill.BackgroundColor3 = preset.accent
+	end
+	if stageUi.track then
+		stageUi.track.BackgroundColor3 = preset.panelMuted
 	end
 	if stageUi.title then
-		stageUi.title.TextColor3 = Color3.fromRGB(255, 255, 255)
+		stageUi.title.TextColor3 = preset.stage
 	end
 	if stageUi.progress then
-		stageUi.progress.TextColor3 = Color3.fromRGB(230, 238, 249)
+		stageUi.progress.TextColor3 = preset.panelText
 	end
 
 	for y = 1, Config.BoardSize do
@@ -1537,6 +1613,52 @@ local function applyStagePalette()
 			end
 		end
 	end
+
+	if hasSoloStage and renderBoard then
+		renderBoard()
+	end
+end
+
+local function playStageTransition(stage)
+	local preset = StageVisuals.presetForStage(stage)
+	local transition = StageVisuals.transitionForStage(stage, reducedMotion)
+	stageUi.noticeToken = (stageUi.noticeToken or 0) + 1
+	local token = stageUi.noticeToken
+
+	if stageUi.wash then
+		stageUi.wash.BackgroundColor3 = transition.wash
+		stageUi.wash.BackgroundTransparency = reducedMotion and 0.78 or 0.45
+		if not reducedMotion then
+			TweenService:Create(stageUi.wash, TweenInfo.new(transition.duration), {
+				BackgroundTransparency = 1,
+			}):Play()
+		else
+			task.delay(transition.duration, function()
+				if stageUi.wash then
+					stageUi.wash.BackgroundTransparency = 1
+				end
+			end)
+		end
+	end
+
+	if stageUi.notice then
+		stageUi.notice.Text = `STAGE {stage}`
+		stageUi.notice.TextColor3 = preset.notice
+		stageUi.notice.Visible = true
+		stageUi.notice.TextTransparency = 0
+		if not reducedMotion then
+			stageUi.notice.Size = UDim2.fromOffset(340, 96)
+			stageUi.notice.Position = UDim2.new(0.5, -170, 0, WINDOW_LAYOUT.top + 78)
+			TweenService:Create(stageUi.notice, TweenInfo.new(transition.duration), {
+				Position = UDim2.new(0.5, -170, 0, WINDOW_LAYOUT.top + 58),
+			}):Play()
+		end
+		task.delay(transition.messageDuration, function()
+			if stageUi.noticeToken == token and stageUi.notice then
+				stageUi.notice.Visible = false
+			end
+		end)
+	end
 end
 
 local function renderStageDisplay()
@@ -1555,16 +1677,15 @@ local function renderStageDisplay()
 	local cleanStage = StageProgression.publicState(stageState)
 	local progress = math.clamp(cleanStage.stageProgress, 0, cleanStage.stageProgressRequired)
 	local ratio = progress / math.max(1, cleanStage.stageProgressRequired)
-	local palette = StageProgression.paletteForStage(cleanStage.currentStage)
+	local preset = StageVisuals.presetForStage(cleanStage.currentStage)
 	local previousStage = stageUi.lastStage
 	stageUi.lastStage = cleanStage.currentStage
 
 	if previousStage and cleanStage.currentStage > previousStage then
-		stageUi.noticeToken = (stageUi.noticeToken or 0) + 1
-		local token = stageUi.noticeToken
 		stageUi.title.Text = `STAGE UP {cleanStage.currentStage}`
+		playStageTransition(cleanStage.currentStage)
 		task.delay(reducedMotion and 1.2 or 2, function()
-			if stageUi.noticeToken == token and stageUi.title then
+			if stageUi.title then
 				stageUi.title.Text = `STAGE {cleanStage.currentStage}`
 			end
 		end)
@@ -1573,7 +1694,7 @@ local function renderStageDisplay()
 	end
 	stageUi.progress.Text = `{progress} / {cleanStage.stageProgressRequired}`
 	stageUi.fill.Size = UDim2.fromScale(ratio, 1)
-	stageUi.fill.BackgroundColor3 = palette.accent
+	stageUi.fill.BackgroundColor3 = preset.accent
 	applyStagePalette()
 end
 
@@ -1633,8 +1754,10 @@ local function applyTheme()
 	local theme = themePresets[themeIndex]
 	customization.panelColor = theme.panel
 	customization.accentColor = theme.accent
-	root.BackgroundColor3 = theme.panel
-	customizeButton.BackgroundColor3 = theme.accent
+	if not (currentState and currentState.mode == "Solo") then
+		root.BackgroundColor3 = theme.panel
+		customizeButton.BackgroundColor3 = theme.accent
+	end
 	if homePanelController then
 		homePanelController:ApplyTheme(theme)
 	end
@@ -1654,25 +1777,22 @@ end)
 
 resetLayoutButton.Activated:Connect(function()
 	playSound("Button")
-	workspaceScale = DEFAULT_WORKSPACE_SCALE
-	root.Position = DEFAULT_WINDOW_POSITION
 	applyUiScale()
-	clampWindowToScreen()
 end)
 
-local title = Instance.new("TextButton")
-title.Name = "WorkspaceDragHandle"
-title.BackgroundTransparency = 1
-title.Position = UDim2.fromOffset(24, 18)
-title.Size = UDim2.fromOffset(530, 42)
-title.AutoButtonColor = false
-title.Font = Enum.Font.GothamBlack
-title.Text = "SOLO PUZZLE WORKSPACE"
-title.TextColor3 = Color3.fromRGB(245, 247, 251)
-title.TextSize = 22
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = workspaceHeader
-UITheme.text(title, "title")
+stageUi.titleButton = Instance.new("TextButton")
+stageUi.titleButton.Name = "WorkspaceDragHandle"
+stageUi.titleButton.BackgroundTransparency = 1
+stageUi.titleButton.Position = UDim2.fromOffset(24, 18)
+stageUi.titleButton.Size = UDim2.fromOffset(530, 42)
+stageUi.titleButton.AutoButtonColor = false
+stageUi.titleButton.Font = Enum.Font.GothamBlack
+stageUi.titleButton.Text = "SOLO PUZZLE"
+stageUi.titleButton.TextColor3 = Color3.fromRGB(245, 247, 251)
+stageUi.titleButton.TextSize = 22
+stageUi.titleButton.TextXAlignment = Enum.TextXAlignment.Left
+stageUi.titleButton.Parent = workspaceHeader
+UITheme.text(stageUi.titleButton, "title")
 
 for dotIndex = 1, 5 do
 	local gripDot = Instance.new("Frame")
@@ -1687,24 +1807,24 @@ for dotIndex = 1, 5 do
 	UITheme.stroke(gripDot, Color3.fromRGB(5, 12, 24), 1, 0.25)
 end
 
-local scoreCard = Instance.new("Frame")
-scoreCard.Name = "ScoreCard"
-scoreCard.Position = UDim2.fromOffset(22, 72)
-scoreCard.Size = UDim2.fromOffset(210, 170)
-scoreCard.Parent = leftColumn
-ArcadeUI.StatCard(scoreCard)
+stageUi.scoreCard = Instance.new("Frame")
+stageUi.scoreCard.Name = "ScoreCard"
+stageUi.scoreCard.Position = UDim2.fromOffset(22, 72)
+stageUi.scoreCard.Size = UDim2.fromOffset(210, 170)
+stageUi.scoreCard.Parent = leftColumn
+ArcadeUI.StatCard(stageUi.scoreCard)
 
-local scoreHeading = Instance.new("TextLabel")
-scoreHeading.BackgroundTransparency = 1
-scoreHeading.Position = UDim2.fromOffset(16, 12)
-scoreHeading.Size = UDim2.new(1, -32, 0, 26)
-scoreHeading.Font = Enum.Font.GothamBlack
-scoreHeading.Text = "SCORE"
-scoreHeading.TextColor3 = Color3.fromRGB(255, 255, 255)
-scoreHeading.TextSize = 22
-scoreHeading.TextXAlignment = Enum.TextXAlignment.Center
-scoreHeading.Parent = scoreCard
-ArcadeUI.Text(scoreHeading)
+stageUi.scoreHeading = Instance.new("TextLabel")
+stageUi.scoreHeading.BackgroundTransparency = 1
+stageUi.scoreHeading.Position = UDim2.fromOffset(16, 12)
+stageUi.scoreHeading.Size = UDim2.new(1, -32, 0, 26)
+stageUi.scoreHeading.Font = Enum.Font.GothamBlack
+stageUi.scoreHeading.Text = "SCORE"
+stageUi.scoreHeading.TextColor3 = Color3.fromRGB(255, 255, 255)
+stageUi.scoreHeading.TextSize = 22
+stageUi.scoreHeading.TextXAlignment = Enum.TextXAlignment.Center
+stageUi.scoreHeading.Parent = stageUi.scoreCard
+ArcadeUI.Text(stageUi.scoreHeading)
 
 scoreLabel = Instance.new("TextLabel")
 scoreLabel.BackgroundTransparency = 1
@@ -1717,7 +1837,7 @@ scoreLabel.TextSize = 50
 scoreLabel.TextXAlignment = Enum.TextXAlignment.Center
 scoreLabel.TextStrokeColor3 = Color3.fromRGB(42, 28, 10)
 scoreLabel.TextStrokeTransparency = 0.35
-scoreLabel.Parent = scoreCard
+scoreLabel.Parent = stageUi.scoreCard
 ArcadeUI.Text(scoreLabel, "score")
 
 local scoreDivider = Instance.new("Frame")
@@ -1726,7 +1846,7 @@ scoreDivider.BackgroundTransparency = 0.28
 scoreDivider.BorderSizePixel = 0
 scoreDivider.Position = UDim2.new(0, 24, 0, 92)
 scoreDivider.Size = UDim2.new(1, -48, 0, 3)
-scoreDivider.Parent = scoreCard
+scoreDivider.Parent = stageUi.scoreCard
 UITheme.corner(scoreDivider, 3)
 
 bestScoreLabel = Instance.new("TextLabel")
@@ -1738,7 +1858,7 @@ bestScoreLabel.Text = "BEST 0"
 bestScoreLabel.TextColor3 = ArcadeUI.Color.best
 bestScoreLabel.TextSize = 20
 bestScoreLabel.TextXAlignment = Enum.TextXAlignment.Center
-bestScoreLabel.Parent = scoreCard
+bestScoreLabel.Parent = stageUi.scoreCard
 ArcadeUI.Text(bestScoreLabel, "best")
 
 comboBadgeLabel = Instance.new("TextLabel")
@@ -2092,13 +2212,13 @@ developerPanelController = DeveloperPanel.new({
 	getVisibleBoardCellCount = visibleBoardCellCount,
 })
 
-local side = Instance.new("Frame")
-side.Position = UDim2.fromOffset(360, 104)
-side.Size = UDim2.fromOffset(256, 304)
-side.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
-side.BackgroundTransparency = 0.02
-side.Parent = trayStage
-ArcadeUI.Panel(side, {
+stageUi.side = Instance.new("Frame")
+stageUi.side.Position = UDim2.fromOffset(360, 104)
+stageUi.side.Size = UDim2.fromOffset(256, 304)
+stageUi.side.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
+stageUi.side.BackgroundTransparency = 0.02
+stageUi.side.Parent = trayStage
+ArcadeUI.Panel(stageUi.side, {
 	radius = 26,
 	rimColor = ArcadeUI.Color.rimBright,
 	strokeThickness = 5,
@@ -2112,7 +2232,7 @@ statusLabel.Text = "Choose a piece"
 statusLabel.TextColor3 = Color3.fromRGB(245, 247, 251)
 statusLabel.TextSize = 20
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-statusLabel.Parent = side
+statusLabel.Parent = stageUi.side
 UITheme.text(statusLabel, "heading")
 
 local function updateStatusText()
@@ -2137,7 +2257,7 @@ for slot = 1, Config.InventorySize do
 	button.TextColor3 = Color3.fromRGB(245, 247, 251)
 	button.TextSize = 18
 	button.Text = ""
-	button.Parent = side
+	button.Parent = stageUi.side
 	ArcadeUI.PieceSlot(button)
 	UITheme.attachButtonFeedback(button, isUiReducedMotion)
 	markInteractive(button)
@@ -2369,50 +2489,32 @@ local function clampNumber(value, minimum, maximum)
 end
 
 clampWindowToScreen = function()
-	local screenSize = gui.AbsoluteSize
-	local topLeftInset, bottomRightInset = GuiService:GetGuiInset()
-	local scale = rootScale and rootScale.Scale or 1
-	local scaledSize = Vector2.new(root.Size.X.Offset * scale, root.Size.Y.Offset * scale)
-	local halfWidth = scaledSize.X / 2
-	local halfHeight = scaledSize.Y / 2
-	local rawX = (screenSize.X * root.Position.X.Scale) + root.Position.X.Offset
-	local rawY = (screenSize.Y * root.Position.Y.Scale) + root.Position.Y.Offset
-	local minX = math.min(screenSize.X - 24, halfWidth + 16)
-	local maxX = math.max(minX, screenSize.X - halfWidth - 16)
-	local minY = math.min(screenSize.Y - 24, topLeftInset.Y + halfHeight + 16)
-	local maxY = math.max(minY, screenSize.Y - bottomRightInset.Y - halfHeight - 16)
-
-	root.Position = UDim2.fromOffset(clampNumber(rawX, minX, maxX), clampNumber(rawY, minY, maxY))
+	root.Position = UDim2.fromOffset(0, 0)
+	root.Size = UDim2.fromOffset(gui.AbsoluteSize.X, gui.AbsoluteSize.Y)
 end
 
 applyWindowLayout = function()
 	local layout = WINDOW_LAYOUT
-	local contentY = layout.outerPadding + layout.headerHeight + layout.headerGap
-	local contentHeight = layout.height - contentY - layout.outerPadding
+	local contentY = layout.top + layout.headerHeight + layout.headerGap
+	local contentHeight = layout.contentHeight
 	local gridSize = layout.boardSize
 	local boardPaddingPixels = layout.boardPadding
 	local boardCellPadding = layout.boardGap
-	local cellPixels = math.floor(
-		(gridSize - (2 * boardPaddingPixels) - ((Config.BoardSize - 1) * boardCellPadding))
-			/ Config.BoardSize
-	)
-	local usedBoardPixels = (cellPixels * Config.BoardSize)
-		+ ((Config.BoardSize - 1) * boardCellPadding)
-		+ (2 * boardPaddingPixels)
-	local boardInset = math.floor((gridSize - usedBoardPixels) / 2)
+	local cellPixels = layout.boardCell
+	local boardInset = math.floor((layout.centerWidth - gridSize) / 2)
 
-	title.Visible = true
-	title.Position = UDim2.fromOffset(20, 8)
-	title.Size = UDim2.fromOffset(260, 30)
-	title.TextSize = 22
+	stageUi.titleButton.Visible = true
+	stageUi.titleButton.Position = UDim2.fromOffset(20, 6)
+	stageUi.titleButton.Size = UDim2.fromOffset(300, 30)
+	stageUi.titleButton.TextSize = 24
 	progressionLabel.Visible = true
 
-	workspaceHeader.Position = UDim2.fromOffset(layout.outerPadding, layout.outerPadding)
-	workspaceHeader.Size =
-		UDim2.fromOffset(layout.width - (layout.outerPadding * 2), layout.headerHeight)
+	root.Position = UDim2.fromOffset(0, 0)
+	root.Size = UDim2.fromOffset(layout.width, layout.height)
+	workspaceHeader.Position = UDim2.fromOffset(layout.outerPadding, layout.top)
+	workspaceHeader.Size = UDim2.fromOffset(layout.contentWidth, layout.headerHeight)
 	workspaceContent.Position = UDim2.fromOffset(layout.outerPadding, contentY)
-	workspaceContent.Size =
-		UDim2.fromOffset(layout.width - (layout.outerPadding * 2), contentHeight)
+	workspaceContent.Size = UDim2.fromOffset(layout.contentWidth, contentHeight)
 	leftColumn.Position = UDim2.fromOffset(0, 0)
 	leftColumn.Size = UDim2.fromOffset(layout.leftWidth, contentHeight)
 	centerColumn.Position = UDim2.fromOffset(layout.leftWidth + layout.columnGap, 0)
@@ -2428,15 +2530,15 @@ applyWindowLayout = function()
 	trayStage.Size = UDim2.fromOffset(layout.centerWidth, layout.trayHeight)
 
 	progressionLabel.Position = UDim2.fromOffset(20, 34)
-	progressionLabel.Size = UDim2.fromOffset(440, 18)
+	progressionLabel.Size = UDim2.fromOffset(math.max(260, layout.contentWidth - 820), 18)
 	progressionLabel.TextSize = 12
 	if stageUi.card then
-		stageUi.card.Position = UDim2.fromOffset(480, 10)
-		stageUi.card.Size = UDim2.fromOffset(126, 38)
+		stageUi.card.Position = UDim2.fromOffset(math.floor(layout.contentWidth * 0.43), 9)
+		stageUi.card.Size = UDim2.fromOffset(132, 40)
 	end
 	timerLabel.Visible = true
 	timerLabel.AnchorPoint = Vector2.new(0, 0)
-	timerLabel.Position = UDim2.fromOffset(376, 17)
+	timerLabel.Position = UDim2.fromOffset(math.floor(layout.contentWidth * 0.34), 17)
 	timerLabel.Size = UDim2.fromOffset(92, 26)
 	timerLabel.TextSize = 13
 	timerLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -2470,6 +2572,7 @@ applyWindowLayout = function()
 		resetLayoutButton.Size = UDim2.fromOffset(44, 36)
 		resetLayoutButton.Text = "Reset"
 		resetLayoutButton.TextSize = 10
+		resetLayoutButton.Visible = false
 	end
 	if closeWorkspaceButton then
 		closeWorkspaceButton.Position = UDim2.new(1, -22, 0, 12)
@@ -2479,42 +2582,48 @@ applyWindowLayout = function()
 	if resizeHandle then
 		resizeHandle.Position = UDim2.new(1, -18, 1, -18)
 		resizeHandle.Size = UDim2.fromOffset(50, 34)
+		resizeHandle.Visible = false
 	end
 
-	scoreCard.Position = UDim2.fromOffset(0, 0)
-	scoreCard.Size = UDim2.fromOffset(layout.leftWidth, 150)
+	stageUi.scoreCard.Position = UDim2.fromOffset(0, 0)
+	stageUi.scoreCard.Size = UDim2.fromOffset(layout.leftWidth, math.floor(contentHeight * 0.23))
 	scoreLabel.Position = UDim2.fromOffset(14, 18)
 	scoreLabel.Size = UDim2.new(1, -28, 0, 60)
-	scoreLabel.TextSize = 48
-	bestScoreLabel.Position = UDim2.fromOffset(18, 94)
+	scoreLabel.TextSize = clampNumber(math.floor(layout.leftWidth * 0.2), 34, 54)
+	bestScoreLabel.Position = UDim2.fromOffset(18, math.floor(contentHeight * 0.15))
 	bestScoreLabel.Size = UDim2.new(1, -36, 0, 34)
-	bestScoreLabel.TextSize = 20
+	bestScoreLabel.TextSize = clampNumber(math.floor(layout.leftWidth * 0.085), 16, 22)
 
-	comboBadgeLabel.Position = UDim2.fromOffset(0, 150 + layout.statGap)
-	comboBadgeLabel.Size = UDim2.fromOffset(layout.leftWidth, 104)
-	comboBadgeLabel.TextSize = 28
+	local scoreHeight = stageUi.scoreCard.Size.Y.Offset
+	local statHeight = math.floor((contentHeight - scoreHeight - layout.statGap * 3) / 3)
+	comboBadgeLabel.Position = UDim2.fromOffset(0, scoreHeight + layout.statGap)
+	comboBadgeLabel.Size = UDim2.fromOffset(layout.leftWidth, statHeight)
+	comboBadgeLabel.TextSize = clampNumber(math.floor(layout.leftWidth * 0.12), 22, 32)
 	comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	comboBadgeLabel.TextTransparency = 0
 	comboBadgeLabel.BackgroundTransparency = 0.02
 	comboBadgeLabel.TextStrokeTransparency = 0.05
-	coinStatLabel.Position = UDim2.fromOffset(0, 150 + layout.statGap + 104 + layout.statGap)
-	coinStatLabel.Size = UDim2.fromOffset(layout.leftWidth, 86)
-	coinStatLabel.TextSize = 26
+	coinStatLabel.Position =
+		UDim2.fromOffset(0, scoreHeight + layout.statGap + statHeight + layout.statGap)
+	coinStatLabel.Size = UDim2.fromOffset(layout.leftWidth, statHeight)
+	coinStatLabel.TextSize = clampNumber(math.floor(layout.leftWidth * 0.11), 20, 28)
 	coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
 	coinStatLabel.TextTransparency = 0
 	coinStatLabel.BackgroundTransparency = 0.02
 	coinStatLabel.TextStrokeTransparency = 0.08
-	rankStatLabel.Position =
-		UDim2.fromOffset(0, 150 + layout.statGap + 104 + layout.statGap + 86 + layout.statGap)
-	rankStatLabel.Size = UDim2.fromOffset(layout.leftWidth, 86)
-	rankStatLabel.TextSize = 22
+	rankStatLabel.Position = UDim2.fromOffset(
+		0,
+		scoreHeight + layout.statGap + statHeight + layout.statGap + statHeight + layout.statGap
+	)
+	rankStatLabel.Size = UDim2.fromOffset(layout.leftWidth, statHeight)
+	rankStatLabel.TextSize = clampNumber(math.floor(layout.leftWidth * 0.095), 18, 24)
 	rankStatLabel.TextColor3 = ArcadeUI.Color.gold
 	rankStatLabel.TextTransparency = 0
 	rankStatLabel.BackgroundTransparency = 0.02
 	rankStatLabel.TextStrokeTransparency = 0.08
 
-	boardFrame.Position = UDim2.fromOffset(boardInset, boardInset)
-	boardFrame.Size = UDim2.fromOffset(usedBoardPixels, usedBoardPixels)
+	boardFrame.Position = UDim2.fromOffset(boardInset, 0)
+	boardFrame.Size = UDim2.fromOffset(gridSize, gridSize)
 	boardGridContainer.Position = UDim2.fromScale(0, 0)
 	boardGridContainer.Size = UDim2.fromScale(1, 1)
 	boardLayout.CellSize = UDim2.fromOffset(cellPixels, cellPixels)
@@ -2525,14 +2634,14 @@ applyWindowLayout = function()
 	boardPadding.PaddingRight = UDim.new(0, boardPaddingPixels)
 
 	local sideWidth = layout.centerWidth
-	side.Position = UDim2.fromOffset(0, 0)
-	side.Size = UDim2.fromOffset(sideWidth, layout.trayHeight)
+	stageUi.side.Position = UDim2.fromOffset(0, 0)
+	stageUi.side.Size = UDim2.fromOffset(sideWidth, layout.trayHeight)
 	statusLabel.Position = UDim2.fromOffset(18, 12)
 	statusLabel.Size = UDim2.fromOffset(sideWidth - 36, 22)
 	statusLabel.TextSize = 17
 	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-	local slotHeight = 62
+	local slotHeight = math.max(74, layout.trayHeight - 42)
 	for slot, button in handButtons do
 		local buttonWidth =
 			math.floor((sideWidth - 36 - ((Config.InventorySize - 1) * 14)) / Config.InventorySize)
@@ -2540,9 +2649,10 @@ applyWindowLayout = function()
 		button.Size = UDim2.fromOffset(buttonWidth, slotHeight)
 
 		local preview = handPreviews[slot]
-		preview.Size = UDim2.fromOffset(60, 60)
+		local previewSize = math.max(60, math.min(94, slotHeight - 10))
+		preview.Size = UDim2.fromOffset(previewSize, previewSize)
 		preview.Position =
-			UDim2.fromOffset(math.max(8, math.floor((buttonWidth - preview.Size.X.Offset) / 2)), 1)
+			UDim2.fromOffset(math.max(8, math.floor((buttonWidth - preview.Size.X.Offset) / 2)), 3)
 
 		local label = button:FindFirstChild("Label")
 		if label and label:IsA("TextLabel") then
@@ -2556,7 +2666,7 @@ applyWindowLayout = function()
 	if leaderboardLabel then
 		leaderboardLabel.Visible = true
 		leaderboardLabel.Position = UDim2.fromOffset(0, 0)
-		leaderboardLabel.Size = UDim2.fromOffset(layout.rightWidth, 378)
+		leaderboardLabel.Size = UDim2.fromOffset(layout.rightWidth, layout.leaderboardHeight)
 		leaderboardLabel.TextSize = 18
 	end
 	local activeLeaderboardHeading = leaderboardLabel and leaderboardLabel:FindFirstChild("Heading")
@@ -2588,8 +2698,8 @@ applyWindowLayout = function()
 		emptyLabel.TextSize = 15
 	end
 
-	actionsPanel.Position = UDim2.fromOffset(0, 378 + layout.actionGap)
-	actionsPanel.Size = UDim2.fromOffset(layout.rightWidth, 112)
+	actionsPanel.Position = UDim2.fromOffset(0, layout.leaderboardHeight + layout.actionGap)
+	actionsPanel.Size = UDim2.fromOffset(layout.rightWidth, layout.actionsHeight)
 
 	local actionWidth = math.floor((layout.rightWidth - layout.actionGap) / 2)
 	returnHubButton.Position = UDim2.fromOffset(0, 0)
@@ -2602,7 +2712,23 @@ applyWindowLayout = function()
 	rerollPieceButton.Position = UDim2.fromOffset(actionWidth + layout.actionGap, 56)
 	rerollPieceButton.Size = UDim2.fromOffset(actionWidth, 42)
 
-	root.Size = UDim2.fromOffset(layout.width, layout.height)
+	for index, decor in stageUi.decorations do
+		local width = math.floor(layout.width * (0.14 + index * 0.018))
+		local height = math.floor(layout.height * (0.08 + index * 0.01))
+		decor.Size = UDim2.fromOffset(width, height)
+		decor.Position = UDim2.fromOffset(
+			(index % 2 == 0) and (layout.width - width - layout.outerPadding * index)
+				or layout.outerPadding * index,
+			layout.top + 48 + index * math.floor(layout.height * 0.105)
+		)
+	end
+	if stageUi.notice then
+		stageUi.notice.Size = UDim2.fromOffset(340, 96)
+		stageUi.notice.Position = UDim2.new(0.5, -170, 0, layout.top + 58)
+	end
+	if stageUi.wash then
+		stageUi.wash.Size = UDim2.fromScale(1, 1)
+	end
 end
 
 returnHubButton.Activated:Connect(function()
@@ -2640,36 +2766,9 @@ rerollPieceButton.Activated:Connect(function()
 	requestSelectedHandAction("Reroll")
 end)
 
-workspaceInteraction = ArcadeUI.AttachWorkspaceInteraction({
-	root = root,
-	resizeHandle = resizeHandle,
-	UserInputService = UserInputService,
-	dragTargets = {
-		root,
-		workspaceHeader,
-		workspaceContent,
-		leftColumn,
-		centerColumn,
-		rightColumn,
-		boardStage,
-		trayStage,
-		actionsPanel,
-		title,
-		scoreCard,
-		comboBadgeLabel,
-		coinStatLabel,
-		rankStatLabel,
-		side,
-	},
-	getWorkspaceScale = function()
-		return workspaceScale
-	end,
-	setWorkspaceScale = function(nextScale)
-		workspaceScale = clampNumber(nextScale, MIN_WORKSPACE_SCALE, MAX_WORKSPACE_SCALE)
-	end,
-	applyUiScale = applyUiScale,
-	clampWindowToScreen = clampWindowToScreen,
-})
+workspaceInteraction = {
+	stop = function() end,
+}
 
 local function clearGlossyBlocks(parent)
 	for _, child in parent:GetChildren() do
@@ -2699,6 +2798,7 @@ local function setCellGloss(cell, color, state)
 end
 
 renderBoard = function()
+	local preset, hasSoloStage = activeStageVisual()
 	for y = 1, Config.BoardSize do
 		for x = 1, Config.BoardSize do
 			local value = currentState.board[y][x]
@@ -2706,7 +2806,13 @@ renderBoard = function()
 			if value == false then
 				setCellGloss(cell, customization.boardEmptyColor, "empty")
 			elseif value == "garbage" then
-				setCellGloss(cell, Config.Colors.Garbage, "filled")
+				setCellGloss(
+					cell,
+					hasSoloStage and preset.boardOutline or Config.Colors.Garbage,
+					"filled"
+				)
+			elseif hasSoloStage then
+				setCellGloss(cell, StageVisuals.blockColorForCell(preset, x, y), "filled")
 			elseif typeof(value) == "Color3" then
 				setCellGloss(cell, value, "filled")
 			else
@@ -2731,14 +2837,8 @@ renderBoard = function()
 			end
 			local stroke = cell:FindFirstChildOfClass("UIStroke")
 			if stroke then
-				local stageState = currentState and currentState.stage
-				local stagePalette = currentState
-						and currentState.mode == "Solo"
-						and typeof(stageState) == "table"
-						and StageProgression.paletteForStage(stageState.currentStage)
-					or nil
 				stroke.Color = value == false
-						and (stagePalette and stagePalette.outline or Color3.fromRGB(38, 61, 97))
+						and (hasSoloStage and preset.boardOutline or Color3.fromRGB(38, 61, 97))
 					or Color3.fromRGB(255, 255, 255)
 				stroke.Transparency = value == false and 0.2 or 0.55
 			end
@@ -2762,7 +2862,9 @@ renderBoard = function()
 			local previewCell = cells[y][x]
 			setCellGloss(
 				previewCell,
-				canPlace and shape.color or Config.Colors.PreviewInvalid,
+				canPlace
+						and (hasSoloStage and StageVisuals.blockColorForCell(preset, x, y) or shape.color)
+					or Config.Colors.PreviewInvalid,
 				canPlace and "preview" or "invalid"
 			)
 			local stroke = previewCell:FindFirstChildOfClass("UIStroke")
@@ -2793,21 +2895,27 @@ pulseHandSlot = function(slot)
 end
 
 renderHand = function()
+	local preset, hasSoloStage = activeStageVisual()
 	for slot, button in handButtons do
 		local shape = currentState.hand[slot]
 		local label = button:FindFirstChild("Label")
 		if label then
 			label.Text = ArcadeUI.HandSlotText(shape)
+			label.TextColor3 = hasSoloStage and preset.panelText or Color3.fromRGB(245, 247, 251)
 		end
-		ArcadeUI.RenderShapePreview(handPreviews[slot], shape)
-		button.BackgroundColor3 = selectedSlot == slot and Color3.fromRGB(18, 71, 126)
-			or shape and ArcadeUI.Color.inner
+		ArcadeUI.RenderShapePreview(handPreviews[slot], shape, {
+			blockColors = hasSoloStage and preset.blockPalette or nil,
+		})
+		button.BackgroundColor3 = selectedSlot == slot
+				and (hasSoloStage and preset.panelMuted or Color3.fromRGB(18, 71, 126))
+			or shape and (hasSoloStage and preset.panel or ArcadeUI.Color.inner)
 			or Color3.fromRGB(28, 34, 46)
 		button.BackgroundTransparency = shape and 0 or 0.32
 		local stroke = button:FindFirstChildOfClass("UIStroke")
 		if stroke then
-			stroke.Color = selectedSlot == slot and ArcadeUI.Color.rimBright
-				or shape and Color3.fromRGB(33, 103, 177)
+			stroke.Color = selectedSlot == slot
+					and (hasSoloStage and preset.accent or ArcadeUI.Color.rimBright)
+				or shape and (hasSoloStage and preset.panelBorder or Color3.fromRGB(33, 103, 177))
 				or Color3.fromRGB(78, 84, 96)
 			stroke.Thickness = selectedSlot == slot and 4 or 2
 			stroke.Transparency = shape and 0.08 or 0.45
@@ -2816,6 +2924,7 @@ renderHand = function()
 end
 
 local function renderLeaderboard(leaderboard)
+	local preset, hasSoloStage = activeStageVisual()
 	local currentRank = nil
 	thumbnailRequestToken += 1
 	local leaderboardToken = thumbnailRequestToken
@@ -2836,11 +2945,12 @@ local function renderLeaderboard(leaderboard)
 
 		local rowStroke = row:FindFirstChildOfClass("UIStroke")
 		if rowStroke then
-			rowStroke.Color = isLocalPlayer and ArcadeUI.Color.rimBright
+			rowStroke.Color = isLocalPlayer
+					and (hasSoloStage and preset.accent or ArcadeUI.Color.rimBright)
 				or index == 1 and ArcadeUI.Color.gold
 				or index == 2 and ArcadeUI.Color.silver
 				or index == 3 and ArcadeUI.Color.bronze
-				or Color3.fromRGB(31, 90, 151)
+				or (hasSoloStage and preset.leaderboard or Color3.fromRGB(31, 90, 151))
 			rowStroke.Thickness = isLocalPlayer and 3 or 1
 			rowStroke.Transparency = isLocalPlayer and 0 or 0.28
 		end
@@ -2856,8 +2966,9 @@ local function renderLeaderboard(leaderboard)
 
 		local avatar = row:FindFirstChild("Avatar")
 		if avatar and avatar:IsA("Frame") then
-			avatar.BackgroundColor3 = isLocalPlayer and Color3.fromRGB(254, 230, 122)
-				or Color3.fromRGB(32, 73, 118)
+			avatar.BackgroundColor3 = isLocalPlayer
+					and (hasSoloStage and preset.accent or Color3.fromRGB(254, 230, 122))
+				or (hasSoloStage and preset.panelMuted or Color3.fromRGB(32, 73, 118))
 			local avatarImage = avatar:FindFirstChild("AvatarImage")
 			if avatarImage and avatarImage:IsA("ImageLabel") then
 				avatarImage.Image = ""
@@ -2869,13 +2980,17 @@ local function renderLeaderboard(leaderboard)
 		local nameLabel = row:FindFirstChild("Name")
 		if nameLabel and nameLabel:IsA("TextLabel") then
 			nameLabel.Text = isLocalPlayer and "You" or entry.name or "Player"
-			nameLabel.TextColor3 = isLocalPlayer and ArcadeUI.Color.gold or ArcadeUI.Color.text
+			nameLabel.TextColor3 = isLocalPlayer
+					and (hasSoloStage and preset.stage or ArcadeUI.Color.gold)
+				or (hasSoloStage and preset.panelText or ArcadeUI.Color.text)
 		end
 
 		local score = row:FindFirstChild("Score")
 		if score and score:IsA("TextLabel") then
 			score.Text = tostring(entry.score or 0)
-			score.TextColor3 = index <= 3 and ArcadeUI.Color.gold or ArcadeUI.Color.best
+			score.TextColor3 = index <= 3
+					and (hasSoloStage and preset.accent or ArcadeUI.Color.gold)
+				or (hasSoloStage and preset.stage or ArcadeUI.Color.best)
 		end
 	end
 
@@ -2996,10 +3111,8 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	end
 
 	if not root.Visible then
-		root.Position = DEFAULT_WINDOW_POSITION
 		root.Visible = true
 		applyUiScale()
-		clampWindowToScreen()
 	end
 	if hudController then
 		hudController:UpdateGameState(currentState)
@@ -3016,7 +3129,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	storyPanelController:Hide()
 	setHubPanelVisible(false)
 	updateTutorialVisibility()
-	title.Text = currentState.mode == "Story" and "STORY TRAINING"
+	stageUi.titleButton.Text = currentState.mode == "Story" and "STORY TRAINING"
 		or currentState.mode == "Custom" and "CUSTOM LAB"
 		or currentState.mode == "Solo" and "SOLO PUZZLE"
 		or "BLOCK BLAST BATTLE"
@@ -3255,7 +3368,11 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		showBanner(effect.message or "Pressure row rising", Color3.fromRGB(251, 146, 60))
 	elseif effect.kind == "StageUp" then
 		pulseStageUpDisplay()
-		showBanner(`Stage {effect.currentStage or "?"}!`, Color3.fromRGB(83, 202, 255))
+		if effect.currentStage then
+			playStageTransition(effect.currentStage)
+		end
+		local preset = StageVisuals.presetForStage(effect.currentStage or 1)
+		showBanner(`Stage {effect.currentStage or "?"}!`, preset.stage)
 	elseif effect.kind == "DeveloperCommand" then
 		showBanner(effect.message or "Developer command applied", Color3.fromRGB(74, 222, 128))
 	elseif effect.kind == "BattleResult" then
