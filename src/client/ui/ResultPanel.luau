@@ -22,6 +22,8 @@ function ResultPanel.new(gui, queueEvent, options)
 	self.hasCurrentRun = options.hasCurrentRun or function()
 		return false
 	end
+	self.requestCooldownSeconds = options.requestCooldownSeconds or 0.45
+	self.lastRequestAt = 0
 
 	local panel = Instance.new("Frame")
 	panel.AnchorPoint = Vector2.new(1, 0.5)
@@ -153,6 +155,11 @@ function ResultPanel.new(gui, queueEvent, options)
 	end)
 
 	replayButton.Activated:Connect(function()
+		local now = os.clock()
+		if now - self.lastRequestAt < self.requestCooldownSeconds then
+			return
+		end
+		self.lastRequestAt = now
 		self.playSound("Queue")
 		self:Hide()
 		if self.hasCurrentRun() then

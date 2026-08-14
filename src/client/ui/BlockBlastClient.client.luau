@@ -132,6 +132,12 @@ local pulseHandSlot = nil
 local WINDOW_LAYOUT = SoloLayout.calculate(Vector2.new(1280, 720), 36, 0, 1)
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local day43Ui = {
+	serverActionCooldownSeconds = 0.45,
+	placeActionCooldownSeconds = 0.08,
+	lastServerActionAt = 0,
+	lastPlaceActionAt = 0,
+}
 
 local function isUiReducedMotion()
 	return reducedMotion
@@ -577,6 +583,21 @@ local function saveSettings()
 	settingsEvent:FireServer("Update", settingsPayload())
 end
 
+function day43Ui.fireQueueRequest(action, payload)
+	local now = os.clock()
+	if now - day43Ui.lastServerActionAt < day43Ui.serverActionCooldownSeconds then
+		return false
+	end
+
+	day43Ui.lastServerActionAt = now
+	if payload ~= nil then
+		queueEvent:FireServer(action, payload)
+	else
+		queueEvent:FireServer(action)
+	end
+	return true
+end
+
 local function localCosmeticProgress()
 	local leaderstats = player:FindFirstChild("leaderstats")
 	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
@@ -829,6 +850,25 @@ local function restoreCosmeticPreview()
 	end
 end
 
+function day43Ui.closeMajorPanels(except)
+	if except ~= "shop" and shopPanelController then
+		shopPanelController:Hide()
+	end
+	if except ~= "cosmetics" and cosmeticPanelController then
+		cosmeticPanelController:Hide()
+	end
+	if except ~= "story" and storyPanelController then
+		storyPanelController:Hide()
+	end
+	if except ~= "menu" and hudController and hudController.menu then
+		hudController.menu:Close()
+	end
+	if except ~= "tutorial" then
+		tutorialManuallyOpened = false
+		updateTutorialVisibility()
+	end
+end
+
 local function previewShopCosmetic(item)
 	if typeof(item) ~= "table" or typeof(item.preview) ~= "table" then
 		return
@@ -922,6 +962,7 @@ shopPanelController = ShopPanel.new(gui, {
 	previewCosmetic = previewShopCosmetic,
 	stopPreview = restoreCosmeticPreview,
 	openCloset = function()
+		day43Ui.closeMajorPanels("cosmetics")
 		cosmeticPanelController:Show()
 	end,
 })
@@ -933,7 +974,7 @@ storyPanelController = StoryPanel.new(gui, {
 		return currentHubState and currentHubState.storyMissions or {}
 	end,
 	startMission = function(chapter)
-		queueEvent:FireServer("Story", chapter)
+		day43Ui.fireQueueRequest("Story", chapter)
 	end,
 })
 
@@ -952,6 +993,7 @@ hudController = HUDController.new(gui, {
 	end,
 	callbacks = {
 		play = function()
+			day43Ui.closeMajorPanels()
 			if currentState then
 				root.Visible = true
 				clampWindowToScreen()
@@ -961,11 +1003,11 @@ hudController = HUDController.new(gui, {
 				ExperienceConfig.isModeEnabled("Solo")
 				and not ExperienceConfig.isModeEnabled("Battle")
 			then
-				queueEvent:FireServer("Solo")
+				day43Ui.fireQueueRequest("Solo")
 			elseif currentHubState and currentHubState.queued then
-				queueEvent:FireServer("LeaveQueue")
+				day43Ui.fireQueueRequest("LeaveQueue")
 			else
-				queueEvent:FireServer("Battle")
+				day43Ui.fireQueueRequest("Battle")
 			end
 		end,
 		modes = function()
@@ -973,9 +1015,7 @@ hudController = HUDController.new(gui, {
 				showBanner("Finish your current run first", Color3.fromRGB(251, 146, 60))
 				return
 			end
-			cosmeticPanelController:Hide()
-			shopPanelController:Hide()
-			storyPanelController:Hide()
+			day43Ui.closeMajorPanels("menu")
 			hudController.menu:Open("modes", "Choose Mode", function(content)
 				local layout = Instance.new("UIListLayout")
 				layout.Padding = UDim.new(0, 10)
@@ -1025,58 +1065,154 @@ hudController = HUDController.new(gui, {
 					end)
 				end
 
-				makeModeButton(
-					1,
-					"Battle Queue",
-					"Classic race to outscore rivals.",
-					Color3.fromRGB(64, 156, 255),
-					function()
-						queueEvent:FireServer("Battle")
-					end
-				)
-				makeModeButton(
-					2,
-					"Story Missions",
-					"Solo objectives and replayable guide practice.",
-					Color3.fromRGB(167, 109, 255),
-					function()
-						storyPanelController:Show()
-					end
-				)
-				makeModeButton(
-					3,
-					"Custom Lab",
-					"Test block rotations and reroll your hand.",
-					Color3.fromRGB(255, 112, 189),
-					function()
-						queueEvent:FireServer("CustomLab")
-					end
-				)
+				local order = 1
+				if ExperienceConfig.isModeEnabled("Battle") then
+					makeModeButton(
+						order,
+						"Battle Queue",
+						"Classic race to outscore rivals.",
+						Color3.fromRGB(64, 156, 255),
+						function()
+							day43Ui.fireQueueRequest("Battle")
+						end
+					)
+					order += 1
+				end
+				if ExperienceConfig.isModeEnabled("Story") then
+					makeModeButton(
+						order,
+						"Story Missions",
+						"Solo objectives and replayable guide practice.",
+						Color3.fromRGB(167, 109, 255),
+						function()
+							day43Ui.closeMajorPanels("story")
+							storyPanelController:Show()
+						end
+					)
+					order += 1
+				end
+				if ExperienceConfig.isModeEnabled("CustomLab") then
+					makeModeButton(
+						order,
+						"Custom Lab",
+						"Test block rotations and reroll your hand.",
+						Color3.fromRGB(255, 112, 189),
+						function()
+							day43Ui.fireQueueRequest("CustomLab")
+						end
+					)
+					order += 1
+				end
+				if order == 1 then
+					makeModeButton(
+						order,
+						"Solo Puzzle",
+						"Battle, Story, and Custom Lab are disabled in this build.",
+						Color3.fromRGB(64, 156, 255),
+						function()
+							day43Ui.fireQueueRequest("Solo")
+						end
+					)
+				end
 			end)
 		end,
 		inventory = function()
-			shopPanelController:Hide()
-			storyPanelController:Hide()
+			day43Ui.closeMajorPanels("cosmetics")
 			cosmeticPanelController:Show()
 		end,
 		shop = function()
-			cosmeticPanelController:Hide()
-			storyPanelController:Hide()
+			day43Ui.closeMajorPanels("shop")
 			shopPanelController:Show()
 		end,
 		rewards = function()
+			day43Ui.closeMajorPanels("menu")
 			hudController:OpenInfoPanel("Quests", {
-				"Solo scores, coins, XP, and personal bests are tracked by the server.",
-				"Daily quests are coming after the solo loop is tightened.",
-				"Leaderboards are the next major progression priority.",
+				"COMING SOON",
+				"Solo scores, coins, XP, and personal bests are already tracked.",
+				"Daily quests are intentionally disabled in this solo-first build.",
 			})
 		end,
 		settings = function()
-			hudController:OpenInfoPanel("Settings", {
-				reducedMotion and "Motion: Reduced" or "Motion: Full",
-				soundEnabled and `Sound: {math.floor(soundVolume * 100)}%` or "Sound: Off",
-				"Full controls remain in the Home panel for now.",
-			})
+			day43Ui.closeMajorPanels("menu")
+			hudController.menu:Open("settings", "Settings", function(content)
+				local layout = Instance.new("UIListLayout")
+				layout.Padding = UDim.new(0, 10)
+				layout.SortOrder = Enum.SortOrder.LayoutOrder
+				layout.Parent = content
+
+				local function makeSettingButton(order, text, callback)
+					local button = Instance.new("TextButton")
+					button.LayoutOrder = order
+					button.Size = UDim2.new(1, 0, 0, 58)
+					button.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+					button.BorderSizePixel = 0
+					button.Font = Enum.Font.GothamBold
+					button.Text = text
+					button.TextColor3 = Color3.fromRGB(245, 247, 251)
+					button.TextSize = 16
+					button.TextWrapped = true
+					button.Parent = content
+					styleButton(button, "secondary")
+					button.Activated:Connect(function()
+						callback()
+						hudController:SetMenuButtonSelected("settings")
+					end)
+				end
+
+				makeSettingButton(
+					1,
+					reducedMotion and "Motion: Reduced" or "Motion: Full",
+					function()
+						reducedMotion = not reducedMotion
+						updateSettingsButtonText()
+						playSound("Button")
+						saveSettings()
+						hudController.callbacks.settings()
+					end
+				)
+				makeSettingButton(
+					2,
+					soundEnabled and `Sound: {math.floor(soundVolume * 100)}%` or "Sound: Off",
+					function()
+						if soundVolume > 0.36 then
+							soundVolume = 0.35
+							soundEnabled = true
+						elseif soundVolume > 0 then
+							soundVolume = 0
+							soundEnabled = false
+						else
+							soundVolume = 0.65
+							soundEnabled = true
+						end
+						updateSettingsButtonText()
+						applySoundSettings()
+						playSound("Button")
+						saveSettings()
+						hudController.callbacks.settings()
+					end
+				)
+				makeSettingButton(
+					3,
+					uiScale == 1 and "UI Size: Auto"
+						or uiScale > 1 and "UI Size: Large"
+						or "UI Size: Compact",
+					function()
+						if uiScale == 1 then
+							uiScale = 1.12
+						elseif uiScale > 1 then
+							uiScale = 0.92
+						else
+							uiScale = 1
+						end
+						updateSettingsButtonText()
+						applyUiScale()
+						clampWindowToScreen()
+						playSound("Button")
+						saveSettings()
+						hudController.callbacks.settings()
+					end
+				)
+			end)
 		end,
 	},
 })
@@ -1228,18 +1364,18 @@ homePanelController = HomePanel.new(gui, {
 			updateTutorialVisibility()
 		end,
 		battle = function(queued)
+			day43Ui.closeMajorPanels()
 			if
 				ExperienceConfig.isModeEnabled("Solo")
 				and not ExperienceConfig.isModeEnabled("Battle")
 			then
-				queueEvent:FireServer("Solo")
+				day43Ui.fireQueueRequest("Solo")
 			else
-				queueEvent:FireServer(queued and "LeaveQueue" or "Battle")
+				day43Ui.fireQueueRequest(queued and "LeaveQueue" or "Battle")
 			end
 		end,
 		story = function()
-			cosmeticPanelController:Hide()
-			shopPanelController:Hide()
+			day43Ui.closeMajorPanels("story")
 			storyPanelController:Show()
 		end,
 		motion = function()
@@ -1305,8 +1441,7 @@ homePanelController = HomePanel.new(gui, {
 			showBanner(`Board: {boardSkin and boardSkin.name or "Auto"}`, customization.accentColor)
 		end,
 		shop = function()
-			cosmeticPanelController:Hide()
-			storyPanelController:Hide()
+			day43Ui.closeMajorPanels("shop")
 			shopPanelController:Show()
 		end,
 		sound = function()
@@ -1414,7 +1549,7 @@ tutorialStoryButton.Activated:Connect(function()
 	updateTutorialVisibility()
 	playSound("Button")
 	saveSettings()
-	queueEvent:FireServer("Story")
+	day43Ui.fireQueueRequest("Story")
 end)
 
 customizeButton = Instance.new("TextButton")
@@ -1448,6 +1583,7 @@ UITheme.attachButtonFeedback(resetLayoutButton, isUiReducedMotion)
 markInteractive(resetLayoutButton)
 
 closeWorkspaceButton = Instance.new("TextButton")
+closeWorkspaceButton.Name = "WorkspaceCloseButton"
 closeWorkspaceButton.AnchorPoint = Vector2.new(1, 0)
 closeWorkspaceButton.Position = UDim2.new(1, -26, 0, 18)
 closeWorkspaceButton.Size = UDim2.fromOffset(44, 38)
@@ -1464,18 +1600,16 @@ markInteractive(closeWorkspaceButton)
 
 closeWorkspaceButton.Activated:Connect(function()
 	playSound("Button")
-	queueEvent:FireServer("LeaveBattle")
+	day43Ui.fireQueueRequest("LeaveBattle")
 end)
 
 settingsButton = makeTopControl("WorkspaceSettingsButton", "SET", Color3.fromRGB(24, 49, 86))
 settingsButton.TextSize = 13
 settingsButton.Activated:Connect(function()
 	playSound("Button")
-	hudController:OpenInfoPanel("Settings", {
-		reducedMotion and "Motion: Reduced" or "Motion: Full",
-		soundEnabled and `Sound: {math.floor(soundVolume * 100)}%` or "Sound: Off",
-		"Use Reset to restore the puzzle workspace layout.",
-	})
+	if hudController and hudController.callbacks and hudController.callbacks.settings then
+		hudController.callbacks.settings()
+	end
 end)
 
 helpButton = makeTopControl("WorkspaceHelpButton", "?", Color3.fromRGB(24, 49, 86))
@@ -2112,6 +2246,10 @@ for y = 1, Config.BoardSize do
 			local boardX = button:GetAttribute("BoardX")
 			local boardY = button:GetAttribute("BoardY")
 			if currentState and selectedSlot then
+				local now = os.clock()
+				if now - day43Ui.lastPlaceActionAt < day43Ui.placeActionCooldownSeconds then
+					return
+				end
 				local shape = currentState.hand[selectedSlot]
 				if
 					shape
@@ -2119,6 +2257,7 @@ for y = 1, Config.BoardSize do
 					and typeof(boardY) == "number"
 					and Grid.canPlace(currentState.board, shape, boardX, boardY)
 				then
+					day43Ui.lastPlaceActionAt = now
 					playSound("Place")
 					placeEvent:FireServer(selectedSlot, boardX, boardY)
 				elseif shape then
@@ -2249,6 +2388,7 @@ end
 
 for slot = 1, Config.InventorySize do
 	local button = Instance.new("TextButton")
+	button.Name = `HandSlot{slot}`
 	button.Position = UDim2.fromOffset(0, 38 + (slot - 1) * 66)
 	button.Size = UDim2.fromOffset(256, 58)
 	button.BackgroundColor3 = Color3.fromRGB(31, 38, 52)
@@ -2414,6 +2554,7 @@ for rowIndex = 1, 7 do
 end
 
 returnHubButton = Instance.new("TextButton")
+returnHubButton.Name = "ReturnHubButton"
 returnHubButton.Position = UDim2.fromOffset(360, 390)
 returnHubButton.Size = UDim2.fromOffset(124, 32)
 returnHubButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
@@ -2427,6 +2568,7 @@ styleButton(returnHubButton, "secondary")
 markInteractive(returnHubButton)
 
 playAgainButton = Instance.new("TextButton")
+playAgainButton.Name = "PlayAgainButton"
 playAgainButton.Position = UDim2.fromOffset(492, 390)
 playAgainButton.Size = UDim2.fromOffset(124, 32)
 playAgainButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
@@ -2441,6 +2583,7 @@ styleButton(playAgainButton, "primary")
 markInteractive(playAgainButton)
 
 rotatePieceButton = Instance.new("TextButton")
+rotatePieceButton.Name = "RotatePieceButton"
 rotatePieceButton.Position = UDim2.fromOffset(360, 352)
 rotatePieceButton.Size = UDim2.fromOffset(124, 32)
 rotatePieceButton.BackgroundColor3 = Color3.fromRGB(167, 109, 255)
@@ -2455,6 +2598,7 @@ styleButton(rotatePieceButton, "primary")
 markInteractive(rotatePieceButton)
 
 rerollPieceButton = Instance.new("TextButton")
+rerollPieceButton.Name = "RerollPieceButton"
 rerollPieceButton.Position = UDim2.fromOffset(492, 352)
 rerollPieceButton.Size = UDim2.fromOffset(124, 32)
 rerollPieceButton.BackgroundColor3 = Color3.fromRGB(255, 112, 189)
@@ -2479,6 +2623,9 @@ resizeHandle.Font = Enum.Font.GothamBlack
 resizeHandle.Text = "Resize"
 resizeHandle.TextColor3 = Color3.fromRGB(245, 247, 251)
 resizeHandle.TextSize = 11
+resizeHandle.Visible = false
+resizeHandle.Active = false
+resizeHandle.Selectable = false
 resizeHandle.Parent = root
 styleButton(resizeHandle, "secondary")
 UITheme.stroke(resizeHandle, Color3.fromRGB(47, 199, 255), 3, 0.06)
@@ -2583,6 +2730,8 @@ applyWindowLayout = function()
 		resizeHandle.Position = UDim2.new(1, -18, 1, -18)
 		resizeHandle.Size = UDim2.fromOffset(50, 34)
 		resizeHandle.Visible = false
+		resizeHandle.Active = false
+		resizeHandle.Selectable = false
 	end
 
 	stageUi.scoreCard.Position = UDim2.fromOffset(0, 0)
@@ -2733,12 +2882,12 @@ end
 
 returnHubButton.Activated:Connect(function()
 	playSound("Button")
-	queueEvent:FireServer("LeaveBattle")
+	day43Ui.fireQueueRequest("LeaveBattle")
 end)
 
 playAgainButton.Activated:Connect(function()
 	playSound("Queue")
-	queueEvent:FireServer("PlayAgain")
+	day43Ui.fireQueueRequest("PlayAgain")
 end)
 
 local function requestSelectedHandAction(action)

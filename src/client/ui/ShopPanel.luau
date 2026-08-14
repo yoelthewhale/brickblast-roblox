@@ -100,6 +100,7 @@ function ShopPanel.new(gui, options)
 	dim.Text = ""
 	dim.AutoButtonColor = false
 	dim.Visible = false
+	dim.Active = false
 	dim.Size = UDim2.fromScale(1, 1)
 	dim.ZIndex = 42
 	dim.Parent = gui
@@ -665,6 +666,7 @@ function ShopPanel:Hide()
 	self.stopPreview()
 	self.panel.Visible = false
 	self.dim.Visible = false
+	self.dim.Active = false
 	self.rays.Visible = false
 end
 
@@ -674,6 +676,7 @@ function ShopPanel:Show(category)
 	self:Refresh()
 	self.updateScale()
 	self.dim.Visible = true
+	self.dim.Active = true
 	self.rays.Visible = true
 	self.panel.Visible = true
 	self:Track("ShopOpened")

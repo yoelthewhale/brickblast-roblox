@@ -1,8 +1,12 @@
 local GuiService = game:GetService("GuiService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local UITheme = require(script.Parent.UITheme)
+local ExperienceConfig = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game"):WaitForChild("ExperienceConfig")
+)
 
 local HomePanel = {}
 HomePanel.__index = HomePanel
@@ -173,7 +177,8 @@ function HomePanel.new(gui, options)
 	battleButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
 	battleButton.BorderSizePixel = 0
 	battleButton.Font = Enum.Font.GothamBold
-	battleButton.Text = "Join Battle Queue"
+	battleButton.Text = ExperienceConfig.isModeEnabled("Battle") and "Join Battle Queue"
+		or "Play Solo"
 	battleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 	battleButton.TextSize = 16
 	battleButton.Parent = panel
@@ -190,6 +195,7 @@ function HomePanel.new(gui, options)
 	storyButton.TextColor3 = Color3.fromRGB(13, 32, 24)
 	storyButton.TextSize = 15
 	storyButton.TextWrapped = true
+	storyButton.Visible = ExperienceConfig.isModeEnabled("Story")
 	storyButton.Parent = panel
 	styleButton(storyButton, "success", self.isReducedMotion)
 	self.storyButton = storyButton
@@ -205,6 +211,7 @@ function HomePanel.new(gui, options)
 	storyPreviewLabel.TextWrapped = true
 	storyPreviewLabel.TextXAlignment = Enum.TextXAlignment.Left
 	storyPreviewLabel.TextYAlignment = Enum.TextYAlignment.Center
+	storyPreviewLabel.Visible = ExperienceConfig.isModeEnabled("Story")
 	storyPreviewLabel.Parent = panel
 	UITheme.text(storyPreviewLabel, "soft")
 	self.storyPreviewLabel = storyPreviewLabel
@@ -405,11 +412,15 @@ end
 
 function HomePanel:ConfigureFocus()
 	self.closeButton.NextSelectionLeft = self.guideButton
-	self.closeButton.NextSelectionDown = self.storyButton
+	self.closeButton.NextSelectionDown = if self.storyButton.Visible
+		then self.storyButton
+		else self.battleButton
 	self.guideButton.NextSelectionRight = self.closeButton
 	self.guideButton.NextSelectionDown = self.battleButton
 
-	self.battleButton.NextSelectionRight = self.storyButton
+	self.battleButton.NextSelectionRight = if self.storyButton.Visible
+		then self.storyButton
+		else nil
 	self.battleButton.NextSelectionUp = self.guideButton
 	self.battleButton.NextSelectionDown = self.shopButton
 
@@ -572,9 +583,16 @@ function HomePanel:UpdateHubState(hubState, storyPreviewText, accentColor)
 		queueText ..= ` | solo test in {hubState.secondsToSoloStart}s`
 	end
 
-	if typeof(hubState.storyMission) == "table" then
+	if not ExperienceConfig.isModeEnabled("Story") then
+		self.storyButton.Visible = false
+		self.storyPreviewLabel.Visible = false
+	elseif typeof(hubState.storyMission) == "table" then
+		self.storyButton.Visible = true
+		self.storyPreviewLabel.Visible = true
 		self.storyButton.Text = `Story: {hubState.storyMission.name or "Mission"}`
 	else
+		self.storyButton.Visible = true
+		self.storyPreviewLabel.Visible = true
 		self.storyButton.Text = "Story Mode"
 	end
 	self.storyPreviewLabel.Text = storyPreviewText or "Complete missions to unlock chapters"
@@ -591,7 +609,9 @@ function HomePanel:UpdateHubState(hubState, storyPreviewText, accentColor)
 
 	self.queued = hubState.queued == true
 	self:SetBattleEnabled(openArenas > 0 or self.queued)
-	if self.queued then
+	if ExperienceConfig.isModeEnabled("Solo") and not ExperienceConfig.isModeEnabled("Battle") then
+		self.battleButton.Text = "Play Solo"
+	elseif self.queued then
 		self.battleButton.Text = "Queued - Leave Queue"
 	elseif openArenas <= 0 then
 		self.battleButton.Text = "Arenas Full"

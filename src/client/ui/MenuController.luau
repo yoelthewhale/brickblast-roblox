@@ -32,6 +32,7 @@ function MenuController.new(gui, options)
 	dim.BorderSizePixel = 0
 	dim.Text = ""
 	dim.Visible = false
+	dim.Active = false
 	dim.AutoButtonColor = false
 	dim.Size = UDim2.fromScale(1, 1)
 	dim.ZIndex = UITheme.Z.modal - 2
@@ -153,6 +154,7 @@ function MenuController:Open(key, title, render)
 		render(self.content)
 	end
 	self.dim.Visible = true
+	self.dim.Active = true
 	self.panel.Visible = true
 	self:RefreshResponsiveLayout()
 
@@ -180,6 +182,7 @@ function MenuController:Close()
 	end
 	self.activeKey = nil
 	self.dim.Visible = false
+	self.dim.Active = false
 	self.panel.Visible = false
 	self:Clear()
 	if GuiService.SelectedObject and GuiService.SelectedObject:IsDescendantOf(self.panel) then

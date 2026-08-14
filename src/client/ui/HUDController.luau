@@ -14,7 +14,7 @@ HUDController.__index = HUDController
 local LEFT_BUTTONS = {
 	{
 		key = "rewards",
-		label = "Quests",
+		label = "Quests Soon",
 		icon = "Quest",
 		accent = Color3.fromRGB(255, 211, 71),
 	},
@@ -772,6 +772,9 @@ function HUDController:SetGameplayFocus(enabled)
 	if self.brand then
 		self.brand.Visible = visible
 	end
+	if self.resourceBar then
+		self.resourceBar.Visible = visible
+	end
 	if self.leftNav then
 		self.leftNav.Visible = visible
 	end
@@ -880,6 +883,11 @@ function HUDController:UpdateHubState(hubState)
 		or hubState.mode == "Custom"
 		or hubState.mode == "Solo"
 	then
+		self:SetGameplayFocus(true)
+		self.topBar.Visible = false
+		if self.cancelQueueButton then
+			self.cancelQueueButton.Visible = false
+		end
 		return
 	end
 
@@ -918,7 +926,7 @@ function HUDController:UpdateGameState(state)
 	end
 
 	self:SetGameplayFocus(true)
-	self.topBar.Visible = true
+	self.topBar.Visible = false
 	if self.cancelQueueButton then
 		self.cancelQueueButton.Visible = false
 	end
