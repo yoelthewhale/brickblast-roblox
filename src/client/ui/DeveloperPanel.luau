@@ -424,12 +424,23 @@ function DeveloperPanel:SetDiagnostics(diagnostics)
 		return
 	end
 
+	local placementText = {}
+	for _, entry in diagnostics.legalPlacementCounts or {} do
+		table.insert(placementText, `{entry.shape}:{entry.placements}`)
+	end
+
 	self.diagnostics.Text = table.concat({
 		`Stage {diagnostics.currentStage}: {diagnostics.stageProgress}/{diagnostics.stageProgressRequired}`,
+		`Pressure {string.format("%.2f", diagnostics.stagePressure or 0)}`,
 		`Score {diagnostics.score} | Combo {diagnostics.comboStreak}`,
 		`Perfect clears {diagnostics.totalPerfectClears}`,
 		`Occupied {diagnostics.occupiedCells}`,
 		`Hand {table.concat(diagnostics.handShapeNames or {}, ", ")}`,
+		`Legal {table.concat(placementText, ", ")}`,
+		`Assist {diagnostics.assistanceRemaining}/{diagnostics.assistanceCap}`,
+		`Assist used {tostring(diagnostics.lastHandAssistanceConsumed)}`,
+		`Reason {diagnostics.lastHandAssistanceReason or "none"}`,
+		`Candidates {diagnostics.candidatesScored}/{diagnostics.candidateLimit}`,
 		`Record eligible {tostring(diagnostics.recordEligible)}`,
 		`Visible cells {diagnostics.visibleBoardCells}`,
 	}, "\n")

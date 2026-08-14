@@ -60,6 +60,34 @@ local function handShapeNames(hand)
 	return names
 end
 
+local function legalPlacementCounts(board, hand)
+	local counts = {}
+
+	if typeof(board) ~= "table" or typeof(hand) ~= "table" then
+		return counts
+	end
+
+	for slot = 1, Config.InventorySize do
+		local shape = hand[slot]
+		local placements = 0
+		if shape then
+			for y = 1, Config.BoardSize do
+				for x = 1, Config.BoardSize do
+					if Grid.canPlace(board, shape, x, y) then
+						placements += 1
+					end
+				end
+			end
+		end
+		counts[slot] = {
+			shape = shape and shape.id or "empty",
+			placements = placements,
+		}
+	end
+
+	return counts
+end
+
 local function validShapeIds()
 	local ids = {}
 
@@ -162,15 +190,27 @@ end
 
 function DeveloperTools.diagnostics(state, visibleCellCount)
 	local stage = StageProgression.publicState(state and state.stage)
+	local generation = state and state.lastHandGeneration or {}
+	local assistance = HandGenerator.sanitizeAssistance(state and state.assistance)
+	local difficulty = generation.effectiveDifficulty
+		or HandGenerator.difficultyForStage(stage.currentStage)
 	return {
 		currentStage = stage.currentStage,
 		stageProgress = stage.stageProgress,
 		stageProgressRequired = stage.stageProgressRequired,
+		stagePressure = difficulty.pressure,
 		score = state and state.score or 0,
 		comboStreak = state and state.comboStreak or 0,
 		totalPerfectClears = stage.totalPerfectClears,
 		occupiedCells = state and countOccupied(state.board) or 0,
 		handShapeNames = state and handShapeNames(state.hand) or {},
+		legalPlacementCounts = state and legalPlacementCounts(state.board, state.hand) or {},
+		assistanceRemaining = assistance.remaining,
+		assistanceCap = assistance.cap,
+		lastHandAssistanceConsumed = assistance.lastHandConsumed,
+		lastHandAssistanceReason = assistance.lastHandReason,
+		candidatesScored = generation.candidatesScored or 0,
+		candidateLimit = generation.candidateLimit or HandGenerator.CandidateLimit,
 		recordEligible = state and state.developerTestRun ~= true or false,
 		visibleBoardCells = cleanInteger(
 			visibleCellCount,
@@ -227,20 +267,31 @@ function DeveloperTools.applyCommand(state, command)
 		state.highestCombo = 0
 		state.stage = StageProgression.newRun()
 		state.recentHands = {}
-		state.hand = HandGenerator.generate(state.board, {
+		state.assistance = HandGenerator.newAssistance()
+		local hand, generation = HandGenerator.generate(state.board, {
 			randomizer = state.randomizer,
 			count = Config.InventorySize,
 			pieceSkin = state.pieceSkin,
+			assistance = state.assistance,
+			stage = state.stage.currentStage,
 		})
+		state.hand = hand
+		state.assistance = generation.assistance
+		state.lastHandGeneration = generation
 	elseif action == "GenerateHand" then
 		markDeveloperRun(state)
-		state.hand = HandGenerator.generate(state.board, {
+		local hand, generation = HandGenerator.generate(state.board, {
 			randomizer = state.randomizer,
 			count = Config.InventorySize,
 			pieceSkin = state.pieceSkin,
 			comboStreak = state.comboStreak,
 			recentHands = state.recentHands,
+			assistance = state.assistance,
+			stage = state.stage and state.stage.currentStage or 1,
 		})
+		state.hand = hand
+		state.assistance = generation.assistance
+		state.lastHandGeneration = generation
 		state.recentHands = HandGenerator.rememberHand(state.recentHands, state.hand)
 	elseif action == "ChooseHand" then
 		if typeof(command.shapes) ~= "table" then
@@ -256,6 +307,7 @@ function DeveloperTools.applyCommand(state, command)
 		end
 		markDeveloperRun(state)
 		state.hand = hand
+		state.lastHandGeneration = nil
 	elseif action == "LoadPattern" then
 		local board = DeveloperTools.boardPattern(command.pattern)
 		if not DeveloperTools.validateBoard(board) then

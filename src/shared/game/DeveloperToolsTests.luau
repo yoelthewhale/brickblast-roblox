@@ -2,6 +2,7 @@ local Blocks = require(script.Parent.Blocks)
 local Config = require(script.Parent.Config)
 local DeveloperTools = require(script.Parent.DeveloperTools)
 local Grid = require(script.Parent.Grid)
+local HandGenerator = require(script.Parent.HandGenerator)
 local StageProgression = require(script.Parent.StageProgression)
 
 local DeveloperToolsTests = {}
@@ -30,6 +31,8 @@ local function makeState()
 		comboStreak = 0,
 		highestCombo = 0,
 		stage = StageProgression.newRun(),
+		assistance = HandGenerator.newAssistance(),
+		lastHandGeneration = nil,
 		alive = true,
 	}
 end
@@ -143,6 +146,29 @@ tests.diagnosticsReportRecordSuppression = function()
 	assertCondition(diagnostics.recordEligible == false, "Diagnostics should report ineligible run")
 	assertCondition(diagnostics.comboStreak == 4, "Diagnostics should include combo")
 	assertCondition(diagnostics.visibleBoardCells == 64, "Diagnostics should include cell count")
+	assertCondition(
+		diagnostics.assistanceRemaining == Config.HandGeneration.AssistanceStart,
+		"Diagnostics should include assistance"
+	)
+	assertCondition(
+		#diagnostics.legalPlacementCounts == Config.InventorySize,
+		"Diagnostics should include legal placement counts"
+	)
+end
+
+tests.generateHandTracksGeneratorDiagnostics = function()
+	local state = makeState()
+	local ok = DeveloperTools.applyCommand(state, { action = "GenerateHand" })
+
+	assertCondition(ok == true, "Generate hand command should apply")
+	assertCondition(
+		typeof(state.lastHandGeneration) == "table",
+		"Generate hand should store diagnostics"
+	)
+	assertCondition(
+		state.lastHandGeneration.candidatesScored <= state.lastHandGeneration.candidateLimit,
+		"Generate hand should stay within candidate limit"
+	)
 end
 
 function DeveloperToolsTests.run()

@@ -64,6 +64,34 @@ Config.StageProgression = {
 	},
 }
 
+Config.HandGeneration = {
+	CandidateLimit = 40,
+	RecentHistoryLimit = 5,
+	AssistanceStart = 3,
+	AssistanceMax = 4,
+	CrowdedRescueThreshold = 0.58,
+	TightBoardFitThreshold = 3,
+	RescueCost = 1,
+	StagePressureStart = 3,
+	PressurePerStage = 0.07,
+	MaxPressure = 0.42,
+	FlexibleShapeIds = {
+		single = true,
+		line2 = true,
+	},
+	RestrictiveShapeIds = {
+		plus = true,
+		corner = true,
+		square2 = true,
+		line3 = true,
+		vertical3 = true,
+	},
+	StageAdvanceRestore = 1,
+	ComboRestoreMilestone = 3,
+	ComboRestore = 1,
+	PerfectClearRestore = 2,
+}
+
 Config.DeveloperTools = {
 	Enabled = true,
 	CommandCooldownSeconds = 0.12,

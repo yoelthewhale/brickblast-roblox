@@ -1922,16 +1922,53 @@ end
 
 local function giveNewHand(state)
 	if state.mode == "Solo" then
-		state.hand = HandGenerator.generate(state.board, {
+		local hand, generation = HandGenerator.generate(state.board, {
 			randomizer = state.randomizer,
 			count = Config.InventorySize,
 			pieceSkin = state.pieceSkin,
 			comboStreak = state.comboStreak,
 			recentHands = state.recentHands,
+			assistance = state.assistance,
+			stage = state.stage and state.stage.currentStage or 1,
 		})
+		state.hand = hand
+		state.assistance = generation.assistance
+		state.lastHandGeneration = generation
 		state.recentHands = HandGenerator.rememberHand(state.recentHands, state.hand)
 	else
 		state.hand = Blocks.createHand(state.randomizer, Config.InventorySize, state.pieceSkin)
+	end
+end
+
+local function restoreSoloAssistance(state, stageResult)
+	if state.mode ~= "Solo" then
+		return
+	end
+
+	local restoreAmount = 0
+	local reasons = {}
+	if stageResult and stageResult.stagesAdvanced > 0 then
+		restoreAmount += Config.HandGeneration.StageAdvanceRestore * stageResult.stagesAdvanced
+		table.insert(reasons, "stage advanced")
+	end
+	if
+		state.comboStreak > 0
+		and state.comboStreak % Config.HandGeneration.ComboRestoreMilestone == 0
+	then
+		restoreAmount += Config.HandGeneration.ComboRestore
+		table.insert(reasons, "combo milestone")
+	end
+	if stageResult and stageResult.perfectClear then
+		restoreAmount += Config.HandGeneration.PerfectClearRestore
+		table.insert(reasons, "perfect clear")
+	end
+
+	if restoreAmount > 0 then
+		state.assistance = HandGenerator.restoreAssistance(
+			state.assistance,
+			restoreAmount,
+			table.concat(reasons, ", ")
+		)
 	end
 end
 
@@ -2058,6 +2095,8 @@ local function createPlayerState(player, mode, storyChapter)
 		comboStreak = 0,
 		highestCombo = 0,
 		stage = mode == "Solo" and StageProgression.newRun() or nil,
+		assistance = mode == "Solo" and HandGenerator.newAssistance() or nil,
+		lastHandGeneration = nil,
 		developerTestRun = false,
 		rewardsGranted = false,
 		storyMission = mode == "Story" and storyMissionForPlayer(player, storyChapter) or nil,
@@ -2578,6 +2617,7 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 			linesCleared = linesCleared,
 			comboStreak = state.comboStreak,
 		})
+		restoreSoloAssistance(state, stageResult)
 	end
 	analytics.placements += 1
 	analytics.linesCleared += linesCleared

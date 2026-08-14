@@ -80,9 +80,10 @@ tests.crowdedBoardOnlySingleFits = function()
 	local board = filledBoard()
 	board[Config.BoardSize][Config.BoardSize] = false
 
-	local hand = HandGenerator.generate(board, {
+	local hand, diagnostics = HandGenerator.generate(board, {
 		randomizer = Random.new(202),
 		candidateLimit = 12,
+		assistance = HandGenerator.newAssistance(),
 	})
 	local containsSingle = false
 
@@ -97,6 +98,15 @@ tests.crowdedBoardOnlySingleFits = function()
 	assertCondition(
 		handHasAnyMove(board, hand),
 		"Crowded board hand should include the one fitting move"
+	)
+	assertCondition(
+		diagnostics.assistanceConsumed == true,
+		"Crowded rescue should spend assistance"
+	)
+	assertCondition(
+		diagnostics.assistance.remaining
+			== Config.HandGeneration.AssistanceStart - Config.HandGeneration.RescueCost,
+		"Crowded rescue should reduce assistance by the configured cost"
 	)
 end
 
@@ -114,6 +124,10 @@ tests.noKnownPieceFits = function()
 	assertCondition(
 		handHasAnyMove(board, hand) == false,
 		"Full board hand should preserve game over"
+	)
+	assertCondition(
+		diagnostics.assistanceConsumed == false,
+		"No-fit boards should not spend assistance"
 	)
 end
 
@@ -155,6 +169,29 @@ tests.repeatPenalty = function()
 	})
 
 	assertCondition(penalizedScore < cleanScore, "Recent hand signature should reduce score")
+end
+
+tests.assistanceIsCapped = function()
+	local assistance = HandGenerator.restoreAssistance({
+		remaining = Config.HandGeneration.AssistanceMax,
+		cap = Config.HandGeneration.AssistanceMax,
+	}, 99, "test")
+
+	assertCondition(
+		assistance.remaining == Config.HandGeneration.AssistanceMax,
+		"Restored assistance should stay capped"
+	)
+end
+
+tests.stagePressureIncreases = function()
+	local early = HandGenerator.difficultyForStage(1)
+	local late = HandGenerator.difficultyForStage(8)
+
+	assertCondition(early.pressure <= late.pressure, "Later stages should add pressure")
+	assertCondition(
+		late.pressure <= Config.HandGeneration.MaxPressure,
+		"Pressure should stay capped"
+	)
 end
 
 tests.fixedCandidateLimit = function()
