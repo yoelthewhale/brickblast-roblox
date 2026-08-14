@@ -302,6 +302,110 @@ function ArcadeUI.RenderProgression(context)
 	end
 end
 
+function ArcadeUI.CloneBoard(board, boardSize)
+	local copy = {}
+
+	for y = 1, boardSize do
+		copy[y] = {}
+		for x = 1, boardSize do
+			copy[y][x] = board[y][x]
+		end
+	end
+
+	return copy
+end
+
+function ArcadeUI.PlayCellPop(context, x, y)
+	if context.reducedMotion then
+		return
+	end
+
+	local scale = context.cellScales[y] and context.cellScales[y][x]
+	if not scale then
+		return
+	end
+
+	scale.Scale = 0.72
+	context.TweenService:Create(scale, context.quickTween, { Scale = 1 }):Play()
+end
+
+function ArcadeUI.PlayClearFlash(context, x, y)
+	if context.reducedMotion then
+		return
+	end
+
+	local cell = context.cells[y] and context.cells[y][x]
+	local scale = context.cellScales[y] and context.cellScales[y][x]
+	if not cell or not scale then
+		return
+	end
+
+	local originalColor = cell.BackgroundColor3
+	cell.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	scale.Scale = 1.18
+	context.TweenService
+		:Create(scale, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Scale = 1,
+		})
+		:Play()
+	task.delay(0.12, function()
+		if context.currentState and context.currentState.board[y][x] == false then
+			cell.BackgroundColor3 = context.boardEmptyColor
+		else
+			cell.BackgroundColor3 = originalColor
+		end
+	end)
+end
+
+function ArcadeUI.PlayBoardDiff(context, previous, nextBoard)
+	if not previous then
+		return
+	end
+
+	for y = 1, context.boardSize do
+		for x = 1, context.boardSize do
+			local oldValue = previous[y][x]
+			local newValue = nextBoard[y][x]
+			if oldValue == false and newValue ~= false then
+				ArcadeUI.PlayCellPop(context, x, y)
+			elseif oldValue ~= false and newValue == false then
+				ArcadeUI.PlayClearFlash(context, x, y)
+			end
+		end
+	end
+end
+
+function ArcadeUI.ShakeWindow(context)
+	if context.reducedMotion or not context.root then
+		return
+	end
+
+	local startPosition = context.root.Position
+	context.TweenService
+		:Create(context.root, TweenInfo.new(0.05), {
+			Position = startPosition + UDim2.fromOffset(8, 0),
+		})
+		:Play()
+	task.delay(0.06, function()
+		if context.root then
+			context.TweenService
+				:Create(context.root, TweenInfo.new(0.05), {
+					Position = startPosition + UDim2.fromOffset(-8, 0),
+				})
+				:Play()
+		end
+	end)
+	task.delay(0.12, function()
+		if context.root then
+			context.TweenService
+				:Create(context.root, TweenInfo.new(0.06), {
+					Position = startPosition,
+				})
+				:Play()
+		end
+	end)
+end
+
 function ArcadeUI.BoardCell(button)
 	button.BorderSizePixel = 0
 	button.BackgroundColor3 = Color3.fromRGB(12, 29, 56)

@@ -27,6 +27,7 @@ local Config = require(GameShared.Config)
 local ExperienceConfig = require(GameShared.ExperienceConfig)
 local Grid = require(GameShared.Grid)
 local HandGenerator = require(GameShared.HandGenerator)
+local StageProgression = require(GameShared.StageProgression)
 local HubBuilder = require(script.Parent.Parent.world.HubBuilder)
 
 local remotes = Instance.new("Folder")
@@ -1711,6 +1712,7 @@ local function publicState(player)
 		customMode = state.mode == "Custom",
 		storyMission = state.storyMission,
 		storyComplete = state.mode == "Story" and isStoryMissionComplete(state) or false,
+		stage = state.mode == "Solo" and StageProgression.publicState(state.stage) or nil,
 		resultSummary = state.resultSummary,
 		equippedCosmetics = publicEquippedCosmetics(player),
 		sessionId = session and session.id or nil,
@@ -1991,6 +1993,7 @@ local function createPlayerState(player, mode, storyChapter)
 		linesCleared = 0,
 		comboStreak = 0,
 		highestCombo = 0,
+		stage = mode == "Solo" and StageProgression.newRun() or nil,
 		rewardsGranted = false,
 		storyMission = mode == "Story" and storyMissionForPlayer(player, storyChapter) or nil,
 		alive = true,
@@ -2500,6 +2503,13 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 		state.comboStreak = 0
 	end
 	local comboBonus = math.max(0, state.comboStreak - 1) * Config.ComboBonusPoints
+	local stageResult = nil
+	if state.mode == "Solo" then
+		state.stage, stageResult = StageProgression.applyPlacement(state.stage, state.board, {
+			linesCleared = linesCleared,
+			comboStreak = state.comboStreak,
+		})
+	end
 	analytics.placements += 1
 	analytics.linesCleared += linesCleared
 	effectsEvent:FireClient(player, {
@@ -2511,7 +2521,19 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 		lineClearEffect = publicEquippedCosmetics(player).lineClearEffect,
 		comboStreak = state.comboStreak,
 		comboBonus = comboBonus,
+		stageProgressGained = stageResult and stageResult.progressGained or nil,
+		perfectClear = stageResult and stageResult.perfectClear or nil,
 	})
+	if stageResult and stageResult.stagesAdvanced > 0 then
+		effectsEvent:FireClient(player, {
+			kind = "StageUp",
+			currentStage = stageResult.currentStage,
+			stagesAdvanced = stageResult.stagesAdvanced,
+			stageProgress = stageResult.stageProgress,
+			stageProgressRequired = stageResult.stageProgressRequired,
+			perfectClear = stageResult.perfectClear,
+		})
+	end
 	state.score += cellsPlaced * Config.PointsPerCell + linesCleared * Config.PointsPerLine + comboBonus
 	state.linesCleared += linesCleared
 	if state.score > state.bestScore then

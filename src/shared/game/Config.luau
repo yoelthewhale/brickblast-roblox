@@ -17,6 +17,53 @@ Config.XpPerHundredScore = 8
 Config.WinnerBonusXp = 60
 Config.LevelXpBase = 120
 
+Config.StageProgression = {
+	BaseRequirement = 28,
+	RequirementGrowth = 8,
+	LineProgress = 8,
+	MultiLineBonus = 5,
+	PerfectClearBonus = 40,
+	ComboProgressBonus = 3,
+	ComboProgressCap = 9,
+	Palettes = {
+		{
+			name = "Launch",
+			rim = Color3.fromRGB(47, 199, 255),
+			empty = Color3.fromRGB(14, 30, 58),
+			outline = Color3.fromRGB(52, 91, 143),
+			accent = Color3.fromRGB(83, 202, 255),
+		},
+		{
+			name = "Voltage",
+			rim = Color3.fromRGB(108, 240, 138),
+			empty = Color3.fromRGB(13, 41, 34),
+			outline = Color3.fromRGB(61, 131, 86),
+			accent = Color3.fromRGB(132, 255, 162),
+		},
+		{
+			name = "Nova",
+			rim = Color3.fromRGB(255, 207, 102),
+			empty = Color3.fromRGB(45, 34, 13),
+			outline = Color3.fromRGB(143, 112, 46),
+			accent = Color3.fromRGB(255, 221, 117),
+		},
+		{
+			name = "Pulse",
+			rim = Color3.fromRGB(255, 112, 189),
+			empty = Color3.fromRGB(48, 22, 46),
+			outline = Color3.fromRGB(146, 68, 121),
+			accent = Color3.fromRGB(255, 143, 206),
+		},
+		{
+			name = "Aurora",
+			rim = Color3.fromRGB(167, 139, 250),
+			empty = Color3.fromRGB(31, 28, 58),
+			outline = Color3.fromRGB(94, 84, 157),
+			accent = Color3.fromRGB(196, 181, 253),
+		},
+	},
+}
+
 Config.StoryCompletionCoins = 30
 Config.StoryCompletionXp = 50
 Config.DailyBonusCoins = 25

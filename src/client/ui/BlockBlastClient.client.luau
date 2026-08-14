@@ -15,6 +15,7 @@ local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
 local ExperienceConfig = require(GameShared.ExperienceConfig)
 local Grid = require(GameShared.Grid)
+local StageProgression = require(GameShared.StageProgression)
 local ArcadeUI = require(script.Parent.ArcadeUI)
 local CosmeticPanel = require(script.Parent.CosmeticPanel)
 local HUDController = require(script.Parent.HUDController)
@@ -74,9 +75,11 @@ local leftColumn = nil
 local centerColumn = nil
 local rightColumn = nil
 local boardStage = nil
+local boardFrame = nil
 local trayStage = nil
 local actionsPanel = nil
 local boardGridContainer = nil
+local stageUi = {}
 local leaderboardLabel = nil
 local leaderboardRows = {}
 local thumbnailCache = {}
@@ -1466,6 +1469,136 @@ helpButton.Activated:Connect(function()
 	playSound("Button")
 end)
 
+-- Cosmetics keep broad theme identity and piece colors; gameplay stages control the Solo
+-- board rim, empty-cell tint/outline, and stage progress display.
+local function applyStagePalette()
+	local stageState = currentState and currentState.stage
+	local hasSoloStage = currentState
+		and currentState.mode == "Solo"
+		and typeof(stageState) == "table"
+	local palette = StageProgression.paletteForStage(hasSoloStage and stageState.currentStage or 1)
+	local boardSkin = Config.BoardSkins[boardSkinIndex] or Config.BoardSkins[1]
+	local theme = themePresets[themeIndex]
+	local emptyColor = if hasSoloStage then palette.empty else boardSkin.empty or theme.board
+	local outlineColor = if hasSoloStage
+		then palette.outline
+		else boardSkin.border or Color3.fromRGB(45, 55, 72)
+	local rimColor = if hasSoloStage then palette.rim else ArcadeUI.Color.rimBright
+
+	customization.boardEmptyColor = emptyColor
+
+	if boardFrame then
+		for _, child in boardFrame:GetChildren() do
+			if child:IsA("UIStroke") then
+				child.Color = rimColor
+			end
+		end
+	end
+
+	if stageUi.card then
+		stageUi.card.Visible = hasSoloStage
+		stageUi.card.BackgroundColor3 = palette.rim:Lerp(Color3.fromRGB(5, 13, 28), 0.62)
+		for _, child in stageUi.card:GetChildren() do
+			if child:IsA("UIStroke") then
+				child.Color = palette.rim
+			end
+		end
+	end
+	if stageUi.fill then
+		stageUi.fill.BackgroundColor3 = palette.accent
+	end
+	if stageUi.title then
+		stageUi.title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	end
+	if stageUi.progress then
+		stageUi.progress.TextColor3 = Color3.fromRGB(230, 238, 249)
+	end
+
+	for y = 1, Config.BoardSize do
+		for x = 1, Config.BoardSize do
+			local cell = cells[y] and cells[y][x]
+			if not cell then
+				continue
+			end
+
+			cell.BorderSizePixel = 1
+			cell.BorderColor3 = outlineColor
+			local stroke = cell:FindFirstChildOfClass("UIStroke")
+			if stroke and (not currentState or currentState.board[y][x] == false) then
+				stroke.Color = outlineColor
+				stroke.Transparency = hasSoloStage and 0.12 or 0.2
+			end
+			if not currentState or currentState.board[y][x] == false then
+				cell.BackgroundColor3 = emptyColor
+			end
+		end
+	end
+end
+
+local function renderStageDisplay()
+	local stageState = currentState and currentState.stage
+	local hasSoloStage = currentState
+		and currentState.mode == "Solo"
+		and typeof(stageState) == "table"
+	if stageUi.card then
+		stageUi.card.Visible = hasSoloStage
+	end
+	if not hasSoloStage then
+		stageUi.lastStage = nil
+		return
+	end
+
+	local cleanStage = StageProgression.publicState(stageState)
+	local progress = math.clamp(cleanStage.stageProgress, 0, cleanStage.stageProgressRequired)
+	local ratio = progress / math.max(1, cleanStage.stageProgressRequired)
+	local palette = StageProgression.paletteForStage(cleanStage.currentStage)
+	local previousStage = stageUi.lastStage
+	stageUi.lastStage = cleanStage.currentStage
+
+	if previousStage and cleanStage.currentStage > previousStage then
+		stageUi.noticeToken = (stageUi.noticeToken or 0) + 1
+		local token = stageUi.noticeToken
+		stageUi.title.Text = `STAGE UP {cleanStage.currentStage}`
+		task.delay(reducedMotion and 1.2 or 2, function()
+			if stageUi.noticeToken == token and stageUi.title then
+				stageUi.title.Text = `STAGE {cleanStage.currentStage}`
+			end
+		end)
+	else
+		stageUi.title.Text = `STAGE {cleanStage.currentStage}`
+	end
+	stageUi.progress.Text = `{progress} / {cleanStage.stageProgressRequired}`
+	stageUi.fill.Size = UDim2.fromScale(ratio, 1)
+	stageUi.fill.BackgroundColor3 = palette.accent
+	applyStagePalette()
+end
+
+local function pulseStageUpDisplay()
+	if not stageUi.card then
+		return
+	end
+
+	if reducedMotion then
+		stageUi.card.BackgroundTransparency = 0
+		task.delay(0.35, function()
+			if stageUi.card then
+				stageUi.card.BackgroundTransparency = 0.04
+			end
+		end)
+		return
+	end
+
+	local scale = stageUi.card:FindFirstChildOfClass("UIScale") or Instance.new("UIScale")
+	scale.Scale = 1
+	scale.Parent = stageUi.card
+	TweenService:Create(scale, QUICK_TWEEN, { Scale = 1.08 }):Play()
+	task.delay(0.16, function()
+		if scale.Parent then
+			TweenService:Create(scale, SOFT_TWEEN, { Scale = 1 }):Play()
+		end
+	end)
+end
+
 applyBoardSkin = function()
 	local theme = themePresets[themeIndex]
 	local boardSkin = Config.BoardSkins[boardSkinIndex] or Config.BoardSkins[1]
@@ -1488,6 +1621,8 @@ applyBoardSkin = function()
 			end
 		end
 	end
+
+	applyStagePalette()
 end
 
 local function applyTheme()
@@ -1699,6 +1834,58 @@ progressionLabel.TextXAlignment = Enum.TextXAlignment.Left
 progressionLabel.Parent = workspaceHeader
 UITheme.text(progressionLabel, "soft")
 
+stageUi.card = Instance.new("Frame")
+stageUi.card.Name = "StageProgressCard"
+stageUi.card.BackgroundColor3 = Color3.fromRGB(9, 26, 51)
+stageUi.card.BackgroundTransparency = 0.04
+stageUi.card.BorderSizePixel = 0
+stageUi.card.Parent = workspaceHeader
+ArcadeUI.Panel(stageUi.card, {
+	radius = 14,
+	rimColor = Color3.fromRGB(83, 202, 255),
+	strokeThickness = 2,
+})
+
+stageUi.title = Instance.new("TextLabel")
+stageUi.title.BackgroundTransparency = 1
+stageUi.title.Position = UDim2.fromOffset(10, 4)
+stageUi.title.Size = UDim2.new(1, -20, 0, 15)
+stageUi.title.Font = Enum.Font.GothamBlack
+stageUi.title.Text = "STAGE 1"
+stageUi.title.TextColor3 = Color3.fromRGB(255, 255, 255)
+stageUi.title.TextSize = 12
+stageUi.title.TextXAlignment = Enum.TextXAlignment.Left
+stageUi.title.Parent = stageUi.card
+
+stageUi.progress = Instance.new("TextLabel")
+stageUi.progress.BackgroundTransparency = 1
+stageUi.progress.Position = UDim2.fromOffset(10, 18)
+stageUi.progress.Size = UDim2.new(1, -20, 0, 14)
+stageUi.progress.Font = Enum.Font.GothamBold
+stageUi.progress.Text = "0 / 28"
+stageUi.progress.TextColor3 = Color3.fromRGB(202, 213, 230)
+stageUi.progress.TextSize = 10
+stageUi.progress.TextXAlignment = Enum.TextXAlignment.Left
+stageUi.progress.Parent = stageUi.card
+
+stageUi.track = Instance.new("Frame")
+stageUi.track.Name = "StageProgressTrack"
+stageUi.track.BackgroundColor3 = Color3.fromRGB(5, 15, 31)
+stageUi.track.BackgroundTransparency = 0.05
+stageUi.track.BorderSizePixel = 0
+stageUi.track.Position = UDim2.new(0, 10, 1, -9)
+stageUi.track.Size = UDim2.new(1, -20, 0, 4)
+stageUi.track.Parent = stageUi.card
+UITheme.corner(stageUi.track, 4)
+
+stageUi.fill = Instance.new("Frame")
+stageUi.fill.Name = "StageProgressFill"
+stageUi.fill.BackgroundColor3 = Color3.fromRGB(83, 202, 255)
+stageUi.fill.BorderSizePixel = 0
+stageUi.fill.Size = UDim2.fromScale(0, 1)
+stageUi.fill.Parent = stageUi.track
+UITheme.corner(stageUi.fill, 4)
+
 matchInfoLabel = Instance.new("TextLabel")
 matchInfoLabel.AnchorPoint = Vector2.new(1, 0)
 matchInfoLabel.BackgroundTransparency = 1
@@ -1739,7 +1926,7 @@ local function selectFirstAvailablePiece()
 	end
 end
 
-local boardFrame = Instance.new("Frame")
+boardFrame = Instance.new("Frame")
 boardFrame:SetAttribute("BlocksWorkspaceDrag", true)
 boardFrame.Position = UDim2.fromOffset(24, 104)
 boardFrame.Size = UDim2.fromOffset(304, 304)
@@ -2219,6 +2406,10 @@ applyWindowLayout = function()
 	progressionLabel.Position = UDim2.fromOffset(20, 34)
 	progressionLabel.Size = UDim2.fromOffset(440, 18)
 	progressionLabel.TextSize = 12
+	if stageUi.card then
+		stageUi.card.Position = UDim2.fromOffset(480, 10)
+		stageUi.card.Size = UDim2.fromOffset(126, 38)
+	end
 	timerLabel.Visible = true
 	timerLabel.AnchorPoint = Vector2.new(0, 0)
 	timerLabel.Position = UDim2.fromOffset(376, 17)
@@ -2509,101 +2700,6 @@ UserInputService.InputEnded:Connect(function(input)
 	end
 end)
 
-local function cloneBoard(board)
-	local copy = {}
-
-	for y = 1, Config.BoardSize do
-		copy[y] = {}
-		for x = 1, Config.BoardSize do
-			copy[y][x] = board[y][x]
-		end
-	end
-
-	return copy
-end
-
-local function playCellPop(x, y)
-	if reducedMotion then
-		return
-	end
-
-	local scale = cellScales[y] and cellScales[y][x]
-	if not scale then
-		return
-	end
-
-	scale.Scale = 0.72
-	TweenService:Create(scale, QUICK_TWEEN, { Scale = 1 }):Play()
-end
-
-local function playClearFlash(x, y)
-	if reducedMotion then
-		return
-	end
-
-	local cell = cells[y] and cells[y][x]
-	local scale = cellScales[y] and cellScales[y][x]
-	if not cell or not scale then
-		return
-	end
-
-	local originalColor = cell.BackgroundColor3
-	cell.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	scale.Scale = 1.18
-	TweenService
-		:Create(scale, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-			Scale = 1,
-		})
-		:Play()
-	task.delay(0.12, function()
-		if currentState and currentState.board[y][x] == false then
-			cell.BackgroundColor3 = customization.boardEmptyColor
-		else
-			cell.BackgroundColor3 = originalColor
-		end
-	end)
-end
-
-local function shakeWindow()
-	if reducedMotion then
-		showBanner("That spot is blocked", Color3.fromRGB(224, 74, 74))
-		return
-	end
-
-	local startPosition = root.Position
-	TweenService:Create(root, TweenInfo.new(0.05), {
-		Position = startPosition + UDim2.fromOffset(8, 0),
-	}):Play()
-	task.delay(0.06, function()
-		TweenService:Create(root, TweenInfo.new(0.05), {
-			Position = startPosition + UDim2.fromOffset(-8, 0),
-		}):Play()
-	end)
-	task.delay(0.12, function()
-		TweenService:Create(root, TweenInfo.new(0.06), {
-			Position = startPosition,
-		}):Play()
-	end)
-end
-
-local function playBoardDiff(previous, nextBoard)
-	if not previous then
-		return
-	end
-
-	for y = 1, Config.BoardSize do
-		for x = 1, Config.BoardSize do
-			local oldValue = previous[y][x]
-			local newValue = nextBoard[y][x]
-			if oldValue == false and newValue ~= false then
-				playCellPop(x, y)
-			elseif oldValue ~= false and newValue == false then
-				playClearFlash(x, y)
-			end
-		end
-	end
-end
-
 local function clearGlossyBlocks(parent)
 	for _, child in parent:GetChildren() do
 		if child.Name == "GlossyBlock" or child.Name == "GlossyBlockShadow" then
@@ -2664,7 +2760,14 @@ renderBoard = function()
 			end
 			local stroke = cell:FindFirstChildOfClass("UIStroke")
 			if stroke then
-				stroke.Color = value == false and Color3.fromRGB(38, 61, 97)
+				local stageState = currentState and currentState.stage
+				local stagePalette = currentState
+						and currentState.mode == "Solo"
+						and typeof(stageState) == "table"
+						and StageProgression.paletteForStage(stageState.currentStage)
+					or nil
+				stroke.Color = value == false
+						and (stagePalette and stagePalette.outline or Color3.fromRGB(38, 61, 97))
 					or Color3.fromRGB(255, 255, 255)
 				stroke.Transparency = value == false and 0.2 or 0.55
 			end
@@ -2899,6 +3002,10 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	if not currentState then
 		stopWorkspaceInteraction()
 		root.Visible = false
+		if stageUi.card then
+			stageUi.card.Visible = false
+		end
+		stageUi.lastStage = nil
 		rotatePieceButton.Visible = false
 		rerollPieceButton.Visible = false
 		if hudController then
@@ -2944,6 +3051,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		enforceStatTextContrast()
 		comboBadgeLabel.Visible = combo > 1 or currentState.mode == "Solo"
 	end
+	renderStageDisplay()
 	matchInfoLabel.Text = currentState.mode == "Story"
 			and (ArcadeUI.StoryGoalText(currentState) or "Story Mission")
 		or currentState.mode == "Custom" and "Rotate or reroll pieces before placement"
@@ -2965,7 +3073,16 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	selectFirstAvailablePiece()
 
 	renderBoard()
-	playBoardDiff(oldBoard, currentState.board)
+	ArcadeUI.PlayBoardDiff({
+		boardSize = Config.BoardSize,
+		cells = cells,
+		cellScales = cellScales,
+		currentState = currentState,
+		boardEmptyColor = customization.boardEmptyColor,
+		reducedMotion = reducedMotion,
+		TweenService = TweenService,
+		quickTween = QUICK_TWEEN,
+	}, oldBoard, currentState.board)
 	renderHand()
 	renderLeaderboard(leaderboard)
 	ArcadeUI.RenderProgression({
@@ -2979,7 +3096,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		enforceStatTextContrast = enforceStatTextContrast,
 	})
 	renderDiagnostics()
-	previousBoard = cloneBoard(currentState.board)
+	previousBoard = ArcadeUI.CloneBoard(currentState.board, Config.BoardSize)
 end)
 
 task.spawn(function()
@@ -3101,13 +3218,22 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 
 	if effect.kind == "InvalidPlace" then
 		playSound("Blocked")
-		shakeWindow()
+		ArcadeUI.ShakeWindow({
+			root = root,
+			reducedMotion = reducedMotion,
+			TweenService = TweenService,
+		})
 		showBanner(effect.message or "That spot is blocked", Color3.fromRGB(224, 74, 74))
 	elseif effect.kind == "Place" then
 		playSound("Place")
 		if effect.shape then
 			for _, cell in effect.shape.cells do
-				playCellPop(effect.originX + cell.X, effect.originY + cell.Y)
+				ArcadeUI.PlayCellPop({
+					cellScales = cellScales,
+					reducedMotion = reducedMotion,
+					TweenService = TweenService,
+					quickTween = QUICK_TWEEN,
+				}, effect.originX + cell.X, effect.originY + cell.Y)
 			end
 		end
 		if effect.linesCleared and effect.linesCleared > 0 then
@@ -3148,6 +3274,9 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 	elseif effect.kind == "SuddenDeathPressure" then
 		playSound("Blocked")
 		showBanner(effect.message or "Pressure row rising", Color3.fromRGB(251, 146, 60))
+	elseif effect.kind == "StageUp" then
+		pulseStageUpDisplay()
+		showBanner(`Stage {effect.currentStage or "?"}!`, Color3.fromRGB(83, 202, 255))
 	elseif effect.kind == "BattleResult" then
 		playSound("Result")
 		resultPanelController:Show(effect.result, effect.message, effect.won)
