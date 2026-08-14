@@ -64,6 +64,17 @@ Config.StageProgression = {
 	},
 }
 
+Config.DeveloperTools = {
+	Enabled = true,
+	CommandCooldownSeconds = 0.12,
+	MaxStage = 25,
+	MaxStageProgress = 5000,
+	MaxCombo = 25,
+	AuthorizedUserIds = {
+		564972790,
+	},
+}
+
 Config.StoryCompletionCoins = 30
 Config.StoryCompletionXp = 50
 Config.DailyBonusCoins = 25

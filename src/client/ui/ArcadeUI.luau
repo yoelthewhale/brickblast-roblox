@@ -406,6 +406,86 @@ function ArcadeUI.ShakeWindow(context)
 	end)
 end
 
+function ArcadeUI.AttachWorkspaceInteraction(context)
+	local state = {
+		draggingWindow = false,
+		resizingWindow = false,
+		inputStartPosition = nil,
+		windowStartPosition = nil,
+		resizeStartScale = nil,
+	}
+
+	local function stop()
+		state.draggingWindow = false
+		state.resizingWindow = false
+		state.inputStartPosition = nil
+		state.windowStartPosition = nil
+		state.resizeStartScale = nil
+	end
+
+	local function startDrag(input)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 or not context.root.Visible then
+			return
+		end
+
+		state.draggingWindow = true
+		state.resizingWindow = false
+		state.inputStartPosition = input.Position
+		state.windowStartPosition = context.root.Position
+	end
+
+	local function startResize(input)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 or not context.root.Visible then
+			return
+		end
+
+		state.resizingWindow = true
+		state.draggingWindow = false
+		state.inputStartPosition = input.Position
+		state.windowStartPosition = context.root.Position
+		state.resizeStartScale = context.getWorkspaceScale()
+	end
+
+	for _, target in context.dragTargets do
+		target.InputBegan:Connect(startDrag)
+	end
+	context.resizeHandle.InputBegan:Connect(startResize)
+
+	context.UserInputService.InputChanged:Connect(function(input)
+		if input.UserInputType ~= Enum.UserInputType.MouseMovement then
+			return
+		end
+
+		if state.draggingWindow and state.inputStartPosition and state.windowStartPosition then
+			local delta = input.Position - state.inputStartPosition
+			context.root.Position = UDim2.new(
+				state.windowStartPosition.X.Scale,
+				state.windowStartPosition.X.Offset + delta.X,
+				state.windowStartPosition.Y.Scale,
+				state.windowStartPosition.Y.Offset + delta.Y
+			)
+			context.clampWindowToScreen()
+		elseif state.resizingWindow and state.inputStartPosition and state.resizeStartScale then
+			local delta = input.Position - state.inputStartPosition
+			local averageDelta = (delta.X + delta.Y) / 2
+			local nextScale = state.resizeStartScale + averageDelta / 520
+			context.setWorkspaceScale(nextScale)
+			context.applyUiScale()
+			context.clampWindowToScreen()
+		end
+	end)
+
+	context.UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			stop()
+		end
+	end)
+
+	return {
+		stop = stop,
+	}
+end
+
 function ArcadeUI.BoardCell(button)
 	button.BorderSizePixel = 0
 	button.BackgroundColor3 = Color3.fromRGB(12, 29, 56)

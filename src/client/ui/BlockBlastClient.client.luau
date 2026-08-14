@@ -18,6 +18,7 @@ local Grid = require(GameShared.Grid)
 local StageProgression = require(GameShared.StageProgression)
 local ArcadeUI = require(script.Parent.ArcadeUI)
 local CosmeticPanel = require(script.Parent.CosmeticPanel)
+local DeveloperPanel = require(script.Parent.DeveloperPanel)
 local HUDController = require(script.Parent.HUDController)
 local HomePanel = require(script.Parent.HomePanel)
 local NotificationController = require(script.Parent.NotificationController)
@@ -36,6 +37,7 @@ local hubEvent = remotes:WaitForChild("Hub")
 local effectsEvent = remotes:WaitForChild("Effects")
 local settingsEvent = remotes:WaitForChild("Settings")
 local shopEvent = remotes:WaitForChild("Shop")
+local devCommandFunction = remotes:WaitForChild("DevCommand")
 
 local selectedSlot = nil
 local hoverX = nil
@@ -106,6 +108,7 @@ local storyPanelController = nil
 local homePanelController = nil
 local hudController = nil
 local notificationController = nil
+local developerPanelController = nil
 local loadingDismissed = false
 local tutorialPanel = nil
 local hubManuallyClosed = true
@@ -115,6 +118,7 @@ local cosmeticPreviewSnapshot = nil
 local root = nil
 local rootScale = nil
 local bannerScale = nil
+local workspaceInteraction = nil
 local clampWindowToScreen = nil
 local applyWindowLayout = nil
 local applyBoardSkin = nil
@@ -2068,6 +2072,26 @@ end
 
 validateBoardGridHierarchy()
 
+local function visibleBoardCellCount()
+	local count = 0
+
+	for _, child in boardGridContainer:GetChildren() do
+		if child:IsA("GuiButton") and child.Visible then
+			count += 1
+		end
+	end
+
+	return count
+end
+
+developerPanelController = DeveloperPanel.new({
+	parent = gui,
+	remote = devCommandFunction,
+	showMessage = showBanner,
+	isReducedMotion = isUiReducedMotion,
+	getVisibleBoardCellCount = visibleBoardCellCount,
+})
+
 local side = Instance.new("Frame")
 side.Position = UDim2.fromOffset(360, 104)
 side.Size = UDim2.fromOffset(256, 304)
@@ -2616,89 +2640,36 @@ rerollPieceButton.Activated:Connect(function()
 	requestSelectedHandAction("Reroll")
 end)
 
-local draggingWindow = false
-local resizingWindow = false
-local inputStartPosition = nil
-local windowStartPosition = nil
-local resizeStartScale = nil
-
-local function stopWorkspaceInteraction()
-	draggingWindow = false
-	resizingWindow = false
-	inputStartPosition = nil
-	windowStartPosition = nil
-	resizeStartScale = nil
-end
-
-local function startWorkspaceDrag(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseButton1 or not root.Visible then
-		return
-	end
-
-	draggingWindow = true
-	resizingWindow = false
-	inputStartPosition = input.Position
-	windowStartPosition = root.Position
-end
-
-local function startWorkspaceResize(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseButton1 or not root.Visible then
-		return
-	end
-
-	resizingWindow = true
-	draggingWindow = false
-	inputStartPosition = input.Position
-	windowStartPosition = root.Position
-	resizeStartScale = workspaceScale
-end
-
-root.InputBegan:Connect(startWorkspaceDrag)
-workspaceHeader.InputBegan:Connect(startWorkspaceDrag)
-workspaceContent.InputBegan:Connect(startWorkspaceDrag)
-leftColumn.InputBegan:Connect(startWorkspaceDrag)
-centerColumn.InputBegan:Connect(startWorkspaceDrag)
-rightColumn.InputBegan:Connect(startWorkspaceDrag)
-boardStage.InputBegan:Connect(startWorkspaceDrag)
-trayStage.InputBegan:Connect(startWorkspaceDrag)
-actionsPanel.InputBegan:Connect(startWorkspaceDrag)
-title.InputBegan:Connect(startWorkspaceDrag)
-scoreCard.InputBegan:Connect(startWorkspaceDrag)
-comboBadgeLabel.InputBegan:Connect(startWorkspaceDrag)
-coinStatLabel.InputBegan:Connect(startWorkspaceDrag)
-rankStatLabel.InputBegan:Connect(startWorkspaceDrag)
-side.InputBegan:Connect(startWorkspaceDrag)
-resizeHandle.InputBegan:Connect(startWorkspaceResize)
-
-UserInputService.InputChanged:Connect(function(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseMovement then
-		return
-	end
-
-	if draggingWindow and inputStartPosition and windowStartPosition then
-		local delta = input.Position - inputStartPosition
-		root.Position = UDim2.new(
-			windowStartPosition.X.Scale,
-			windowStartPosition.X.Offset + delta.X,
-			windowStartPosition.Y.Scale,
-			windowStartPosition.Y.Offset + delta.Y
-		)
-		clampWindowToScreen()
-	elseif resizingWindow and inputStartPosition and resizeStartScale then
-		local delta = input.Position - inputStartPosition
-		local averageDelta = (delta.X + delta.Y) / 2
-		local nextScale = resizeStartScale + (averageDelta / 520)
+workspaceInteraction = ArcadeUI.AttachWorkspaceInteraction({
+	root = root,
+	resizeHandle = resizeHandle,
+	UserInputService = UserInputService,
+	dragTargets = {
+		root,
+		workspaceHeader,
+		workspaceContent,
+		leftColumn,
+		centerColumn,
+		rightColumn,
+		boardStage,
+		trayStage,
+		actionsPanel,
+		title,
+		scoreCard,
+		comboBadgeLabel,
+		coinStatLabel,
+		rankStatLabel,
+		side,
+	},
+	getWorkspaceScale = function()
+		return workspaceScale
+	end,
+	setWorkspaceScale = function(nextScale)
 		workspaceScale = clampNumber(nextScale, MIN_WORKSPACE_SCALE, MAX_WORKSPACE_SCALE)
-		applyUiScale()
-		clampWindowToScreen()
-	end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		stopWorkspaceInteraction()
-	end
-end)
+	end,
+	applyUiScale = applyUiScale,
+	clampWindowToScreen = clampWindowToScreen,
+})
 
 local function clearGlossyBlocks(parent)
 	for _, child in parent:GetChildren() do
@@ -3000,7 +2971,9 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	currentState = nextState
 
 	if not currentState then
-		stopWorkspaceInteraction()
+		if workspaceInteraction then
+			workspaceInteraction.stop()
+		end
 		root.Visible = false
 		if stageUi.card then
 			stageUi.card.Visible = false
@@ -3011,6 +2984,9 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		if hudController then
 			suppressExternalPuzzleHud(false)
 			hudController:UpdateGameState(nil)
+		end
+		if developerPanelController then
+			developerPanelController:UpdateState(nil)
 		end
 		setHubPanelVisible(not hubManuallyClosed)
 		updateTutorialVisibility()
@@ -3028,6 +3004,9 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	if hudController then
 		hudController:UpdateGameState(currentState)
 		suppressExternalPuzzleHud(true)
+	end
+	if developerPanelController then
+		developerPanelController:UpdateState(currentState)
 	end
 	if currentState.alive then
 		resultPanelController:Hide()
@@ -3277,6 +3256,8 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 	elseif effect.kind == "StageUp" then
 		pulseStageUpDisplay()
 		showBanner(`Stage {effect.currentStage or "?"}!`, Color3.fromRGB(83, 202, 255))
+	elseif effect.kind == "DeveloperCommand" then
+		showBanner(effect.message or "Developer command applied", Color3.fromRGB(74, 222, 128))
 	elseif effect.kind == "BattleResult" then
 		playSound("Result")
 		resultPanelController:Show(effect.result, effect.message, effect.won)

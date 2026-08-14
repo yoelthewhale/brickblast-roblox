@@ -24,6 +24,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameShared = Shared:WaitForChild("game")
 local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
+local DeveloperTools = require(GameShared.DeveloperTools)
 local ExperienceConfig = require(GameShared.ExperienceConfig)
 local Grid = require(GameShared.Grid)
 local HandGenerator = require(GameShared.HandGenerator)
@@ -65,6 +66,10 @@ settingsEvent.Parent = remotes
 local shopEvent = Instance.new("RemoteEvent")
 shopEvent.Name = "Shop"
 shopEvent.Parent = remotes
+
+local devCommandFunction = Instance.new("RemoteFunction")
+devCommandFunction.Name = "DevCommand"
+devCommandFunction.Parent = remotes
 
 local function makeFallbackPart(parent, name, size, position, color, material)
 	local part = Instance.new("Part")
@@ -235,6 +240,7 @@ local selectedStoryChapters = {}
 local lastPlaceRequestAt = {}
 local lastHandRequestAt = {}
 local lastQueueRequestAt = {}
+local lastDeveloperCommandAt = {}
 local lastShopRequestAt = {}
 local purchasePromptLocks = {}
 local processedReceipts = {}
@@ -676,7 +682,7 @@ local function createLeaderstats(player)
 	end)
 end
 
-local function updateLeaderstats(player, score)
+local function updateLeaderstats(player, score, recordEligible)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if not leaderstats then
 		return
@@ -687,6 +693,10 @@ local function updateLeaderstats(player, score)
 
 	if battleScore then
 		battleScore.Value = score
+	end
+
+	if recordEligible == false then
+		return
 	end
 
 	if bestScore and score > bestScore.Value then
@@ -1480,6 +1490,30 @@ local function grantBattleRewards(player, state, winner)
 	end
 
 	state.rewardsGranted = true
+	if state.developerTestRun then
+		state.finishedAt = state.finishedAt or os.clock()
+		state.resultSummary = {
+			mode = state.mode,
+			outcome = "Developer Test",
+			score = state.score,
+			linesCleared = state.linesCleared,
+			highestCombo = state.highestCombo,
+			duration = state.startedAt
+					and math.max(0, math.floor(state.finishedAt - state.startedAt))
+				or nil,
+			coins = 0,
+			xp = 0,
+			storyStars = 0,
+			bestScore = state.startingBestScore or state.bestScore,
+			previousBestScore = state.startingBestScore or state.bestScore,
+			storyCompleted = false,
+			won = false,
+			nextUnlockText = "Developer test run - records and rewards disabled.",
+		}
+		state.message = "Developer test run - no records or rewards"
+		return
+	end
+
 	if state.mode == "Custom" then
 		state.finishedAt = state.finishedAt or os.clock()
 		state.resultSummary = {
@@ -1677,6 +1711,21 @@ local function canAcceptQueueAction(player)
 	return true
 end
 
+local function canAcceptDeveloperCommand(player)
+	if not DeveloperTools.isAuthorizedUserId(player.UserId) then
+		return false, "Unauthorized"
+	end
+
+	local now = os.clock()
+	local lastRequestAt = lastDeveloperCommandAt[player] or 0
+	if now - lastRequestAt < Config.DeveloperTools.CommandCooldownSeconds then
+		return false, "Cooldown"
+	end
+
+	lastDeveloperCommandAt[player] = now
+	return true, nil
+end
+
 local function scheduleSettingsSave(player)
 	if settingsSaveScheduled[player] then
 		return
@@ -1713,6 +1762,20 @@ local function publicState(player)
 		storyMission = state.storyMission,
 		storyComplete = state.mode == "Story" and isStoryMissionComplete(state) or false,
 		stage = state.mode == "Solo" and StageProgression.publicState(state.stage) or nil,
+		developer = {
+			enabled = DeveloperTools.isEnabled(),
+			authorized = DeveloperTools.isAuthorizedUserId(player.UserId),
+			testRun = state.developerTestRun == true,
+			recordEligible = state.developerTestRun ~= true,
+			diagnostics = DeveloperTools.isAuthorizedUserId(player.UserId)
+					and DeveloperTools.diagnostics(state, nil)
+				or nil,
+			commands = DeveloperTools.isAuthorizedUserId(player.UserId)
+					and DeveloperTools.commandList()
+				or {},
+			shapes = DeveloperTools.isAuthorizedUserId(player.UserId) and DeveloperTools.shapeIds()
+				or {},
+		},
 		resultSummary = state.resultSummary,
 		equippedCosmetics = publicEquippedCosmetics(player),
 		sessionId = session and session.id or nil,
@@ -1803,6 +1866,7 @@ sendHubState = function(player, message)
 		profileLoadFailures = profileLoadFailures,
 		profileSaveFailures = profileSaveFailures,
 		analytics = table.clone(analytics),
+		developer = DeveloperTools.publicAccessForPlayer(player),
 		serverHighScores = serverHighScoreList(),
 		secondsToSoloStart = secondsToSoloStart,
 		message = message,
@@ -1994,6 +2058,7 @@ local function createPlayerState(player, mode, storyChapter)
 		comboStreak = 0,
 		highestCombo = 0,
 		stage = mode == "Solo" and StageProgression.newRun() or nil,
+		developerTestRun = false,
 		rewardsGranted = false,
 		storyMission = mode == "Story" and storyMissionForPlayer(player, storyChapter) or nil,
 		alive = true,
@@ -2002,7 +2067,7 @@ local function createPlayerState(player, mode, storyChapter)
 
 	giveNewHand(state)
 	playerStates[player] = state
-	updateLeaderstats(player, 0)
+	updateLeaderstats(player, 0, true)
 end
 
 local function startBattle(players, mode, storyChapter)
@@ -2313,7 +2378,9 @@ local function finishBattle(session, winner)
 
 		state.finishedAt = os.clock()
 		grantBattleRewards(player, state, player == winner)
-		saveProfile(player)
+		if not state.developerTestRun then
+			saveProfile(player)
+		end
 		state.alive = false
 		fireResult(player, state, player == winner)
 	end
@@ -2394,7 +2461,9 @@ leaveBattle = function(player)
 		end
 		returnMessage = state.message or returnMessage
 	end
-	saveProfile(player)
+	if not (state and state.developerTestRun) then
+		saveProfile(player)
+	end
 	playerStates[player] = nil
 	playerSessions[player] = nil
 	queuedPlayers[player] = nil
@@ -2403,8 +2472,8 @@ leaveBattle = function(player)
 
 	if session then
 		local stateScore = state and state.score or nil
-		if stateScore then
-			updateLeaderstats(player, stateScore)
+		if stateScore and not (state and state.developerTestRun) then
+			updateLeaderstats(player, stateScore, true)
 		end
 		if session.mode == "Solo" then
 			analytics.soloSessionsFinished += 1
@@ -2536,10 +2605,12 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 	end
 	state.score += cellsPlaced * Config.PointsPerCell + linesCleared * Config.PointsPerLine + comboBonus
 	state.linesCleared += linesCleared
-	if state.score > state.bestScore then
+	if not state.developerTestRun and state.score > state.bestScore then
 		state.bestScore = state.score
 	end
-	updateLeaderstats(player, state.score)
+	if not state.developerTestRun then
+		updateLeaderstats(player, state.score, true)
+	end
 
 	local hasPieces = false
 	for _, remaining in state.hand do
@@ -2608,6 +2679,48 @@ handEvent.OnServerEvent:Connect(function(player, action, slot)
 	})
 	broadcast(session)
 end)
+
+devCommandFunction.OnServerInvoke = function(player, command)
+	local canRequest, rejectReason = canAcceptDeveloperCommand(player)
+	if not canRequest then
+		return {
+			ok = false,
+			message = rejectReason or "Developer tools unavailable",
+			access = DeveloperTools.publicAccessForPlayer(player),
+		}
+	end
+
+	local state = playerStates[player]
+	local session = playerSessions[player]
+	if not state or not session or state.mode ~= "Solo" then
+		return {
+			ok = false,
+			message = "Start a Solo run first",
+			access = DeveloperTools.publicAccessForPlayer(player),
+		}
+	end
+
+	local ok, message, alteredGameplay = DeveloperTools.applyCommand(state, command)
+	if ok and alteredGameplay then
+		effectsEvent:FireClient(player, {
+			kind = "DeveloperCommand",
+			message = message,
+		})
+		scheduleReturnIfEliminated(player, state)
+		broadcast(session)
+	end
+
+	return {
+		ok = ok,
+		message = message,
+		access = DeveloperTools.publicAccessForPlayer(player),
+		developer = publicState(player).developer,
+		diagnostics = DeveloperTools.diagnostics(
+			state,
+			typeof(command) == "table" and command.visibleBoardCells or nil
+		),
+	}
+end
 
 queueEvent.OnServerEvent:Connect(function(player, mode, requestedChapter)
 	if not canAcceptQueueAction(player) then
@@ -2905,7 +3018,10 @@ end
 Players.PlayerAdded:Connect(initializePlayer)
 
 Players.PlayerRemoving:Connect(function(player)
-	saveProfile(player)
+	local removingState = playerStates[player]
+	if not (removingState and removingState.developerTestRun) then
+		saveProfile(player)
+	end
 	local session = playerSessions[player]
 	if queuedPlayers[player] then
 		analytics.queueLeaves += 1
@@ -2935,6 +3051,7 @@ Players.PlayerRemoving:Connect(function(player)
 	lastPlaceRequestAt[player] = nil
 	lastHandRequestAt[player] = nil
 	lastQueueRequestAt[player] = nil
+	lastDeveloperCommandAt[player] = nil
 	lastShopRequestAt[player] = nil
 	purchasePromptLocks[player] = nil
 	settingsSaveScheduled[player] = nil
@@ -2956,7 +3073,10 @@ end)
 
 game:BindToClose(function()
 	for _, player in Players:GetPlayers() do
-		saveProfile(player)
+		local state = playerStates[player]
+		if not (state and state.developerTestRun) then
+			saveProfile(player)
+		end
 	end
 end)
 
