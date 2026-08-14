@@ -2701,52 +2701,6 @@ renderBoard = function()
 	end
 end
 
-local function clearPreview(preview)
-	for _, child in preview:GetChildren() do
-		child:Destroy()
-	end
-end
-
-local function renderShapePreview(preview, shape)
-	clearPreview(preview)
-
-	if not shape then
-		return
-	end
-
-	local minX = math.huge
-	local maxX = -math.huge
-	local minY = math.huge
-	local maxY = -math.huge
-
-	for _, cell in shape.cells do
-		minX = math.min(minX, cell.X)
-		maxX = math.max(maxX, cell.X)
-		minY = math.min(minY, cell.Y)
-		maxY = math.max(maxY, cell.Y)
-	end
-
-	local width = maxX - minX + 1
-	local height = maxY - minY + 1
-	local previewSize = math.max(44, math.min(preview.AbsoluteSize.X, preview.AbsoluteSize.Y))
-	local tileSize = math.floor(math.min((previewSize - 6) / width, (previewSize - 6) / height))
-	local offsetX = math.floor((previewSize - width * tileSize) / 2)
-	local offsetY = math.floor((previewSize - height * tileSize) / 2)
-
-	for _, cell in shape.cells do
-		ArcadeUI.GlossyBlock(
-			preview,
-			shape.color,
-			UDim2.fromOffset(tileSize - 3, tileSize - 3),
-			UDim2.fromOffset(
-				offsetX + (cell.X - minX) * tileSize,
-				offsetY + (cell.Y - minY) * tileSize
-			),
-			"GlossyBlock"
-		)
-	end
-end
-
 pulseHandSlot = function(slot)
 	local button = handButtons[slot]
 	if not button or reducedMotion then
@@ -2764,53 +2718,14 @@ pulseHandSlot = function(slot)
 	end)
 end
 
-local function shapeText(shape)
-	if not shape then
-		return "Used"
-	end
-
-	return "Ready"
-end
-
-local function storyGoalText(state)
-	local mission = state and state.storyMission
-	if not mission then
-		return nil
-	end
-
-	local targetLines = mission.targetLines or 0
-	local targetScore = mission.targetScore or 0
-	local currentLines = math.min(state.linesCleared or 0, targetLines)
-	local currentScore = math.min(state.score or 0, targetScore)
-	local chapterName = `Chapter {mission.chapter or 1}: {mission.name}`
-
-	if targetLines > 0 and targetScore > 0 then
-		return `{chapterName}: {currentLines}/{targetLines} lines, {currentScore}/{targetScore} score`
-	elseif targetLines > 0 then
-		return `{chapterName}: {currentLines}/{targetLines} lines`
-	end
-
-	return `{chapterName}: {currentScore}/{targetScore} score`
-end
-
-local function storyPreviewText(mission, storyStars)
-	if typeof(mission) ~= "table" then
-		return "Complete missions to unlock chapters"
-	end
-
-	local chapter = mission.chapter or 1
-	local stars = storyStars or 0
-	return `Chapter {chapter} | {mission.description or "Clear blocks and score"} | Stars {stars}`
-end
-
 renderHand = function()
 	for slot, button in handButtons do
 		local shape = currentState.hand[slot]
 		local label = button:FindFirstChild("Label")
 		if label then
-			label.Text = shapeText(shape)
+			label.Text = ArcadeUI.HandSlotText(shape)
 		end
-		renderShapePreview(handPreviews[slot], shape)
+		ArcadeUI.RenderShapePreview(handPreviews[slot], shape)
 		button.BackgroundColor3 = selectedSlot == slot and Color3.fromRGB(18, 71, 126)
 			or shape and ArcadeUI.Color.inner
 			or Color3.fromRGB(28, 34, 46)
@@ -2915,32 +2830,6 @@ local function renderLeaderboard(leaderboard)
 	end
 
 	leaderboardLabel.Text = ""
-end
-
-local function renderProgression()
-	local leaderstats = player:FindFirstChild("leaderstats")
-	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
-	local xp = leaderstats and leaderstats:FindFirstChild("XP")
-	local level = leaderstats and leaderstats:FindFirstChild("Level")
-	local storyStars = leaderstats and leaderstats:FindFirstChild("StoryStars")
-	local cleared = currentState and currentState.linesCleared or 0
-	local titleName = currentState
-			and typeof(currentState.equippedCosmetics) == "table"
-			and currentState.equippedCosmetics.title
-		or "Rookie"
-
-	progressionLabel.Text =
-		`{titleName} | Level {level and level.Value or 1} | {coins and coins.Value or 0} coins | {xp and xp.Value or 0} XP | {storyStars and storyStars.Value or 0} stars | {cleared} cleared`
-	if coinChipLabel then
-		coinChipLabel.Text = `{coins and coins.Value or 0} Coins  +`
-	end
-	if coinStatLabel then
-		coinStatLabel.Text = statRichText("COINS", tostring(coins and coins.Value or 0), "#FFECA0")
-		enforceStatTextContrast()
-	end
-	if hudController then
-		hudController:UpdateProgression()
-	end
 end
 
 renderDiagnostics = function()
@@ -3056,7 +2945,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		comboBadgeLabel.Visible = combo > 1 or currentState.mode == "Solo"
 	end
 	matchInfoLabel.Text = currentState.mode == "Story"
-			and (storyGoalText(currentState) or "Story Mission")
+			and (ArcadeUI.StoryGoalText(currentState) or "Story Mission")
 		or currentState.mode == "Custom" and "Rotate or reroll pieces before placement"
 		or currentState.mode == "Solo" and `Best score: {currentState.bestScore or 0}`
 		or `Arena {currentState.arenaIndex or "--"} | Match {currentState.sessionId or "--"}`
@@ -3079,7 +2968,16 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	playBoardDiff(oldBoard, currentState.board)
 	renderHand()
 	renderLeaderboard(leaderboard)
-	renderProgression()
+	ArcadeUI.RenderProgression({
+		player = player,
+		currentState = currentState,
+		progressionLabel = progressionLabel,
+		coinChipLabel = coinChipLabel,
+		coinStatLabel = coinStatLabel,
+		hudController = hudController,
+		statRichText = statRichText,
+		enforceStatTextContrast = enforceStatTextContrast,
+	})
 	renderDiagnostics()
 	previousBoard = cloneBoard(currentState.board)
 end)
@@ -3090,7 +2988,16 @@ task.spawn(function()
 		for _, stat in leaderstats:GetChildren() do
 			if stat:IsA("IntValue") then
 				stat.Changed:Connect(function()
-					renderProgression()
+					ArcadeUI.RenderProgression({
+						player = player,
+						currentState = currentState,
+						progressionLabel = progressionLabel,
+						coinChipLabel = coinChipLabel,
+						coinStatLabel = coinStatLabel,
+						hudController = hudController,
+						statRichText = statRichText,
+						enforceStatTextContrast = enforceStatTextContrast,
+					})
 					updateSettingsButtonText()
 				end)
 			end
@@ -3098,14 +3005,41 @@ task.spawn(function()
 		leaderstats.ChildAdded:Connect(function(child)
 			if child:IsA("IntValue") then
 				child.Changed:Connect(function()
-					renderProgression()
+					ArcadeUI.RenderProgression({
+						player = player,
+						currentState = currentState,
+						progressionLabel = progressionLabel,
+						coinChipLabel = coinChipLabel,
+						coinStatLabel = coinStatLabel,
+						hudController = hudController,
+						statRichText = statRichText,
+						enforceStatTextContrast = enforceStatTextContrast,
+					})
 					updateSettingsButtonText()
 				end)
-				renderProgression()
+				ArcadeUI.RenderProgression({
+					player = player,
+					currentState = currentState,
+					progressionLabel = progressionLabel,
+					coinChipLabel = coinChipLabel,
+					coinStatLabel = coinStatLabel,
+					hudController = hudController,
+					statRichText = statRichText,
+					enforceStatTextContrast = enforceStatTextContrast,
+				})
 				updateSettingsButtonText()
 			end
 		end)
-		renderProgression()
+		ArcadeUI.RenderProgression({
+			player = player,
+			currentState = currentState,
+			progressionLabel = progressionLabel,
+			coinChipLabel = coinChipLabel,
+			coinStatLabel = coinStatLabel,
+			hudController = hudController,
+			statRichText = statRichText,
+			enforceStatTextContrast = enforceStatTextContrast,
+		})
 		updateSettingsButtonText()
 	end
 end)
@@ -3147,7 +3081,7 @@ hubEvent.OnClientEvent:Connect(function(hubState)
 	if homePanelController then
 		homePanelController:UpdateHubState(
 			hubState,
-			storyPreviewText(hubState.storyMission, hubState.storyStars),
+			ArcadeUI.StoryPreviewText(hubState.storyMission, hubState.storyStars),
 			customization.accentColor
 		)
 	end

@@ -192,6 +192,116 @@ function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	return block
 end
 
+function ArcadeUI.RenderShapePreview(preview, shape)
+	for _, child in preview:GetChildren() do
+		child:Destroy()
+	end
+
+	if not shape then
+		return
+	end
+
+	local minX = math.huge
+	local maxX = -math.huge
+	local minY = math.huge
+	local maxY = -math.huge
+
+	for _, cell in shape.cells do
+		minX = math.min(minX, cell.X)
+		maxX = math.max(maxX, cell.X)
+		minY = math.min(minY, cell.Y)
+		maxY = math.max(maxY, cell.Y)
+	end
+
+	local width = maxX - minX + 1
+	local height = maxY - minY + 1
+	local previewSize = math.max(44, math.min(preview.AbsoluteSize.X, preview.AbsoluteSize.Y))
+	local tileSize = math.floor(math.min((previewSize - 6) / width, (previewSize - 6) / height))
+	local offsetX = math.floor((previewSize - width * tileSize) / 2)
+	local offsetY = math.floor((previewSize - height * tileSize) / 2)
+
+	for _, cell in shape.cells do
+		ArcadeUI.GlossyBlock(
+			preview,
+			shape.color,
+			UDim2.fromOffset(tileSize - 3, tileSize - 3),
+			UDim2.fromOffset(
+				offsetX + (cell.X - minX) * tileSize,
+				offsetY + (cell.Y - minY) * tileSize
+			),
+			"GlossyBlock"
+		)
+	end
+end
+
+function ArcadeUI.HandSlotText(shape)
+	if not shape then
+		return "Used"
+	end
+
+	return "Ready"
+end
+
+function ArcadeUI.StoryGoalText(state)
+	local mission = state and state.storyMission
+	if not mission then
+		return nil
+	end
+
+	local targetLines = mission.targetLines or 0
+	local targetScore = mission.targetScore or 0
+	local currentLines = math.min(state.linesCleared or 0, targetLines)
+	local currentScore = math.min(state.score or 0, targetScore)
+	local chapterName = `Chapter {mission.chapter or 1}: {mission.name}`
+
+	if targetLines > 0 and targetScore > 0 then
+		return `{chapterName}: {currentLines}/{targetLines} lines, {currentScore}/{targetScore} score`
+	elseif targetLines > 0 then
+		return `{chapterName}: {currentLines}/{targetLines} lines`
+	end
+
+	return `{chapterName}: {currentScore}/{targetScore} score`
+end
+
+function ArcadeUI.StoryPreviewText(mission, storyStars)
+	if typeof(mission) ~= "table" then
+		return "Complete missions to unlock chapters"
+	end
+
+	local chapter = mission.chapter or 1
+	local stars = storyStars or 0
+	return `Chapter {chapter} | {mission.description or "Clear blocks and score"} | Stars {stars}`
+end
+
+function ArcadeUI.RenderProgression(context)
+	local player = context.player
+	local currentState = context.currentState
+	local leaderstats = player:FindFirstChild("leaderstats")
+	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
+	local xp = leaderstats and leaderstats:FindFirstChild("XP")
+	local level = leaderstats and leaderstats:FindFirstChild("Level")
+	local storyStars = leaderstats and leaderstats:FindFirstChild("StoryStars")
+	local cleared = currentState and currentState.linesCleared or 0
+	local titleName = currentState
+			and typeof(currentState.equippedCosmetics) == "table"
+			and currentState.equippedCosmetics.title
+		or "Rookie"
+
+	context.progressionLabel.Text =
+		`{titleName} | Level {level and level.Value or 1} | {coins and coins.Value or 0} coins | {xp and xp.Value or 0} XP | {storyStars and storyStars.Value or 0} stars | {cleared} cleared`
+	if context.coinChipLabel then
+		context.coinChipLabel.Text = `{coins and coins.Value or 0} Coins  +`
+	end
+	if context.coinStatLabel then
+		context.coinStatLabel.Text =
+			context.statRichText("COINS", tostring(coins and coins.Value or 0), "#FFECA0")
+		context.enforceStatTextContrast()
+	end
+	if context.hudController then
+		context.hudController:UpdateProgression()
+	end
+end
+
 function ArcadeUI.BoardCell(button)
 	button.BorderSizePixel = 0
 	button.BackgroundColor3 = Color3.fromRGB(12, 29, 56)

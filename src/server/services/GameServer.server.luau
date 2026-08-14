@@ -26,6 +26,7 @@ local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
 local ExperienceConfig = require(GameShared.ExperienceConfig)
 local Grid = require(GameShared.Grid)
+local HandGenerator = require(GameShared.HandGenerator)
 local HubBuilder = require(script.Parent.Parent.world.HubBuilder)
 
 local remotes = Instance.new("Folder")
@@ -1854,7 +1855,18 @@ local function broadcast(session)
 end
 
 local function giveNewHand(state)
-	state.hand = Blocks.createHand(state.randomizer, Config.InventorySize, state.pieceSkin)
+	if state.mode == "Solo" then
+		state.hand = HandGenerator.generate(state.board, {
+			randomizer = state.randomizer,
+			count = Config.InventorySize,
+			pieceSkin = state.pieceSkin,
+			comboStreak = state.comboStreak,
+			recentHands = state.recentHands,
+		})
+		state.recentHands = HandGenerator.rememberHand(state.recentHands, state.hand)
+	else
+		state.hand = Blocks.createHand(state.randomizer, Config.InventorySize, state.pieceSkin)
+	end
 end
 
 local function teleportTo(part, player)
@@ -1966,6 +1978,7 @@ local function createPlayerState(player, mode, storyChapter)
 	local state = {
 		board = Grid.create(),
 		hand = {},
+		recentHands = {},
 		randomizer = randomizer,
 		mode = mode,
 		pieceSkin = (playerSettings[player] or DEFAULT_SETTINGS).pieceSkin,

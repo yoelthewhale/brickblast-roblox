@@ -109,6 +109,16 @@ function Blocks.isValidPieceSkin(pieceSkin)
 	return false
 end
 
+function Blocks.getShapeDefinition(shapeId)
+	for _, shape in Blocks.Shapes do
+		if shape.id == shapeId then
+			return shape
+		end
+	end
+
+	return nil
+end
+
 function Blocks.rotateShape(shape)
 	if typeof(shape) ~= "table" or typeof(shape.cells) ~= "table" then
 		return nil
@@ -126,15 +136,24 @@ function Blocks.rotateShape(shape)
 	}
 end
 
-function Blocks.getRandomShape(randomizer, pieceSkin)
-	local index = randomizer:NextInteger(1, #Blocks.Shapes)
-	local shape = Blocks.Shapes[index]
+function Blocks.createShape(shapeId, randomizer, pieceSkin)
+	local shape = Blocks.getShapeDefinition(shapeId)
+	if not shape then
+		return nil
+	end
 
 	return {
 		id = shape.id,
 		cells = Blocks.cloneCells(shape.cells),
 		color = randomPieceColor(randomizer, pieceSkin),
 	}
+end
+
+function Blocks.getRandomShape(randomizer, pieceSkin)
+	local index = randomizer:NextInteger(1, #Blocks.Shapes)
+	local shape = Blocks.Shapes[index]
+
+	return Blocks.createShape(shape.id, randomizer, pieceSkin)
 end
 
 function Blocks.createHand(randomizer, count, pieceSkin)
