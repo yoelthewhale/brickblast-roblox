@@ -1,63 +1,72 @@
-# Block Blast Battle
+# BrickBlast
 
-A Rojo-powered Roblox project for a battle version of Block Blast.
+BrickBlast is a full-screen, stage-based Roblox block puzzle game built with Luau, Rojo, Git, StyLua, and Selene.
 
-See `PROJECT_MAP.md` for where each part of the game lives.
+The current direction is **Solo first**: tighten the core 8x8 puzzle loop, scoring feel, stage pacing, UI responsiveness, saved progression, and validation workflow before reopening larger modes.
 
-Start with `BLOCK_BLAST_START_HERE.md` when opening the project locally.
+## Current Status
 
-Project management lives in `docs/PROJECT_TRACKER.md`, with a Tuesday.com-ready CSV at
-`docs/TUESDAY_IMPORT.csv`.
+- Solo mode is enabled and is the primary development path.
+- Battle, Story, and Custom Lab remain disabled behind feature gates.
+- The current clean checkpoint is Day43 on commit `6e8f6b86015b862fe623ceb59b000512e65daa84`.
+- Smart hand generation, stage progression, developer tools, full-screen stage transformations, difficulty balancing, and UI cleanup are in place.
+- Project management is tracked in GitHub Issues and the **BrickBlast Development** project board.
 
-Multiplayer validation steps live in `docs/MULTIPLAYER_STRESS_TEST.md`.
+## Gameplay Features
 
-## Setup
+- 8x8 board with exactly 64 logical cells.
+- Three-piece hand/tray block puzzle loop.
+- Row and column clears.
+- Stage progression and stage-specific visual transforms.
+- Smart but not automatic hand generation.
+- Combo, perfect-clear, score, and progression systems under active development.
+- Server-authoritative gameplay and developer tools.
 
-1. Open this folder in VS Code.
-2. Install the recommended extensions when VS Code prompts you.
-3. Start Rojo from the VS Code Rojo menu or run:
+## Important 8x8 Invariant
 
-   ```powershell
-   rojo serve default.project.json
-   ```
+The logical board is exactly `Config.BoardSize` by `Config.BoardSize`, currently `8 x 8`.
 
-4. In Roblox Studio, install/open the Rojo plugin and connect to the local server.
-5. Press Play in Studio.
+The visible PC board must show exactly 64 direct cell buttons under `BoardGridContainer`. Do not add decorative or helper GUI objects as direct children of that container. Board placement math must use the board's current `AbsolutePosition` and `AbsoluteSize`.
 
-## Tooling From The Setup Video
+## Technology Stack
 
-This project includes the Roblox external tooling stack from the video:
+- Roblox / Luau
+- Rojo
+- Rokit
+- Wally
+- StyLua
+- Selene
+- Git and GitHub Issues/Projects
 
-- Rokit for pinning CLI tools.
-- Rojo for VS Code to Roblox Studio sync.
-- Wally for Roblox packages.
-- wally-package-types for package type support.
-- StyLua for Luau formatting.
-- Selene for Luau linting.
+## Project Structure
 
-The tools are pinned in `rokit.toml` and copied into `tools/` so the VS Code tasks can run without relying on your global PATH.
+- `src/client/ui/` - client UI controllers, panels, visuals, and Solo workspace.
+- `src/server/services/` - server-authoritative gameplay, profile/session handling, receipts, rewards, and developer tools.
+- `src/server/world/` - generated hub/world construction.
+- `src/shared/game/` - shared rules, config, grid logic, hand generation, simulation helpers, and pure test modules.
+- `docs/` - planning notes, audits, validation checklists, and design references.
+- `tools/` - pinned local CLI tools used by the project.
+- `assets/` - generated/approved local UI assets and mockups.
 
-Useful VS Code tasks:
+## Safe Validation Commands
 
-- `Tools: Install With Rokit`
-- `Rojo: Serve`
-- `Rojo: Build Place`
-- `Rojo: Build Day17`
-- `Studio: Open Latest Local Build`
-- `Rojo: Generate Sourcemap`
-- `Wally: Install Packages`
-- `Wally: Generate Package Types`
-- `Luau: Format With StyLua`
-- `Luau: Lint With Selene`
+Run from the project root:
 
-## Game Loop
+```powershell
+.\tools\stylua.exe src
+.\tools\selene.exe src
+.\tools\rojo.exe build default.project.json --output BlockBlastBattle-DevSetup.rbxl
+git diff --check
+```
 
-- Each player gets an 8x8 board and three block pieces.
-- Place pieces to fill rows or columns.
-- Clearing lines scores points and sends pressure to opponents.
-- Incoming pressure fills cells from the bottom unless the player keeps clearing lines.
-- Story Training gives rotating solo missions with score and line-clear goals, previewed from the hub before starting.
-- Players can customize UI theme, board skin, piece skin, sound, motion, and UI scale, with cosmetics unlocked through play.
-- The battle window supports a compact touch layout for smaller screens.
+There is no established automated Luau test runner yet. Pure test modules exist, but a reliable project-local runner is tracked as roadmap work.
 
-This is intentionally a small, readable prototype so you can start changing rules and adding visuals quickly.
+## GitHub Project
+
+Roadmap work is managed in the private GitHub Project:
+
+`BrickBlast Development`
+
+## Notes
+
+This project must not copy competitor branding, logos, screenshots, or copyrighted assets. Remaining legacy internal names should be renamed deliberately where safe, while preserving compatibility when required.
