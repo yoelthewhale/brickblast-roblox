@@ -1,5 +1,6 @@
 local Config = require(script.Parent.Config)
 local Blocks = require(script.Parent.Blocks)
+local GameplayRules = require(script.Parent.GameplayRules)
 local Grid = require(script.Parent.Grid)
 local HandGenerator = require(script.Parent.HandGenerator)
 local StageProgression = require(script.Parent.StageProgression)
@@ -51,23 +52,32 @@ local function handIsEmpty(hand)
 	return true
 end
 
+local function newFairnessFloorTriggers()
+	return {
+		stageAdvanced = 0,
+		comboMilestone = 0,
+		perfectClear = 0,
+		totalRestored = 0,
+	}
+end
+
 local function restoreAssistance(state, stageResult)
-	local restoreAmount = 0
-	if stageResult and stageResult.stagesAdvanced > 0 then
-		restoreAmount += Config.HandGeneration.StageAdvanceRestore * stageResult.stagesAdvanced
-	end
-	if
-		state.comboStreak > 0
-		and state.comboStreak % Config.HandGeneration.ComboRestoreMilestone == 0
-	then
-		restoreAmount += Config.HandGeneration.ComboRestore
-	end
-	if stageResult and stageResult.perfectClear then
-		restoreAmount += Config.HandGeneration.PerfectClearRestore
-	end
+	local restoreAmount, triggers =
+		GameplayRules.assistanceRestoreAmount(state.comboStreak, stageResult)
 	if restoreAmount > 0 then
 		state.assistance =
 			HandGenerator.restoreAssistance(state.assistance, restoreAmount, "simulation reward")
+		local counters = state.fairnessFloorTriggers
+		if triggers.stageAdvanced then
+			counters.stageAdvanced += 1
+		end
+		if triggers.comboMilestone then
+			counters.comboMilestone += 1
+		end
+		if triggers.perfectClear then
+			counters.perfectClear += 1
+		end
+		counters.totalRestored += restoreAmount
 	end
 end
 
@@ -172,9 +182,11 @@ local function chooseMove(strategy, moves, randomizer)
 			return leftScore > rightScore
 		end)
 		return moves[1]
+	elseif strategy == "spam" then
+		return moves[1]
 	end
 
-	return moves[1]
+	error(`SimulationHarness: unknown strategy "{tostring(strategy)}"`, 2)
 end
 
 function SimulationHarness.run(options)
@@ -194,6 +206,7 @@ function SimulationHarness.run(options)
 		handsSurvived = 0,
 		assistanceUsed = 0,
 		candidateLimit = options.candidateLimit,
+		fairnessFloorTriggers = newFairnessFloorTriggers(),
 	}
 	local maxPlacements = options.maxPlacements or DEFAULT_MAX_PLACEMENTS
 	local strategy = options.strategy or "spam"
@@ -212,6 +225,7 @@ function SimulationHarness.run(options)
 				highestCombo = state.highestCombo,
 				highestStage = state.stage.currentStage,
 				assistanceUsed = state.assistanceUsed,
+				fairnessFloorTriggers = state.fairnessFloorTriggers,
 			}
 		end
 
@@ -226,8 +240,9 @@ function SimulationHarness.run(options)
 			state.comboStreak = 0
 		end
 
-		local comboBonus = math.max(0, state.comboStreak - 1) * Config.ComboBonusPoints
-		state.score += #move.shape.cells * Config.PointsPerCell + linesCleared * Config.PointsPerLine + comboBonus
+		local scoreDelta =
+			GameplayRules.scoreForPlacement(#move.shape.cells, linesCleared, state.comboStreak)
+		state.score += scoreDelta
 		state.linesCleared += linesCleared
 		local stageResult = nil
 		state.stage, stageResult = StageProgression.applyPlacement(state.stage, state.board, {
@@ -253,6 +268,7 @@ function SimulationHarness.run(options)
 		highestCombo = state.highestCombo,
 		highestStage = state.stage.currentStage,
 		assistanceUsed = state.assistanceUsed,
+		fairnessFloorTriggers = state.fairnessFloorTriggers,
 	}
 end
 
