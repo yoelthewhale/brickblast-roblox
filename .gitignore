@@ -9,3 +9,5 @@ ServerPackages/
 *.rbxmx
 .vscode/settings.json
 .DS_Store
+.mcp.json
+*.log
