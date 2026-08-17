@@ -417,7 +417,7 @@ loadingTitle.BackgroundTransparency = 1
 loadingTitle.Position = UDim2.fromScale(0.5, 0.44)
 loadingTitle.Size = UDim2.fromOffset(520, 54)
 loadingTitle.Font = Enum.Font.GothamBlack
-loadingTitle.Text = "Block Blast Battle"
+loadingTitle.Text = "BrickBlast"
 loadingTitle.TextColor3 = Color3.fromRGB(245, 247, 251)
 loadingTitle.TextSize = 34
 loadingTitle.TextWrapped = true
@@ -3531,7 +3531,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	stageUi.titleButton.Text = currentState.mode == "Story" and "STORY TRAINING"
 		or currentState.mode == "Custom" and "CUSTOM LAB"
 		or currentState.mode == "Solo" and "SOLO PUZZLE"
-		or "BLOCK BLAST BATTLE"
+		or "BRICKBLAST BATTLE"
 	scoreLabel.Text = tostring(currentState.score)
 	if bestScoreLabel then
 		bestScoreLabel.Text = `BEST {currentState.bestScore or 0}`

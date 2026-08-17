@@ -1271,7 +1271,7 @@ local function buildSideIslands(parent)
 		)
 		battlePad.Name = "BattleQueuePad"
 		battlePad:SetAttribute("QueueMode", "Battle")
-		battlePrompt = addPrompt(battlePad, "Join Queue", "Block Blast Battle")
+		battlePrompt = addPrompt(battlePad, "Join Queue", "BrickBlast")
 		local battleTitle, battleSubtitle = addStatusBillboard(
 			battlePad,
 			"QueueStatus",
