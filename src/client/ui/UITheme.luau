@@ -2,40 +2,44 @@ local TweenService = game:GetService("TweenService")
 
 local UITheme = {}
 
+-- B2 "Polished Arcade" palette
 UITheme.Color = {
-	background = Color3.fromRGB(7, 10, 18),
-	panel = Color3.fromRGB(13, 18, 29),
-	panelRaised = Color3.fromRGB(20, 27, 40),
-	panelSoft = Color3.fromRGB(28, 37, 54),
-	stroke = Color3.fromRGB(72, 91, 124),
-	strokeSoft = Color3.fromRGB(43, 55, 76),
-	primary = Color3.fromRGB(64, 156, 255),
-	primaryDark = Color3.fromRGB(35, 89, 164),
-	success = Color3.fromRGB(74, 222, 128),
-	danger = Color3.fromRGB(255, 105, 105),
-	warning = Color3.fromRGB(251, 146, 60),
-	reward = Color3.fromRGB(255, 224, 128),
-	text = Color3.fromRGB(245, 247, 251),
-	textMuted = Color3.fromRGB(190, 201, 218),
-	textSoft = Color3.fromRGB(142, 157, 181),
+	background = Color3.fromRGB(9, 13, 25),
+	panel = Color3.fromRGB(23, 32, 57),
+	panelRaised = Color3.fromRGB(32, 44, 76),
+	panelSoft = Color3.fromRGB(42, 57, 96),
+	stroke = Color3.fromRGB(94, 138, 189),
+	strokeSoft = Color3.fromRGB(54, 71, 108),
+	primary = Color3.fromRGB(30, 187, 255),
+	primaryDark = Color3.fromRGB(14, 108, 158),
+	cyan = Color3.fromRGB(110, 244, 255),
+	lime = Color3.fromRGB(123, 237, 75),
+	pink = Color3.fromRGB(255, 93, 200),
+	success = Color3.fromRGB(123, 237, 75),
+	danger = Color3.fromRGB(255, 86, 107),
+	warning = Color3.fromRGB(255, 139, 61),
+	reward = Color3.fromRGB(255, 210, 71),
+	text = Color3.fromRGB(255, 255, 255),
+	textMuted = Color3.fromRGB(200, 213, 235),
+	textSoft = Color3.fromRGB(150, 168, 199),
 }
 
 UITheme.Color.button = UITheme.Color.primary
 UITheme.Color.buttonMuted = UITheme.Color.panelSoft
 UITheme.Color.card = UITheme.Color.panelRaised
-UITheme.Color.cardMuted = Color3.fromRGB(24, 30, 42)
+UITheme.Color.cardMuted = Color3.fromRGB(27, 37, 64)
 UITheme.Color.muted = UITheme.Color.textMuted
 UITheme.Color.soft = UITheme.Color.textSoft
 UITheme.Color.warn = UITheme.Color.warning
 UITheme.Color.error = UITheme.Color.danger
 UITheme.Color.hudPanel = Color3.fromRGB(255, 255, 255)
-UITheme.Color.hudPanelBlue = Color3.fromRGB(225, 246, 255)
-UITheme.Color.hudText = Color3.fromRGB(35, 45, 55)
-UITheme.Color.hudTextMuted = Color3.fromRGB(87, 104, 117)
-UITheme.Color.hubGrass = Color3.fromRGB(74, 222, 128)
-UITheme.Color.hubWater = Color3.fromRGB(64, 156, 255)
-UITheme.Color.hubGold = Color3.fromRGB(255, 205, 82)
-UITheme.Color.hubPurple = Color3.fromRGB(167, 109, 255)
+UITheme.Color.hudPanelBlue = Color3.fromRGB(224, 248, 255)
+UITheme.Color.hudText = Color3.fromRGB(23, 32, 57)
+UITheme.Color.hudTextMuted = Color3.fromRGB(87, 104, 128)
+UITheme.Color.hubGrass = Color3.fromRGB(123, 237, 75)
+UITheme.Color.hubWater = Color3.fromRGB(30, 187, 255)
+UITheme.Color.hubGold = Color3.fromRGB(255, 210, 71)
+UITheme.Color.hubPurple = Color3.fromRGB(190, 118, 255)
 
 UITheme.Font = {
 	title = Enum.Font.GothamBlack,
@@ -45,25 +49,25 @@ UITheme.Font = {
 }
 
 UITheme.TextSize = {
-	hero = 30,
-	title = 24,
-	heading = 18,
-	body = 14,
+	hero = 32,
+	title = 26,
+	heading = 19,
+	body = 15,
 	caption = 12,
 }
 
 UITheme.Space = {
-	xs = 6,
-	sm = 10,
-	md = 14,
-	lg = 18,
-	xl = 24,
+	xs = 10,
+	sm = 14,
+	md = 18,
+	lg = 28,
+	xl = 36,
 }
 
 UITheme.Radius = {
-	sm = 6,
-	md = 8,
-	lg = 10,
+	sm = 10,
+	md = 16,
+	lg = 20,
 	pill = 999,
 }
 
@@ -158,7 +162,8 @@ function UITheme.button(button, variant)
 	button.BorderSizePixel = 0
 	button.Font = UITheme.Font.heading
 	button.TextSize = button.TextSize > 0 and button.TextSize or UITheme.TextSize.body
-	button.TextColor3 = variant == "success" and Color3.fromRGB(11, 35, 24) or UITheme.Color.text
+	button.TextColor3 = (variant == "success" or variant == "reward") and Color3.fromRGB(11, 35, 24)
+		or UITheme.Color.text
 	button.BackgroundColor3 = variant == "primary" and UITheme.Color.primary
 		or variant == "success" and UITheme.Color.success
 		or variant == "danger" and UITheme.Color.danger
@@ -166,12 +171,28 @@ function UITheme.button(button, variant)
 		or UITheme.Color.panelSoft
 	button.Selectable = true
 	UITheme.corner(button, UITheme.Radius.md)
-	UITheme.stroke(
+
+	local outline = Instance.new("UIStroke")
+	outline.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	outline.Color = Color3.fromRGB(6, 10, 20)
+	outline.Thickness = 3
+	outline.Transparency = 0
+	outline.Parent = button
+
+	local highlight = Instance.new("UIStroke")
+	highlight.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	highlight.Color = button.BackgroundColor3:Lerp(Color3.fromRGB(255, 255, 255), 0.55)
+	highlight.Thickness = 2
+	highlight.Transparency = 0.15
+	highlight.Parent = button
+
+	UITheme.gradient(
 		button,
-		variant == "primary" and Color3.fromRGB(156, 211, 255) or UITheme.Color.strokeSoft,
-		1,
-		0.35
+		button.BackgroundColor3:Lerp(Color3.fromRGB(255, 255, 255), 0.16),
+		button.BackgroundColor3:Lerp(Color3.fromRGB(0, 0, 0), 0.2),
+		90
 	)
+
 	return button
 end
 
@@ -179,14 +200,6 @@ function UITheme.closeButton(button)
 	UITheme.button(button, "danger")
 	button.Text = "X"
 	button.TextSize = 16
-	button.BackgroundColor3 = Color3.fromRGB(255, 76, 104)
-	button.TextColor3 = Color3.fromRGB(255, 255, 255)
-	local stroke = button:FindFirstChildOfClass("UIStroke")
-	if stroke then
-		stroke.Color = Color3.fromRGB(126, 19, 40)
-		stroke.Thickness = 2
-		stroke.Transparency = 0
-	end
 	return button
 end
 

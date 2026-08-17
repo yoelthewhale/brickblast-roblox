@@ -53,7 +53,7 @@ function MenuController.new(gui, options)
 	UITheme.panel(panel, {
 		color = Color3.fromRGB(18, 28, 52),
 		bottomColor = Color3.fromRGB(10, 17, 34),
-		strokeColor = Color3.fromRGB(48, 190, 255),
+		strokeColor = Color3.fromRGB(30, 187, 255),
 		strokeTransparency = 0,
 	})
 	local panelStroke = panel:FindFirstChildOfClass("UIStroke")

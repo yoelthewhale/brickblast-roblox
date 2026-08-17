@@ -14,15 +14,15 @@ local THEME = UITheme.Color
 local SHOP_BLUE = Color3.fromRGB(34, 186, 255)
 local SHOP_BLUE_DARK = Color3.fromRGB(10, 19, 42)
 local SHOP_GREEN = Color3.fromRGB(106, 236, 67)
-local SHOP_PURPLE = Color3.fromRGB(205, 95, 255)
-local SHOP_GOLD = Color3.fromRGB(255, 215, 72)
+local SHOP_PURPLE = Color3.fromRGB(190, 118, 255)
+local SHOP_GOLD = Color3.fromRGB(255, 210, 71)
 local SHOP_RED = Color3.fromRGB(255, 69, 83)
 local SHOP_TEXT = Color3.fromRGB(244, 248, 255)
 local CARD_COLORS = {
-	Color3.fromRGB(35, 185, 255),
+	Color3.fromRGB(30, 187, 255),
 	Color3.fromRGB(116, 236, 70),
-	Color3.fromRGB(205, 95, 255),
-	Color3.fromRGB(255, 211, 71),
+	Color3.fromRGB(190, 118, 255),
+	Color3.fromRGB(255, 210, 71),
 }
 
 local function safeArray(value)
@@ -165,7 +165,7 @@ function ShopPanel.new(gui, options)
 	header.ZIndex = 46
 	header.Parent = panel
 	UITheme.corner(header, UITheme.Radius.md)
-	UITheme.gradient(header, Color3.fromRGB(190, 91, 255), Color3.fromRGB(72, 45, 180), 90)
+	UITheme.gradient(header, Color3.fromRGB(190, 118, 255), Color3.fromRGB(72, 45, 180), 90)
 
 	local title = Instance.new("TextLabel")
 	title.BackgroundTransparency = 1

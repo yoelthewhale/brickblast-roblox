@@ -77,7 +77,7 @@ function HomePanel.new(gui, options)
 	logoButton.AnchorPoint = Vector2.new(0, 0.5)
 	logoButton.Position = UDim2.fromScale(0, 0.5)
 	logoButton.Size = UDim2.fromOffset(52, 52)
-	logoButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
+	logoButton.BackgroundColor3 = Color3.fromRGB(30, 187, 255)
 	logoButton.BorderSizePixel = 0
 	logoButton.Font = Enum.Font.GothamBlack
 	logoButton.Text = "BB"
@@ -108,7 +108,7 @@ function HomePanel.new(gui, options)
 	closeButton.AnchorPoint = Vector2.new(1, 0)
 	closeButton.Position = UDim2.new(1, -12, 0, 12)
 	closeButton.Size = UDim2.fromOffset(30, 30)
-	closeButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+	closeButton.BackgroundColor3 = Color3.fromRGB(42, 57, 96)
 	closeButton.BorderSizePixel = 0
 	closeButton.Font = Enum.Font.GothamBlack
 	closeButton.Text = "X"
@@ -174,7 +174,7 @@ function HomePanel.new(gui, options)
 	local battleButton = Instance.new("TextButton")
 	battleButton.Position = UDim2.fromOffset(16, 124)
 	battleButton.Size = UDim2.fromOffset(172, 50)
-	battleButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
+	battleButton.BackgroundColor3 = Color3.fromRGB(30, 187, 255)
 	battleButton.BorderSizePixel = 0
 	battleButton.Font = Enum.Font.GothamBold
 	battleButton.Text = ExperienceConfig.isModeEnabled("Battle") and "Join Battle Queue"
@@ -188,7 +188,7 @@ function HomePanel.new(gui, options)
 	local storyButton = Instance.new("TextButton")
 	storyButton.Position = UDim2.fromOffset(204, 124)
 	storyButton.Size = UDim2.fromOffset(170, 50)
-	storyButton.BackgroundColor3 = Color3.fromRGB(74, 222, 128)
+	storyButton.BackgroundColor3 = Color3.fromRGB(123, 237, 75)
 	storyButton.BorderSizePixel = 0
 	storyButton.Font = Enum.Font.GothamBold
 	storyButton.Text = "Story Mode"
@@ -219,7 +219,7 @@ function HomePanel.new(gui, options)
 	local motionButton = Instance.new("TextButton")
 	motionButton.Position = UDim2.fromOffset(22, 224)
 	motionButton.Size = UDim2.fromOffset(276, 42)
-	motionButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+	motionButton.BackgroundColor3 = Color3.fromRGB(42, 57, 96)
 	motionButton.BorderSizePixel = 0
 	motionButton.Font = Enum.Font.GothamBold
 	motionButton.Text = "Motion: Full"
@@ -233,7 +233,7 @@ function HomePanel.new(gui, options)
 	local uiSizeButton = Instance.new("TextButton")
 	uiSizeButton.Position = UDim2.fromOffset(322, 224)
 	uiSizeButton.Size = UDim2.fromOffset(276, 42)
-	uiSizeButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+	uiSizeButton.BackgroundColor3 = Color3.fromRGB(42, 57, 96)
 	uiSizeButton.BorderSizePixel = 0
 	uiSizeButton.Font = Enum.Font.GothamBold
 	uiSizeButton.Text = "UI Size: Auto"
@@ -247,7 +247,7 @@ function HomePanel.new(gui, options)
 	local pieceSkinButton = Instance.new("TextButton")
 	pieceSkinButton.Position = UDim2.fromOffset(22, 278)
 	pieceSkinButton.Size = UDim2.fromOffset(276, 42)
-	pieceSkinButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+	pieceSkinButton.BackgroundColor3 = Color3.fromRGB(42, 57, 96)
 	pieceSkinButton.BorderSizePixel = 0
 	pieceSkinButton.Font = Enum.Font.GothamBold
 	pieceSkinButton.Text = "  Pieces: Rainbow"
@@ -279,7 +279,7 @@ function HomePanel.new(gui, options)
 	local soundButton = Instance.new("TextButton")
 	soundButton.Position = UDim2.fromOffset(322, 278)
 	soundButton.Size = UDim2.fromOffset(276, 42)
-	soundButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+	soundButton.BackgroundColor3 = Color3.fromRGB(42, 57, 96)
 	soundButton.BorderSizePixel = 0
 	soundButton.Font = Enum.Font.GothamBold
 	soundButton.Text = "Sound: 65%"
@@ -293,7 +293,7 @@ function HomePanel.new(gui, options)
 	local boardSkinButton = Instance.new("TextButton")
 	boardSkinButton.Position = UDim2.fromOffset(22, 332)
 	boardSkinButton.Size = UDim2.fromOffset(276, 42)
-	boardSkinButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+	boardSkinButton.BackgroundColor3 = Color3.fromRGB(42, 57, 96)
 	boardSkinButton.BorderSizePixel = 0
 	boardSkinButton.Font = Enum.Font.GothamBold
 	boardSkinButton.Text = "  Board: Auto"
@@ -326,7 +326,7 @@ function HomePanel.new(gui, options)
 	end
 
 	local shopButton = Instance.new("TextButton")
-	shopButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
+	shopButton.BackgroundColor3 = Color3.fromRGB(30, 187, 255)
 	shopButton.BackgroundTransparency = 0
 	shopButton.Position = UDim2.fromOffset(16, 190)
 	shopButton.Size = UDim2.fromOffset(358, 34)
@@ -502,7 +502,7 @@ function HomePanel:ApplyTheme(theme)
 	self.accentColor = theme.accent or self.accentColor
 	self.panel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	self.logoButton.BackgroundColor3 = self.accentColor
-	self.battleButton.BackgroundColor3 = self.queued and Color3.fromRGB(244, 114, 182)
+	self.battleButton.BackgroundColor3 = self.queued and Color3.fromRGB(255, 93, 200)
 		or self.accentColor
 	self.shopButton.BackgroundColor3 = self.accentColor
 end
@@ -605,7 +605,7 @@ function HomePanel:UpdateHubState(hubState, storyPreviewText, accentColor)
 	self.matchmakingLabel.Text =
 		`Arenas: {openArenas}/{totalArenas} open | Matches: {activeSessions} | {queueText}`
 	self.matchmakingLabel.TextColor3 = openArenas > 0 and UITheme.Color.textSoft
-		or Color3.fromRGB(255, 207, 102)
+		or Color3.fromRGB(255, 210, 71)
 
 	self.queued = hubState.queued == true
 	self:SetBattleEnabled(openArenas > 0 or self.queued)
@@ -618,7 +618,7 @@ function HomePanel:UpdateHubState(hubState, storyPreviewText, accentColor)
 	else
 		self.battleButton.Text = "Join Battle Queue"
 	end
-	self.battleButton.BackgroundColor3 = self.queued and Color3.fromRGB(244, 114, 182)
+	self.battleButton.BackgroundColor3 = self.queued and Color3.fromRGB(255, 93, 200)
 		or self.battleEnabled and self.accentColor
 		or UITheme.Color.panelSoft
 
@@ -629,7 +629,7 @@ function HomePanel:UpdateHubState(hubState, storyPreviewText, accentColor)
 
 	if self.queued then
 		if not self.lastQueued then
-			self.showBanner("Queued for battle", Color3.fromRGB(244, 114, 182))
+			self.showBanner("Queued for battle", Color3.fromRGB(255, 93, 200))
 		end
 		if not self.isReducedMotion() then
 			self.queuedPulseTween = TweenService:Create(
