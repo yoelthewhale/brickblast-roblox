@@ -52,8 +52,11 @@ tests.majorPanelsAreMutuallyExclusive = function()
 end
 
 tests.resetAndReturnDebounce = function()
+	-- 1.5 rather than the cooldown's exact boundary (1.45): floating-point
+	-- subtraction (1.45 - 1) lands at 0.44999999999999996, just under the
+	-- 0.45 cooldown, so an exact-boundary input is flaky by construction.
 	assertCondition(
-		UIControlRules.canFireServerAction(1, 1.45),
+		UIControlRules.canFireServerAction(1, 1.5),
 		"Request should be allowed after cooldown"
 	)
 	assertCondition(

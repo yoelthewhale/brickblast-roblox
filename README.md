@@ -56,10 +56,11 @@ Run from the project root:
 .\tools\stylua.exe src
 .\tools\selene.exe src
 .\tools\rojo.exe build default.project.json --output BlockBlastBattle-DevSetup.rbxl
+.\tools\lune.exe run scripts/run-tests.luau
 git diff --check
 ```
 
-There is no established automated Luau test runner yet. Pure test modules exist, but a reliable project-local runner is tracked as roadmap work.
+`scripts/run-tests.luau` is a headless runner (via Lune, a standalone Luau runtime) for the pure `*Tests.luau` modules in `src/shared/game/`. It fakes just enough of the Roblox environment — `Vector2`/`Color3`/etc. from Lune's `@lune/roblox`, a `Random.new` polyfill, and a `script.Parent.X`-style require shim — to run those modules outside Studio, and exits non-zero if any module fails. It cannot run anything under `src/client/` or `src/server/`, since those depend on real Roblox services.
 
 ## GitHub Project
 
