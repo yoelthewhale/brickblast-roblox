@@ -39,8 +39,6 @@ local hubEvent = remotes:WaitForChild("Hub")
 local effectsEvent = remotes:WaitForChild("Effects")
 local settingsEvent = remotes:WaitForChild("Settings")
 local shopEvent = remotes:WaitForChild("Shop")
-local codesEvent = remotes:WaitForChild("Codes")
-local achievementsEvent = remotes:WaitForChild("Achievements")
 local devCommandFunction = remotes:WaitForChild("DevCommand")
 
 local selectedSlot = nil
@@ -133,7 +131,6 @@ local renderGhostPreview = nil
 local renderHand = nil
 local renderDiagnostics = nil
 local pulseHandSlot = nil
-local previousHandOccupied = {}
 
 local WINDOW_LAYOUT = SoloLayout.calculate(Vector2.new(1280, 720), 36, 0, 1)
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
@@ -143,6 +140,11 @@ local day43Ui = {
 	placeActionCooldownSeconds = 0.08,
 	lastServerActionAt = 0,
 	lastPlaceActionAt = 0,
+	-- Attached here instead of top-level locals: this script is a single
+	-- top-level chunk already close to Luau's 200-local register limit.
+	codesEvent = remotes:WaitForChild("Codes"),
+	achievementsEvent = remotes:WaitForChild("Achievements"),
+	previousHandOccupied = {},
 }
 
 local function isUiReducedMotion()
@@ -1215,7 +1217,7 @@ hudController = HUDController.new(gui, {
 					playSound("Button")
 					status.Text = "Checking..."
 					status.TextColor3 = Color3.fromRGB(190, 210, 233)
-					codesEvent:FireServer(code)
+					day43Ui.codesEvent:FireServer(code)
 				end
 
 				redeem.Activated:Connect(submit)
@@ -1255,7 +1257,7 @@ hudController = HUDController.new(gui, {
 				loading.Parent = scroll
 
 				day43Ui.achievementsScroll = scroll
-				achievementsEvent:FireServer("RequestSnapshot")
+				day43Ui.achievementsEvent:FireServer("RequestSnapshot")
 			end)
 		end,
 		settings = function()
@@ -3384,7 +3386,7 @@ pulseHandSlot = function(slot)
 	end)
 end
 
-local function playTrayEntrance(button, slot)
+day43Ui.playTrayEntrance = function(button, slot)
 	if reducedMotion then
 		return
 	end
@@ -3409,10 +3411,10 @@ renderHand = function()
 	for slot, button in handButtons do
 		local shape = currentState.hand[slot]
 		local isOccupied = shape ~= nil
-		if isOccupied and not previousHandOccupied[slot] then
-			playTrayEntrance(button, slot)
+		if isOccupied and not day43Ui.previousHandOccupied[slot] then
+			day43Ui.playTrayEntrance(button, slot)
 		end
-		previousHandOccupied[slot] = isOccupied
+		day43Ui.previousHandOccupied[slot] = isOccupied
 		local label = button:FindFirstChild("Label")
 		if label then
 			label.Text = ArcadeUI.HandSlotText(shape)
@@ -3821,7 +3823,7 @@ shopEvent.OnClientEvent:Connect(function(message)
 	end
 end)
 
-local function renderAchievements(list)
+day43Ui.renderAchievements = function(list)
 	local scroll = day43Ui.achievementsScroll
 	if not scroll or not scroll.Parent then
 		return
@@ -3894,13 +3896,13 @@ local function renderAchievements(list)
 	end
 end
 
-achievementsEvent.OnClientEvent:Connect(function(response)
+day43Ui.achievementsEvent.OnClientEvent:Connect(function(response)
 	if response and response.kind == "Snapshot" and response.achievements then
-		renderAchievements(response.achievements)
+		day43Ui.renderAchievements(response.achievements)
 	end
 end)
 
-codesEvent.OnClientEvent:Connect(function(response)
+day43Ui.codesEvent.OnClientEvent:Connect(function(response)
 	if not response then
 		return
 	end
