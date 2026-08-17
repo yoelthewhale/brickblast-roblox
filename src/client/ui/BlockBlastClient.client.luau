@@ -376,6 +376,11 @@ end
 local gui = Instance.new("ScreenGui")
 gui.Name = "BlockBlastBattleGui"
 gui.ResetOnSpawn = false
+-- Layout code throughout this file and HUDController manually reserves
+-- safe-area space via GuiService:GetGuiInset(), so Roblox must not also
+-- shrink AbsoluteSize/AbsolutePosition for the same inset or that space
+-- gets reserved twice (visible as an extra gap, worst along the top edge).
+gui.IgnoreGuiInset = true
 gui.Parent = player:WaitForChild("PlayerGui")
 
 if RunService:IsStudio() then
@@ -1232,8 +1237,11 @@ root.BorderSizePixel = 0
 root.Visible = false
 root.ZIndex = 1
 root.Parent = gui
+-- radius = 0: root is stretched to the literal screen edges, so any corner
+-- rounding here shows as a background sliver at the four screen corners
+-- instead of a floating-card look. Inner panels keep their own rounding.
 ArcadeUI.Panel(root, {
-	radius = 34,
+	radius = 0,
 	rimColor = ArcadeUI.Color.rimBright,
 	strokeThickness = 5,
 })
