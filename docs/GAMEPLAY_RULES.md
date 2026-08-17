@@ -22,7 +22,7 @@
 ## Solo Hand Generation
 
 - Solo uses `HandGenerator.generate`; disabled legacy modes keep the older random hand behavior.
-- Available shapes remain `single`, `line2`, `line3`, `vertical3`, `square2`, `corner`, and `plus`.
+- Available shapes (see `src/shared/game/Blocks.luau` for the exact list, since this grows over time): singles, straight lines (2/3/4 cells, both orientations), the 2x2 square, the 2x3 rectangle (both orientations), a plus, all 4 rotations of the L-tromino corner piece, all 4 rotations each of T/S/Z/J/L tetrominoes, and diagonal pieces (2/3/4 cells, corner-touching only — not edge-adjacent, so they don't tile efficiently and are intentionally the hardest pieces to place).
 - The generator evaluates all known shapes against the current board with `Grid.canPlace`.
 - Each new hand scores a bounded set of candidate three-piece hands. The default candidate limit is `Config.HandGeneration.CandidateLimit`.
 - If any known shape can fit, the chosen hand must contain at least one fitting piece.
@@ -46,8 +46,20 @@
 - Diagnostics are read-only and do not mark a run as a developer test run.
 - Gameplay-changing developer commands still mark records disabled.
 
+## Achievements And Lifetime Stats
+
+- `src/shared/game/Achievements.luau` defines tiered achievements (Bronze/Silver/Gold) across 7 lifetime stat categories: best score, highest combo, highest stage, total perfect clears, total lines cleared, total blocks placed, and total runs completed.
+- Lifetime stats are separate from per-run state and persist across runs in the player's profile, sanitized and clamped the same way every other saved stat is.
+- Achievements are checked server-side after every placement and again at run completion; unlocking one grants a one-time coin reward and fires a client notification immediately.
+- Developer test runs and Custom Lab never contribute to lifetime stats or achievements, matching every other reward path in the game.
+
+## Redeemable Codes
+
+- Players can redeem a code from the hub's Codes panel; redemption is validated server-side and each code can only be redeemed once per player (tracked in the saved profile).
+- The `yoel` code is a developer/testing code: it maxes out coins, XP, level, and story stars, and unlocks every cosmetic including gamepass-locked ones. It is intentionally not restricted to a specific account — this is a private project for a small group, not a live game with a real economy to protect.
+
 ## Balance Notes
 
 - The intended feel is smart-but-not-automatic: most fresh hands should offer useful choices, while poor placement and crowding can still end the run.
 - Future balance work should use deterministic simulations and Studio play checks before changing candidate limits, assistance budget, or stage pressure.
-- New shapes, powerups, achievements, monetization, mobile changes, and map changes are outside this rules checkpoint.
+- Powerups, monetization, mobile changes, and map changes are still outside this rules checkpoint.

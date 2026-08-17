@@ -1,6 +1,8 @@
 # Roblox Studio MCP Validation
 
-Status: unexecuted. The official Roblox Studio MCP server was not connected to this Codex session, so no Studio playtest, screenshots, output reads, or device-emulation tests were performed.
+Status: **connected and in active use** (as of 2026-08-17, via Claude Code). The connection steps below worked as documented. `list_roblox_studios`, `get_console_output`, `start_stop_play`, and `screen_capture` have all been used successfully to read Output errors, cycle Play mode, and visually confirm UI changes without needing Yoel to do it by hand.
+
+What this does **not** mean: the full device/viewport test matrix below is still mostly unexecuted. What's actually happened so far is targeted spot-checks (e.g. confirming a specific bug is fixed after a code change), not a systematic pass through every row in the matrix. Don't mark matrix rows `Pass` unless they were individually checked.
 
 ## Official MCP Connection Steps
 
@@ -22,7 +24,7 @@ Use the built-in Roblox Studio MCP server. Do not install a third-party Studio c
 ## Opening The Local Place Safely
 
 1. In Roblox Studio, use `File > Open from File...`.
-2. Open `C:\Users\Bear4\Documents\Codex\2026-07-28\build\outputs\block-blast-battle\BlockBlastBattle-Day9.rbxl`.
+2. Open the latest `BlockBlastBattle-Day*.rbxl` in this folder (the number keeps incrementing — check file timestamps, don't assume a specific one), or let Rojo serve straight into whatever place is already open.
 3. Do not use `File > Publish to Roblox`.
 4. Do not overwrite an existing live experience.
 5. Keep testing local unless a deliberate release branch and Creator Dashboard plan exist.
@@ -32,8 +34,8 @@ Use the built-in Roblox Studio MCP server. Do not install a third-party Studio c
 Expected result after MCP is connected:
 
 - Studio Assistant MCP panel shows a green connected-client indicator.
-- Codex exposes Roblox Studio MCP tools, including tools for listing Studio sessions, reading console output, starting/stopping play, capturing screens, and sending keyboard/mouse input.
-- `list_roblox_studios` returns the local Day9 Studio session.
+- The agent (Codex or Claude Code) exposes Roblox Studio MCP tools, including tools for listing Studio sessions, reading console output, starting/stopping play, capturing screens, and sending keyboard/mouse input.
+- `list_roblox_studios` returns the currently-open local Studio session.
 
 ## Required Test Matrix
 

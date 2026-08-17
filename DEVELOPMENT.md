@@ -2039,3 +2039,40 @@ Upload the seven PNGs in `assets/ui/icons`, paste the returned IDs into `UIAsset
 ### Next Priority
 
 - Open `BlockBlastBattle-Day37-2-3.rbxl` in Studio and confirm the top-left cell is a normal square, no clickable cell appears below the board, and stat text is readable.
+
+## Session Update - 2026-08-17 HUD Fixes, Gameplay Feedback, Achievements, and Tooling
+
+First session with Claude Code working alongside Codex on this project, on top of the Day43 checkpoint (merged via PR #14) and PR #15 (piece dragging + UI theme remake + hub/world remake).
+
+### Completed
+
+- **Hub HUD fixes**: the Play button's icon was invisible (drawing white shapes on a white background), the top-right resource bar wrapped long stat text onto two lines (hardcoded chip widths), and the left nav had a large empty gap (fixed-height container sized for more buttons than it held). Switched the icon chips and resource/nav containers to `AutomaticSize` so they hug real content instead of guessed pixel widths.
+- **Day44B gameplay feedback animations**: staggered row/column line-clear sweep (deduced purely from the board diff, no server change needed), a floating score popup, a combo pulse (including sparkle dots that existed in the code but were never wired up), a tray-entrance pop-in for new pieces, and a perfect-clear flash + banner. Every new effect has a reduced-motion alternative, matching the existing convention in `ArcadeUI.luau`.
+- **Fullscreen gameplay gap fix**: the ScreenGui never set `IgnoreGuiInset = true`, so Roblox was already shrinking `AbsoluteSize` to exclude the topbar inset while the layout code also manually reserved that same space again — a real gap, worst along the top edge. Also removed a 34px corner radius from the fullscreen root panel that was showing as background slivers at the literal screen corners.
+- **Shape roster expansion**: added diagonal pieces (2/3/4-cell, corner-touching only — intentionally the hardest to place since they don't tile against orthogonal pieces), and closed two real orientation gaps found during an audit (`line2` had no vertical counterpart, the 2x3 rectangle had no portrait counterpart).
+- **Branding cleanup**: renamed remaining player-facing "Block Blast Battle" text to BrickBlast (loading splash, a dormant Battle-mode prompt, a title fallback) — that name collides with an existing competitor mobile game. Left internal-only instance names/log messages alone.
+- **Synced sound effects**: added Combo/PerfectClear/TrayRefill cues as pitch-shifted variants of already-verified sound assets (via `PlaybackSpeed`), each firing exactly when its matching new animation fires.
+- **Redeemable codes system**: a Codes button in the hub opens a text-entry panel wired to a new `Codes` RemoteEvent. Redemptions are validated server-side and tracked per-player in the profile so a code can't be redeemed twice. The `yoel` code maxes stats and unlocks every cosmetic for development/testing use.
+- **Headless Lune test runner** (`scripts/run-tests.luau`): the `src/shared/game/*Tests.luau` modules could previously only run inside Studio's dev console, so nothing was actually exercising them. Built a runner via Lune (a standalone Luau runtime) that polyfills `Vector2`/`Color3`/etc. from `@lune/roblox`, a `Random.new` implementation, and a `script.Parent.X` require shim. It immediately caught a real bug: `UIControlRulesTests` asserted a floating-point-exact cooldown boundary (`1.45 - 1`) that fails under IEEE-754 double precision — same failure would happen in real Studio, it had just never been run. Fixed the test's boundary value.
+- **Tiered achievements and lifetime-stats system**: 7 stat categories (score, combo, stage, perfect clears, lines, blocks, runs) x Bronze/Silver/Gold, server-authoritative, persisted per-player, excluded from developer test runs and Custom Lab the same way every other reward path already is. `Achievements.luau` is pure logic covered by `AchievementsTests.luau`.
+- **Critical bug found and fixed**: `BlockBlastClient.client.luau` is one giant top-level Luau chunk that a comment already flagged as close to the compiler's 200-local-register limit. The Codes/Achievements work's 5 new top-level locals pushed it over — the script failed to compile and the entire custom HUD silently never rendered (confirmed live via a player screenshot: only Roblox's default topbar showed). Fixed by attaching those locals to the existing `day43Ui` table instead, verified by cycling Play mode in Studio via the MCP connector and confirming a clean console + full HUD render.
+- **A multi-angle code review pass** (8 finder angles across the whole session's diff) surfaced several more real, smaller issues that were queued up for fixing: a Codes-panel button whose manual success-green styling gets silently overwritten by a later `UITheme.button(..., "primary")` call, a staggered clear-flash animation that can (rarely, at high placement speed) repaint a cell using stale board state, and the three new per-player state tables (`playerRedeemedCodes`, `playerLifetimeStats`, `playerUnlockedAchievements`) missing from the `PlayerRemoving` cleanup block.
+- **Documentation and organization pass** (this entry included): archived stale Day-numbered snapshot docs into `docs/archive/`, retired the old Tuesday.com-import project tracker in favor of GitHub Issues, updated `AGENTS.md`/`docs/GAMEPLAY_RULES.md`/`docs/STUDIO_MCP_VALIDATION.md` to match current reality, consolidated `PROJECT_MAP.md` into `BLOCK_BLAST_START_HERE.md`, and rewrote `README.md`'s status section.
+- The GitHub repo and its GitHub Project board were made public so a second collaborator (Tanner) could be added.
+
+### Current State
+
+- Everything above is committed and pushed to `master`, and Rojo is serving it live.
+- The register-limit fix was verified live in Studio (Play mode cycled via the Studio MCP connector, console confirmed clean, HUD screenshot confirmed rendering).
+- The rest of the code-review findings (button color bug, stale-state repaint edge case, `PlayerRemoving` cleanup gap) were identified but not yet all fixed as of this entry — check open review findings before assuming they're resolved.
+
+### Known Gaps
+
+- No mobile/touch support yet — piece dragging only responds to mouse input. Tracked, intentionally on hold.
+- `Grid.luau` and `Blocks.luau` still don't have dedicated test files (only exercised indirectly through other tests).
+- Power-ups (tracked, needs a design decision before it's buildable) and further hub-world polish (tracked, low priority/vague) are the only other open backlog items besides mobile.
+
+### Next Priority
+
+- Finish applying the outstanding code-review fixes (see Current State above).
+- Whenever development resumes: mobile/touch layout is the next real feature-shaped gap.

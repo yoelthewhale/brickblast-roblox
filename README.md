@@ -4,22 +4,25 @@ BrickBlast is a full-screen, stage-based Roblox block puzzle game built with Lua
 
 The current direction is **Solo first**: tighten the core 8x8 puzzle loop, scoring feel, stage pacing, UI responsiveness, saved progression, and validation workflow before reopening larger modes.
 
+New here? Start with [`BLOCK_BLAST_START_HERE.md`](BLOCK_BLAST_START_HERE.md) for setup, or [`AGENTS.md`](AGENTS.md) if you're working with an AI coding agent on this repo.
+
 ## Current Status
 
 - Solo mode is enabled and is the primary development path.
 - Battle, Story, and Custom Lab remain disabled behind feature gates.
-- The current clean checkpoint is Day43 on commit `6e8f6b86015b862fe623ceb59b000512e65daa84`.
-- Smart hand generation, stage progression, developer tools, full-screen stage transformations, difficulty balancing, and UI cleanup are in place.
+- In place: smart hand generation, stage progression, cosmetics/shop, an achievements system with lifetime stats, a redeemable-codes system, synced gameplay feedback animations and sound, a full shape roster (including diagonal pieces), and developer tools.
+- A headless automated test runner (`scripts/run-tests.luau`, via Lune) covers the pure gameplay-logic modules in `src/shared/game/`. Anything under `src/client/` or `src/server/` still needs a Roblox Studio Play-mode check.
+- Not yet supported: mobile/touch layout (piece dragging is currently mouse-only).
 - Project management is tracked in GitHub Issues and the **BrickBlast Development** project board.
 
 ## Gameplay Features
 
 - 8x8 board with exactly 64 logical cells.
-- Three-piece hand/tray block puzzle loop.
-- Row and column clears.
+- Three-piece hand/tray block puzzle loop with drag-to-place.
+- Row and column clears, with staggered clear animations, score popups, combo pulses, and perfect-clear feedback.
 - Stage progression and stage-specific visual transforms.
-- Smart but not automatic hand generation.
-- Combo, perfect-clear, score, and progression systems under active development.
+- Smart but not automatic hand generation, including diagonal (corner-touching, not edge-adjacent) pieces as the hardest to place.
+- Tiered achievements and lifetime stats, and a redeemable-codes system.
 - Server-authoritative gameplay and developer tools.
 
 ## Important 8x8 Invariant
@@ -36,15 +39,17 @@ The visible PC board must show exactly 64 direct cell buttons under `BoardGridCo
 - Wally
 - StyLua
 - Selene
+- Lune (headless test runner)
 - Git and GitHub Issues/Projects
 
 ## Project Structure
 
 - `src/client/ui/` - client UI controllers, panels, visuals, and Solo workspace.
-- `src/server/services/` - server-authoritative gameplay, profile/session handling, receipts, rewards, and developer tools.
+- `src/server/services/` - server-authoritative gameplay, profile/session handling, receipts, rewards, achievements, codes, and developer tools.
 - `src/server/world/` - generated hub/world construction.
-- `src/shared/game/` - shared rules, config, grid logic, hand generation, simulation helpers, and pure test modules.
-- `docs/` - planning notes, audits, validation checklists, and design references.
+- `src/shared/game/` - shared rules, config, grid logic, hand generation, achievements, simulation helpers, and pure test modules.
+- `docs/` - current rules, setup, and validation docs. `docs/archive/` holds superseded point-in-time snapshots — not current truth.
+- `scripts/` - helper scripts, including the headless test runner.
 - `tools/` - pinned local CLI tools used by the project.
 - `assets/` - generated/approved local UI assets and mockups.
 
@@ -64,9 +69,11 @@ git diff --check
 
 ## GitHub Project
 
-Roadmap work is managed in the private GitHub Project:
+Roadmap work is managed in the GitHub Project:
 
-`BrickBlast Development`
+**BrickBlast Development** — https://github.com/users/yoelthewhale/projects/1/views/1
+
+Issues are labeled by `type:` (bug/feature/polish/documentation/testing/technical-debt), `area:` (which system), and `priority:`. See [`docs/PROJECT_TRACKER.md`](docs/PROJECT_TRACKER.md) for details.
 
 ## Notes
 
