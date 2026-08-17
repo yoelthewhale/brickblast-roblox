@@ -15,19 +15,22 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Rokit reads rokit.toml and installs the exact pinned tool versions the
       # project uses locally (rojo, stylua, selene, lune). Installing through
       # rokit rather than pinning versions here keeps CI and local dev in sync -
       # update rokit.toml and CI follows automatically.
+      #
+      # Downloaded into RUNNER_TEMP, not the repository, so the installer does
+      # not leave untracked files behind and trip the clean-tree check below.
       - name: Install Rokit
         run: |
-          curl -fsSL -o rokit.zip \
+          curl -fsSL -o "$RUNNER_TEMP/rokit.zip" \
             https://github.com/rojo-rbx/rokit/releases/download/v1.2.0/rokit-1.2.0-linux-x86_64.zip
-          unzip -q rokit.zip
-          chmod +x rokit
-          ./rokit self-install
+          unzip -q "$RUNNER_TEMP/rokit.zip" -d "$RUNNER_TEMP"
+          chmod +x "$RUNNER_TEMP/rokit"
+          "$RUNNER_TEMP/rokit" self-install
           echo "$HOME/.rokit/bin" >> "$GITHUB_PATH"
 
       - name: Install project tools from rokit.toml
