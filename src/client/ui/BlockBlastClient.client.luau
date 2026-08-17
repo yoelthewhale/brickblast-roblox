@@ -2191,6 +2191,45 @@ ArcadeUI.Panel(boardFrame, {
 	rimColor = ArcadeUI.Color.rimBright,
 	strokeThickness = 6,
 })
+-- Assigned onto day43Ui (not a new top-level local) because this script is a
+-- single top-level chunk already close to Luau's 200-local register limit.
+day43Ui.attemptPlacement = function(slot, boardX, boardY)
+	local UIControlRules = require(GameShared.UIControlRules)
+	if not currentState or not slot then
+		return false
+	end
+
+	local now = os.clock()
+	if
+		not UIControlRules.canFireServerAction(
+			day43Ui.lastPlaceActionAt,
+			now,
+			day43Ui.placeActionCooldownSeconds
+		)
+	then
+		return false
+	end
+
+	local shape = currentState.hand[slot]
+	if
+		shape
+		and typeof(boardX) == "number"
+		and typeof(boardY) == "number"
+		and Grid.canPlace(currentState.board, shape, boardX, boardY)
+	then
+		day43Ui.lastPlaceActionAt = now
+		playSound("Place")
+		placeEvent:FireServer(slot, boardX, boardY)
+		return true
+	elseif shape then
+		statusLabel.Text = "That spot is blocked"
+		playSound("Blocked")
+		showBanner("That spot is blocked", Color3.fromRGB(224, 74, 74))
+	end
+
+	return false
+end
+
 boardGridContainer = Instance.new("Frame")
 boardGridContainer.Name = "BoardGridContainer"
 boardGridContainer.BackgroundTransparency = 1
@@ -2250,25 +2289,7 @@ for y = 1, Config.BoardSize do
 			local boardX = button:GetAttribute("BoardX")
 			local boardY = button:GetAttribute("BoardY")
 			if currentState and selectedSlot then
-				local now = os.clock()
-				if now - day43Ui.lastPlaceActionAt < day43Ui.placeActionCooldownSeconds then
-					return
-				end
-				local shape = currentState.hand[selectedSlot]
-				if
-					shape
-					and typeof(boardX) == "number"
-					and typeof(boardY) == "number"
-					and Grid.canPlace(currentState.board, shape, boardX, boardY)
-				then
-					day43Ui.lastPlaceActionAt = now
-					playSound("Place")
-					placeEvent:FireServer(selectedSlot, boardX, boardY)
-				elseif shape then
-					statusLabel.Text = "That spot is blocked"
-					playSound("Blocked")
-					showBanner("That spot is blocked", Color3.fromRGB(224, 74, 74))
-				end
+				day43Ui.attemptPlacement(selectedSlot, boardX, boardY)
 			end
 		end)
 
@@ -2390,6 +2411,94 @@ local function updateStatusText()
 	end
 end
 
+-- Assigned onto day43Ui (not a new top-level local) because this script is a
+-- single top-level chunk already close to Luau's 200-local register limit.
+day43Ui.drag = {
+	MOVE_THRESHOLD = 6,
+	state = {
+		active = false,
+		dragging = false,
+		slot = nil,
+		shape = nil,
+		startPosition = nil,
+		icon = nil,
+	},
+}
+
+function day43Ui.drag.boardCellFromScreenPosition(screenX, screenY)
+	local innerPadding = WINDOW_LAYOUT.boardPadding
+	local cellGap = WINDOW_LAYOUT.boardGap
+	local cellPixels = WINDOW_LAYOUT.boardCell
+	local step = cellPixels + cellGap
+
+	local localX = screenX - boardFrame.AbsolutePosition.X
+	local localY = screenY - boardFrame.AbsolutePosition.Y
+	local boardX = math.floor((localX - innerPadding) / step) + 1
+	local boardY = math.floor((localY - innerPadding) / step) + 1
+
+	return boardX, boardY
+end
+
+function day43Ui.drag.destroyIcon()
+	if day43Ui.drag.state.icon then
+		day43Ui.drag.state.icon:Destroy()
+		day43Ui.drag.state.icon = nil
+	end
+end
+
+function day43Ui.drag.createIcon(shape)
+	local preset, hasSoloStage = activeStageVisual()
+	local cellPixels = WINDOW_LAYOUT.boardCell
+	local minX, maxX, minY, maxY = math.huge, -math.huge, math.huge, -math.huge
+	for _, cell in shape.cells do
+		minX = math.min(minX, cell.X)
+		maxX = math.max(maxX, cell.X)
+		minY = math.min(minY, cell.Y)
+		maxY = math.max(maxY, cell.Y)
+	end
+
+	local icon = Instance.new("Frame")
+	icon.Name = "DragPieceIcon"
+	icon.BackgroundTransparency = 1
+	icon.Size = UDim2.fromOffset((maxX - minX + 1) * cellPixels, (maxY - minY + 1) * cellPixels)
+	icon.ZIndex = 50
+	icon.Active = false
+	icon.Parent = root
+	ArcadeUI.RenderShapePreview(icon, shape, {
+		blockColors = hasSoloStage and preset.blockPalette or nil,
+	})
+
+	return icon
+end
+
+function day43Ui.drag.updateIconPosition(screenX, screenY)
+	if not day43Ui.drag.state.icon then
+		return
+	end
+	day43Ui.drag.state.icon.Position = UDim2.fromOffset(
+		screenX - day43Ui.drag.state.icon.AbsoluteSize.X / 2,
+		screenY - day43Ui.drag.state.icon.AbsoluteSize.Y / 2
+	)
+end
+
+function day43Ui.drag.finish(screenX, screenY)
+	if day43Ui.drag.state.dragging then
+		local boardX, boardY = day43Ui.drag.boardCellFromScreenPosition(screenX, screenY)
+		day43Ui.attemptPlacement(day43Ui.drag.state.slot, boardX, boardY)
+		local trayPreview = handPreviews[day43Ui.drag.state.slot]
+		if trayPreview then
+			trayPreview.Visible = true
+		end
+	end
+
+	day43Ui.drag.destroyIcon()
+	day43Ui.drag.state.active = false
+	day43Ui.drag.state.dragging = false
+	day43Ui.drag.state.slot = nil
+	day43Ui.drag.state.shape = nil
+	day43Ui.drag.state.startPosition = nil
+end
+
 for slot = 1, Config.InventorySize do
 	local button = Instance.new("TextButton")
 	button.Name = `HandSlot{slot}`
@@ -2447,7 +2556,68 @@ for slot = 1, Config.InventorySize do
 			renderHand()
 		end
 	end)
+
+	button.InputBegan:Connect(function(input)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+			return
+		end
+		if not currentState then
+			return
+		end
+		local shape = currentState.hand[slot]
+		if not shape then
+			return
+		end
+
+		day43Ui.drag.state.active = true
+		day43Ui.drag.state.dragging = false
+		day43Ui.drag.state.slot = slot
+		day43Ui.drag.state.shape = shape
+		day43Ui.drag.state.startPosition = input.Position
+	end)
 end
+
+UserInputService.InputChanged:Connect(function(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseMovement then
+		return
+	end
+	if not day43Ui.drag.state.active or not day43Ui.drag.state.startPosition then
+		return
+	end
+
+	if not day43Ui.drag.state.dragging then
+		local delta = input.Position - day43Ui.drag.state.startPosition
+		if delta.Magnitude < day43Ui.drag.MOVE_THRESHOLD then
+			return
+		end
+		day43Ui.drag.state.dragging = true
+		selectedSlot = day43Ui.drag.state.slot
+		day43Ui.drag.state.icon = day43Ui.drag.createIcon(day43Ui.drag.state.shape)
+		local trayPreview = handPreviews[day43Ui.drag.state.slot]
+		if trayPreview then
+			trayPreview.Visible = false
+		end
+	end
+
+	day43Ui.drag.updateIconPosition(input.Position.X, input.Position.Y)
+
+	local boardX, boardY =
+		day43Ui.drag.boardCellFromScreenPosition(input.Position.X, input.Position.Y)
+	if currentState and (boardX ~= hoverX or boardY ~= hoverY) then
+		hoverX = boardX
+		hoverY = boardY
+		renderGhostPreview()
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+		return
+	end
+	if day43Ui.drag.state.active then
+		day43Ui.drag.finish(input.Position.X, input.Position.Y)
+	end
+end)
 
 leaderboardLabel = Instance.new("TextLabel")
 leaderboardLabel.BackgroundColor3 = ArcadeUI.Color.inner

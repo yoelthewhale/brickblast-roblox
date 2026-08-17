@@ -81,6 +81,62 @@ Blocks.Shapes = {
 			Vector2.new(2, 1),
 		},
 	},
+	{
+		id = "tShape2",
+		cells = { Vector2.new(1, 0), Vector2.new(0, 1), Vector2.new(1, 1), Vector2.new(2, 1) },
+	},
+	{
+		id = "tShape3",
+		cells = { Vector2.new(0, 0), Vector2.new(0, 1), Vector2.new(1, 1), Vector2.new(0, 2) },
+	},
+	{
+		id = "tShape4",
+		cells = { Vector2.new(1, 0), Vector2.new(0, 1), Vector2.new(1, 1), Vector2.new(1, 2) },
+	},
+	{
+		id = "sShape2",
+		cells = { Vector2.new(0, 0), Vector2.new(0, 1), Vector2.new(1, 1), Vector2.new(1, 2) },
+	},
+	{
+		id = "zShape2",
+		cells = { Vector2.new(1, 0), Vector2.new(0, 1), Vector2.new(1, 1), Vector2.new(0, 2) },
+	},
+	{
+		id = "jShape2",
+		cells = { Vector2.new(0, 0), Vector2.new(1, 0), Vector2.new(2, 0), Vector2.new(2, 1) },
+	},
+	{
+		id = "jShape3",
+		cells = { Vector2.new(0, 0), Vector2.new(1, 0), Vector2.new(0, 1), Vector2.new(0, 2) },
+	},
+	{
+		id = "jShape4",
+		cells = { Vector2.new(0, 0), Vector2.new(0, 1), Vector2.new(1, 1), Vector2.new(2, 1) },
+	},
+	{
+		id = "lShape2",
+		cells = { Vector2.new(2, 0), Vector2.new(0, 1), Vector2.new(1, 1), Vector2.new(2, 1) },
+	},
+	{
+		id = "lShape3",
+		cells = { Vector2.new(0, 0), Vector2.new(1, 0), Vector2.new(1, 1), Vector2.new(1, 2) },
+	},
+	{
+		id = "lShape4",
+		cells = { Vector2.new(0, 0), Vector2.new(1, 0), Vector2.new(2, 0), Vector2.new(0, 1) },
+	},
+	{
+		id = "corner2",
+		cells = { Vector2.new(1, 0), Vector2.new(0, 1), Vector2.new(1, 1) },
+	},
+	{
+		id = "corner3",
+		cells = { Vector2.new(0, 0), Vector2.new(1, 0), Vector2.new(1, 1) },
+	},
+	{
+		id = "corner4",
+		cells = { Vector2.new(0, 0), Vector2.new(1, 0), Vector2.new(0, 1) },
+	},
 }
 
 local function randomRainbowColor(randomizer)
