@@ -168,6 +168,24 @@ Blocks.Shapes = {
 		id = "diagonal3Alt",
 		cells = { Vector2.new(2, 0), Vector2.new(1, 1), Vector2.new(0, 2) },
 	},
+	{
+		id = "diagonal4",
+		cells = {
+			Vector2.new(0, 0),
+			Vector2.new(1, 1),
+			Vector2.new(2, 2),
+			Vector2.new(3, 3),
+		},
+	},
+	{
+		id = "diagonal4Alt",
+		cells = {
+			Vector2.new(3, 0),
+			Vector2.new(2, 1),
+			Vector2.new(1, 2),
+			Vector2.new(0, 3),
+		},
+	},
 }
 
 local function randomRainbowColor(randomizer)
