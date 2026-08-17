@@ -460,7 +460,7 @@ function DeveloperPanel:Invoke(command)
 
 	if not ok or typeof(response) ~= "table" then
 		if self.showMessage then
-			self.showMessage("Developer command failed", Color3.fromRGB(224, 74, 74))
+			self.showMessage("Developer command failed", Color3.fromRGB(255, 86, 107))
 		end
 		return
 	end
@@ -477,7 +477,7 @@ function DeveloperPanel:Invoke(command)
 	if self.showMessage then
 		self.showMessage(
 			response.message or "Developer command complete",
-			response.ok and Color3.fromRGB(74, 222, 128) or Color3.fromRGB(224, 74, 74)
+			response.ok and Color3.fromRGB(123, 237, 75) or Color3.fromRGB(255, 86, 107)
 		)
 	end
 end

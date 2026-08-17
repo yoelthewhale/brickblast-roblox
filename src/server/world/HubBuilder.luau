@@ -1744,16 +1744,9 @@ end
 local function makeToyboxMachine(parent)
 	local machine = makeZoneFolder(parent, "GumballMachine")
 	local machineCenter = Vector3.new(36, 7, -22)
-	makeToyBlock(
-		machine,
-		"MachineBase",
-		machineCenter,
-		Vector3.new(18, 8, 13),
-		PALETTE.red,
-		{
-			studs = false,
-		}
-	)
+	makeToyBlock(machine, "MachineBase", machineCenter, Vector3.new(18, 8, 13), PALETTE.red, {
+		studs = false,
+	})
 	makePart(
 		machine,
 		"MachineWindow",
@@ -2394,11 +2387,36 @@ local function buildToyboxHub(parent)
 
 	for _, cloudData in
 		{
-			{ name = "CloudNorthPink", center = Vector3.new(-52, 26, -12), scale = 1.4, color = PALETTE.pink },
-			{ name = "CloudNorthBlue", center = Vector3.new(58, 24, 4), scale = 1.2, color = PALETTE.cyan },
-			{ name = "CloudSouthPink", center = Vector3.new(-10, 22, 96), scale = 1.1, color = PALETTE.pink },
-			{ name = "CloudSouthPurple", center = Vector3.new(30, 25, 100), scale = 1.3, color = PALETTE.purple },
-			{ name = "CloudRearMint", center = Vector3.new(0, 30, -70), scale = 1.5, color = PALETTE.grass },
+			{
+				name = "CloudNorthPink",
+				center = Vector3.new(-52, 26, -12),
+				scale = 1.4,
+				color = PALETTE.pink,
+			},
+			{
+				name = "CloudNorthBlue",
+				center = Vector3.new(58, 24, 4),
+				scale = 1.2,
+				color = PALETTE.cyan,
+			},
+			{
+				name = "CloudSouthPink",
+				center = Vector3.new(-10, 22, 96),
+				scale = 1.1,
+				color = PALETTE.pink,
+			},
+			{
+				name = "CloudSouthPurple",
+				center = Vector3.new(30, 25, 100),
+				scale = 1.3,
+				color = PALETTE.purple,
+			},
+			{
+				name = "CloudRearMint",
+				center = Vector3.new(0, 30, -70),
+				scale = 1.5,
+				color = PALETTE.grass,
+			},
 		}
 	do
 		makeCloud(hub, cloudData.name, cloudData.center, cloudData.scale, {
