@@ -42,6 +42,45 @@ Blocks.Shapes = {
 			Vector2.new(1, 2),
 		},
 	},
+	{
+		id = "line4",
+		cells = { Vector2.new(0, 0), Vector2.new(1, 0), Vector2.new(2, 0), Vector2.new(3, 0) },
+	},
+	{
+		id = "vertical4",
+		cells = { Vector2.new(0, 0), Vector2.new(0, 1), Vector2.new(0, 2), Vector2.new(0, 3) },
+	},
+	{
+		id = "tShape",
+		cells = { Vector2.new(0, 0), Vector2.new(1, 0), Vector2.new(2, 0), Vector2.new(1, 1) },
+	},
+	{
+		id = "sShape",
+		cells = { Vector2.new(1, 0), Vector2.new(2, 0), Vector2.new(0, 1), Vector2.new(1, 1) },
+	},
+	{
+		id = "zShape",
+		cells = { Vector2.new(0, 0), Vector2.new(1, 0), Vector2.new(1, 1), Vector2.new(2, 1) },
+	},
+	{
+		id = "jShape",
+		cells = { Vector2.new(1, 0), Vector2.new(1, 1), Vector2.new(0, 2), Vector2.new(1, 2) },
+	},
+	{
+		id = "lShape",
+		cells = { Vector2.new(0, 0), Vector2.new(0, 1), Vector2.new(0, 2), Vector2.new(1, 2) },
+	},
+	{
+		id = "rect2x3",
+		cells = {
+			Vector2.new(0, 0),
+			Vector2.new(1, 0),
+			Vector2.new(2, 0),
+			Vector2.new(0, 1),
+			Vector2.new(1, 1),
+			Vector2.new(2, 1),
+		},
+	},
 }
 
 local function randomRainbowColor(randomizer)

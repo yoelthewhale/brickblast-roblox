@@ -369,13 +369,14 @@ function ArcadeUI.PlayBoardDiff(context, previous, nextBoard)
 		return
 	end
 
+	-- Placement pops are fired once by the explicit "Place" effect
+	-- (see BlockBlastClient's effectsEvent handler); only clear feedback
+	-- belongs here, or clears would pop twice for the same placement.
 	for y = 1, context.boardSize do
 		for x = 1, context.boardSize do
 			local oldValue = previous[y][x]
 			local newValue = nextBoard[y][x]
-			if oldValue == false and newValue ~= false then
-				ArcadeUI.PlayCellPop(context, x, y)
-			elseif oldValue ~= false and newValue == false then
+			if oldValue ~= false and newValue == false then
 				ArcadeUI.PlayClearFlash(context, x, y)
 			end
 		end

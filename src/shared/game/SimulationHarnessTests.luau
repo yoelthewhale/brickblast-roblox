@@ -85,6 +85,11 @@ tests.smartOutperformsPoorOnFixedSeed = function()
 	)
 end
 
+tests.unknownStrategyErrors = function()
+	local ok = pcall(runStrategy, "not-a-real-strategy", 31)
+	assertCondition(not ok, "Unknown strategy should error instead of silently succeeding")
+end
+
 function SimulationHarnessTests.run()
 	local results = {}
 

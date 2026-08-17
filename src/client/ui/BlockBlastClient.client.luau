@@ -51,6 +51,8 @@ local cellScales = {}
 local handButtons = {}
 local handPreviews = {}
 local previousBoard = nil
+local lastRenderedBoard = nil
+local boardGhostLayer = nil
 local reducedMotion = false
 local uiScale = 1
 local pieceSkinIndex = 1
@@ -125,6 +127,7 @@ local clampWindowToScreen = nil
 local applyWindowLayout = nil
 local applyBoardSkin = nil
 local renderBoard = nil
+local renderGhostPreview = nil
 local renderHand = nil
 local renderDiagnostics = nil
 local pulseHandSlot = nil
@@ -846,7 +849,7 @@ local function restoreCosmeticPreview()
 		applyBoardSkin()
 	end
 	if currentState and renderBoard then
-		renderBoard()
+		renderBoard(true)
 	end
 end
 
@@ -904,7 +907,7 @@ local function previewShopCosmetic(item)
 		applyBoardSkin()
 	end
 	if currentState and renderBoard then
-		renderBoard()
+		renderBoard(true)
 	end
 	showBanner(`Previewing {item.name or "cosmetic"}`, customization.accentColor)
 end
@@ -946,7 +949,7 @@ cosmeticPanelController = CosmeticPanel.new(gui, Blocks, Config, {
 			applyBoardSkin()
 		end
 		if currentState and renderBoard then
-			renderBoard()
+			renderBoard(true)
 		end
 		saveSettings()
 		local boardSkin = Config.BoardSkins[boardSkinIndex]
@@ -1433,7 +1436,7 @@ homePanelController = HomePanel.new(gui, {
 			updateSettingsButtonText()
 			applyBoardSkin()
 			if currentState then
-				renderBoard()
+				renderBoard(true)
 			end
 			playSound("Button")
 			saveSettings()
@@ -1749,7 +1752,7 @@ local function applyStagePalette()
 	end
 
 	if hasSoloStage and renderBoard then
-		renderBoard()
+		renderBoard(true)
 	end
 end
 
@@ -1812,20 +1815,11 @@ local function renderStageDisplay()
 	local progress = math.clamp(cleanStage.stageProgress, 0, cleanStage.stageProgressRequired)
 	local ratio = progress / math.max(1, cleanStage.stageProgressRequired)
 	local preset = StageVisuals.presetForStage(cleanStage.currentStage)
-	local previousStage = stageUi.lastStage
+	-- Stage-advance visuals (wash tween, title flash, banner) are owned solely
+	-- by the explicit "StageUp" effect handler, not derived here from a diff,
+	-- so they only fire once per advance instead of twice.
 	stageUi.lastStage = cleanStage.currentStage
-
-	if previousStage and cleanStage.currentStage > previousStage then
-		stageUi.title.Text = `STAGE UP {cleanStage.currentStage}`
-		playStageTransition(cleanStage.currentStage)
-		task.delay(reducedMotion and 1.2 or 2, function()
-			if stageUi.title then
-				stageUi.title.Text = `STAGE {cleanStage.currentStage}`
-			end
-		end)
-	else
-		stageUi.title.Text = `STAGE {cleanStage.currentStage}`
-	end
+	stageUi.title.Text = `STAGE {cleanStage.currentStage}`
 	stageUi.progress.Text = `{progress} / {cleanStage.stageProgressRequired}`
 	stageUi.fill.Size = UDim2.fromScale(ratio, 1)
 	stageUi.fill.BackgroundColor3 = preset.accent
@@ -2204,6 +2198,16 @@ boardGridContainer.BorderSizePixel = 0
 boardGridContainer.ClipsDescendants = true
 boardGridContainer.Parent = boardFrame
 
+boardGhostLayer = Instance.new("Frame")
+boardGhostLayer.Name = "BoardGhostLayer"
+boardGhostLayer.BackgroundTransparency = 1
+boardGhostLayer.BorderSizePixel = 0
+boardGhostLayer.ClipsDescendants = true
+boardGhostLayer.Position = UDim2.fromScale(0, 0)
+boardGhostLayer.Size = UDim2.fromScale(1, 1)
+boardGhostLayer.ZIndex = 2
+boardGhostLayer.Parent = boardFrame
+
 local boardPadding = Instance.new("UIPadding")
 boardPadding.PaddingTop = UDim.new(0, 16)
 boardPadding.PaddingBottom = UDim.new(0, 16)
@@ -2272,7 +2276,7 @@ for y = 1, Config.BoardSize do
 			hoverX = button:GetAttribute("BoardX")
 			hoverY = button:GetAttribute("BoardY")
 			if currentState then
-				renderBoard()
+				renderGhostPreview()
 			end
 		end)
 
@@ -2284,7 +2288,7 @@ for y = 1, Config.BoardSize do
 				hoverX = nil
 				hoverY = nil
 				if currentState then
-					renderBoard()
+					renderGhostPreview()
 				end
 			end
 		end)
@@ -2439,7 +2443,7 @@ for slot = 1, Config.InventorySize do
 		end
 		updateStatusText()
 		if currentState then
-			renderBoard()
+			renderGhostPreview()
 			renderHand()
 		end
 	end)
@@ -2946,82 +2950,116 @@ local function setCellGloss(cell, color, state)
 	)
 end
 
-renderBoard = function()
+renderBoard = function(forceFull)
 	local preset, hasSoloStage = activeStageVisual()
 	for y = 1, Config.BoardSize do
 		for x = 1, Config.BoardSize do
 			local value = currentState.board[y][x]
-			local cell = cells[y][x]
-			if value == false then
-				setCellGloss(cell, customization.boardEmptyColor, "empty")
-			elseif value == "garbage" then
-				setCellGloss(
-					cell,
-					hasSoloStage and preset.boardOutline or Config.Colors.Garbage,
-					"filled"
-				)
-			elseif hasSoloStage then
-				setCellGloss(cell, StageVisuals.blockColorForCell(preset, x, y), "filled")
-			elseif typeof(value) == "Color3" then
-				setCellGloss(cell, value, "filled")
-			else
-				setCellGloss(cell, Config.Colors.Filled, "filled")
+			local unchanged = not forceFull
+				and lastRenderedBoard
+				and lastRenderedBoard[y]
+				and lastRenderedBoard[y][x] == value
+			if not unchanged then
+				local cell = cells[y][x]
+				if value == false then
+					setCellGloss(cell, customization.boardEmptyColor, "empty")
+				elseif value == "garbage" then
+					setCellGloss(
+						cell,
+						hasSoloStage and preset.boardOutline or Config.Colors.Garbage,
+						"filled"
+					)
+				elseif hasSoloStage then
+					setCellGloss(cell, StageVisuals.blockColorForCell(preset, x, y), "filled")
+				elseif typeof(value) == "Color3" then
+					setCellGloss(cell, value, "filled")
+				else
+					setCellGloss(cell, Config.Colors.Filled, "filled")
+				end
+				local gradient = cell:FindFirstChildOfClass("UIGradient")
+				if gradient then
+					local baseColor = cell.BackgroundColor3
+					gradient.Color = ColorSequence.new({
+						ColorSequenceKeypoint.new(
+							0,
+							baseColor:Lerp(
+								Color3.fromRGB(255, 255, 255),
+								value == false and 0.06 or 0.22
+							)
+						),
+						ColorSequenceKeypoint.new(
+							1,
+							baseColor:Lerp(Color3.fromRGB(0, 0, 0), value == false and 0.1 or 0.18)
+						),
+					})
+				end
+				local stroke = cell:FindFirstChildOfClass("UIStroke")
+				if stroke then
+					stroke.Color = value == false
+							and (hasSoloStage and preset.boardOutline or Color3.fromRGB(38, 61, 97))
+						or Color3.fromRGB(255, 255, 255)
+					stroke.Transparency = value == false and 0.2 or 0.55
+				end
 			end
-			local gradient = cell:FindFirstChildOfClass("UIGradient")
-			if gradient then
-				local baseColor = cell.BackgroundColor3
-				gradient.Color = ColorSequence.new({
-					ColorSequenceKeypoint.new(
-						0,
-						baseColor:Lerp(
-							Color3.fromRGB(255, 255, 255),
-							value == false and 0.06 or 0.22
-						)
-					),
-					ColorSequenceKeypoint.new(
-						1,
-						baseColor:Lerp(Color3.fromRGB(0, 0, 0), value == false and 0.1 or 0.18)
-					),
-				})
-			end
-			local stroke = cell:FindFirstChildOfClass("UIStroke")
-			if stroke then
-				stroke.Color = value == false
-						and (hasSoloStage and preset.boardOutline or Color3.fromRGB(38, 61, 97))
-					or Color3.fromRGB(255, 255, 255)
-				stroke.Transparency = value == false and 0.2 or 0.55
-			end
+
+			lastRenderedBoard = lastRenderedBoard or {}
+			lastRenderedBoard[y] = lastRenderedBoard[y] or {}
+			lastRenderedBoard[y][x] = value
 		end
 	end
 
 	updateStatusText()
+end
+
+local ghostCells = {}
+
+renderGhostPreview = function()
+	for _, ghostCell in ghostCells do
+		ghostCell:Destroy()
+	end
+	table.clear(ghostCells)
 
 	local shape = getSelectedShape()
-	if not shape or not hoverX or not hoverY or not currentState.alive then
+	if not shape or not hoverX or not hoverY or not currentState or not currentState.alive then
 		return
 	end
 
+	local preset, hasSoloStage = activeStageVisual()
 	local canPlace = Grid.canPlace(currentState.board, shape, hoverX, hoverY)
 	statusLabel.Text = canPlace and `Place {shape.id}` or "That spot is blocked"
+
+	local innerPadding = WINDOW_LAYOUT.boardPadding
+	local cellGap = WINDOW_LAYOUT.boardGap
+	local cellPixels = WINDOW_LAYOUT.boardCell
 
 	for _, cell in shape.cells do
 		local x = hoverX + cell.X
 		local y = hoverY + cell.Y
 		if x >= 1 and x <= Config.BoardSize and y >= 1 and y <= Config.BoardSize then
-			local previewCell = cells[y][x]
-			setCellGloss(
-				previewCell,
-				canPlace
-						and (hasSoloStage and StageVisuals.blockColorForCell(preset, x, y) or shape.color)
-					or Config.Colors.PreviewInvalid,
-				canPlace and "preview" or "invalid"
+			local ghostCell = Instance.new("Frame")
+			ghostCell.Name = `Ghost_{x}_{y}`
+			ghostCell.Active = false
+			ghostCell.Position = UDim2.fromOffset(
+				innerPadding + (x - 1) * (cellPixels + cellGap),
+				innerPadding + (y - 1) * (cellPixels + cellGap)
 			)
-			local stroke = previewCell:FindFirstChildOfClass("UIStroke")
+			ghostCell.Size = UDim2.fromOffset(cellPixels, cellPixels)
+			ghostCell.Parent = boardGhostLayer
+			ArcadeUI.BoardCell(ghostCell)
+
+			local color = canPlace
+					and (hasSoloStage and StageVisuals.blockColorForCell(preset, x, y) or shape.color)
+				or Config.Colors.PreviewInvalid
+			setCellGloss(ghostCell, color, canPlace and "preview" or "invalid")
+
+			local stroke = ghostCell:FindFirstChildOfClass("UIStroke")
 			if stroke then
 				stroke.Color = canPlace and Color3.fromRGB(255, 255, 255)
 					or Color3.fromRGB(255, 105, 105)
 				stroke.Transparency = 0.12
 			end
+
+			table.insert(ghostCells, ghostCell)
 		end
 	end
 end
@@ -3255,6 +3293,8 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		setHubPanelVisible(not hubManuallyClosed)
 		updateTutorialVisibility()
 		previousBoard = nil
+		lastRenderedBoard = nil
+		renderGhostPreview()
 		renderDiagnostics()
 		return
 	end
@@ -3314,6 +3354,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	selectFirstAvailablePiece()
 
 	renderBoard()
+	renderGhostPreview()
 	ArcadeUI.PlayBoardDiff({
 		boardSize = Config.BoardSize,
 		cells = cells,
@@ -3519,6 +3560,15 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		pulseStageUpDisplay()
 		if effect.currentStage then
 			playStageTransition(effect.currentStage)
+			if stageUi.title then
+				stageUi.title.Text = `STAGE UP {effect.currentStage}`
+				local flashedStage = effect.currentStage
+				task.delay(reducedMotion and 1.2 or 2, function()
+					if stageUi.title and stageUi.lastStage == flashedStage then
+						stageUi.title.Text = `STAGE {flashedStage}`
+					end
+				end)
+			end
 		end
 		local preset = StageVisuals.presetForStage(effect.currentStage or 1)
 		showBanner(`Stage {effect.currentStage or "?"}!`, preset.stage)

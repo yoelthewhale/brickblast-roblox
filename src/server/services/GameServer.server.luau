@@ -26,6 +26,7 @@ local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
 local DeveloperTools = require(GameShared.DeveloperTools)
 local ExperienceConfig = require(GameShared.ExperienceConfig)
+local GameplayRules = require(GameShared.GameplayRules)
 local Grid = require(GameShared.Grid)
 local HandGenerator = require(GameShared.HandGenerator)
 local StageProgression = require(GameShared.StageProgression)
@@ -1945,29 +1946,13 @@ local function restoreSoloAssistance(state, stageResult)
 		return
 	end
 
-	local restoreAmount = 0
-	local reasons = {}
-	if stageResult and stageResult.stagesAdvanced > 0 then
-		restoreAmount += Config.HandGeneration.StageAdvanceRestore * stageResult.stagesAdvanced
-		table.insert(reasons, "stage advanced")
-	end
-	if
-		state.comboStreak > 0
-		and state.comboStreak % Config.HandGeneration.ComboRestoreMilestone == 0
-	then
-		restoreAmount += Config.HandGeneration.ComboRestore
-		table.insert(reasons, "combo milestone")
-	end
-	if stageResult and stageResult.perfectClear then
-		restoreAmount += Config.HandGeneration.PerfectClearRestore
-		table.insert(reasons, "perfect clear")
-	end
-
+	local restoreAmount, triggers =
+		GameplayRules.assistanceRestoreAmount(state.comboStreak, stageResult)
 	if restoreAmount > 0 then
 		state.assistance = HandGenerator.restoreAssistance(
 			state.assistance,
 			restoreAmount,
-			table.concat(reasons, ", ")
+			GameplayRules.describeAssistanceTriggers(triggers)
 		)
 	end
 end
@@ -2610,7 +2595,8 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 	else
 		state.comboStreak = 0
 	end
-	local comboBonus = math.max(0, state.comboStreak - 1) * Config.ComboBonusPoints
+	local scoreDelta, comboBonus =
+		GameplayRules.scoreForPlacement(cellsPlaced, linesCleared, state.comboStreak)
 	local stageResult = nil
 	if state.mode == "Solo" then
 		state.stage, stageResult = StageProgression.applyPlacement(state.stage, state.board, {
@@ -2643,7 +2629,7 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 			perfectClear = stageResult.perfectClear,
 		})
 	end
-	state.score += cellsPlaced * Config.PointsPerCell + linesCleared * Config.PointsPerLine + comboBonus
+	state.score += scoreDelta
 	state.linesCleared += linesCleared
 	if not state.developerTestRun and state.score > state.bestScore then
 		state.bestScore = state.score
