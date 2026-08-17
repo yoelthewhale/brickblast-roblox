@@ -357,7 +357,7 @@ This file tracks production-readiness work, priorities, known issues, and techni
   - raised the world PLAY billboard from `Vector3.new(0, 7.2, 0)` to `Vector3.new(0, 10.5, 0)`
   - kept the cyan PLAY pad as the strongest visual accent
 - Simplified attraction presentation:
-  - compacted `BlockDropMachine` and reduced internal visible blocks from 10 to 4
+  - compacted `BlockDropMachine` (later renamed `GumballMachine`) and reduced internal visible blocks from 10 to 4
   - compacted `BlueToySlide` from 7 segments plus 2 rails to 4 shorter segments and no long rails
   - moved bounce, launcher, button, spinner, and moving platform closer to the main foundation
   - shrank `ToyboxSpinnerPlatform` and `MovingPuzzlePlatform`

@@ -786,7 +786,7 @@ local function showBanner(message, color)
 
 	if notificationController then
 		local kind = "info"
-		if color == Color3.fromRGB(255, 86, 107) or color == Color3.fromRGB(255, 86, 107) then
+		if color == Color3.fromRGB(255, 86, 107) then
 			kind = "error"
 		elseif color == Color3.fromRGB(255, 139, 61) or color == Color3.fromRGB(255, 210, 71) then
 			kind = "warning"
@@ -2484,7 +2484,13 @@ end
 function day43Ui.drag.finish(screenX, screenY)
 	if day43Ui.drag.state.dragging then
 		local boardX, boardY = day43Ui.drag.boardCellFromScreenPosition(screenX, screenY)
-		day43Ui.attemptPlacement(day43Ui.drag.state.slot, boardX, boardY)
+		local isOverBoard = boardX >= 1
+			and boardX <= Config.BoardSize
+			and boardY >= 1
+			and boardY <= Config.BoardSize
+		if isOverBoard then
+			day43Ui.attemptPlacement(day43Ui.drag.state.slot, boardX, boardY)
+		end
 		local trayPreview = handPreviews[day43Ui.drag.state.slot]
 		if trayPreview then
 			trayPreview.Visible = true
