@@ -1,22 +1,23 @@
 local ArcadeUI = {}
 
+-- B2 "Polished Arcade" palette
 ArcadeUI.Color = {
-	shell = Color3.fromRGB(8, 18, 36),
-	shellTop = Color3.fromRGB(18, 50, 96),
-	shellBottom = Color3.fromRGB(3, 9, 22),
-	inner = Color3.fromRGB(10, 29, 56),
-	innerBottom = Color3.fromRGB(4, 13, 31),
-	edge = Color3.fromRGB(2, 7, 18),
-	rim = Color3.fromRGB(41, 162, 255),
-	rimBright = Color3.fromRGB(87, 217, 255),
+	shell = Color3.fromRGB(9, 13, 25),
+	shellTop = Color3.fromRGB(23, 44, 82),
+	shellBottom = Color3.fromRGB(5, 8, 18),
+	inner = Color3.fromRGB(17, 32, 60),
+	innerBottom = Color3.fromRGB(7, 13, 27),
+	edge = Color3.fromRGB(5, 9, 20),
+	rim = Color3.fromRGB(30, 187, 255),
+	rimBright = Color3.fromRGB(110, 244, 255),
 	text = Color3.fromRGB(255, 255, 255),
-	muted = Color3.fromRGB(177, 205, 232),
-	score = Color3.fromRGB(255, 209, 45),
-	best = Color3.fromRGB(42, 215, 255),
-	combo = Color3.fromRGB(218, 73, 255),
-	gold = Color3.fromRGB(255, 198, 41),
+	muted = Color3.fromRGB(190, 210, 233),
+	score = Color3.fromRGB(255, 210, 71),
+	best = Color3.fromRGB(110, 244, 255),
+	combo = Color3.fromRGB(255, 93, 200),
+	gold = Color3.fromRGB(255, 210, 71),
 	silver = Color3.fromRGB(213, 225, 241),
-	bronze = Color3.fromRGB(235, 132, 44),
+	bronze = Color3.fromRGB(255, 139, 61),
 }
 
 local function corner(parent, radius)

@@ -16,7 +16,7 @@ local LEFT_BUTTONS = {
 		key = "rewards",
 		label = "Quests Soon",
 		icon = "Quest",
-		accent = Color3.fromRGB(255, 211, 71),
+		accent = Color3.fromRGB(255, 210, 71),
 	},
 }
 
@@ -41,19 +41,19 @@ local RIGHT_BUTTONS = {
 		key = "shop",
 		label = "Shop",
 		icon = "Bag",
-		accent = Color3.fromRGB(184, 96, 255),
+		accent = Color3.fromRGB(190, 118, 255),
 	},
 	{
 		key = "inventory",
 		label = "Inventory",
 		icon = "Grid",
-		accent = Color3.fromRGB(48, 190, 255),
+		accent = Color3.fromRGB(30, 187, 255),
 	},
 	{
 		key = "settings",
 		label = "Settings",
 		icon = "Gear",
-		accent = Color3.fromRGB(255, 190, 74),
+		accent = Color3.fromRGB(255, 210, 71),
 	},
 }
 
@@ -71,7 +71,7 @@ local RESOURCE_ITEMS = {
 	{
 		key = "coins",
 		label = "Coins",
-		accent = Color3.fromRGB(255, 211, 71),
+		accent = Color3.fromRGB(255, 210, 71),
 	},
 	{
 		key = "bestScore",
@@ -92,7 +92,7 @@ if ExperienceConfig.UI.ShowStoryStars then
 	table.insert(RESOURCE_ITEMS, {
 		key = "stars",
 		label = "Stars",
-		accent = Color3.fromRGB(184, 96, 255),
+		accent = Color3.fromRGB(190, 118, 255),
 	})
 end
 
@@ -254,7 +254,7 @@ local function makeNavButton(parent, data, compact)
 	local button = Instance.new("TextButton")
 	button.Name = `{data.key}Button`
 	button.AutoButtonColor = false
-	button.BackgroundColor3 = data.primary and Color3.fromRGB(109, 235, 71)
+	button.BackgroundColor3 = data.primary and Color3.fromRGB(123, 237, 75)
 		or Color3.fromRGB(22, 33, 58)
 	button.BorderSizePixel = 0
 	button.Font = Enum.Font.GothamBlack
@@ -305,7 +305,7 @@ local function makeNavButton(parent, data, compact)
 	badge.AnchorPoint = Vector2.new(1, 0)
 	badge.Position = UDim2.new(1, -6, 0, -6)
 	badge.Size = UDim2.fromOffset(24, 24)
-	badge.BackgroundColor3 = Color3.fromRGB(255, 76, 104)
+	badge.BackgroundColor3 = Color3.fromRGB(255, 86, 107)
 	badge.BorderSizePixel = 0
 	badge.Font = Enum.Font.GothamBlack
 	badge.Text = "1"
@@ -406,7 +406,7 @@ function HUDController:BuildResourceBar()
 	bar.ZIndex = UITheme.Z.hud
 	bar.Parent = self.gui
 	addCorner(bar, 18)
-	addStroke(bar, Color3.fromRGB(39, 184, 255), 2, 0.08)
+	addStroke(bar, Color3.fromRGB(30, 187, 255), 2, 0.08)
 	addGradient(bar, Color3.fromRGB(22, 35, 65), Color3.fromRGB(13, 21, 39))
 	self.resourceBar = bar
 	addPadding(bar, 12, 12, 8, 8)
@@ -466,7 +466,7 @@ function HUDController:BuildLeftNav()
 	stack.ZIndex = UITheme.Z.hud
 	stack.Parent = self.gui
 	addCorner(stack, 20)
-	addStroke(stack, Color3.fromRGB(39, 184, 255), 3, 0)
+	addStroke(stack, Color3.fromRGB(30, 187, 255), 3, 0)
 	makeShadow(stack, 20)
 	addPadding(stack, 12, 12, 12, 12)
 	addList(
@@ -531,7 +531,7 @@ function HUDController:BuildTopHud()
 	top.ZIndex = UITheme.Z.hud
 	top.Parent = self.gui
 	addCorner(top, 16)
-	addStroke(top, Color3.fromRGB(39, 184, 255), 2, 0.08)
+	addStroke(top, Color3.fromRGB(30, 187, 255), 2, 0.08)
 	addGradient(top, Color3.fromRGB(23, 42, 78), Color3.fromRGB(14, 23, 43))
 	makeShadow(top, 16)
 	self.topBar = top
@@ -556,7 +556,7 @@ function HUDController:BuildTopHud()
 	cancel.Position = UDim2.new(1, -10, 0.5, 0)
 	cancel.Size = UDim2.fromOffset(108, 32)
 	cancel.AutoButtonColor = false
-	cancel.BackgroundColor3 = Color3.fromRGB(255, 76, 104)
+	cancel.BackgroundColor3 = Color3.fromRGB(255, 86, 107)
 	cancel.BorderSizePixel = 0
 	cancel.Font = Enum.Font.GothamBlack
 	cancel.Text = "LEAVE"
@@ -789,7 +789,7 @@ end
 function HUDController:SetMenuButtonSelected(key)
 	for buttonKey, button in self.buttons do
 		local selected = buttonKey == key
-		local dataAccent = Color3.fromRGB(48, 190, 255)
+		local dataAccent = Color3.fromRGB(30, 187, 255)
 		for _, data in LEFT_BUTTONS do
 			if data.key == buttonKey then
 				dataAccent = data.accent
@@ -802,7 +802,7 @@ function HUDController:SetMenuButtonSelected(key)
 		end
 		local stroke = button:FindFirstChildOfClass("UIStroke")
 		if stroke then
-			stroke.Color = selected and Color3.fromRGB(255, 211, 71) or dataAccent
+			stroke.Color = selected and Color3.fromRGB(255, 210, 71) or dataAccent
 			stroke.Thickness = selected and 4 or buttonKey == "play" and 4 or 2
 		end
 		button.BackgroundTransparency = selected and 0 or 0.02
@@ -829,10 +829,10 @@ function HUDController:SetPlayButtonState(hubState)
 	end
 	button.BackgroundColor3 = ExperienceConfig.isModeEnabled("Solo")
 			and not ExperienceConfig.isModeEnabled("Battle")
-			and Color3.fromRGB(109, 235, 71)
+			and Color3.fromRGB(123, 237, 75)
 		or queued and Color3.fromRGB(255, 89, 178)
 		or openArenas <= 0 and Color3.fromRGB(88, 96, 112)
-		or Color3.fromRGB(109, 235, 71)
+		or Color3.fromRGB(123, 237, 75)
 end
 
 function HUDController:UpdateProgression()

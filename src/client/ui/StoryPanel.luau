@@ -112,7 +112,7 @@ function StoryPanel.new(gui, options)
 	local closeButton = Instance.new("TextButton")
 	closeButton.Position = UDim2.new(1, -48, 0, 14)
 	closeButton.Size = UDim2.fromOffset(32, 32)
-	closeButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+	closeButton.BackgroundColor3 = Color3.fromRGB(42, 57, 96)
 	closeButton.BorderSizePixel = 0
 	closeButton.Font = Enum.Font.GothamBlack
 	closeButton.Text = "X"
@@ -238,7 +238,7 @@ function StoryPanel:createMissionCard(index)
 			self.playSound("Blocked")
 			self.showMessage(
 				"Clear your next chapter to unlock this mission.",
-				Color3.fromRGB(251, 146, 60)
+				Color3.fromRGB(255, 139, 61)
 			)
 			return
 		end

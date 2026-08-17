@@ -9,10 +9,10 @@ local MAX_NOTIFICATIONS = 4
 local DEFAULT_DURATION = 3.2
 
 local TYPE_COLORS = {
-	info = Color3.fromRGB(64, 156, 255),
-	success = Color3.fromRGB(74, 222, 128),
+	info = Color3.fromRGB(30, 187, 255),
+	success = Color3.fromRGB(123, 237, 75),
 	warning = Color3.fromRGB(255, 196, 87),
-	error = Color3.fromRGB(255, 105, 105),
+	error = Color3.fromRGB(255, 86, 107),
 	reward = Color3.fromRGB(255, 224, 128),
 }
 

@@ -63,7 +63,7 @@ local soundController = SoundController.new()
 local customization = {
 	boardEmptyColor = Config.Colors.Empty,
 	panelColor = Color3.fromRGB(14, 18, 27),
-	accentColor = Color3.fromRGB(64, 156, 255),
+	accentColor = Color3.fromRGB(30, 187, 255),
 }
 local scoreLabel = nil
 local bestScoreLabel = nil
@@ -297,19 +297,19 @@ local themePresets = {
 		name = "Ocean",
 		panel = Color3.fromRGB(14, 18, 27),
 		board = Color3.fromRGB(24, 28, 36),
-		accent = Color3.fromRGB(64, 156, 255),
+		accent = Color3.fromRGB(30, 187, 255),
 	},
 	{
 		name = "Candy",
 		panel = Color3.fromRGB(35, 19, 36),
 		board = Color3.fromRGB(45, 27, 49),
-		accent = Color3.fromRGB(244, 114, 182),
+		accent = Color3.fromRGB(255, 93, 200),
 	},
 	{
 		name = "Arcade",
 		panel = Color3.fromRGB(12, 30, 24),
 		board = Color3.fromRGB(18, 42, 35),
-		accent = Color3.fromRGB(74, 222, 128),
+		accent = Color3.fromRGB(123, 237, 75),
 	},
 }
 local themeIndex = 1
@@ -434,7 +434,7 @@ local loadingAccent = Instance.new("Frame")
 loadingAccent.AnchorPoint = Vector2.new(0.5, 0.5)
 loadingAccent.Position = UDim2.fromScale(0.5, 0.56)
 loadingAccent.Size = UDim2.fromOffset(220, 4)
-loadingAccent.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
+loadingAccent.BackgroundColor3 = Color3.fromRGB(30, 187, 255)
 loadingAccent.BorderSizePixel = 0
 loadingAccent.ZIndex = 51
 loadingAccent.Parent = loadingScreen
@@ -703,9 +703,9 @@ local function previewColorsForPieceSkin(skinName)
 	if skinName == "Neon" then
 		return {
 			Color3.fromRGB(0, 255, 234),
-			Color3.fromRGB(255, 44, 209),
-			Color3.fromRGB(255, 244, 42),
-			Color3.fromRGB(69, 255, 86),
+			Color3.fromRGB(255, 93, 200),
+			Color3.fromRGB(255, 210, 71),
+			Color3.fromRGB(123, 237, 75),
 		}
 	elseif skinName == "Pastel" then
 		return {
@@ -724,10 +724,10 @@ local function previewColorsForPieceSkin(skinName)
 	end
 
 	return {
-		Color3.fromRGB(255, 76, 76),
-		Color3.fromRGB(255, 204, 54),
-		Color3.fromRGB(76, 217, 100),
-		Color3.fromRGB(64, 156, 255),
+		Color3.fromRGB(255, 86, 107),
+		Color3.fromRGB(255, 210, 71),
+		Color3.fromRGB(123, 237, 75),
+		Color3.fromRGB(30, 187, 255),
 	}
 end
 
@@ -786,11 +786,11 @@ local function showBanner(message, color)
 
 	if notificationController then
 		local kind = "info"
-		if color == Color3.fromRGB(224, 74, 74) or color == Color3.fromRGB(255, 110, 110) then
+		if color == Color3.fromRGB(255, 86, 107) then
 			kind = "error"
-		elseif color == Color3.fromRGB(251, 146, 60) or color == Color3.fromRGB(255, 207, 102) then
+		elseif color == Color3.fromRGB(255, 139, 61) or color == Color3.fromRGB(255, 210, 71) then
 			kind = "warning"
-		elseif color == Color3.fromRGB(74, 222, 128) then
+		elseif color == Color3.fromRGB(123, 237, 75) then
 			kind = "success"
 		end
 		notificationController:Show(message, kind)
@@ -1015,7 +1015,7 @@ hudController = HUDController.new(gui, {
 		end,
 		modes = function()
 			if currentState then
-				showBanner("Finish your current run first", Color3.fromRGB(251, 146, 60))
+				showBanner("Finish your current run first", Color3.fromRGB(255, 139, 61))
 				return
 			end
 			day43Ui.closeMajorPanels("menu")
@@ -1074,7 +1074,7 @@ hudController = HUDController.new(gui, {
 						order,
 						"Battle Queue",
 						"Classic race to outscore rivals.",
-						Color3.fromRGB(64, 156, 255),
+						Color3.fromRGB(30, 187, 255),
 						function()
 							day43Ui.fireQueueRequest("Battle")
 						end
@@ -1086,7 +1086,7 @@ hudController = HUDController.new(gui, {
 						order,
 						"Story Missions",
 						"Solo objectives and replayable guide practice.",
-						Color3.fromRGB(167, 109, 255),
+						Color3.fromRGB(190, 118, 255),
 						function()
 							day43Ui.closeMajorPanels("story")
 							storyPanelController:Show()
@@ -1099,7 +1099,7 @@ hudController = HUDController.new(gui, {
 						order,
 						"Custom Lab",
 						"Test block rotations and reroll your hand.",
-						Color3.fromRGB(255, 112, 189),
+						Color3.fromRGB(255, 93, 200),
 						function()
 							day43Ui.fireQueueRequest("CustomLab")
 						end
@@ -1111,7 +1111,7 @@ hudController = HUDController.new(gui, {
 						order,
 						"Solo Puzzle",
 						"Battle, Story, and Custom Lab are disabled in this build.",
-						Color3.fromRGB(64, 156, 255),
+						Color3.fromRGB(30, 187, 255),
 						function()
 							day43Ui.fireQueueRequest("Solo")
 						end
@@ -1147,7 +1147,7 @@ hudController = HUDController.new(gui, {
 					local button = Instance.new("TextButton")
 					button.LayoutOrder = order
 					button.Size = UDim2.new(1, 0, 0, 58)
-					button.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+					button.BackgroundColor3 = Color3.fromRGB(42, 57, 96)
 					button.BorderSizePixel = 0
 					button.Font = Enum.Font.GothamBold
 					button.Text = text
@@ -1409,7 +1409,7 @@ homePanelController = HomePanel.new(gui, {
 			local nextIndex =
 				nextUnlockedIndex(pieceSkinIndex, #Blocks.PieceSkins, isPieceSkinUnlocked)
 			if nextIndex == pieceSkinIndex then
-				showBanner(nextLockedCosmeticText(), Color3.fromRGB(251, 146, 60))
+				showBanner(nextLockedCosmeticText(), Color3.fromRGB(255, 139, 61))
 				playSound("Blocked")
 				return
 			end
@@ -1427,7 +1427,7 @@ homePanelController = HomePanel.new(gui, {
 			local nextIndex =
 				nextUnlockedIndex(boardSkinIndex, #Config.BoardSkins, isBoardSkinUnlocked)
 			if nextIndex == boardSkinIndex then
-				showBanner(nextLockedCosmeticText(), Color3.fromRGB(251, 146, 60))
+				showBanner(nextLockedCosmeticText(), Color3.fromRGB(255, 139, 61))
 				playSound("Blocked")
 				return
 			end
@@ -1516,7 +1516,7 @@ UITheme.text(tutorialBody, "muted")
 local tutorialButton = Instance.new("TextButton")
 tutorialButton.Position = UDim2.fromOffset(18, 158)
 tutorialButton.Size = UDim2.fromOffset(132, 34)
-tutorialButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
+tutorialButton.BackgroundColor3 = Color3.fromRGB(30, 187, 255)
 tutorialButton.BorderSizePixel = 0
 tutorialButton.Font = Enum.Font.GothamBold
 tutorialButton.Text = "Got It"
@@ -1528,7 +1528,7 @@ styleButton(tutorialButton, "primary")
 local tutorialStoryButton = Instance.new("TextButton")
 tutorialStoryButton.Position = UDim2.fromOffset(162, 158)
 tutorialStoryButton.Size = UDim2.fromOffset(140, 34)
-tutorialStoryButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+tutorialStoryButton.BackgroundColor3 = Color3.fromRGB(42, 57, 96)
 tutorialStoryButton.BorderSizePixel = 0
 tutorialStoryButton.Font = Enum.Font.GothamBold
 tutorialStoryButton.Text = "Try Story"
@@ -1574,7 +1574,7 @@ resetLayoutButton = Instance.new("TextButton")
 resetLayoutButton.AnchorPoint = Vector2.new(1, 0)
 resetLayoutButton.Position = UDim2.new(1, -174, 0, 18)
 resetLayoutButton.Size = UDim2.fromOffset(126, 38)
-resetLayoutButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+resetLayoutButton.BackgroundColor3 = Color3.fromRGB(42, 57, 96)
 resetLayoutButton.BorderSizePixel = 0
 resetLayoutButton.Font = Enum.Font.GothamBold
 resetLayoutButton.Text = "Reset Layout"
@@ -1590,14 +1590,14 @@ closeWorkspaceButton.Name = "WorkspaceCloseButton"
 closeWorkspaceButton.AnchorPoint = Vector2.new(1, 0)
 closeWorkspaceButton.Position = UDim2.new(1, -26, 0, 18)
 closeWorkspaceButton.Size = UDim2.fromOffset(44, 38)
-closeWorkspaceButton.BackgroundColor3 = Color3.fromRGB(215, 43, 54)
+closeWorkspaceButton.BackgroundColor3 = Color3.fromRGB(255, 86, 107)
 closeWorkspaceButton.BorderSizePixel = 0
 closeWorkspaceButton.Font = Enum.Font.GothamBlack
 closeWorkspaceButton.Text = "X"
 closeWorkspaceButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeWorkspaceButton.TextSize = 20
 closeWorkspaceButton.Parent = workspaceHeader
-ArcadeUI.Button(closeWorkspaceButton, Color3.fromRGB(215, 43, 54))
+ArcadeUI.Button(closeWorkspaceButton, Color3.fromRGB(255, 86, 107))
 UITheme.attachButtonFeedback(closeWorkspaceButton, isUiReducedMotion)
 markInteractive(closeWorkspaceButton)
 
@@ -1995,7 +1995,7 @@ comboBadgeLabel.BackgroundColor3 = ArcadeUI.Color.inner
 comboBadgeLabel.Position = UDim2.fromOffset(22, 232)
 comboBadgeLabel.Size = UDim2.fromOffset(210, 108)
 comboBadgeLabel.Font = Enum.Font.GothamBlack
-comboBadgeLabel.Text = statRichText("COMBO", "x1", "#DA49FF")
+comboBadgeLabel.Text = statRichText("COMBO", "x1", "#FF5DC8")
 comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 comboBadgeLabel.TextSize = 28
 comboBadgeLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
@@ -2038,7 +2038,7 @@ rankStatLabel.BackgroundColor3 = Color3.fromRGB(11, 27, 51)
 rankStatLabel.Position = UDim2.fromOffset(22, 482)
 rankStatLabel.Size = UDim2.fromOffset(210, 76)
 rankStatLabel.Font = Enum.Font.GothamBlack
-rankStatLabel.Text = statRichText("TROPHY", "RANK --", "#FFC629")
+rankStatLabel.Text = statRichText("TROPHY", "RANK --", "#FFD247")
 rankStatLabel.TextColor3 = ArcadeUI.Color.gold
 rankStatLabel.TextSize = 22
 rankStatLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
@@ -2094,7 +2094,7 @@ stageUi.card.BorderSizePixel = 0
 stageUi.card.Parent = workspaceHeader
 ArcadeUI.Panel(stageUi.card, {
 	radius = 14,
-	rimColor = Color3.fromRGB(83, 202, 255),
+	rimColor = Color3.fromRGB(110, 244, 255),
 	strokeThickness = 2,
 })
 
@@ -2132,7 +2132,7 @@ UITheme.corner(stageUi.track, 4)
 
 stageUi.fill = Instance.new("Frame")
 stageUi.fill.Name = "StageProgressFill"
-stageUi.fill.BackgroundColor3 = Color3.fromRGB(83, 202, 255)
+stageUi.fill.BackgroundColor3 = Color3.fromRGB(110, 244, 255)
 stageUi.fill.BorderSizePixel = 0
 stageUi.fill.Size = UDim2.fromScale(0, 1)
 stageUi.fill.Parent = stageUi.track
@@ -2191,6 +2191,45 @@ ArcadeUI.Panel(boardFrame, {
 	rimColor = ArcadeUI.Color.rimBright,
 	strokeThickness = 6,
 })
+-- Assigned onto day43Ui (not a new top-level local) because this script is a
+-- single top-level chunk already close to Luau's 200-local register limit.
+day43Ui.attemptPlacement = function(slot, boardX, boardY)
+	local UIControlRules = require(GameShared.UIControlRules)
+	if not currentState or not slot then
+		return false
+	end
+
+	local now = os.clock()
+	if
+		not UIControlRules.canFireServerAction(
+			day43Ui.lastPlaceActionAt,
+			now,
+			day43Ui.placeActionCooldownSeconds
+		)
+	then
+		return false
+	end
+
+	local shape = currentState.hand[slot]
+	if
+		shape
+		and typeof(boardX) == "number"
+		and typeof(boardY) == "number"
+		and Grid.canPlace(currentState.board, shape, boardX, boardY)
+	then
+		day43Ui.lastPlaceActionAt = now
+		playSound("Place")
+		placeEvent:FireServer(slot, boardX, boardY)
+		return true
+	elseif shape then
+		statusLabel.Text = "That spot is blocked"
+		playSound("Blocked")
+		showBanner("That spot is blocked", Color3.fromRGB(255, 86, 107))
+	end
+
+	return false
+end
+
 boardGridContainer = Instance.new("Frame")
 boardGridContainer.Name = "BoardGridContainer"
 boardGridContainer.BackgroundTransparency = 1
@@ -2250,25 +2289,7 @@ for y = 1, Config.BoardSize do
 			local boardX = button:GetAttribute("BoardX")
 			local boardY = button:GetAttribute("BoardY")
 			if currentState and selectedSlot then
-				local now = os.clock()
-				if now - day43Ui.lastPlaceActionAt < day43Ui.placeActionCooldownSeconds then
-					return
-				end
-				local shape = currentState.hand[selectedSlot]
-				if
-					shape
-					and typeof(boardX) == "number"
-					and typeof(boardY) == "number"
-					and Grid.canPlace(currentState.board, shape, boardX, boardY)
-				then
-					day43Ui.lastPlaceActionAt = now
-					playSound("Place")
-					placeEvent:FireServer(selectedSlot, boardX, boardY)
-				elseif shape then
-					statusLabel.Text = "That spot is blocked"
-					playSound("Blocked")
-					showBanner("That spot is blocked", Color3.fromRGB(224, 74, 74))
-				end
+				day43Ui.attemptPlacement(selectedSlot, boardX, boardY)
 			end
 		end)
 
@@ -2390,6 +2411,100 @@ local function updateStatusText()
 	end
 end
 
+-- Assigned onto day43Ui (not a new top-level local) because this script is a
+-- single top-level chunk already close to Luau's 200-local register limit.
+day43Ui.drag = {
+	MOVE_THRESHOLD = 6,
+	state = {
+		active = false,
+		dragging = false,
+		slot = nil,
+		shape = nil,
+		startPosition = nil,
+		icon = nil,
+	},
+}
+
+function day43Ui.drag.boardCellFromScreenPosition(screenX, screenY)
+	local innerPadding = WINDOW_LAYOUT.boardPadding
+	local cellGap = WINDOW_LAYOUT.boardGap
+	local cellPixels = WINDOW_LAYOUT.boardCell
+	local step = cellPixels + cellGap
+
+	local localX = screenX - boardFrame.AbsolutePosition.X
+	local localY = screenY - boardFrame.AbsolutePosition.Y
+	local boardX = math.floor((localX - innerPadding) / step) + 1
+	local boardY = math.floor((localY - innerPadding) / step) + 1
+
+	return boardX, boardY
+end
+
+function day43Ui.drag.destroyIcon()
+	if day43Ui.drag.state.icon then
+		day43Ui.drag.state.icon:Destroy()
+		day43Ui.drag.state.icon = nil
+	end
+end
+
+function day43Ui.drag.createIcon(shape)
+	local preset, hasSoloStage = activeStageVisual()
+	local cellPixels = WINDOW_LAYOUT.boardCell
+	local minX, maxX, minY, maxY = math.huge, -math.huge, math.huge, -math.huge
+	for _, cell in shape.cells do
+		minX = math.min(minX, cell.X)
+		maxX = math.max(maxX, cell.X)
+		minY = math.min(minY, cell.Y)
+		maxY = math.max(maxY, cell.Y)
+	end
+
+	local icon = Instance.new("Frame")
+	icon.Name = "DragPieceIcon"
+	icon.BackgroundTransparency = 1
+	icon.Size = UDim2.fromOffset((maxX - minX + 1) * cellPixels, (maxY - minY + 1) * cellPixels)
+	icon.ZIndex = 50
+	icon.Active = false
+	icon.Parent = root
+	ArcadeUI.RenderShapePreview(icon, shape, {
+		blockColors = hasSoloStage and preset.blockPalette or nil,
+	})
+
+	return icon
+end
+
+function day43Ui.drag.updateIconPosition(screenX, screenY)
+	if not day43Ui.drag.state.icon then
+		return
+	end
+	day43Ui.drag.state.icon.Position = UDim2.fromOffset(
+		screenX - day43Ui.drag.state.icon.AbsoluteSize.X / 2,
+		screenY - day43Ui.drag.state.icon.AbsoluteSize.Y / 2
+	)
+end
+
+function day43Ui.drag.finish(screenX, screenY)
+	if day43Ui.drag.state.dragging then
+		local boardX, boardY = day43Ui.drag.boardCellFromScreenPosition(screenX, screenY)
+		local isOverBoard = boardX >= 1
+			and boardX <= Config.BoardSize
+			and boardY >= 1
+			and boardY <= Config.BoardSize
+		if isOverBoard then
+			day43Ui.attemptPlacement(day43Ui.drag.state.slot, boardX, boardY)
+		end
+		local trayPreview = handPreviews[day43Ui.drag.state.slot]
+		if trayPreview then
+			trayPreview.Visible = true
+		end
+	end
+
+	day43Ui.drag.destroyIcon()
+	day43Ui.drag.state.active = false
+	day43Ui.drag.state.dragging = false
+	day43Ui.drag.state.slot = nil
+	day43Ui.drag.state.shape = nil
+	day43Ui.drag.state.startPosition = nil
+end
+
 for slot = 1, Config.InventorySize do
 	local button = Instance.new("TextButton")
 	button.Name = `HandSlot{slot}`
@@ -2447,7 +2562,68 @@ for slot = 1, Config.InventorySize do
 			renderHand()
 		end
 	end)
+
+	button.InputBegan:Connect(function(input)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+			return
+		end
+		if not currentState then
+			return
+		end
+		local shape = currentState.hand[slot]
+		if not shape then
+			return
+		end
+
+		day43Ui.drag.state.active = true
+		day43Ui.drag.state.dragging = false
+		day43Ui.drag.state.slot = slot
+		day43Ui.drag.state.shape = shape
+		day43Ui.drag.state.startPosition = input.Position
+	end)
 end
+
+UserInputService.InputChanged:Connect(function(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseMovement then
+		return
+	end
+	if not day43Ui.drag.state.active or not day43Ui.drag.state.startPosition then
+		return
+	end
+
+	if not day43Ui.drag.state.dragging then
+		local delta = input.Position - day43Ui.drag.state.startPosition
+		if delta.Magnitude < day43Ui.drag.MOVE_THRESHOLD then
+			return
+		end
+		day43Ui.drag.state.dragging = true
+		selectedSlot = day43Ui.drag.state.slot
+		day43Ui.drag.state.icon = day43Ui.drag.createIcon(day43Ui.drag.state.shape)
+		local trayPreview = handPreviews[day43Ui.drag.state.slot]
+		if trayPreview then
+			trayPreview.Visible = false
+		end
+	end
+
+	day43Ui.drag.updateIconPosition(input.Position.X, input.Position.Y)
+
+	local boardX, boardY =
+		day43Ui.drag.boardCellFromScreenPosition(input.Position.X, input.Position.Y)
+	if currentState and (boardX ~= hoverX or boardY ~= hoverY) then
+		hoverX = boardX
+		hoverY = boardY
+		renderGhostPreview()
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+		return
+	end
+	if day43Ui.drag.state.active then
+		day43Ui.drag.finish(input.Position.X, input.Position.Y)
+	end
+end)
 
 leaderboardLabel = Instance.new("TextLabel")
 leaderboardLabel.BackgroundColor3 = ArcadeUI.Color.inner
@@ -2561,7 +2737,7 @@ returnHubButton = Instance.new("TextButton")
 returnHubButton.Name = "ReturnHubButton"
 returnHubButton.Position = UDim2.fromOffset(360, 390)
 returnHubButton.Size = UDim2.fromOffset(124, 32)
-returnHubButton.BackgroundColor3 = Color3.fromRGB(45, 58, 82)
+returnHubButton.BackgroundColor3 = Color3.fromRGB(42, 57, 96)
 returnHubButton.BorderSizePixel = 0
 returnHubButton.Font = Enum.Font.GothamBold
 returnHubButton.Text = "Return Hub"
@@ -2575,7 +2751,7 @@ playAgainButton = Instance.new("TextButton")
 playAgainButton.Name = "PlayAgainButton"
 playAgainButton.Position = UDim2.fromOffset(492, 390)
 playAgainButton.Size = UDim2.fromOffset(124, 32)
-playAgainButton.BackgroundColor3 = Color3.fromRGB(64, 156, 255)
+playAgainButton.BackgroundColor3 = Color3.fromRGB(30, 187, 255)
 playAgainButton.BorderSizePixel = 0
 playAgainButton.Font = Enum.Font.GothamBold
 playAgainButton.Text = "Play Again"
@@ -2590,7 +2766,7 @@ rotatePieceButton = Instance.new("TextButton")
 rotatePieceButton.Name = "RotatePieceButton"
 rotatePieceButton.Position = UDim2.fromOffset(360, 352)
 rotatePieceButton.Size = UDim2.fromOffset(124, 32)
-rotatePieceButton.BackgroundColor3 = Color3.fromRGB(167, 109, 255)
+rotatePieceButton.BackgroundColor3 = Color3.fromRGB(190, 118, 255)
 rotatePieceButton.BorderSizePixel = 0
 rotatePieceButton.Font = Enum.Font.GothamBold
 rotatePieceButton.Text = "Rotate"
@@ -2605,7 +2781,7 @@ rerollPieceButton = Instance.new("TextButton")
 rerollPieceButton.Name = "RerollPieceButton"
 rerollPieceButton.Position = UDim2.fromOffset(492, 352)
 rerollPieceButton.Size = UDim2.fromOffset(124, 32)
-rerollPieceButton.BackgroundColor3 = Color3.fromRGB(255, 112, 189)
+rerollPieceButton.BackgroundColor3 = Color3.fromRGB(255, 93, 200)
 rerollPieceButton.BorderSizePixel = 0
 rerollPieceButton.Font = Enum.Font.GothamBold
 rerollPieceButton.Text = "Reroll"
@@ -2896,13 +3072,13 @@ end)
 
 local function requestSelectedHandAction(action)
 	if not currentState or currentState.mode ~= "Custom" then
-		showBanner("Custom Lab only", Color3.fromRGB(251, 146, 60))
+		showBanner("Custom Lab only", Color3.fromRGB(255, 139, 61))
 		playSound("Blocked")
 		return
 	end
 
 	if not selectedSlot or not currentState.hand or not currentState.hand[selectedSlot] then
-		showBanner("Choose an active piece first", Color3.fromRGB(251, 146, 60))
+		showBanner("Choose an active piece first", Color3.fromRGB(255, 139, 61))
 		playSound("Blocked")
 		return
 	end
@@ -3055,7 +3231,7 @@ renderGhostPreview = function()
 			local stroke = ghostCell:FindFirstChildOfClass("UIStroke")
 			if stroke then
 				stroke.Color = canPlace and Color3.fromRGB(255, 255, 255)
-					or Color3.fromRGB(255, 105, 105)
+					or Color3.fromRGB(255, 86, 107)
 				stroke.Transparency = 0.12
 			end
 
@@ -3201,7 +3377,7 @@ local function renderLeaderboard(leaderboard)
 
 	if rankStatLabel then
 		rankStatLabel.Text =
-			statRichText("TROPHY", currentRank and `RANK #{currentRank}` or "RANK --", "#FFC629")
+			statRichText("TROPHY", currentRank and `RANK #{currentRank}` or "RANK --", "#FFD247")
 		enforceStatTextContrast()
 	end
 
@@ -3328,7 +3504,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	end
 	if comboBadgeLabel then
 		local combo = math.max(1, currentState.comboStreak or 1)
-		comboBadgeLabel.Text = statRichText("COMBO", `x{combo}`, "#DA49FF")
+		comboBadgeLabel.Text = statRichText("COMBO", `x{combo}`, "#FF5DC8")
 		enforceStatTextContrast()
 		comboBadgeLabel.Visible = combo > 1 or currentState.mode == "Solo"
 	end
@@ -3343,8 +3519,8 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 			and `Sudden: {currentState.timeLeft}s`
 		or currentState.timeLeft and `Time: {currentState.timeLeft}s`
 		or "Time: --"
-	timerLabel.TextColor3 = currentState.suddenDeath and Color3.fromRGB(255, 110, 110)
-		or currentState.timeLeft and currentState.timeLeft <= 15 and Color3.fromRGB(255, 207, 102)
+	timerLabel.TextColor3 = currentState.suddenDeath and Color3.fromRGB(255, 86, 107)
+		or currentState.timeLeft and currentState.timeLeft <= 15 and Color3.fromRGB(255, 210, 71)
 		or Color3.fromRGB(193, 201, 215)
 	playAgainButton.Text = currentState.mode == "Story" and "Replay" or "Play Again"
 	playAgainButton.Visible = not currentState.alive and currentState.mode ~= "Custom"
@@ -3505,7 +3681,7 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 			reducedMotion = reducedMotion,
 			TweenService = TweenService,
 		})
-		showBanner(effect.message or "That spot is blocked", Color3.fromRGB(224, 74, 74))
+		showBanner(effect.message or "That spot is blocked", Color3.fromRGB(255, 86, 107))
 	elseif effect.kind == "Place" then
 		playSound("Place")
 		if effect.shape then
@@ -3523,15 +3699,15 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 			if effect.comboStreak and effect.comboStreak > 1 then
 				showBanner(
 					`Combo x{effect.comboStreak}! +{effect.comboBonus or 0}`,
-					Color3.fromRGB(255, 207, 102)
+					Color3.fromRGB(255, 210, 71)
 				)
 			elseif effect.lineClearEffect == "Ripple" then
 				showBanner(
 					`Ripple clear: {effect.linesCleared} line(s)!`,
-					Color3.fromRGB(64, 156, 255)
+					Color3.fromRGB(30, 187, 255)
 				)
 			else
-				showBanner(`Cleared {effect.linesCleared} line(s)!`, Color3.fromRGB(74, 222, 128))
+				showBanner(`Cleared {effect.linesCleared} line(s)!`, Color3.fromRGB(123, 237, 75))
 			end
 		end
 	elseif effect.kind == "BattleStart" then
@@ -3546,16 +3722,13 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		if effect.slot and pulseHandSlot then
 			pulseHandSlot(effect.slot)
 		end
-		showBanner(effect.message or "Piece updated", Color3.fromRGB(255, 112, 189))
+		showBanner(effect.message or "Piece updated", Color3.fromRGB(255, 93, 200))
 	elseif effect.kind == "SuddenDeath" then
 		playSound("Blocked")
-		showBanner(
-			effect.detail or effect.message or "Sudden death!",
-			Color3.fromRGB(255, 110, 110)
-		)
+		showBanner(effect.detail or effect.message or "Sudden death!", Color3.fromRGB(255, 86, 107))
 	elseif effect.kind == "SuddenDeathPressure" then
 		playSound("Blocked")
-		showBanner(effect.message or "Pressure row rising", Color3.fromRGB(251, 146, 60))
+		showBanner(effect.message or "Pressure row rising", Color3.fromRGB(255, 139, 61))
 	elseif effect.kind == "StageUp" then
 		pulseStageUpDisplay()
 		if effect.currentStage then
@@ -3573,13 +3746,13 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		local preset = StageVisuals.presetForStage(effect.currentStage or 1)
 		showBanner(`Stage {effect.currentStage or "?"}!`, preset.stage)
 	elseif effect.kind == "DeveloperCommand" then
-		showBanner(effect.message or "Developer command applied", Color3.fromRGB(74, 222, 128))
+		showBanner(effect.message or "Developer command applied", Color3.fromRGB(123, 237, 75))
 	elseif effect.kind == "BattleResult" then
 		playSound("Result")
 		resultPanelController:Show(effect.result, effect.message, effect.won)
 		showBanner(
 			effect.message or "Run complete",
-			effect.won and Color3.fromRGB(74, 222, 128) or Color3.fromRGB(251, 146, 60)
+			effect.won and Color3.fromRGB(123, 237, 75) or Color3.fromRGB(255, 139, 61)
 		)
 	end
 end)

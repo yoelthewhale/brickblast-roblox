@@ -10,9 +10,9 @@ local function previewColorsForPieceSkin(skinName)
 	if skinName == "Neon" then
 		return {
 			Color3.fromRGB(0, 255, 234),
-			Color3.fromRGB(255, 44, 209),
-			Color3.fromRGB(255, 244, 42),
-			Color3.fromRGB(69, 255, 86),
+			Color3.fromRGB(255, 93, 200),
+			Color3.fromRGB(255, 210, 71),
+			Color3.fromRGB(123, 237, 75),
 		}
 	elseif skinName == "Pastel" then
 		return {
@@ -31,10 +31,10 @@ local function previewColorsForPieceSkin(skinName)
 	end
 
 	return {
-		Color3.fromRGB(255, 76, 76),
-		Color3.fromRGB(255, 204, 54),
-		Color3.fromRGB(76, 217, 100),
-		Color3.fromRGB(64, 156, 255),
+		Color3.fromRGB(255, 86, 107),
+		Color3.fromRGB(255, 210, 71),
+		Color3.fromRGB(123, 237, 75),
+		Color3.fromRGB(30, 187, 255),
 	}
 end
 
@@ -44,7 +44,7 @@ end
 
 local function setCardState(card, unlocked, equipped)
 	if equipped then
-		card.BackgroundColor3 = Color3.fromRGB(35, 185, 255)
+		card.BackgroundColor3 = Color3.fromRGB(30, 187, 255)
 	elseif unlocked then
 		card.BackgroundColor3 = Color3.fromRGB(232, 247, 255)
 	else
@@ -53,9 +53,9 @@ local function setCardState(card, unlocked, equipped)
 
 	local stroke = card:FindFirstChildOfClass("UIStroke")
 	if stroke then
-		stroke.Color = equipped and Color3.fromRGB(255, 215, 72)
+		stroke.Color = equipped and Color3.fromRGB(255, 210, 71)
 			or unlocked and Color3.fromRGB(32, 185, 255)
-			or Color3.fromRGB(255, 190, 74)
+			or Color3.fromRGB(255, 210, 71)
 		stroke.Transparency = equipped and 0 or unlocked and 0.1 or 0.32
 		stroke.Thickness = equipped and 3 or 2
 	end
@@ -96,7 +96,7 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	UITheme.panel(panel, {
 		color = Color3.fromRGB(18, 28, 52),
 		bottomColor = Color3.fromRGB(10, 17, 34),
-		strokeColor = Color3.fromRGB(48, 190, 255),
+		strokeColor = Color3.fromRGB(30, 187, 255),
 		strokeTransparency = 0,
 	})
 	local panelStroke = panel:FindFirstChildOfClass("UIStroke")
@@ -135,7 +135,7 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	local closeButton = Instance.new("TextButton")
 	closeButton.Position = UDim2.new(1, -48, 0, 14)
 	closeButton.Size = UDim2.fromOffset(46, 46)
-	closeButton.BackgroundColor3 = Color3.fromRGB(255, 76, 104)
+	closeButton.BackgroundColor3 = Color3.fromRGB(255, 86, 107)
 	closeButton.BorderSizePixel = 0
 	closeButton.Font = Enum.Font.GothamBlack
 	closeButton.Text = "X"
@@ -166,7 +166,7 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	boardsHeader.Size = UDim2.fromOffset(240, 20)
 	boardsHeader.Font = Enum.Font.GothamBold
 	boardsHeader.Text = "Board Skins"
-	boardsHeader.TextColor3 = Color3.fromRGB(255, 215, 72)
+	boardsHeader.TextColor3 = Color3.fromRGB(255, 210, 71)
 	boardsHeader.TextSize = 17
 	boardsHeader.TextXAlignment = Enum.TextXAlignment.Left
 	boardsHeader.ZIndex = 39
@@ -200,12 +200,12 @@ function CosmeticPanel.new(gui, blocks, config, options)
 	rail.ZIndex = 39
 	rail.Parent = panel
 	UITheme.corner(rail, 16)
-	UITheme.stroke(rail, Color3.fromRGB(48, 190, 255), 2, 0.05)
+	UITheme.stroke(rail, Color3.fromRGB(30, 187, 255), 2, 0.05)
 
 	local railLabels = {
-		{ text = "Pieces", color = Color3.fromRGB(48, 190, 255), y = 18 },
-		{ text = "Boards", color = Color3.fromRGB(255, 215, 72), y = 94 },
-		{ text = "Locked", color = Color3.fromRGB(184, 96, 255), y = 170 },
+		{ text = "Pieces", color = Color3.fromRGB(30, 187, 255), y = 18 },
+		{ text = "Boards", color = Color3.fromRGB(255, 210, 71), y = 94 },
+		{ text = "Locked", color = Color3.fromRGB(190, 118, 255), y = 170 },
 	}
 	for _, item in railLabels do
 		local railButton = Instance.new("TextLabel")
@@ -305,7 +305,7 @@ function CosmeticPanel:createPieceCard(index, skinName)
 		local unlocked = self.config.meetsCosmeticRequirement(requirement, self.getProgress())
 		if not unlocked then
 			self.playSound("Blocked")
-			self.showMessage(`Locked: {requirementText(requirement)}`, Color3.fromRGB(251, 146, 60))
+			self.showMessage(`Locked: {requirementText(requirement)}`, Color3.fromRGB(255, 139, 61))
 			return
 		end
 
@@ -360,7 +360,7 @@ function CosmeticPanel:createBoardCard(index, skin)
 	statusLabel.TextColor3 = Color3.fromRGB(45, 62, 86)
 
 	local emptyColor = skin.empty or Color3.fromRGB(24, 28, 36)
-	local borderColor = skin.border or Color3.fromRGB(64, 156, 255)
+	local borderColor = skin.border or Color3.fromRGB(30, 187, 255)
 	for row = 1, 2 do
 		for column = 1, 3 do
 			local cell = Instance.new("Frame")
@@ -378,7 +378,7 @@ function CosmeticPanel:createBoardCard(index, skin)
 		local unlocked = self.config.meetsCosmeticRequirement(requirement, self.getProgress())
 		if not unlocked then
 			self.playSound("Blocked")
-			self.showMessage(`Locked: {requirementText(requirement)}`, Color3.fromRGB(251, 146, 60))
+			self.showMessage(`Locked: {requirementText(requirement)}`, Color3.fromRGB(255, 139, 61))
 			return
 		end
 

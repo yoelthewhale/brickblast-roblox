@@ -14,33 +14,33 @@ local ARENA_CENTERS = {
 }
 
 local PALETTE = {
-	grass = Color3.fromRGB(72, 210, 119),
-	grassDark = Color3.fromRGB(42, 158, 91),
-	stone = Color3.fromRGB(211, 194, 166),
-	stoneDark = Color3.fromRGB(156, 139, 118),
-	marble = Color3.fromRGB(244, 241, 232),
-	water = Color3.fromRGB(38, 172, 255),
-	waterDeep = Color3.fromRGB(23, 104, 218),
-	gold = Color3.fromRGB(255, 205, 82),
-	cyan = Color3.fromRGB(40, 229, 255),
-	purple = Color3.fromRGB(167, 109, 255),
-	pink = Color3.fromRGB(255, 112, 189),
-	orange = Color3.fromRGB(255, 154, 64),
-	red = Color3.fromRGB(255, 91, 91),
-	wood = Color3.fromRGB(138, 91, 54),
-	leaf = Color3.fromRGB(32, 178, 101),
-	cloud = Color3.fromRGB(246, 250, 255),
-	shadow = Color3.fromRGB(97, 118, 137),
+	grass = Color3.fromRGB(137, 255, 206),
+	grassDark = Color3.fromRGB(88, 214, 168),
+	stone = Color3.fromRGB(255, 214, 235),
+	stoneDark = Color3.fromRGB(219, 158, 197),
+	marble = Color3.fromRGB(255, 247, 250),
+	waterDeep = Color3.fromRGB(219, 86, 153),
+	gold = Color3.fromRGB(255, 229, 120),
+	cyan = Color3.fromRGB(137, 207, 255),
+	purple = Color3.fromRGB(190, 150, 255),
+	pink = Color3.fromRGB(255, 133, 193),
+	orange = Color3.fromRGB(255, 163, 102),
+	red = Color3.fromRGB(255, 99, 132),
+	cloud = Color3.fromRGB(255, 240, 247),
 	text = Color3.fromRGB(255, 255, 255),
 }
+PALETTE.water = PALETTE.pink
+PALETTE.wood = PALETTE.marble
+PALETTE.leaf = PALETTE.grass
+PALETTE.shadow = PALETTE.stoneDark
 
 local BLOCK_COLORS = {
-	Color3.fromRGB(255, 82, 82),
-	Color3.fromRGB(255, 210, 62),
-	Color3.fromRGB(63, 219, 118),
-	Color3.fromRGB(48, 158, 255),
-	Color3.fromRGB(167, 109, 255),
-	Color3.fromRGB(255, 112, 189),
+	PALETTE.pink,
+	PALETTE.cyan,
+	PALETTE.grass,
+	PALETTE.gold,
+	PALETTE.purple,
+	PALETTE.orange,
 }
 
 local queueVisuals = {}
@@ -521,27 +521,37 @@ local function makeWaterfall(parent, name, lip)
 	)
 end
 
-local function makeCloud(parent, name, center, scale)
+local CANDY_PUFF_OFFSETS = {
+	Vector3.new(0, 0, 0),
+	Vector3.new(3.2, 0.6, 1.4),
+	Vector3.new(-3.4, 0.4, -1.2),
+	Vector3.new(1.6, 1.2, -2.6),
+	Vector3.new(-1.8, 0.9, 2.4),
+}
+
+local function makeCloud(parent, name, center, scale, options)
+	options = options or {}
 	local cloud = Instance.new("Folder")
 	cloud.Name = name
 	cloud.Parent = parent
-	for index, offset in
-		{
+	local offsets = options.offsets
+		or {
 			Vector3.new(0, 0, 0),
 			Vector3.new(8, 1, 2),
 			Vector3.new(-8, 0.8, -1),
 			Vector3.new(2, 2, -7),
 			Vector3.new(-2, 1.3, 7),
 		}
-	do
+	local puffSize = options.puffSize or Vector3.new(16, 6, 12)
+	for index, offset in offsets do
 		local puff = makePart(
 			cloud,
 			`CloudPuff{index}`,
-			Vector3.new(16, 6, 12) * scale,
+			puffSize * scale,
 			center + offset * scale,
-			PALETTE.cloud,
-			Enum.Material.SmoothPlastic,
-			{ canCollide = false, transparency = 0.22 }
+			options.color or PALETTE.cloud,
+			options.material or Enum.Material.SmoothPlastic,
+			{ canCollide = false, transparency = options.transparency or 0.22 }
 		)
 		puff.Shape = Enum.PartType.Ball
 	end
@@ -840,10 +850,10 @@ local function configureLighting()
 	safeLightingSet("ExposureCompensation", -0.18)
 	safeLightingSet("EnvironmentDiffuseScale", 0.35)
 	safeLightingSet("EnvironmentSpecularScale", 0.42)
-	safeLightingSet("Ambient", Color3.fromRGB(104, 126, 151))
-	safeLightingSet("OutdoorAmbient", Color3.fromRGB(96, 119, 145))
-	safeLightingSet("ColorShift_Top", Color3.fromRGB(255, 205, 145))
-	safeLightingSet("ColorShift_Bottom", Color3.fromRGB(131, 202, 255))
+	safeLightingSet("Ambient", Color3.fromRGB(215, 179, 235))
+	safeLightingSet("OutdoorAmbient", Color3.fromRGB(207, 190, 245))
+	safeLightingSet("ColorShift_Top", Color3.fromRGB(255, 191, 224))
+	safeLightingSet("ColorShift_Bottom", Color3.fromRGB(190, 220, 255))
 
 	for _, child in Lighting:GetChildren() do
 		if child.Name:match("^BlockBlast") then
@@ -853,33 +863,33 @@ local function configureLighting()
 
 	local atmosphere = Instance.new("Atmosphere")
 	atmosphere.Name = "BlockBlastAtmosphere"
-	atmosphere.Color = Color3.fromRGB(168, 214, 255)
-	atmosphere.Decay = Color3.fromRGB(229, 176, 132)
-	atmosphere.Density = 0.18
-	atmosphere.Offset = 0.12
-	atmosphere.Glare = 0.16
-	atmosphere.Haze = 1.35
+	atmosphere.Color = Color3.fromRGB(255, 214, 235)
+	atmosphere.Decay = Color3.fromRGB(214, 179, 245)
+	atmosphere.Density = 0.16
+	atmosphere.Offset = 0.1
+	atmosphere.Glare = 0.2
+	atmosphere.Haze = 1.1
 	atmosphere.Parent = Lighting
 
 	local bloom = Instance.new("BloomEffect")
 	bloom.Name = "BlockBlastBloom"
-	bloom.Intensity = 0.12
-	bloom.Size = 18
-	bloom.Threshold = 1.8
+	bloom.Intensity = 0.22
+	bloom.Size = 22
+	bloom.Threshold = 1.5
 	bloom.Parent = Lighting
 
 	local rays = Instance.new("SunRaysEffect")
 	rays.Name = "BlockBlastSunRays"
-	rays.Intensity = 0.035
-	rays.Spread = 0.65
+	rays.Intensity = 0.05
+	rays.Spread = 0.7
 	rays.Parent = Lighting
 
 	local correction = Instance.new("ColorCorrectionEffect")
 	correction.Name = "BlockBlastColor"
-	correction.Brightness = -0.015
-	correction.Contrast = 0.12
-	correction.Saturation = 0.12
-	correction.TintColor = Color3.fromRGB(255, 244, 228)
+	correction.Brightness = 0
+	correction.Contrast = 0.14
+	correction.Saturation = 0.28
+	correction.TintColor = Color3.fromRGB(255, 240, 250)
 	correction.Parent = Lighting
 
 	local depth = Instance.new("DepthOfFieldEffect")
@@ -1591,20 +1601,21 @@ local function makeToyBlock(parent, name, center, size, color, options)
 		local studsZ = math.max(1, math.floor(size.Z / 4))
 		for xIndex = 1, studsX do
 			for zIndex = 1, studsZ do
+				local sprinkleColor = BLOCK_COLORS[((xIndex * 7 + zIndex * 3) % #BLOCK_COLORS) + 1]
 				local stud = makePart(
 					parent,
 					`{name}Stud{xIndex}_{zIndex}`,
-					Vector3.new(1.25, 0.32, 1.25),
+					Vector3.new(1.1, 1.1, 1.1),
 					Vector3.new(
 						center.X - size.X / 2 + (xIndex - 0.5) * (size.X / studsX),
-						center.Y + size.Y / 2 + 0.18,
+						center.Y + size.Y / 2 + 0.35,
 						center.Z - size.Z / 2 + (zIndex - 0.5) * (size.Z / studsZ)
 					),
-					color:Lerp(Color3.fromRGB(255, 255, 255), 0.12),
+					sprinkleColor:Lerp(Color3.fromRGB(255, 255, 255), 0.1),
 					Enum.Material.SmoothPlastic,
-					{ canCollide = false, shape = Enum.PartType.Cylinder }
+					{ canCollide = false, shape = Enum.PartType.Ball }
 				)
-				stud.CFrame *= CFrame.Angles(0, 0, math.rad(90))
+				stud.Reflectance = 0.08
 			end
 		end
 	end
@@ -1617,12 +1628,13 @@ local function makeToyboxSlide(parent, name, startCenter, length, color)
 	for index = 1, 4 do
 		local alpha = (index - 1) / 3
 		local position = startCenter + Vector3.new(0, -alpha * 8, alpha * length)
+		local stripeColor = index % 2 == 0 and PALETTE.marble or color
 		local segment = makePart(
 			slide,
 			`SlideSegment{index}`,
 			Vector3.new(11, 1, 12),
 			CFrame.new(position) * CFrame.Angles(math.rad(-12), 0, 0),
-			color,
+			stripeColor,
 			Enum.Material.SmoothPlastic
 		)
 		segment.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.05, 0.25)
@@ -1730,37 +1742,41 @@ local function makePressButton(parent, name, center, color)
 end
 
 local function makeToyboxMachine(parent)
-	local machine = makeZoneFolder(parent, "BlockDropMachine")
+	local machine = makeZoneFolder(parent, "GumballMachine")
 	local machineCenter = Vector3.new(36, 7, -22)
-	makeToyBlock(
-		machine,
-		"MachineBase",
-		machineCenter,
-		Vector3.new(18, 8, 13),
-		Color3.fromRGB(226, 167, 58),
-		{
-			studs = false,
-		}
-	)
+	makeToyBlock(machine, "MachineBase", machineCenter, Vector3.new(18, 8, 13), PALETTE.red, {
+		studs = false,
+	})
 	makePart(
 		machine,
 		"MachineWindow",
 		Vector3.new(12, 8, 1),
 		machineCenter + Vector3.new(0, 6, -7.1),
-		Color3.fromRGB(119, 232, 255),
+		Color3.fromRGB(255, 214, 235),
 		Enum.Material.Glass,
-		{ transparency = 0.42, canCollide = false }
+		{ transparency = 0.32, canCollide = false }
+	)
+	makePart(
+		machine,
+		"MachineDome",
+		Vector3.new(14, 9, 11),
+		machineCenter + Vector3.new(0, 8.5, 0),
+		Color3.fromRGB(255, 247, 250),
+		Enum.Material.Glass,
+		{ transparency = 0.28, canCollide = false, shape = Enum.PartType.Ball }
 	)
 	for index = 1, 4 do
-		local block = makeToyBlock(
+		local block = makePart(
 			machine,
-			`MachineLooseBlock{index}`,
+			`MachineGumball{index}`,
+			Vector3.new(2.6, 2.6, 2.6),
 			machineCenter
-				+ Vector3.new(-4.5 + (index % 2) * 5, 4.5 + math.floor((index - 1) / 2) * 2.2, -3.5),
-			Vector3.new(2.4, 2.4, 2.4),
+				+ Vector3.new(-4.5 + (index % 2) * 5, 6.5 + math.floor((index - 1) / 2) * 2.4, -3.5),
 			BLOCK_COLORS[((index - 1) % #BLOCK_COLORS) + 1],
-			{ canCollide = false, studs = false }
+			Enum.Material.SmoothPlastic,
+			{ canCollide = false, shape = Enum.PartType.Ball }
 		)
+		block.Reflectance = 0.15
 		queueSpin(block, 20 + index, Vector3.new(0, 1, 0))
 	end
 	makePressButton(machine, "MachineButton", Vector3.new(43, 5.3, -9), PALETTE.red)
@@ -1864,28 +1880,66 @@ local function makeToyFence(parent, name, start, finish, color)
 	)
 	for index = 0, 5 do
 		local alpha = index / 5
-		makePart(
+		local post = makePart(
 			fence,
 			`Post{index}`,
 			Vector3.new(1.8, 5.2, 1.8),
 			start:Lerp(finish, alpha) + Vector3.new(0, 2.6, 0),
-			PALETTE.marble,
+			index % 2 == 0 and PALETTE.marble or PALETTE.red,
 			Enum.Material.SmoothPlastic,
-			{ canCollide = false }
+			{ canCollide = false, shape = Enum.PartType.Cylinder }
 		)
+		post.CFrame *= CFrame.Angles(math.rad(90), 0, 0)
 	end
 	return fence
 end
 
+local function makeLollipopProp(parent, name, center, scale, color)
+	scale = scale or 1
+	local prop = makeZoneFolder(parent, name)
+	local stick = makePart(
+		prop,
+		"Stick",
+		Vector3.new(0.55, 5.4 * scale, 0.55),
+		center + Vector3.new(0, 2.7 * scale, 0),
+		PALETTE.marble,
+		Enum.Material.SmoothPlastic,
+		{ canCollide = false, shape = Enum.PartType.Cylinder }
+	)
+	stick.CFrame *= CFrame.Angles(0, 0, math.rad(90))
+	local candyCenter = center + Vector3.new(0, 5.6 * scale, 0)
+	local candy = makePart(
+		prop,
+		"Candy",
+		Vector3.new(4.2 * scale, 4.2 * scale, 1.4 * scale),
+		candyCenter,
+		color,
+		Enum.Material.SmoothPlastic,
+		{ canCollide = false, shape = Enum.PartType.Ball }
+	)
+	local swirl = makePart(
+		prop,
+		"Swirl",
+		Vector3.new(2.6 * scale, 2.6 * scale, 1.6 * scale),
+		candyCenter,
+		PALETTE.marble,
+		Enum.Material.SmoothPlastic,
+		{ canCollide = false, shape = Enum.PartType.Ball, transparency = 0.25 }
+	)
+	swirl.CFrame *= CFrame.Angles(0, 0, math.rad(35))
+	queueSpin(candy, 30, Vector3.new(0, 0, 1))
+	return prop
+end
+
 local function buildToyboxHub(parent)
-	local hub = makeZoneFolder(parent, "ToyboxSoloHub")
+	local hub = makeZoneFolder(parent, "BubblegumSoloHub")
 
 	local floor = makePart(
 		hub,
 		"ToyboxMainPlayFloor",
 		Vector3.new(148, 3, 122),
 		Vector3.new(0, 0, 0),
-		Color3.fromRGB(232, 218, 194),
+		PALETTE.stone,
 		Enum.Material.Concrete
 	)
 	floor.Transparency = 1
@@ -1898,7 +1952,7 @@ local function buildToyboxHub(parent)
 		"ToyPlaysetCenterFoundation",
 		Vector3.new(0, 2.45, 8),
 		Vector3.new(74, 5.2, 76),
-		Color3.fromRGB(93, 148, 190),
+		Color3.fromRGB(255, 178, 217),
 		{ studs = false }
 	)
 	makeToyBlock(
@@ -1906,7 +1960,7 @@ local function buildToyboxHub(parent)
 		"ToyPlaysetSpawnConnectorFoundation",
 		Vector3.new(0, 2.85, 51),
 		Vector3.new(34, 4.4, 40),
-		Color3.fromRGB(100, 160, 205),
+		Color3.fromRGB(255, 191, 224),
 		{ studs = false }
 	)
 	makeToyBlock(
@@ -1914,7 +1968,7 @@ local function buildToyboxHub(parent)
 		"ToyPlaysetSpawnLandingFoundation",
 		Vector3.new(0, 3.05, 76),
 		Vector3.new(44, 4, 32),
-		Color3.fromRGB(111, 173, 214),
+		Color3.fromRGB(255, 201, 229),
 		{ studs = false }
 	)
 	makeToyBlock(
@@ -1922,7 +1976,7 @@ local function buildToyboxHub(parent)
 		"ToyPlaysetLeftActivityFoundation",
 		Vector3.new(-35, 2.3, 15),
 		Vector3.new(34, 4.5, 42),
-		Color3.fromRGB(138, 111, 178),
+		PALETTE.purple,
 		{ studs = false }
 	)
 	makeToyBlock(
@@ -1930,7 +1984,7 @@ local function buildToyboxHub(parent)
 		"ToyPlaysetRightActivityFoundation",
 		Vector3.new(35, 2.3, 16),
 		Vector3.new(34, 4.5, 46),
-		Color3.fromRGB(91, 163, 138),
+		PALETTE.grass,
 		{ studs = false }
 	)
 	makeToyBlock(
@@ -1938,7 +1992,7 @@ local function buildToyboxHub(parent)
 		"ToyPlaysetRearActivityFoundation",
 		Vector3.new(14, 2.35, -36),
 		Vector3.new(54, 4.7, 32),
-		Color3.fromRGB(104, 132, 185),
+		PALETTE.cyan,
 		{ studs = false }
 	)
 	makeToyBlock(
@@ -1946,7 +2000,7 @@ local function buildToyboxHub(parent)
 		"ToyFoundationFrontCreamLip",
 		Vector3.new(0, 5.45, 47),
 		Vector3.new(74, 2, 4),
-		Color3.fromRGB(244, 236, 210),
+		PALETTE.marble,
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -1954,7 +2008,7 @@ local function buildToyboxHub(parent)
 		"ToyFoundationRearCreamLip",
 		Vector3.new(0, 5.45, -30),
 		Vector3.new(74, 2, 4),
-		Color3.fromRGB(244, 236, 210),
+		PALETTE.marble,
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -1962,7 +2016,7 @@ local function buildToyboxHub(parent)
 		"ToyFoundationLeftCreamLip",
 		Vector3.new(-39, 5.45, 8),
 		Vector3.new(4, 2, 74),
-		Color3.fromRGB(244, 236, 210),
+		PALETTE.marble,
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -1970,7 +2024,7 @@ local function buildToyboxHub(parent)
 		"ToyFoundationRightCreamLip",
 		Vector3.new(39, 5.45, 8),
 		Vector3.new(4, 2, 74),
-		Color3.fromRGB(244, 236, 210),
+		PALETTE.marble,
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -1978,7 +2032,7 @@ local function buildToyboxHub(parent)
 		"SpawnFoundationFrontLip",
 		Vector3.new(0, 5.4, 57),
 		Vector3.new(44, 1.8, 4),
-		Color3.fromRGB(250, 223, 156),
+		PALETTE.gold,
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -1986,7 +2040,7 @@ local function buildToyboxHub(parent)
 		"SpawnFoundationBackLip",
 		Vector3.new(0, 5.4, 92),
 		Vector3.new(44, 1.8, 4),
-		Color3.fromRGB(250, 223, 156),
+		PALETTE.gold,
 		{ studs = false, canCollide = false }
 	)
 
@@ -1996,8 +2050,8 @@ local function buildToyboxHub(parent)
 		Vector3.new(0, 3.8, 8),
 		43,
 		5,
-		Color3.fromRGB(225, 217, 203),
-		Color3.fromRGB(72, 109, 146)
+		PALETTE.cloud,
+		PALETTE.stoneDark
 	)
 	makeToyDiskPlatform(
 		hub,
@@ -2005,8 +2059,8 @@ local function buildToyboxHub(parent)
 		Vector3.new(36, 4.2, -20),
 		17,
 		4,
-		Color3.fromRGB(236, 207, 132),
-		Color3.fromRGB(151, 107, 69)
+		PALETTE.gold,
+		Color3.fromRGB(224, 132, 92)
 	)
 	makeToyDiskPlatform(
 		hub,
@@ -2014,8 +2068,8 @@ local function buildToyboxHub(parent)
 		Vector3.new(-36, 4.2, 16),
 		18,
 		4,
-		Color3.fromRGB(226, 113, 131),
-		Color3.fromRGB(145, 77, 105)
+		PALETTE.pink,
+		PALETTE.waterDeep
 	)
 	makeToyDiskPlatform(
 		hub,
@@ -2024,7 +2078,7 @@ local function buildToyboxHub(parent)
 		15,
 		4,
 		PALETTE.grass,
-		Color3.fromRGB(68, 132, 92)
+		PALETTE.grassDark
 	)
 	makeToyDiskPlatform(
 		hub,
@@ -2032,8 +2086,8 @@ local function buildToyboxHub(parent)
 		Vector3.new(38, 6.4, -45),
 		14,
 		5,
-		PALETTE.water,
-		Color3.fromRGB(73, 125, 184)
+		PALETTE.cyan,
+		Color3.fromRGB(90, 160, 224)
 	)
 	makeToyWalkway(
 		hub,
@@ -2056,23 +2110,23 @@ local function buildToyboxHub(parent)
 		"PlayToMachinePath",
 		Vector3.new(23, 5.95, -11),
 		Vector3.new(26, 1.1, 15),
-		Color3.fromRGB(238, 209, 138),
-		Color3.fromRGB(168, 120, 72)
+		PALETTE.gold,
+		Color3.fromRGB(224, 188, 66)
 	)
 	makeToyWalkway(
 		hub,
 		"PlayToFunPath",
 		Vector3.new(-22, 5.95, 15),
 		Vector3.new(25, 1.1, 15),
-		Color3.fromRGB(233, 190, 207),
-		Color3.fromRGB(158, 83, 111)
+		Color3.fromRGB(255, 201, 229),
+		PALETTE.waterDeep
 	)
 	makeToyWalkway(
 		hub,
 		"PlayToLaunchPath",
 		Vector3.new(24, 6.05, 33),
 		Vector3.new(23, 1.1, 14),
-		Color3.fromRGB(202, 232, 186),
+		Color3.fromRGB(202, 255, 230),
 		PALETTE.grassDark
 	)
 
@@ -2081,7 +2135,7 @@ local function buildToyboxHub(parent)
 		"RoundPuzzlePlaza",
 		Vector3.new(58, 1.2, 58),
 		Vector3.new(0, 5.75, 8),
-		Color3.fromRGB(237, 232, 216),
+		PALETTE.marble,
 		Enum.Material.SmoothPlastic,
 		{ shape = Enum.PartType.Cylinder }
 	)
@@ -2090,7 +2144,7 @@ local function buildToyboxHub(parent)
 		"ToyPlazaCyanRing",
 		Vector3.new(64, 0.7, 64),
 		Vector3.new(0, 5.38, 8),
-		Color3.fromRGB(62, 203, 230),
+		PALETTE.pink,
 		Enum.Material.SmoothPlastic,
 		{ shape = Enum.PartType.Cylinder, canCollide = false }
 	)
@@ -2127,7 +2181,7 @@ local function buildToyboxHub(parent)
 		"SpawnWelcomeLeftMarker",
 		Vector3.new(-18, 7.2, 65),
 		Vector3.new(4, 3, 4),
-		Color3.fromRGB(255, 218, 94),
+		PALETTE.gold,
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -2135,9 +2189,11 @@ local function buildToyboxHub(parent)
 		"SpawnWelcomeRightMarker",
 		Vector3.new(18, 7.2, 65),
 		Vector3.new(4, 3, 4),
-		Color3.fromRGB(255, 218, 94),
+		PALETTE.gold,
 		{ studs = false, canCollide = false }
 	)
+	makeLollipopProp(hub, "SpawnLollipopLeft", Vector3.new(-24, 7.4, 68), 1.1, PALETTE.red)
+	makeLollipopProp(hub, "SpawnLollipopRight", Vector3.new(24, 7.4, 68), 1.1, PALETTE.purple)
 
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "HubSpawn"
@@ -2201,7 +2257,7 @@ local function buildToyboxHub(parent)
 		"PlaySignLeftSupport",
 		Vector3.new(-14, 10, 4),
 		Vector3.new(2, 7, 2),
-		Color3.fromRGB(245, 245, 238),
+		PALETTE.marble,
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -2209,7 +2265,7 @@ local function buildToyboxHub(parent)
 		"PlaySignRightSupport",
 		Vector3.new(14, 10, 4),
 		Vector3.new(2, 7, 2),
-		Color3.fromRGB(245, 245, 238),
+		PALETTE.marble,
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -2223,8 +2279,8 @@ local function buildToyboxHub(parent)
 	addBillboard(playPad, "PLAY", "Solo Puzzle", Vector3.new(0, 6.2, 0))
 
 	makeToyboxMachine(hub)
-	makeToyboxSlide(hub, "BlueToySlide", Vector3.new(38, 18, -51), 24, Color3.fromRGB(44, 170, 255))
-	makeBouncePad(hub, "RedSpringBouncePad", Vector3.new(-38, 7.2, 32), PALETTE.red)
+	makeToyboxSlide(hub, "BlueToySlide", Vector3.new(38, 18, -51), 24, PALETTE.red)
+	makeBouncePad(hub, "RedSpringBouncePad", Vector3.new(-38, 7.2, 32), PALETTE.pink)
 	makeLauncher(hub, "GreenLauncherPad", Vector3.new(38, 7.15, 38))
 	makePressButton(hub, "PurpleSpinnerButton", Vector3.new(34, 7.3, -4), PALETTE.purple)
 	makeToyBlock(
@@ -2232,7 +2288,7 @@ local function buildToyboxHub(parent)
 		"MachineStationBackWall",
 		Vector3.new(36, 8.2, -30),
 		Vector3.new(24, 7, 2),
-		Color3.fromRGB(244, 217, 151),
+		Color3.fromRGB(255, 201, 229),
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -2248,7 +2304,7 @@ local function buildToyboxHub(parent)
 		"BounceSpringBase",
 		Vector3.new(-38, 5.9, 32),
 		Vector3.new(24, 2, 24),
-		Color3.fromRGB(255, 193, 187),
+		PALETTE.stone,
 		{ studs = false }
 	)
 	makePart(
@@ -2256,7 +2312,7 @@ local function buildToyboxHub(parent)
 		"BounceSpringCoilA",
 		Vector3.new(17, 1.3, 17),
 		Vector3.new(-38, 8.6, 32),
-		Color3.fromRGB(255, 247, 240),
+		PALETTE.marble,
 		Enum.Material.SmoothPlastic,
 		{ shape = Enum.PartType.Cylinder, canCollide = false }
 	)
@@ -2274,7 +2330,7 @@ local function buildToyboxHub(parent)
 		"LauncherArrowBase",
 		Vector3.new(38, 5.95, 28),
 		Vector3.new(20, 2, 8),
-		Color3.fromRGB(226, 245, 211),
+		Color3.fromRGB(210, 255, 235),
 		{ studs = false }
 	)
 	makeToyBlock(
@@ -2282,7 +2338,7 @@ local function buildToyboxHub(parent)
 		"SpinnerPurpleGuard",
 		Vector3.new(-34, 5.9, -18),
 		Vector3.new(24, 2, 6),
-		Color3.fromRGB(202, 175, 244),
+		Color3.fromRGB(216, 191, 255),
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -2290,11 +2346,11 @@ local function buildToyboxHub(parent)
 		"MoverTrackBase",
 		Vector3.new(-20, 6.4, -35),
 		Vector3.new(32, 1.4, 12),
-		Color3.fromRGB(245, 226, 161),
+		PALETTE.gold,
 		{ studs = false }
 	)
-	makeToyRail(hub, "LeftSpawnRail", -22, -8, 63, 9.4, PALETTE.cyan)
-	makeToyRail(hub, "RightSpawnRail", 8, 22, 63, 9.4, PALETTE.cyan)
+	makeToyRail(hub, "LeftSpawnRail", -22, -8, 63, 9.4, PALETTE.pink)
+	makeToyRail(hub, "RightSpawnRail", 8, 22, 63, 9.4, PALETTE.pink)
 	makeToyFence(
 		hub,
 		"SpawnWestFence",
@@ -2327,7 +2383,52 @@ local function buildToyboxHub(parent)
 		{ shape = Enum.PartType.Cylinder }
 	)
 	queueSpin(spinner, 10, Vector3.new(0, 1, 0))
-	addBillboard(spinner, "SPIN", "Ride the turntable", Vector3.new(0, 5.8, 0))
+	addBillboard(spinner, "SPIN", "Ride the gumdrop wheel", Vector3.new(0, 5.8, 0))
+
+	for _, cloudData in
+		{
+			{
+				name = "CloudNorthPink",
+				center = Vector3.new(-52, 26, -12),
+				scale = 1.4,
+				color = PALETTE.pink,
+			},
+			{
+				name = "CloudNorthBlue",
+				center = Vector3.new(58, 24, 4),
+				scale = 1.2,
+				color = PALETTE.cyan,
+			},
+			{
+				name = "CloudSouthPink",
+				center = Vector3.new(-10, 22, 96),
+				scale = 1.1,
+				color = PALETTE.pink,
+			},
+			{
+				name = "CloudSouthPurple",
+				center = Vector3.new(30, 25, 100),
+				scale = 1.3,
+				color = PALETTE.purple,
+			},
+			{
+				name = "CloudRearMint",
+				center = Vector3.new(0, 30, -70),
+				scale = 1.5,
+				color = PALETTE.grass,
+			},
+		}
+	do
+		makeCloud(hub, cloudData.name, cloudData.center, cloudData.scale, {
+			color = cloudData.color,
+			material = Enum.Material.Neon,
+			transparency = 0.35,
+			puffSize = Vector3.new(4.6, 3.6, 4.6),
+			offsets = CANDY_PUFF_OFFSETS,
+		})
+	end
+	makeLollipopProp(hub, "PlazaLollipopA", Vector3.new(-30, 6.3, -8), 1, PALETTE.pink)
+	makeLollipopProp(hub, "PlazaLollipopB", Vector3.new(28, 6.3, 26), 0.9, PALETTE.cyan)
 
 	local mover = makeToyBlock(
 		hub,
@@ -2369,7 +2470,7 @@ local function buildToyboxHub(parent)
 		"RearToyBackdropBase",
 		Vector3.new(0, 12, -82),
 		Vector3.new(48, 10, 4),
-		Color3.fromRGB(113, 168, 208),
+		Color3.fromRGB(255, 191, 224),
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -2377,7 +2478,7 @@ local function buildToyboxHub(parent)
 		"RearToyBackdropTop",
 		Vector3.new(0, 18, -82),
 		Vector3.new(36, 4, 4),
-		Color3.fromRGB(244, 215, 132),
+		PALETTE.gold,
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -2385,7 +2486,7 @@ local function buildToyboxHub(parent)
 		"RearToyBackdropLeftDot",
 		Vector3.new(-18, 19.8, -79),
 		Vector3.new(5, 5, 2),
-		Color3.fromRGB(255, 128, 128),
+		PALETTE.red,
 		{ studs = false, canCollide = false }
 	)
 	makeToyBlock(
@@ -2393,7 +2494,7 @@ local function buildToyboxHub(parent)
 		"RearToyBackdropRightDot",
 		Vector3.new(18, 19.8, -79),
 		Vector3.new(5, 5, 2),
-		Color3.fromRGB(80, 220, 245),
+		PALETTE.cyan,
 		{ studs = false, canCollide = false }
 	)
 
