@@ -3320,6 +3320,9 @@ Players.PlayerRemoving:Connect(function(player)
 	playerDailyRewardDates[player] = nil
 	playerEntitlements[player] = nil
 	playerFulfilledPurchaseIds[player] = nil
+	playerRedeemedCodes[player] = nil
+	playerLifetimeStats[player] = nil
+	playerUnlockedAchievements[player] = nil
 	playerCosmeticInventories[player] = nil
 	lastPlaceRequestAt[player] = nil
 	lastHandRequestAt[player] = nil

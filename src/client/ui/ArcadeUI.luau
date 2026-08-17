@@ -357,7 +357,11 @@ function ArcadeUI.PlayClearFlash(context, x, y)
 		})
 		:Play()
 	task.delay(0.12, function()
-		if context.currentState and context.currentState.board[y][x] == false then
+		-- getCurrentState (not a captured snapshot) so this reads the live
+		-- board even if it fires after a later placement/clear already
+		-- replaced the state object this animation was originally queued for.
+		local liveState = context.getCurrentState and context.getCurrentState()
+		if liveState and liveState.board[y][x] == false then
 			cell.BackgroundColor3 = context.boardEmptyColor
 		else
 			cell.BackgroundColor3 = originalColor

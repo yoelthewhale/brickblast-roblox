@@ -1197,14 +1197,12 @@ hudController = HUDController.new(gui, {
 				local redeem = Instance.new("TextButton")
 				redeem.LayoutOrder = 4
 				redeem.Size = UDim2.new(1, 0, 0, 54)
-				redeem.BackgroundColor3 = Color3.fromRGB(123, 237, 75)
 				redeem.BorderSizePixel = 0
 				redeem.Font = Enum.Font.GothamBlack
 				redeem.Text = "REDEEM"
-				redeem.TextColor3 = Color3.fromRGB(15, 46, 24)
 				redeem.TextSize = 18
 				redeem.Parent = content
-				UITheme.button(redeem, "primary")
+				UITheme.button(redeem, "success")
 				UITheme.attachButtonFeedback(redeem, isUiReducedMotion)
 
 				local function submit()
@@ -3689,7 +3687,9 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		boardSize = Config.BoardSize,
 		cells = cells,
 		cellScales = cellScales,
-		currentState = currentState,
+		getCurrentState = function()
+			return currentState
+		end,
 		boardEmptyColor = customization.boardEmptyColor,
 		reducedMotion = reducedMotion,
 		TweenService = TweenService,
