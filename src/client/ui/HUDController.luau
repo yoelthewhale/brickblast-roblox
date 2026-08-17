@@ -24,6 +24,12 @@ local LEFT_BUTTONS = {
 		icon = "Gift",
 		accent = Color3.fromRGB(255, 93, 200),
 	},
+	{
+		key = "achievements",
+		label = "Achievements",
+		icon = "Trophy",
+		accent = Color3.fromRGB(255, 210, 71),
+	},
 }
 
 if ExperienceConfig.UI.ShowModesButton then
@@ -242,6 +248,12 @@ local function makeIcon(parent, iconType, chipColor, glyphColor)
 		block("Box", UDim2.fromOffset(8, 16), UDim2.fromOffset(20, 12))
 		block("Lid", UDim2.fromOffset(7, 12), UDim2.fromOffset(22, 5))
 		block("Ribbon", UDim2.fromOffset(16, 12), UDim2.fromOffset(4, 16), chipColor)
+	elseif iconType == "Trophy" then
+		block("Cup", UDim2.fromOffset(11, 8), UDim2.fromOffset(14, 12))
+		block("HandleLeft", UDim2.fromOffset(7, 9), UDim2.fromOffset(4, 8))
+		block("HandleRight", UDim2.fromOffset(25, 9), UDim2.fromOffset(4, 8))
+		block("Stem", UDim2.fromOffset(15, 20), UDim2.fromOffset(6, 5))
+		block("Base", UDim2.fromOffset(11, 25), UDim2.fromOffset(14, 4))
 	else
 		block("A", UDim2.fromOffset(9, 10), UDim2.fromOffset(9, 9))
 		block("B", UDim2.fromOffset(19, 17), UDim2.fromOffset(9, 9))

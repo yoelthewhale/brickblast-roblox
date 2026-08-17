@@ -91,6 +91,7 @@ end
 (getfenv() :: any).require = shimRequire
 
 local TEST_MODULES = {
+	"AchievementsTests",
 	"DeveloperToolsTests",
 	"GameplayRulesTests",
 	"HandGeneratorTests",

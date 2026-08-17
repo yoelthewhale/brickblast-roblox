@@ -22,6 +22,7 @@ emergencySpawn.Parent = workspace
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameShared = Shared:WaitForChild("game")
+local Achievements = require(GameShared.Achievements)
 local Blocks = require(GameShared.Blocks)
 local Config = require(GameShared.Config)
 local DeveloperTools = require(GameShared.DeveloperTools)
@@ -71,6 +72,10 @@ shopEvent.Parent = remotes
 local codesEvent = Instance.new("RemoteEvent")
 codesEvent.Name = "Codes"
 codesEvent.Parent = remotes
+
+local achievementsEvent = Instance.new("RemoteEvent")
+achievementsEvent.Name = "Achievements"
+achievementsEvent.Parent = remotes
 
 local devCommandFunction = Instance.new("RemoteFunction")
 devCommandFunction.Name = "DevCommand"
@@ -241,6 +246,8 @@ local playerDailyRewardDates = {}
 local playerEntitlements = {}
 local playerFulfilledPurchaseIds = {}
 local playerRedeemedCodes = {}
+local playerLifetimeStats = {}
+local playerUnlockedAchievements = {}
 local playerCosmeticInventories = {}
 local selectedStoryChapters = {}
 local lastPlaceRequestAt = {}
@@ -320,6 +327,14 @@ local PROFILE_LIMITS = {
 	xp = 100000000,
 	level = 1000,
 	storyStars = 100000,
+}
+local LIFETIME_STAT_LIMITS = {
+	highestCombo = 999,
+	highestStage = 1000,
+	totalPerfectClears = 1000000,
+	totalLinesCleared = 100000000,
+	totalBlocksPlaced = 100000000,
+	totalRuns = 10000000,
 }
 local PROFILE_VERSION = 2
 local leaveBattle = nil
@@ -567,6 +582,34 @@ local function sanitizedStatValue(stat, minimum, maximum, fallback)
 	return clean
 end
 
+local function sanitizeLifetimeStats(raw)
+	raw = typeof(raw) == "table" and raw or {}
+	local clean = {}
+	for key, defaultValue in Achievements.DefaultLifetimeStats do
+		local minimum = key == "highestStage" and 1 or 0
+		local value =
+			sanitizeProfileInteger(raw[key], minimum, LIFETIME_STAT_LIMITS[key], defaultValue)
+		clean[key] = value
+	end
+
+	return clean
+end
+
+local function sanitizeUnlockedAchievements(raw)
+	local clean = {}
+	if typeof(raw) ~= "table" then
+		return clean
+	end
+
+	for achievementId, value in raw do
+		if value == true and Achievements.getDefinition(achievementId) then
+			clean[achievementId] = true
+		end
+	end
+
+	return clean
+end
+
 local function createLeaderstats(player)
 	local leaderstats = Instance.new("Folder")
 	leaderstats.Name = "leaderstats"
@@ -672,6 +715,9 @@ local function createLeaderstats(player)
 		playerRedeemedCodes[player] = typeof(profile.redeemedCodes) == "table"
 				and table.clone(profile.redeemedCodes)
 			or {}
+		playerLifetimeStats[player] = sanitizeLifetimeStats(profile.lifetimeStats)
+		playerUnlockedAchievements[player] =
+			sanitizeUnlockedAchievements(profile.unlockedAchievements)
 		playerCosmeticInventories[player] = sanitizeCosmeticInventory(
 			player,
 			profile.cosmetics,
@@ -806,6 +852,11 @@ local function mergedProfilePayload(player, existingProfile, stats)
 			existingProfile.redeemedCodes
 		)
 		or {}
+	local lifetimeStats =
+		sanitizeLifetimeStats(playerLifetimeStats[player] or existingProfile.lifetimeStats)
+	local unlockedAchievements = typeof(playerUnlockedAchievements[player]) == "table"
+			and table.clone(playerUnlockedAchievements[player])
+		or sanitizeUnlockedAchievements(existingProfile.unlockedAchievements)
 
 	return {
 		version = PROFILE_VERSION,
@@ -820,6 +871,8 @@ local function mergedProfilePayload(player, existingProfile, stats)
 		cosmetics = cosmeticInventory(player),
 		fulfilledPurchaseIds = fulfilledPurchaseIds,
 		redeemedCodes = redeemedCodes,
+		lifetimeStats = lifetimeStats,
+		unlockedAchievements = unlockedAchievements,
 		updatedAt = os.time(),
 	}
 end
@@ -1452,6 +1505,86 @@ codesEvent.OnServerEvent:Connect(function(player, rawCode)
 	redeemCode(player, rawCode)
 end)
 
+local function currentLifetimeView(player)
+	local stats = playerLifetimeStats[player]
+	if not stats then
+		return nil
+	end
+
+	local leaderstats = player:FindFirstChild("leaderstats")
+	local bestScore = leaderstats and leaderstats:FindFirstChild("BestScore")
+	local view = table.clone(stats)
+	view.bestScore = bestScore and bestScore.Value or 0
+	return view
+end
+
+local function publicAchievementsSnapshot(player)
+	local lifetimeView = currentLifetimeView(player)
+		or table.clone(Achievements.DefaultLifetimeStats)
+	local unlocked = playerUnlockedAchievements[player] or {}
+
+	local list = {}
+	for _, definition in Achievements.Definitions do
+		table.insert(list, {
+			id = definition.id,
+			stat = definition.stat,
+			tier = definition.tier,
+			threshold = definition.threshold,
+			name = definition.name,
+			rewardCoins = definition.rewardCoins,
+			unlocked = unlocked[definition.id] == true,
+			progress = lifetimeView[definition.stat] or 0,
+		})
+	end
+
+	return list
+end
+
+local function checkAchievements(player)
+	local lifetimeView = currentLifetimeView(player)
+	if not lifetimeView then
+		return
+	end
+
+	local unlocked = playerUnlockedAchievements[player] or {}
+	playerUnlockedAchievements[player] = unlocked
+
+	local newly = Achievements.newlyUnlocked(lifetimeView, unlocked)
+	if #newly == 0 then
+		return
+	end
+
+	local leaderstats = player:FindFirstChild("leaderstats")
+	local coins = leaderstats and leaderstats:FindFirstChild("Coins")
+	for _, definition in newly do
+		unlocked[definition.id] = true
+		if coins then
+			coins.Value = math.clamp(coins.Value + definition.rewardCoins, 0, PROFILE_LIMITS.coins)
+		end
+	end
+
+	saveProfile(player)
+
+	for _, definition in newly do
+		effectsEvent:FireClient(player, {
+			kind = "AchievementUnlocked",
+			id = definition.id,
+			name = definition.name,
+			tier = definition.tier,
+			rewardCoins = definition.rewardCoins,
+		})
+	end
+end
+
+achievementsEvent.OnServerEvent:Connect(function(player, action)
+	if action == "RequestSnapshot" then
+		achievementsEvent:FireClient(player, {
+			kind = "Snapshot",
+			achievements = publicAchievementsSnapshot(player),
+		})
+	end
+end)
+
 local function grantDeveloperProductReceipt(player, product, receiptKey)
 	local stats = profileStats(player)
 	if not stats or not profileStore then
@@ -1644,6 +1777,12 @@ local function grantBattleRewards(player, state, winner)
 	if not coins or not xp or not level or not wins or not storyStars then
 		return
 	end
+
+	local lifetimeStats = playerLifetimeStats[player]
+	if lifetimeStats then
+		lifetimeStats.totalRuns += 1
+	end
+	checkAchievements(player)
 
 	local hundredScore = math.floor(state.score / 100)
 	local earnedCoins = math.max(5, hundredScore * Config.CoinsPerHundredScore)
@@ -2729,6 +2868,21 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 	end
 	if not state.developerTestRun then
 		updateLeaderstats(player, state.score, true)
+
+		local lifetimeStats = playerLifetimeStats[player]
+		if lifetimeStats then
+			lifetimeStats.highestCombo = math.max(lifetimeStats.highestCombo, state.comboStreak)
+			lifetimeStats.totalLinesCleared += linesCleared
+			lifetimeStats.totalBlocksPlaced += cellsPlaced
+			if stageResult and stageResult.perfectClear then
+				lifetimeStats.totalPerfectClears += 1
+			end
+			if stageResult and stageResult.currentStage then
+				lifetimeStats.highestStage =
+					math.max(lifetimeStats.highestStage, stageResult.currentStage)
+			end
+		end
+		checkAchievements(player)
 	end
 
 	local hasPieces = false

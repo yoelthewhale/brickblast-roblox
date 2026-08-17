@@ -40,6 +40,7 @@ local effectsEvent = remotes:WaitForChild("Effects")
 local settingsEvent = remotes:WaitForChild("Settings")
 local shopEvent = remotes:WaitForChild("Shop")
 local codesEvent = remotes:WaitForChild("Codes")
+local achievementsEvent = remotes:WaitForChild("Achievements")
 local devCommandFunction = remotes:WaitForChild("DevCommand")
 
 local selectedSlot = nil
@@ -1223,6 +1224,38 @@ hudController = HUDController.new(gui, {
 						submit()
 					end
 				end)
+			end)
+		end,
+		achievements = function()
+			day43Ui.closeMajorPanels("menu")
+			hudController.menu:Open("achievements", "Achievements", function(content)
+				local scroll = Instance.new("ScrollingFrame")
+				scroll.Size = UDim2.fromScale(1, 1)
+				scroll.BackgroundTransparency = 1
+				scroll.BorderSizePixel = 0
+				scroll.ScrollBarThickness = 6
+				scroll.ScrollBarImageColor3 = Color3.fromRGB(30, 187, 255)
+				scroll.CanvasSize = UDim2.fromOffset(0, 0)
+				scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+				scroll.Parent = content
+
+				local layout = Instance.new("UIListLayout")
+				layout.Padding = UDim.new(0, 8)
+				layout.SortOrder = Enum.SortOrder.LayoutOrder
+				layout.Parent = scroll
+
+				local loading = Instance.new("TextLabel")
+				loading.Name = "Loading"
+				loading.BackgroundTransparency = 1
+				loading.Size = UDim2.new(1, 0, 0, 40)
+				loading.Font = Enum.Font.GothamBold
+				loading.Text = "Loading achievements..."
+				loading.TextColor3 = Color3.fromRGB(190, 210, 233)
+				loading.TextSize = 15
+				loading.Parent = scroll
+
+				day43Ui.achievementsScroll = scroll
+				achievementsEvent:FireServer("RequestSnapshot")
 			end)
 		end,
 		settings = function()
@@ -3788,6 +3821,85 @@ shopEvent.OnClientEvent:Connect(function(message)
 	end
 end)
 
+local function renderAchievements(list)
+	local scroll = day43Ui.achievementsScroll
+	if not scroll or not scroll.Parent then
+		return
+	end
+
+	for _, child in scroll:GetChildren() do
+		if child:IsA("Frame") or (child:IsA("TextLabel") and child.Name == "Loading") then
+			child:Destroy()
+		end
+	end
+
+	table.sort(list, function(left, right)
+		if left.unlocked ~= right.unlocked then
+			return left.unlocked
+		end
+		if left.stat ~= right.stat then
+			return left.stat < right.stat
+		end
+		return left.threshold < right.threshold
+	end)
+
+	for order, entry in list do
+		local tierColor = entry.tier == "Gold" and ArcadeUI.Color.gold
+			or entry.tier == "Silver" and ArcadeUI.Color.silver
+			or ArcadeUI.Color.bronze
+
+		local row = Instance.new("Frame")
+		row.LayoutOrder = order
+		row.Size = UDim2.new(1, 0, 0, 60)
+		row.BackgroundColor3 = entry.unlocked and Color3.fromRGB(20, 46, 30)
+			or Color3.fromRGB(14, 23, 43)
+		row.BorderSizePixel = 0
+		row.Parent = scroll
+		UITheme.corner(row, 12)
+		UITheme.stroke(row, tierColor, 2, entry.unlocked and 0.1 or 0.4)
+
+		local tierBar = Instance.new("Frame")
+		tierBar.Position = UDim2.fromOffset(12, 12)
+		tierBar.Size = UDim2.fromOffset(10, 36)
+		tierBar.BackgroundColor3 = tierColor
+		tierBar.BorderSizePixel = 0
+		tierBar.Parent = row
+		UITheme.corner(tierBar, 4)
+
+		local title = Instance.new("TextLabel")
+		title.BackgroundTransparency = 1
+		title.Position = UDim2.fromOffset(34, 8)
+		title.Size = UDim2.new(1, -46, 0, 22)
+		title.Font = Enum.Font.GothamBlack
+		title.Text = `{entry.name} ({entry.tier})`
+		title.TextColor3 = entry.unlocked and Color3.fromRGB(123, 237, 75)
+			or Color3.fromRGB(255, 255, 255)
+		title.TextSize = 15
+		title.TextXAlignment = Enum.TextXAlignment.Left
+		title.TextTruncate = Enum.TextTruncate.AtEnd
+		title.Parent = row
+
+		local progressText = entry.unlocked and "Unlocked!"
+			or `{math.min(entry.progress, entry.threshold)} / {entry.threshold}`
+		local detail = Instance.new("TextLabel")
+		detail.BackgroundTransparency = 1
+		detail.Position = UDim2.fromOffset(34, 30)
+		detail.Size = UDim2.new(1, -46, 0, 20)
+		detail.Font = Enum.Font.GothamBold
+		detail.Text = `{progressText} - +{entry.rewardCoins} coins`
+		detail.TextColor3 = Color3.fromRGB(190, 210, 233)
+		detail.TextSize = 13
+		detail.TextXAlignment = Enum.TextXAlignment.Left
+		detail.Parent = row
+	end
+end
+
+achievementsEvent.OnClientEvent:Connect(function(response)
+	if response and response.kind == "Snapshot" and response.achievements then
+		renderAchievements(response.achievements)
+	end
+end)
+
 codesEvent.OnClientEvent:Connect(function(response)
 	if not response then
 		return
@@ -3906,6 +4018,12 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		end
 		local preset = StageVisuals.presetForStage(effect.currentStage or 1)
 		showBanner(`Stage {effect.currentStage or "?"}!`, preset.stage)
+	elseif effect.kind == "AchievementUnlocked" then
+		playSound("PerfectClear")
+		showBanner(
+			`Achievement unlocked: {effect.name} ({effect.tier}) +{effect.rewardCoins} coins`,
+			Color3.fromRGB(255, 210, 71)
+		)
 	elseif effect.kind == "DeveloperCommand" then
 		showBanner(effect.message or "Developer command applied", Color3.fromRGB(123, 237, 75))
 	elseif effect.kind == "BattleResult" then
