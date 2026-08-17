@@ -181,23 +181,24 @@ local function makeShadow(parent, radius)
 	return shadow
 end
 
-local function makeIcon(parent, iconType, accent)
+local function makeIcon(parent, iconType, chipColor, glyphColor)
+	glyphColor = glyphColor or Color3.fromRGB(255, 255, 255)
+
 	local iconFrame = Instance.new("Frame")
 	iconFrame.Name = "Icon"
 	iconFrame.Size = UDim2.fromOffset(36, 36)
-	iconFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	iconFrame.BackgroundTransparency = 0.08
+	iconFrame.BackgroundColor3 = chipColor
 	iconFrame.BorderSizePixel = 0
 	iconFrame.Parent = parent
 	addCorner(iconFrame, 10)
-	addStroke(iconFrame, accent, 2, 0.08)
+	addStroke(iconFrame, glyphColor, 2, 0.55)
 
-	local function block(name, position, size, color)
+	local function block(name, position, size, colorOverride)
 		local frame = Instance.new("Frame")
 		frame.Name = name
 		frame.Position = position
 		frame.Size = size
-		frame.BackgroundColor3 = color
+		frame.BackgroundColor3 = colorOverride or glyphColor
 		frame.BorderSizePixel = 0
 		frame.Parent = iconFrame
 		addCorner(frame, 3)
@@ -205,46 +206,35 @@ local function makeIcon(parent, iconType, accent)
 	end
 
 	if iconType == "Play" then
-		block("A", UDim2.fromOffset(11, 9), UDim2.fromOffset(14, 18), accent)
-		block("B", UDim2.fromOffset(21, 14), UDim2.fromOffset(6, 8), accent)
+		block("A", UDim2.fromOffset(11, 9), UDim2.fromOffset(14, 18))
+		block("B", UDim2.fromOffset(21, 14), UDim2.fromOffset(6, 8))
 	elseif iconType == "Bag" then
-		block("Body", UDim2.fromOffset(8, 14), UDim2.fromOffset(20, 14), accent)
-		block("HandleLeft", UDim2.fromOffset(11, 9), UDim2.fromOffset(4, 8), accent)
-		block("HandleRight", UDim2.fromOffset(21, 9), UDim2.fromOffset(4, 8), accent)
+		block("Body", UDim2.fromOffset(8, 14), UDim2.fromOffset(20, 14))
+		block("HandleLeft", UDim2.fromOffset(11, 9), UDim2.fromOffset(4, 8))
+		block("HandleRight", UDim2.fromOffset(21, 9), UDim2.fromOffset(4, 8))
 	elseif iconType == "Grid" then
 		for row = 0, 1 do
 			for column = 0, 1 do
 				block(
 					`Cell{row}{column}`,
 					UDim2.fromOffset(9 + column * 10, 9 + row * 10),
-					UDim2.fromOffset(8, 8),
-					accent
+					UDim2.fromOffset(8, 8)
 				)
 			end
 		end
 	elseif iconType == "Gear" then
-		block("Core", UDim2.fromOffset(13, 13), UDim2.fromOffset(10, 10), accent)
-		block("Top", UDim2.fromOffset(15, 7), UDim2.fromOffset(6, 7), accent)
-		block("Bottom", UDim2.fromOffset(15, 22), UDim2.fromOffset(6, 7), accent)
-		block("Left", UDim2.fromOffset(7, 15), UDim2.fromOffset(7, 6), accent)
-		block("Right", UDim2.fromOffset(22, 15), UDim2.fromOffset(7, 6), accent)
+		block("Core", UDim2.fromOffset(13, 13), UDim2.fromOffset(10, 10))
+		block("Top", UDim2.fromOffset(15, 7), UDim2.fromOffset(6, 7))
+		block("Bottom", UDim2.fromOffset(15, 22), UDim2.fromOffset(6, 7))
+		block("Left", UDim2.fromOffset(7, 15), UDim2.fromOffset(7, 6))
+		block("Right", UDim2.fromOffset(22, 15), UDim2.fromOffset(7, 6))
 	elseif iconType == "Quest" then
-		block("Box", UDim2.fromOffset(9, 9), UDim2.fromOffset(18, 18), accent)
-		block(
-			"CheckA",
-			UDim2.fromOffset(13, 18),
-			UDim2.fromOffset(6, 5),
-			Color3.fromRGB(17, 28, 48)
-		)
-		block(
-			"CheckB",
-			UDim2.fromOffset(18, 13),
-			UDim2.fromOffset(5, 10),
-			Color3.fromRGB(17, 28, 48)
-		)
+		block("Box", UDim2.fromOffset(9, 9), UDim2.fromOffset(18, 18))
+		block("CheckA", UDim2.fromOffset(13, 18), UDim2.fromOffset(6, 5), chipColor)
+		block("CheckB", UDim2.fromOffset(18, 13), UDim2.fromOffset(5, 10), chipColor)
 	else
-		block("A", UDim2.fromOffset(9, 10), UDim2.fromOffset(9, 9), accent)
-		block("B", UDim2.fromOffset(19, 17), UDim2.fromOffset(9, 9), accent)
+		block("A", UDim2.fromOffset(9, 10), UDim2.fromOffset(9, 9))
+		block("B", UDim2.fromOffset(19, 17), UDim2.fromOffset(9, 9))
 	end
 
 	return iconFrame
@@ -277,8 +267,12 @@ local function makeNavButton(parent, data, compact)
 	)
 	makeShadow(button, data.primary and 18 or 14)
 
-	local iconFrame =
-		makeIcon(button, data.icon, data.primary and Color3.fromRGB(255, 255, 255) or data.accent)
+	local iconFrame = makeIcon(
+		button,
+		data.icon,
+		data.primary and Color3.fromRGB(255, 255, 255) or data.accent,
+		data.primary and Color3.fromRGB(38, 132, 62) or Color3.fromRGB(255, 255, 255)
+	)
 	iconFrame.Position =
 		UDim2.fromOffset(data.primary and 16 or compact and 12 or 10, data.primary and 12 or 10)
 	iconFrame.ZIndex = button.ZIndex + 1
@@ -400,7 +394,8 @@ function HUDController:BuildResourceBar()
 	bar.Name = "TopResourceBar"
 	bar.AnchorPoint = Vector2.new(1, 0)
 	bar.Position = UDim2.new(1, -24, 0, 56)
-	bar.Size = UDim2.fromOffset(650, 54)
+	bar.AutomaticSize = Enum.AutomaticSize.X
+	bar.Size = UDim2.fromOffset(0, 54)
 	bar.BackgroundColor3 = Color3.fromRGB(18, 28, 50)
 	bar.BorderSizePixel = 0
 	bar.ZIndex = UITheme.Z.hud
@@ -422,17 +417,26 @@ function HUDController:BuildResourceBar()
 		local chip = Instance.new("Frame")
 		chip.Name = `{item.key}Resource`
 		chip.LayoutOrder = index
-		chip.Size = UDim2.fromOffset(index == 3 and 144 or 104, 38)
+		chip.AutomaticSize = Enum.AutomaticSize.X
+		chip.Size = UDim2.fromOffset(0, 38)
 		chip.BackgroundColor3 = Color3.fromRGB(14, 23, 43)
 		chip.BorderSizePixel = 0
 		chip.ZIndex = bar.ZIndex + 1
 		chip.Parent = bar
 		addCorner(chip, 999)
 		addStroke(chip, item.accent, 2, 0.04)
+		addPadding(chip, 14, 16, 0, 0)
+		addList(
+			chip,
+			Enum.FillDirection.Horizontal,
+			8,
+			Enum.HorizontalAlignment.Left,
+			Enum.VerticalAlignment.Center
+		)
 
 		local iconDot = Instance.new("Frame")
 		iconDot.Name = "Accent"
-		iconDot.Position = UDim2.fromOffset(12, 14)
+		iconDot.LayoutOrder = 1
 		iconDot.Size = UDim2.fromOffset(14, 10)
 		iconDot.BackgroundColor3 = item.accent
 		iconDot.BorderSizePixel = 0
@@ -448,8 +452,10 @@ function HUDController:BuildResourceBar()
 			15,
 			Color3.fromRGB(255, 255, 255)
 		)
-		label.Position = UDim2.fromOffset(32, 0)
-		label.Size = UDim2.new(1, -38, 1, 0)
+		label.LayoutOrder = 2
+		label.AutomaticSize = Enum.AutomaticSize.X
+		label.Size = UDim2.fromOffset(0, 38)
+		label.TextWrapped = false
 		label.TextXAlignment = Enum.TextXAlignment.Left
 		label.ZIndex = chip.ZIndex + 1
 		self.resourceLabels[item.key] = label
@@ -460,7 +466,8 @@ function HUDController:BuildLeftNav()
 	local stack = Instance.new("Frame")
 	stack.Name = "LeftArcadeNav"
 	stack.Position = UDim2.fromOffset(24, 156)
-	stack.Size = UDim2.fromOffset(150, 190)
+	stack.AutomaticSize = Enum.AutomaticSize.Y
+	stack.Size = UDim2.fromOffset(150, 0)
 	stack.BackgroundColor3 = Color3.fromRGB(15, 25, 48)
 	stack.BorderSizePixel = 0
 	stack.ZIndex = UITheme.Z.hud
@@ -652,7 +659,6 @@ function HUDController:RefreshResponsiveLayout()
 	local screenSize = self.gui.AbsoluteSize
 	local inset = GuiService:GetGuiInset()
 	local phone = screenSize.X < 720 or screenSize.Y < 520
-	local tablet = screenSize.X < 1060
 
 	if self.brand then
 		self.brand.Position =
@@ -666,18 +672,13 @@ function HUDController:RefreshResponsiveLayout()
 		self.resourceBar.Position = phone and UDim2.new(0, 16, 0, math.max(inset.Y + 82, 92))
 			or UDim2.new(1, -24, 0, math.max(inset.Y + 18, 56))
 		self.resourceBar.AnchorPoint = phone and Vector2.new(0, 0) or Vector2.new(1, 0)
-		self.resourceBar.Size = phone and UDim2.new(1, -32, 0, 46)
-			or UDim2.fromOffset(tablet and 560 or 650, 54)
+		self.resourceBar.AutomaticSize = phone and Enum.AutomaticSize.None or Enum.AutomaticSize.X
+		self.resourceBar.Size = phone and UDim2.new(1, -32, 0, 46) or UDim2.fromOffset(0, 54)
 		for _, item in RESOURCE_ITEMS do
 			local label = self.resourceLabels[item.key]
 			local chip = label and label.Parent
 			if chip and chip:IsA("Frame") then
-				chip.Size = UDim2.fromOffset(
-					phone and (item.key == "coins" and 118 or 82)
-						or item.key == "coins" and 144
-						or 104,
-					phone and 32 or 38
-				)
+				chip.Size = UDim2.fromOffset(0, phone and 32 or 38)
 				label.TextSize = phone and 12 or 15
 			end
 		end
@@ -686,7 +687,8 @@ function HUDController:RefreshResponsiveLayout()
 	if self.leftNav then
 		self.leftNav.Position = phone and UDim2.new(0, 16, 1, -110)
 			or UDim2.new(0, 24, 0, math.max(inset.Y + 118, 156))
-		self.leftNav.Size = phone and UDim2.fromOffset(236, 82) or UDim2.fromOffset(150, 190)
+		self.leftNav.AutomaticSize = phone and Enum.AutomaticSize.X or Enum.AutomaticSize.Y
+		self.leftNav.Size = phone and UDim2.fromOffset(0, 82) or UDim2.fromOffset(150, 0)
 		local layout = self.leftNav:FindFirstChildOfClass("UIListLayout")
 		if layout then
 			layout.FillDirection = phone and Enum.FillDirection.Horizontal
