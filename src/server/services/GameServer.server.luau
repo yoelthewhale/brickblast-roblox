@@ -68,6 +68,10 @@ local shopEvent = Instance.new("RemoteEvent")
 shopEvent.Name = "Shop"
 shopEvent.Parent = remotes
 
+local codesEvent = Instance.new("RemoteEvent")
+codesEvent.Name = "Codes"
+codesEvent.Parent = remotes
+
 local devCommandFunction = Instance.new("RemoteFunction")
 devCommandFunction.Name = "DevCommand"
 devCommandFunction.Parent = remotes
@@ -236,6 +240,7 @@ local playerSettings = {}
 local playerDailyRewardDates = {}
 local playerEntitlements = {}
 local playerFulfilledPurchaseIds = {}
+local playerRedeemedCodes = {}
 local playerCosmeticInventories = {}
 local selectedStoryChapters = {}
 local lastPlaceRequestAt = {}
@@ -664,6 +669,9 @@ local function createLeaderstats(player)
 		playerFulfilledPurchaseIds[player] = typeof(profile.fulfilledPurchaseIds) == "table"
 				and table.clone(profile.fulfilledPurchaseIds)
 			or {}
+		playerRedeemedCodes[player] = typeof(profile.redeemedCodes) == "table"
+				and table.clone(profile.redeemedCodes)
+			or {}
 		playerCosmeticInventories[player] = sanitizeCosmeticInventory(
 			player,
 			profile.cosmetics,
@@ -792,6 +800,12 @@ local function mergedProfilePayload(player, existingProfile, stats)
 			existingProfile.fulfilledPurchaseIds
 		)
 		or {}
+	local redeemedCodes = typeof(playerRedeemedCodes[player]) == "table"
+			and table.clone(playerRedeemedCodes[player])
+		or typeof(existingProfile.redeemedCodes) == "table" and table.clone(
+			existingProfile.redeemedCodes
+		)
+		or {}
 
 	return {
 		version = PROFILE_VERSION,
@@ -805,6 +819,7 @@ local function mergedProfilePayload(player, existingProfile, stats)
 		dailyRewardDate = playerDailyRewardDates[player],
 		cosmetics = cosmeticInventory(player),
 		fulfilledPurchaseIds = fulfilledPurchaseIds,
+		redeemedCodes = redeemedCodes,
 		updatedAt = os.time(),
 	}
 end
@@ -1359,6 +1374,83 @@ local function equipCosmetic(player, cosmeticId)
 	sendSettings(player)
 	sendShopSnapshot(player, `{cosmetic.name} equipped.`)
 end
+
+local CODES = {
+	yoel = { kind = "DevUnlock" },
+}
+
+local function redeemCode(player, rawCode)
+	local normalizedCode = typeof(rawCode) == "string" and rawCode:gsub("%s", ""):lower() or ""
+	local definition = normalizedCode ~= "" and CODES[normalizedCode] or nil
+	if not definition then
+		codesEvent:FireClient(player, { kind = "Error", message = "That code doesn't exist." })
+		return
+	end
+
+	local redeemed = playerRedeemedCodes[player] or {}
+	playerRedeemedCodes[player] = redeemed
+	if redeemed[normalizedCode] then
+		codesEvent:FireClient(
+			player,
+			{ kind = "Error", message = "You already redeemed that code." }
+		)
+		return
+	end
+
+	if definition.kind == "DevUnlock" then
+		local leaderstats = player:FindFirstChild("leaderstats")
+		local coins = leaderstats and leaderstats:FindFirstChild("Coins")
+		local xp = leaderstats and leaderstats:FindFirstChild("XP")
+		local level = leaderstats and leaderstats:FindFirstChild("Level")
+		local storyStars = leaderstats and leaderstats:FindFirstChild("StoryStars")
+		if not coins or not xp or not level or not storyStars then
+			codesEvent:FireClient(player, {
+				kind = "Error",
+				message = "Stats aren't loaded yet, try again in a moment.",
+			})
+			return
+		end
+
+		coins.Value = PROFILE_LIMITS.coins
+		xp.Value = PROFILE_LIMITS.xp
+		level.Value = PROFILE_LIMITS.level
+		storyStars.Value = PROFILE_LIMITS.storyStars
+
+		local inventory = cosmeticInventory(player)
+		for _, cosmetic in Config.Cosmetics do
+			inventory.owned[cosmetic.id] = true
+		end
+
+		redeemed[normalizedCode] = true
+		if not saveProfile(player) then
+			redeemed[normalizedCode] = nil
+			codesEvent:FireClient(
+				player,
+				{ kind = "Error", message = "Couldn't save that. Try again." }
+			)
+			return
+		end
+
+		sendSettings(player)
+		if sendShopSnapshot then
+			sendShopSnapshot(player, "Everything unlocked.")
+		end
+		codesEvent:FireClient(player, {
+			kind = "Success",
+			message = "Dev code redeemed: everything unlocked and stats maxed out.",
+		})
+		return
+	end
+
+	codesEvent:FireClient(
+		player,
+		{ kind = "Error", message = "That code can't be redeemed right now." }
+	)
+end
+
+codesEvent.OnServerEvent:Connect(function(player, rawCode)
+	redeemCode(player, rawCode)
+end)
 
 local function grantDeveloperProductReceipt(player, product, receiptKey)
 	local stats = profileStats(player)

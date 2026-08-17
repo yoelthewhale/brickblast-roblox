@@ -39,6 +39,7 @@ local hubEvent = remotes:WaitForChild("Hub")
 local effectsEvent = remotes:WaitForChild("Effects")
 local settingsEvent = remotes:WaitForChild("Settings")
 local shopEvent = remotes:WaitForChild("Shop")
+local codesEvent = remotes:WaitForChild("Codes")
 local devCommandFunction = remotes:WaitForChild("DevCommand")
 
 local selectedSlot = nil
@@ -1140,6 +1141,89 @@ hudController = HUDController.new(gui, {
 				"Solo scores, coins, XP, and personal bests are already tracked.",
 				"Daily quests are intentionally disabled in this solo-first build.",
 			})
+		end,
+		codes = function()
+			day43Ui.closeMajorPanels("menu")
+			hudController.menu:Open("codes", "Redeem Code", function(content)
+				local layout = Instance.new("UIListLayout")
+				layout.Padding = UDim.new(0, 12)
+				layout.SortOrder = Enum.SortOrder.LayoutOrder
+				layout.Parent = content
+
+				local hint = Instance.new("TextLabel")
+				hint.LayoutOrder = 1
+				hint.BackgroundTransparency = 1
+				hint.Size = UDim2.new(1, 0, 0, 40)
+				hint.Font = Enum.Font.GothamBold
+				hint.Text = "Enter a code to redeem a reward."
+				hint.TextColor3 = Color3.fromRGB(190, 210, 233)
+				hint.TextSize = 15
+				hint.TextWrapped = true
+				hint.TextXAlignment = Enum.TextXAlignment.Left
+				hint.Parent = content
+
+				local input = Instance.new("TextBox")
+				input.LayoutOrder = 2
+				input.Size = UDim2.new(1, 0, 0, 52)
+				input.BackgroundColor3 = Color3.fromRGB(14, 23, 43)
+				input.BorderSizePixel = 0
+				input.ClearTextOnFocus = false
+				input.Font = Enum.Font.GothamBlack
+				input.PlaceholderText = "Enter code"
+				input.PlaceholderColor3 = Color3.fromRGB(120, 136, 168)
+				input.Text = ""
+				input.TextColor3 = Color3.fromRGB(255, 255, 255)
+				input.TextSize = 18
+				input.Parent = content
+				UITheme.corner(input, 12)
+				UITheme.stroke(input, Color3.fromRGB(30, 187, 255), 2, 0.2)
+
+				local status = Instance.new("TextLabel")
+				status.LayoutOrder = 3
+				status.BackgroundTransparency = 1
+				status.Size = UDim2.new(1, 0, 0, 30)
+				status.Font = Enum.Font.GothamBold
+				status.Text = ""
+				status.TextColor3 = Color3.fromRGB(190, 210, 233)
+				status.TextSize = 14
+				status.TextWrapped = true
+				status.TextXAlignment = Enum.TextXAlignment.Left
+				status.Parent = content
+				day43Ui.codeStatusLabel = status
+
+				local redeem = Instance.new("TextButton")
+				redeem.LayoutOrder = 4
+				redeem.Size = UDim2.new(1, 0, 0, 54)
+				redeem.BackgroundColor3 = Color3.fromRGB(123, 237, 75)
+				redeem.BorderSizePixel = 0
+				redeem.Font = Enum.Font.GothamBlack
+				redeem.Text = "REDEEM"
+				redeem.TextColor3 = Color3.fromRGB(15, 46, 24)
+				redeem.TextSize = 18
+				redeem.Parent = content
+				UITheme.button(redeem, "primary")
+				UITheme.attachButtonFeedback(redeem, isUiReducedMotion)
+
+				local function submit()
+					local code = input.Text
+					if not code or code:gsub("%s", "") == "" then
+						status.Text = "Type a code first."
+						status.TextColor3 = Color3.fromRGB(255, 139, 61)
+						return
+					end
+					playSound("Button")
+					status.Text = "Checking..."
+					status.TextColor3 = Color3.fromRGB(190, 210, 233)
+					codesEvent:FireServer(code)
+				end
+
+				redeem.Activated:Connect(submit)
+				input.FocusLost:Connect(function(enterPressed)
+					if enterPressed then
+						submit()
+					end
+				end)
+			end)
 		end,
 		settings = function()
 			day43Ui.closeMajorPanels("menu")
@@ -3702,6 +3786,24 @@ shopEvent.OnClientEvent:Connect(function(message)
 	if shopPanelController then
 		shopPanelController:HandleServerMessage(message)
 	end
+end)
+
+codesEvent.OnClientEvent:Connect(function(response)
+	if not response then
+		return
+	end
+
+	local message = response.message or ""
+	local isSuccess = response.kind == "Success"
+	local color = isSuccess and Color3.fromRGB(123, 237, 75) or Color3.fromRGB(255, 139, 61)
+
+	if day43Ui.codeStatusLabel and day43Ui.codeStatusLabel.Parent then
+		day43Ui.codeStatusLabel.Text = message
+		day43Ui.codeStatusLabel.TextColor3 = color
+	end
+
+	playSound(isSuccess and "Result" or "Blocked")
+	showBanner(message, color)
 end)
 
 effectsEvent.OnClientEvent:Connect(function(effect)

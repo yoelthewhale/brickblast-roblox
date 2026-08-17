@@ -18,6 +18,12 @@ local LEFT_BUTTONS = {
 		icon = "Quest",
 		accent = Color3.fromRGB(255, 210, 71),
 	},
+	{
+		key = "codes",
+		label = "Codes",
+		icon = "Gift",
+		accent = Color3.fromRGB(255, 93, 200),
+	},
 }
 
 if ExperienceConfig.UI.ShowModesButton then
@@ -232,6 +238,10 @@ local function makeIcon(parent, iconType, chipColor, glyphColor)
 		block("Box", UDim2.fromOffset(9, 9), UDim2.fromOffset(18, 18))
 		block("CheckA", UDim2.fromOffset(13, 18), UDim2.fromOffset(6, 5), chipColor)
 		block("CheckB", UDim2.fromOffset(18, 13), UDim2.fromOffset(5, 10), chipColor)
+	elseif iconType == "Gift" then
+		block("Box", UDim2.fromOffset(8, 16), UDim2.fromOffset(20, 12))
+		block("Lid", UDim2.fromOffset(7, 12), UDim2.fromOffset(22, 5))
+		block("Ribbon", UDim2.fromOffset(16, 12), UDim2.fromOffset(4, 16), chipColor)
 	else
 		block("A", UDim2.fromOffset(9, 10), UDim2.fromOffset(9, 9))
 		block("B", UDim2.fromOffset(19, 17), UDim2.fromOffset(9, 9))
