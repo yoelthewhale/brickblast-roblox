@@ -1,0 +1,23 @@
+# Keep line endings consistent for everyone, on every OS.
+#
+# Without this, Git on Windows checks files out with CRLF line endings while
+# stylua.toml requires Unix (LF). That makes `stylua --check src` fail locally
+# on Windows for files nobody has touched, even though CI (Linux) passes -
+# confusing, and it produces noisy whole-file diffs when two people on
+# different systems edit the same file.
+#
+# Everything already committed to this repo is LF, so this file makes the
+# working copy match what is stored, rather than changing any file content.
+* text=auto eol=lf
+
+# Binary files must never have line endings rewritten - doing so corrupts them.
+*.rbxl binary
+*.rbxlx binary
+*.rbxm binary
+*.rbxmx binary
+*.exe binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.zip binary

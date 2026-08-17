@@ -11,3 +11,7 @@ ServerPackages/
 .DS_Store
 .mcp.json
 *.log
+
+# Local AI-assistant working directory (agent worktrees, local settings).
+# Never belongs in the repository.
+.claude/

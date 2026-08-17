@@ -1,16 +1,21 @@
 # BrickBlast — Start Here
 
-New to this repo? Read this first, then [`README.md`](README.md) for current status and [`AGENTS.md`](AGENTS.md) if you're using an AI coding agent (Claude Code, Codex) on this project.
+New to this repo? Read this first, then [`README.md`](README.md) for current status. If you are about to contribute a change, read [`CONTRIBUTING.md`](CONTRIBUTING.md) — it covers the branch/PR workflow. [`AGENTS.md`](AGENTS.md) is for AI coding agents (Claude Code, Codex, Copilot).
 
-Project folder:
+## Getting The Project
 
-`C:\Users\Bear4\Documents\Codex\2026-07-28\build\outputs\block-blast-battle`
+```bash
+git clone https://github.com/yoelthewhale/brickblast-roblox.git
+cd brickblast-roblox
+```
+
+Clone it wherever you like — nothing in the project depends on a specific location. Every script and task here resolves paths relative to the repository root.
+
+(For reference, on Yoel's machine it happens to live at `C:\Users\Bear4\Documents\Codex\2026-07-28\build\outputs\block-blast-battle`, and older changelog entries mention that path. Yours will be different, and that is fine.)
 
 ## Open In VS Code
 
-Open this folder, not one of the parent `Codex` folders:
-
-`C:\Users\Bear4\Documents\Codex\2026-07-28\build\outputs\block-blast-battle`
+Open the repository folder itself — the one containing `default.project.json` — not a parent folder.
 
 ## Where Things Live
 
