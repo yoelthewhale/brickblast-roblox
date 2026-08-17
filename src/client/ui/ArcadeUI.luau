@@ -373,15 +373,198 @@ function ArcadeUI.PlayBoardDiff(context, previous, nextBoard)
 	-- Placement pops are fired once by the explicit "Place" effect
 	-- (see BlockBlastClient's effectsEvent handler); only clear feedback
 	-- belongs here, or clears would pop twice for the same placement.
+	local clearedCells = {}
 	for y = 1, context.boardSize do
 		for x = 1, context.boardSize do
-			local oldValue = previous[y][x]
-			local newValue = nextBoard[y][x]
-			if oldValue ~= false and newValue == false then
-				ArcadeUI.PlayClearFlash(context, x, y)
+			if previous[y][x] ~= false and nextBoard[y][x] == false then
+				table.insert(clearedCells, { x = x, y = y })
 			end
 		end
 	end
+
+	if #clearedCells == 0 then
+		return
+	end
+
+	-- Grid.clearLines only ever clears whole rows/columns, so a "line" here
+	-- is any row/column where every cell in it just transitioned to empty.
+	-- Staggering by line (and then across each line) gives the classic
+	-- left-to-right/top-to-bottom sweep instead of every cell popping at once.
+	local function lineFullyCleared(getCell)
+		for i = 1, context.boardSize do
+			local x, y = getCell(i)
+			if not (previous[y][x] ~= false and nextBoard[y][x] == false) then
+				return false
+			end
+		end
+		return true
+	end
+
+	local clearedRows, clearedColumns = {}, {}
+	for y = 1, context.boardSize do
+		if lineFullyCleared(function(i)
+			return i, y
+		end) then
+			table.insert(clearedRows, y)
+		end
+	end
+	for x = 1, context.boardSize do
+		if lineFullyCleared(function(i)
+			return x, i
+		end) then
+			table.insert(clearedColumns, x)
+		end
+	end
+
+	local STAGGER_STEP = 0.025
+	local LINE_GAP = 0.08
+	local handled = {}
+	local lineIndex = 0
+
+	for _, y in clearedRows do
+		local base = lineIndex * LINE_GAP
+		lineIndex += 1
+		for x = 1, context.boardSize do
+			handled[`{x}:{y}`] = true
+			task.delay(base + (x - 1) * STAGGER_STEP, function()
+				ArcadeUI.PlayClearFlash(context, x, y)
+			end)
+		end
+	end
+
+	for _, x in clearedColumns do
+		local base = lineIndex * LINE_GAP
+		lineIndex += 1
+		for y = 1, context.boardSize do
+			local key = `{x}:{y}`
+			if not handled[key] then
+				handled[key] = true
+				task.delay(base + (y - 1) * STAGGER_STEP, function()
+					ArcadeUI.PlayClearFlash(context, x, y)
+				end)
+			end
+		end
+	end
+
+	-- Fallback for any diffed cell that isn't part of a full row/column
+	-- (e.g. a board reset outside normal line-clear flow).
+	for _, cell in clearedCells do
+		local key = `{cell.x}:{cell.y}`
+		if not handled[key] then
+			ArcadeUI.PlayClearFlash(context, cell.x, cell.y)
+		end
+	end
+end
+
+function ArcadeUI.ScorePopup(context, amount)
+	if not context.parent or not amount or amount <= 0 then
+		return
+	end
+
+	local label = Instance.new("TextLabel")
+	label.Name = "ScorePopup"
+	label.BackgroundTransparency = 1
+	label.AnchorPoint = Vector2.new(0.5, 0)
+	label.Position = UDim2.new(0.5, 0, 0, 18)
+	label.Size = UDim2.fromOffset(160, 32)
+	label.Font = Enum.Font.GothamBlack
+	label.Text = `+{amount}`
+	label.TextColor3 = Color3.fromRGB(123, 237, 75)
+	label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	label.TextStrokeTransparency = 0.2
+	label.TextSize = 24
+	label.ZIndex = 20
+	label.Parent = context.parent
+
+	if context.reducedMotion then
+		task.delay(0.35, function()
+			label:Destroy()
+		end)
+		return
+	end
+
+	context.TweenService
+		:Create(label, TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = label.Position - UDim2.fromOffset(0, 46),
+			TextTransparency = 1,
+			TextStrokeTransparency = 1,
+		})
+		:Play()
+	task.delay(0.7, function()
+		label:Destroy()
+	end)
+end
+
+function ArcadeUI.PulseCombo(context)
+	if not context.comboBadge then
+		return
+	end
+
+	if context.reducedMotion then
+		local original = context.comboBadge.BackgroundColor3
+		context.comboBadge.BackgroundColor3 = Color3.fromRGB(255, 210, 71)
+		task.delay(0.15, function()
+			if context.comboBadge then
+				context.comboBadge.BackgroundColor3 = original
+			end
+		end)
+		return
+	end
+
+	local scale = context.comboBadge:FindFirstChildOfClass("UIScale") or Instance.new("UIScale")
+	scale.Parent = context.comboBadge
+	scale.Scale = 1
+	context.TweenService:Create(scale, context.quickTween, { Scale = 1.18 }):Play()
+	task.delay(0.14, function()
+		if scale.Parent then
+			context.TweenService
+				:Create(
+					scale,
+					TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+					{ Scale = 1 }
+				)
+				:Play()
+		end
+	end)
+
+	for _, sparkle in context.comboBadge:GetChildren() do
+		if sparkle:IsA("Frame") and sparkle.Name:match("^ComboSparkle") then
+			sparkle.BackgroundTransparency = 0
+			context.TweenService
+				:Create(
+					sparkle,
+					TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+					{ BackgroundTransparency = 1 }
+				)
+				:Play()
+		end
+	end
+end
+
+function ArcadeUI.PerfectClearFlash(context)
+	if context.reducedMotion or not context.boardFrame then
+		return
+	end
+
+	local flash = Instance.new("Frame")
+	flash.Name = "PerfectClearFlash"
+	flash.BackgroundColor3 = Color3.fromRGB(255, 210, 71)
+	flash.BackgroundTransparency = 0.35
+	flash.BorderSizePixel = 0
+	flash.Size = UDim2.fromScale(1, 1)
+	flash.ZIndex = 30
+	flash.Parent = context.boardFrame
+
+	context.TweenService
+		:Create(
+			flash,
+			TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ BackgroundTransparency = 1 }
+		)
+		:Play()
+	task.delay(0.5, function()
+		flash:Destroy()
+	end)
 end
 
 function ArcadeUI.ShakeWindow(context)

@@ -2616,6 +2616,7 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 		lineClearEffect = publicEquippedCosmetics(player).lineClearEffect,
 		comboStreak = state.comboStreak,
 		comboBonus = comboBonus,
+		scoreDelta = scoreDelta,
 		stageProgressGained = stageResult and stageResult.progressGained or nil,
 		perfectClear = stageResult and stageResult.perfectClear or nil,
 	})

@@ -131,6 +131,7 @@ local renderGhostPreview = nil
 local renderHand = nil
 local renderDiagnostics = nil
 local pulseHandSlot = nil
+local previousHandOccupied = {}
 
 local WINDOW_LAYOUT = SoloLayout.calculate(Vector2.new(1280, 720), 36, 0, 1)
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
@@ -2012,6 +2013,7 @@ for sparkleIndex = 1, 4 do
 	sparkle.BorderSizePixel = 0
 	sparkle.Position = UDim2.fromOffset(26 + sparkleIndex * 36, sparkleIndex % 2 == 0 and 24 or 76)
 	sparkle.Size = UDim2.fromOffset(7, 7)
+	sparkle.BackgroundTransparency = 1
 	sparkle.Active = false
 	sparkle.Parent = comboBadgeLabel
 	UITheme.corner(sparkle, 7)
@@ -3257,10 +3259,34 @@ pulseHandSlot = function(slot)
 	end)
 end
 
+local function playTrayEntrance(button, slot)
+	if reducedMotion then
+		return
+	end
+
+	local scale = button:FindFirstChildOfClass("UIScale") or Instance.new("UIScale")
+	scale.Parent = button
+	scale.Scale = 0.4
+	task.delay((slot - 1) * 0.05, function()
+		if scale.Parent then
+			TweenService:Create(
+				scale,
+				TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+				{ Scale = 1 }
+			):Play()
+		end
+	end)
+end
+
 renderHand = function()
 	local preset, hasSoloStage = activeStageVisual()
 	for slot, button in handButtons do
 		local shape = currentState.hand[slot]
+		local isOccupied = shape ~= nil
+		if isOccupied and not previousHandOccupied[slot] then
+			playTrayEntrance(button, slot)
+		end
+		previousHandOccupied[slot] = isOccupied
 		local label = button:FindFirstChild("Label")
 		if label then
 			label.Text = ArcadeUI.HandSlotText(shape)
@@ -3694,9 +3720,31 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 				}, effect.originX + cell.X, effect.originY + cell.Y)
 			end
 		end
+		if effect.scoreDelta and effect.scoreDelta > 0 then
+			ArcadeUI.ScorePopup({
+				parent = stageUi.scoreCard,
+				reducedMotion = reducedMotion,
+				TweenService = TweenService,
+			}, effect.scoreDelta)
+		end
 		if effect.linesCleared and effect.linesCleared > 0 then
 			playSound("Clear")
 			if effect.comboStreak and effect.comboStreak > 1 then
+				ArcadeUI.PulseCombo({
+					comboBadge = comboBadgeLabel,
+					reducedMotion = reducedMotion,
+					TweenService = TweenService,
+					quickTween = QUICK_TWEEN,
+				})
+			end
+			if effect.perfectClear then
+				ArcadeUI.PerfectClearFlash({
+					boardFrame = boardFrame,
+					reducedMotion = reducedMotion,
+					TweenService = TweenService,
+				})
+				showBanner(`Perfect clear! +{effect.comboBonus or 0}`, Color3.fromRGB(255, 210, 71))
+			elseif effect.comboStreak and effect.comboStreak > 1 then
 				showBanner(
 					`Combo x{effect.comboStreak}! +{effect.comboBonus or 0}`,
 					Color3.fromRGB(255, 210, 71)
