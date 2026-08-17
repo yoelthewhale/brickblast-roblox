@@ -17,6 +17,10 @@ Blocks.Shapes = {
 		cells = { Vector2.new(0, 0), Vector2.new(1, 0) },
 	},
 	{
+		id = "vertical2",
+		cells = { Vector2.new(0, 0), Vector2.new(0, 1) },
+	},
+	{
 		id = "line3",
 		cells = { Vector2.new(0, 0), Vector2.new(1, 0), Vector2.new(2, 0) },
 	},
@@ -79,6 +83,17 @@ Blocks.Shapes = {
 			Vector2.new(0, 1),
 			Vector2.new(1, 1),
 			Vector2.new(2, 1),
+		},
+	},
+	{
+		id = "rect3x2",
+		cells = {
+			Vector2.new(0, 0),
+			Vector2.new(1, 0),
+			Vector2.new(0, 1),
+			Vector2.new(1, 1),
+			Vector2.new(0, 2),
+			Vector2.new(1, 2),
 		},
 	},
 	{
