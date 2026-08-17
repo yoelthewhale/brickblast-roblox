@@ -3277,6 +3277,7 @@ local function playTrayEntrance(button, slot)
 	scale.Scale = 0.4
 	task.delay((slot - 1) * 0.05, function()
 		if scale.Parent then
+			playSound("TrayRefill")
 			TweenService:Create(
 				scale,
 				TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
@@ -3738,6 +3739,7 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		if effect.linesCleared and effect.linesCleared > 0 then
 			playSound("Clear")
 			if effect.comboStreak and effect.comboStreak > 1 then
+				playSound("Combo")
 				ArcadeUI.PulseCombo({
 					comboBadge = comboBadgeLabel,
 					reducedMotion = reducedMotion,
@@ -3746,6 +3748,7 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 				})
 			end
 			if effect.perfectClear then
+				playSound("PerfectClear")
 				ArcadeUI.PerfectClearFlash({
 					boardFrame = boardFrame,
 					reducedMotion = reducedMotion,

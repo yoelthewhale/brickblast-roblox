@@ -3,13 +3,20 @@ local SoundService = game:GetService("SoundService")
 local SoundController = {}
 SoundController.__index = SoundController
 
+-- pitch shifts (via PlaybackSpeed) give the new Day44B animation cues a
+-- distinct character without needing new uploaded assets: reusing an
+-- already-verified sound at a different pitch is far lower risk than
+-- guessing at unverified asset ids.
 local SOUND_ASSETS = {
-	Button = "rbxassetid://12221967",
-	Queue = "rbxassetid://12221990",
-	Place = "rbxassetid://12221976",
-	Blocked = "rbxassetid://12221984",
-	Clear = "rbxassetid://12222005",
-	Result = "rbxassetid://12221990",
+	Button = { id = "rbxassetid://12221967", pitch = 1 },
+	Queue = { id = "rbxassetid://12221990", pitch = 1 },
+	Place = { id = "rbxassetid://12221976", pitch = 1 },
+	Blocked = { id = "rbxassetid://12221984", pitch = 1 },
+	Clear = { id = "rbxassetid://12222005", pitch = 1 },
+	Result = { id = "rbxassetid://12221990", pitch = 1 },
+	Combo = { id = "rbxassetid://12222005", pitch = 1.18 },
+	PerfectClear = { id = "rbxassetid://12221990", pitch = 0.85 },
+	TrayRefill = { id = "rbxassetid://12221967", pitch = 1.35 },
 }
 
 function SoundController.new()
@@ -19,10 +26,11 @@ function SoundController.new()
 		sounds = {},
 	}, SoundController)
 
-	for cueName, soundId in SOUND_ASSETS do
+	for cueName, asset in SOUND_ASSETS do
 		local sound = Instance.new("Sound")
 		sound.Name = `BlockBlast{cueName}`
-		sound.SoundId = soundId
+		sound.SoundId = asset.id
+		sound.PlaybackSpeed = asset.pitch
 		sound.Volume = self.volume
 		sound.RollOffMode = Enum.RollOffMode.InverseTapered
 		sound.Parent = SoundService
