@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: New here? Start with the onboarding guide
+    url: https://github.com/yoelthewhale/brickblast-roblox/issues/70
+    about: Setup steps, a suggested order of first tasks, and which areas to avoid.
+  - name: How to contribute (branch and pull request workflow)
+    url: https://github.com/yoelthewhale/brickblast-roblox/blob/master/CONTRIBUTING.md
+    about: Required tools, validation commands, and how to open a pull request.

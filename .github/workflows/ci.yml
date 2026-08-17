@@ -1,0 +1,72 @@
+name: CI
+
+# Runs the same validation commands documented in CONTRIBUTING.md.
+# Every check below can be run locally first - see "Validate your work" there.
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  validate:
+    name: Format, lint, test, build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      # Rokit reads rokit.toml and installs the exact pinned tool versions the
+      # project uses locally (rojo, stylua, selene, lune). Installing through
+      # rokit rather than pinning versions here keeps CI and local dev in sync -
+      # update rokit.toml and CI follows automatically.
+      - name: Install Rokit
+        run: |
+          curl -fsSL -o rokit.zip \
+            https://github.com/rojo-rbx/rokit/releases/download/v1.2.0/rokit-1.2.0-linux-x86_64.zip
+          unzip -q rokit.zip
+          chmod +x rokit
+          ./rokit self-install
+          echo "$HOME/.rokit/bin" >> "$GITHUB_PATH"
+
+      - name: Install project tools from rokit.toml
+        run: rokit install --no-trust-check
+
+      # Fails if any Luau file is not formatted the way stylua.toml specifies.
+      # Fix locally with: stylua src
+      - name: Check formatting (StyLua)
+        run: stylua --check src
+
+      # Static analysis: undefined globals, unused variables, incorrect Roblox
+      # API usage, and similar mistakes that are not syntax errors.
+      - name: Lint (Selene)
+        run: selene src
+
+      # Runs every *Tests.luau module under src/shared/game via Lune, outside of
+      # Roblox Studio. Exits non-zero if any test fails.
+      - name: Run tests (Lune)
+        run: lune run scripts/run-tests.luau
+
+      # Proves the project still assembles into a working Roblox place file.
+      # Catches broken Rojo config or files that cannot be synced.
+      # *.rbxl is gitignored, so this output does not dirty the tree.
+      - name: Build place file (Rojo)
+        run: rojo build default.project.json --output BrickBlast-ci.rbxl
+
+      # Catches whitespace errors (trailing spaces, stray tabs) and leftover
+      # merge-conflict markers.
+      - name: Check for whitespace errors
+        run: git diff --check
+
+      # If any of the steps above modified a tracked file, something generated
+      # output into the repo that should have been gitignored. Fail loudly
+      # rather than letting build artifacts get committed later.
+      - name: Ensure the working tree is still clean
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::Validation modified tracked files. Check what changed below."
+            git status --porcelain
+            exit 1
+          fi
+          echo "Working tree is clean."
