@@ -2940,7 +2940,7 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 	else
 		state.comboStreak = 0
 	end
-	local scoreDelta, comboBonus =
+	local scoreDelta, comboBonus, multiLineBonus =
 		GameplayRules.scoreForPlacement(cellsPlaced, linesCleared, state.comboStreak)
 	local stageResult = nil
 	if state.mode == "Solo" then
@@ -2961,6 +2961,7 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 		lineClearEffect = publicEquippedCosmetics(player).lineClearEffect,
 		comboStreak = state.comboStreak,
 		comboBonus = comboBonus,
+		multiLineBonus = multiLineBonus,
 		scoreDelta = scoreDelta,
 		stageProgressGained = stageResult and stageResult.progressGained or nil,
 		perfectClear = stageResult and stageResult.perfectClear or nil,

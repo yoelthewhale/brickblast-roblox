@@ -28,9 +28,46 @@ tests.scoreForPlacementMatchesFormula = function()
 	assertCondition(scoreDelta == 40, "four placed cells with no clear should score 40")
 	assertCondition(comboBonus == 0, "no combo bonus without a streak above 1")
 
-	scoreDelta, comboBonus = GameplayRules.scoreForPlacement(4, 2, 3)
+	local multiLineBonus
+	scoreDelta, comboBonus, multiLineBonus = GameplayRules.scoreForPlacement(4, 2, 3)
 	assertCondition(comboBonus == 50, "streak 3 should give two bonus units")
-	assertCondition(scoreDelta == 290, "cells + lines + combo bonus should sum to 290")
+	assertCondition(multiLineBonus == 25, "clearing two lines at once should add one bonus unit")
+	assertCondition(
+		scoreDelta == 315,
+		"cells + lines + combo bonus + multi-line bonus should sum to 315"
+	)
+end
+
+tests.multiLineBonusOnlyAppliesToSimultaneousClears = function()
+	assertCondition(GameplayRules.multiLineBonusForClear(0) == 0, "no clear earns no bonus")
+	assertCondition(GameplayRules.multiLineBonusForClear(1) == 0, "a single line earns no bonus")
+	assertCondition(GameplayRules.multiLineBonusForClear(2) == 25, "two lines earn one bonus unit")
+	assertCondition(
+		GameplayRules.multiLineBonusForClear(3) == 75,
+		"three lines earn three bonus units"
+	)
+	assertCondition(GameplayRules.multiLineBonusForClear(nil) == 0, "a missing count earns nothing")
+	assertCondition(GameplayRules.multiLineBonusForClear(-4) == 0, "a negative count earns nothing")
+end
+
+tests.simultaneousClearsScoreAtLeastSequentialOnes = function()
+	-- The regression this guards: clearing n lines in one placement used to
+	-- score less than clearing them one at a time, because only the sequential
+	-- route collected combo bonuses. Cells placed are held at zero so the
+	-- comparison isolates the clear itself.
+	for lines = 2, 6 do
+		local simultaneous = GameplayRules.scoreForPlacement(0, lines, 1)
+
+		local sequential = 0
+		for streak = 1, lines do
+			sequential += GameplayRules.scoreForPlacement(0, 1, streak)
+		end
+
+		assertCondition(
+			simultaneous >= sequential,
+			`clearing {lines} lines at once should score at least as much as {lines} single clears`
+		)
+	end
 end
 
 tests.assistanceRestoreAmountTracksIndividualTriggers = function()
