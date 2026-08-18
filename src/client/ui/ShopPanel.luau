@@ -1,9 +1,13 @@
 local GuiService = game:GetService("GuiService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local UITheme = require(script.Parent.UITheme)
+local UIControlRules = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game"):WaitForChild("UIControlRules")
+)
 
 local ShopPanel = {}
 ShopPanel.__index = ShopPanel
@@ -521,7 +525,7 @@ function ShopPanel:activateItem(item)
 			self.showMessage(`${item.name} is equipped.`, THEME.success)
 			return
 		elseif item.owned then
-			self.pendingPrompt = item.id
+			self:setPendingPrompt(item.id)
 			self.playSound("Button")
 			self.shopEvent:FireServer("EquipCosmetic", {
 				id = item.id,
@@ -529,7 +533,7 @@ function ShopPanel:activateItem(item)
 			self:Refresh()
 			return
 		elseif item.state == "Available" and item.costCoins then
-			self.pendingPrompt = item.id
+			self:setPendingPrompt(item.id)
 			self.playSound("Button")
 			self:Track("CosmeticPurchaseAttempted")
 			self.shopEvent:FireServer("PurchaseCosmetic", {
@@ -538,7 +542,7 @@ function ShopPanel:activateItem(item)
 			self:Refresh()
 			return
 		elseif item.state == "PassRequired" and item.requiredGamePass then
-			self.pendingPrompt = item.requiredGamePass
+			self:setPendingPrompt(item.requiredGamePass)
 			self.playSound("Button")
 			self:Track("GamePassPromptOpened")
 			self.shopEvent:FireServer("RequestPrompt", {
@@ -576,7 +580,7 @@ function ShopPanel:activateItem(item)
 		return
 	end
 
-	self.pendingPrompt = item.id
+	self:setPendingPrompt(item.id)
 	self.playSound("Button")
 	if item.itemType == "GamePass" then
 		self:Track("GamePassPromptOpened")
@@ -586,6 +590,33 @@ function ShopPanel:activateItem(item)
 		id = item.id,
 	})
 	self:Refresh()
+end
+
+-- A pending prompt is normally cleared by an incoming Error or a fresh
+-- snapshot. If neither arrives -- a dropped remote, or a server-side error
+-- that never replies -- the item's button used to sit on "Loading..." until
+-- the whole panel was closed and reopened. Give it a deadline instead.
+--
+-- Every change bumps a generation, so a timeout from an earlier prompt can
+-- never clear a newer one.
+function ShopPanel:setPendingPrompt(promptId)
+	self.pendingPrompt = promptId
+	self.pendingPromptGeneration = (self.pendingPromptGeneration or 0) + 1
+
+	if promptId == nil then
+		return
+	end
+
+	local generation = self.pendingPromptGeneration
+	task.delay(UIControlRules.PanelResponseTimeoutSeconds, function()
+		if self.pendingPromptGeneration ~= generation or self.pendingPrompt == nil then
+			return
+		end
+
+		self.pendingPrompt = nil
+		self.showMessage("No response from the server. Try that again.", THEME.warn)
+		self:Refresh()
+	end)
 end
 
 function ShopPanel:Refresh()
@@ -641,7 +672,7 @@ function ShopPanel:HandleServerMessage(message)
 	if message.kind == "Snapshot" and typeof(message.shop) == "table" then
 		self.shopState = message.shop
 		self.shopState.loading = false
-		self.pendingPrompt = message.shop.pendingId
+		self:setPendingPrompt(message.shop.pendingId)
 		self:Refresh()
 	elseif message.kind == "PromptApproved" then
 		if message.itemType == "GamePass" then
@@ -650,7 +681,7 @@ function ShopPanel:HandleServerMessage(message)
 			MarketplaceService:PromptProductPurchase(Players.LocalPlayer, message.marketplaceId)
 		end
 	elseif message.kind == "Error" then
-		self.pendingPrompt = nil
+		self:setPendingPrompt(nil)
 		self.showMessage(message.message or "Shop error.", THEME.error)
 		self:Refresh()
 	end

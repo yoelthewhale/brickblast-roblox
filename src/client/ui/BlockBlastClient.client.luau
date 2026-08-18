@@ -1215,7 +1215,27 @@ hudController = HUDController.new(gui, {
 					playSound("Button")
 					status.Text = "Checking..."
 					status.TextColor3 = Color3.fromRGB(190, 210, 233)
+					-- Required here rather than at the top of the file: this script
+					-- is close to the Luau top-level local limit.
+					local UIControlRules = require(GameShared.UIControlRules)
+					day43Ui.codeRequestGeneration = (day43Ui.codeRequestGeneration or 0) + 1
+					local requestGeneration = day43Ui.codeRequestGeneration
 					day43Ui.codesEvent:FireServer(code)
+
+					-- Nothing else reverts "Checking...", so a reply that never
+					-- arrives used to leave the player staring at it. The reply
+					-- handler bumps the generation, which cancels this.
+					task.delay(UIControlRules.PanelResponseTimeoutSeconds, function()
+						if day43Ui.codeRequestGeneration ~= requestGeneration then
+							return
+						end
+						if not status.Parent then
+							return
+						end
+
+						status.Text = "No response from the server. Try again."
+						status.TextColor3 = Color3.fromRGB(255, 139, 61)
+					end)
 				end
 
 				redeem.Activated:Connect(submit)
@@ -1255,7 +1275,26 @@ hudController = HUDController.new(gui, {
 				loading.Parent = scroll
 
 				day43Ui.achievementsScroll = scroll
+				local UIControlRules = require(GameShared.UIControlRules)
+				day43Ui.achievementsRequestGeneration = (day43Ui.achievementsRequestGeneration or 0)
+					+ 1
+				local requestGeneration = day43Ui.achievementsRequestGeneration
 				day43Ui.achievementsEvent:FireServer("RequestSnapshot")
+
+				-- Without this the label sits on "Loading achievements..."
+				-- forever if the reply never arrives. The generation check
+				-- stops a stale timeout from overwriting a newer request.
+				task.delay(UIControlRules.PanelResponseTimeoutSeconds, function()
+					if day43Ui.achievementsRequestGeneration ~= requestGeneration then
+						return
+					end
+					if not loading.Parent then
+						return
+					end
+
+					loading.Text = "Couldn't load achievements. Reopen to try again."
+					loading.TextColor3 = Color3.fromRGB(255, 139, 61)
+				end)
 			end)
 		end,
 		settings = function()
@@ -3829,23 +3868,32 @@ day43Ui.renderAchievements = function(list)
 		return
 	end
 
+	-- Sanitize and sort before tearing down the loading label. Doing it the
+	-- other way round meant a malformed payload errored with the label already
+	-- destroyed, leaving a silently blank panel.
+	local UIControlRules = require(GameShared.UIControlRules)
+	local entries = UIControlRules.sanitizeAchievementsPayload(list)
+
+	-- A reply arrived, good or bad, so cancel the pending timeout rather than
+	-- letting it overwrite whatever this render puts on screen.
+	day43Ui.achievementsRequestGeneration = (day43Ui.achievementsRequestGeneration or 0) + 1
+
+	if #entries == 0 then
+		local loading = scroll:FindFirstChild("Loading")
+		if loading and loading:IsA("TextLabel") then
+			loading.Text = "Couldn't read the achievements list. Reopen to try again."
+			loading.TextColor3 = Color3.fromRGB(255, 139, 61)
+		end
+		return
+	end
+
 	for _, child in scroll:GetChildren() do
 		if child:IsA("Frame") or (child:IsA("TextLabel") and child.Name == "Loading") then
 			child:Destroy()
 		end
 	end
 
-	table.sort(list, function(left, right)
-		if left.unlocked ~= right.unlocked then
-			return left.unlocked
-		end
-		if left.stat ~= right.stat then
-			return left.stat < right.stat
-		end
-		return left.threshold < right.threshold
-	end)
-
-	for order, entry in list do
+	for order, entry in entries do
 		local tierColor = entry.tier == "Gold" and ArcadeUI.Color.gold
 			or entry.tier == "Silver" and ArcadeUI.Color.silver
 			or ArcadeUI.Color.bronze
@@ -3906,6 +3954,9 @@ day43Ui.codesEvent.OnClientEvent:Connect(function(response)
 	if not response then
 		return
 	end
+
+	-- A reply arrived, so cancel the pending "no response" timeout.
+	day43Ui.codeRequestGeneration = (day43Ui.codeRequestGeneration or 0) + 1
 
 	local message = response.message or ""
 	local isSuccess = response.kind == "Success"
