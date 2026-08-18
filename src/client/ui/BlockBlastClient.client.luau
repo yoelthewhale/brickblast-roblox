@@ -327,6 +327,18 @@ local function isFiniteNumber(value)
 end
 
 local function applyWorldVisualQuality()
+	-- Effects scale down for the player's Reduced Motion setting and,
+	-- independently, for low-tier devices -- a phone player should not have to
+	-- discover an accessibility toggle to get a playable frame rate. This
+	-- governs post-processing only; the motion preference itself is untouched.
+	local VisualQuality = require(GameShared.VisualQuality)
+	local camera = Workspace.CurrentCamera
+	local lowEffects = VisualQuality.usesReducedEffects({
+		touchEnabled = UserInputService.TouchEnabled,
+		keyboardEnabled = UserInputService.KeyboardEnabled,
+		screenSize = camera and camera.ViewportSize or nil,
+	}, reducedMotion)
+
 	local hub = Workspace:FindFirstChild("BlockBlastHub")
 	if hub then
 		for _, descendant in hub:GetDescendants() do
@@ -336,15 +348,14 @@ local function applyWorldVisualQuality()
 					defaultRate = descendant.Rate
 					descendant:SetAttribute("DefaultRate", defaultRate)
 				end
-				descendant.Rate = reducedMotion and math.min(defaultRate, 0.35) or defaultRate
+				descendant.Rate = lowEffects and math.min(defaultRate, 0.35) or defaultRate
 			elseif descendant:IsA("PointLight") then
 				local defaultBrightness = descendant:GetAttribute("DefaultBrightness")
 				if not isFiniteNumber(defaultBrightness) then
 					defaultBrightness = descendant.Brightness
 					descendant:SetAttribute("DefaultBrightness", defaultBrightness)
 				end
-				descendant.Brightness = reducedMotion and defaultBrightness * 0.45
-					or defaultBrightness
+				descendant.Brightness = lowEffects and defaultBrightness * 0.45 or defaultBrightness
 			end
 		end
 	end
@@ -357,21 +368,21 @@ local function applyWorldVisualQuality()
 					defaultIntensity = effect.Intensity
 					effect:SetAttribute("DefaultIntensity", defaultIntensity)
 				end
-				effect.Intensity = reducedMotion and defaultIntensity * 0.45 or defaultIntensity
+				effect.Intensity = lowEffects and defaultIntensity * 0.45 or defaultIntensity
 			elseif effect:IsA("SunRaysEffect") then
 				local defaultIntensity = effect:GetAttribute("DefaultIntensity")
 				if not isFiniteNumber(defaultIntensity) then
 					defaultIntensity = effect.Intensity
 					effect:SetAttribute("DefaultIntensity", defaultIntensity)
 				end
-				effect.Intensity = reducedMotion and defaultIntensity * 0.35 or defaultIntensity
+				effect.Intensity = lowEffects and defaultIntensity * 0.35 or defaultIntensity
 			elseif effect:IsA("DepthOfFieldEffect") then
 				local defaultFar = effect:GetAttribute("DefaultFarIntensity")
 				if not isFiniteNumber(defaultFar) then
 					defaultFar = effect.FarIntensity
 					effect:SetAttribute("DefaultFarIntensity", defaultFar)
 				end
-				effect.FarIntensity = reducedMotion and 0 or defaultFar
+				effect.FarIntensity = lowEffects and 0 or defaultFar
 			end
 		end
 	end
