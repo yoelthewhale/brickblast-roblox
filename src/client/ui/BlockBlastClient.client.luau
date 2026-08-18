@@ -4026,6 +4026,15 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 			`Achievement unlocked: {effect.name} ({effect.tier}) +{effect.rewardCoins} coins`,
 			Color3.fromRGB(255, 210, 71)
 		)
+	elseif effect.kind == "ProfileLoadFailed" then
+		-- The server could not read this player's save. Say so plainly, so a
+		-- DataStore outage is not mistaken for genuinely losing progress.
+		dismissLoading()
+		playSound("Blocked")
+		showBanner(
+			effect.message or "Couldn't load your save. Progress won't save this session.",
+			Color3.fromRGB(255, 86, 107)
+		)
 	elseif effect.kind == "DeveloperCommand" then
 		showBanner(effect.message or "Developer command applied", Color3.fromRGB(123, 237, 75))
 	elseif effect.kind == "BattleResult" then

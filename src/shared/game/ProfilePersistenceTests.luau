@@ -101,6 +101,49 @@ tests.mergeReturnsAFreshTable = function()
 	assertCondition(inMemory.b == nil, "Merging must not write back into the in-memory set")
 end
 
+tests.loadFailureNoticeWaitsForTheClient = function()
+	assertCondition(
+		not ProfilePersistence.shouldNotifyLoadFailure(
+			LoadStatus.Failed,
+			{ clientReady = false, sent = false }
+		),
+		"The notice must not fire before the client is listening"
+	)
+	assertCondition(
+		ProfilePersistence.shouldNotifyLoadFailure(
+			LoadStatus.Failed,
+			{ clientReady = true, sent = false }
+		),
+		"The notice fires once the client is ready"
+	)
+end
+
+tests.loadFailureNoticeFiresOnlyOnce = function()
+	assertCondition(
+		not ProfilePersistence.shouldNotifyLoadFailure(
+			LoadStatus.Failed,
+			{ clientReady = true, sent = true }
+		),
+		"The notice must not repeat once sent"
+	)
+end
+
+tests.loadFailureNoticeOnlyAppliesToFailedLoads = function()
+	local ready = { clientReady = true, sent = false }
+	assertCondition(
+		not ProfilePersistence.shouldNotifyLoadFailure(LoadStatus.Loaded, ready),
+		"A successful load produces no notice"
+	)
+	assertCondition(
+		not ProfilePersistence.shouldNotifyLoadFailure(LoadStatus.Pending, ready),
+		"A load still in flight produces no notice"
+	)
+	assertCondition(
+		not ProfilePersistence.shouldNotifyLoadFailure(LoadStatus.Failed, nil),
+		"An untracked player produces no notice"
+	)
+end
+
 tests.reconcileKeepsStoredReceiptsAndCodes = function()
 	local payload = {
 		coins = 500,
