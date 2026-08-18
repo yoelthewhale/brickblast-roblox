@@ -61,6 +61,14 @@
 - A player who is not on the allowlist gets the ordinary "That code doesn't exist." response — the same reply an unknown code gets — so submitting it reveals nothing about who it is for.
 - Any future code intended only for developers should set `requiresDeveloperAuthorization = true` in the server's `CODES` table rather than relying on the string staying secret. The `CODES` table itself lives in the server script and is never replicated, so the strings are not readable from a client.
 
+## Phone Presentation
+
+- A viewport narrower than 720px or shorter than 520px is treated as a phone. The same breakpoint decides the hub layout (`HUDController`), the Solo gameplay layout (`SoloLayout`), and the effects tier (`VisualQuality`), so they cannot disagree about what a phone is.
+- Phone Solo gameplay uses a single stacked column: a compact stats strip, the 8x8 board at full content width, the piece tray below it, and an action bar pinned to the bottom holding Return Hub and Play Again.
+- The leaderboard is hidden for the duration of a phone run. It is the only in-run element with no room on a phone, it is not needed to make a decision mid-run, and it still appears in the hub and on the result panel.
+- Phone runs are locked to portrait (`PlayerGui.ScreenOrientation`). A phone held sideways has no vertical room for a playable board once the safe-area inset, padding, and header are subtracted, and the 8x8 board invariant is fixed. Tablets and desktops are never orientation-locked.
+- The lock is applied when a run starts and released on return to the hub, not when the run ends, so the result panel is not rotated out from under the player. The player's previous orientation is captured and restored rather than assumed.
+
 ## Balance Notes
 
 - The intended feel is smart-but-not-automatic: most fresh hands should offer useful choices, while poor placement and crowding can still end the run.

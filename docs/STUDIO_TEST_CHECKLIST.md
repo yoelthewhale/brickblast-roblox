@@ -40,6 +40,10 @@ Do not mark these complete until verified in Roblox Studio or a published test e
 - Gamepad focus enters the home panel and shop close button correctly.
 - Keyboard/gamepad activation can buy/equip/preview without mouse-only dependency.
 - Safe-area behavior avoids clipping on small screens.
+- Phone-sized viewports use the stacked Solo layout: stats strip, full-width board, tray, bottom action bar, and no leaderboard during a run.
+- Starting a Solo run on a phone locks the screen to portrait, and rotating the device mid-run does nothing.
+- Returning to the hub releases the portrait lock, and the device rotates freely again.
+- Tablets and desktops are never orientation-locked, in the hub or in a run.
 
 ## Gameplay Application
 
