@@ -2,6 +2,79 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
+## Day38 Data Safety, Security, and Reliability Pass - 2026-08-18
+
+Autonomous session working the GitHub backlog by priority (Yoel's "Day 35"
+session; the DayNN numbering in this file is its own sequence). GitHub is the
+source of truth for status — every item below is traceable through its issue,
+branch, PR, and CI run.
+
+### Completed
+
+- **#16 (critical, data)** — profile saves could run before the async DataStore
+  load resolved, overwriting a real profile with blank defaults. Saves are now
+  gated on a per-player load status, exit paths wait briefly for an in-flight
+  load, a failed load leaves the session read-only, and writes go through
+  `UpdateAsync` with append-only receipt/code ledgers unioned rather than
+  replaced. Found and fixed a related hazard: payload assembly can yield, so it
+  now happens outside the `UpdateAsync` transform.
+- **#17 (critical, security)** — the `yoel` dev-unlock code was unrestricted in a
+  public repo. Gated behind `Config.DeveloperTools.AuthorizedUserIds`;
+  unauthorized attempts get the same reply as an unknown code.
+- **#26 (high, data)** — profile load failures were invisible to players. A
+  one-time client notice now fires, held until the client's existing settings
+  handshake so it cannot be dropped before the client is listening.
+- **#22 (high, gameplay)** — simultaneous multi-line clears scored worse than the
+  same lines cleared one at a time. Added a multi-line bonus derived from the
+  combo bonus those clears would have earned sequentially.
+- **#24 (high, gameplay)** — four cosmetics required story stars while Story mode
+  is disabled, making them permanent dead ends. Retargeted onto level/coin
+  requirements, with the originals recorded inline for when Story returns.
+- **#19 (high, ui)** — Achievements, Codes, and Shop panels could hang on a
+  loading state forever. All three now time out to an actionable state, and the
+  achievements payload is sanitized before the loading label is destroyed.
+- **#27 (medium, security)** — `Codes` and `Achievements` remotes had no
+  server-side rate limiting, unlike every other remote. Added, matching the
+  existing `canAccept*` pattern.
+- **#40 (medium, performance)** — post-processing only scaled down when the
+  player manually enabled Reduced Motion. Low-tier devices now get the reduced
+  stack automatically, without altering the motion preference itself.
+
+### Current State
+
+- Automated tests grew from 58 to 83 across 12 suites.
+- Three new shared modules hold logic extracted from server/client scripts
+  specifically so it could be tested: `ProfilePersistence`, `VisualQuality`, and
+  the cosmetic-reachability checks in `CosmeticProgressionTests`.
+- StyLua, Selene, Lune tests, Rojo build, and `git diff --check` pass locally and
+  in CI for every merged PR.
+
+### Blocked
+
+- **#18 (high, mobile)** — the Solo layout genuinely does not fit on phone
+  viewports, but fixing it requires choosing a mobile layout approach, and the
+  right column holds the run's action buttons so it cannot simply collapse.
+  Investigation, options, and a recommendation are recorded on the issue;
+  labelled `needs-design` pending Yoel's decision.
+
+### Required Manual Checks
+
+No Studio verification was performed this session — Studio/Rojo serves the main
+checkout rather than the worktree branches this work was done on. Each PR lists
+its own outstanding checks; the ones that matter most:
+
+1. Join with a returning account and leave immediately, before the profile load
+   could resolve; confirm on rejoin that coins and cosmetics are intact (#16).
+2. Shut a server down shortly after several players join and confirm each
+   profile is either saved correctly or correctly left untouched (#16).
+3. Redeem `yoel` on an allowlisted and a non-allowlisted account (#17).
+4. Force a profile load failure and confirm the player sees the notice exactly
+   once, including when the failure precedes client startup (#26).
+5. Disable each of the three server handlers in turn and confirm the
+   Achievements, Codes, and Shop panels recover instead of hanging (#19).
+6. Measure the actual FPS impact of the reduced effects tier on a real phone
+   (#40) — the acceptance criterion this session could not prove from source.
+
 ## Day37.3 Reference-Quality PC UI Polish - 2026-08-13
 
 ### Completed
