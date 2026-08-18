@@ -30,6 +30,7 @@ local ExperienceConfig = require(GameShared.ExperienceConfig)
 local GameplayRules = require(GameShared.GameplayRules)
 local Grid = require(GameShared.Grid)
 local HandGenerator = require(GameShared.HandGenerator)
+local ProfilePersistence = require(GameShared.ProfilePersistence)
 local StageProgression = require(GameShared.StageProgression)
 local HubBuilder = require(script.Parent.Parent.world.HubBuilder)
 
@@ -249,6 +250,7 @@ local playerRedeemedCodes = {}
 local playerLifetimeStats = {}
 local playerUnlockedAchievements = {}
 local playerCosmeticInventories = {}
+local playerProfileLoadStatus = {}
 local selectedStoryChapters = {}
 local lastPlaceRequestAt = {}
 local lastHandRequestAt = {}
@@ -281,6 +283,7 @@ local analytics = {
 	throttledPlaceRequests = 0,
 	suddenDeathPressureRows = 0,
 	profileFieldsSanitized = 0,
+	profileSavesSkippedBeforeLoad = 0,
 	forfeits = 0,
 	shopSnapshotsRequested = 0,
 	shopPromptRequests = 0,
@@ -320,6 +323,11 @@ local SHOP_ACTION_COOLDOWN_SECONDS = 0.35
 local ENTITLEMENT_CACHE_SECONDS = 120
 local SETTINGS_SAVE_DEBOUNCE_SECONDS = 1
 local PROFILE_SAVE_RETRY_COUNT = 3
+local PROFILE_LOAD_RETRY_COUNT = 3
+-- How long a save may block waiting for an in-flight profile load before
+-- giving up. PlayerRemoving and BindToClose both run on a limited budget,
+-- so this stays well under Roblox's 30s BindToClose allowance.
+local PROFILE_LOAD_WAIT_SECONDS = 6
 local PROFILE_LIMITS = {
 	bestScore = 1000000000,
 	wins = 1000000,
@@ -610,7 +618,23 @@ local function sanitizeUnlockedAchievements(raw)
 	return clean
 end
 
+-- Records the outcome of a player's profile load. Ignores players who are
+-- no longer tracked, so a load that resolves after PlayerRemoving cleaned
+-- up does not leak an entry back into the table.
+local function markProfileLoadStatus(player, status)
+	if playerProfileLoadStatus[player] == nil then
+		return
+	end
+
+	playerProfileLoadStatus[player] = status
+end
+
 local function createLeaderstats(player)
+	-- Everything below starts blank and only becomes real once the async
+	-- load at the bottom of this function resolves. Until then no save is
+	-- allowed -- see saveProfile.
+	playerProfileLoadStatus[player] = ProfilePersistence.LoadStatus.Pending
+
 	local leaderstats = Instance.new("Folder")
 	leaderstats.Name = "leaderstats"
 	leaderstats.Parent = player
@@ -652,18 +676,38 @@ local function createLeaderstats(player)
 
 	task.spawn(function()
 		if not profileStore then
+			-- No DataStore access at all. Nothing can be read, so nothing may
+			-- be written either.
+			markProfileLoadStatus(player, ProfilePersistence.LoadStatus.Failed)
 			return
 		end
 
-		local ok, profile = pcall(function()
-			return profileStore:GetAsync(`Player_{player.UserId}`)
-		end)
+		local ok, profile
+		for attempt = 1, PROFILE_LOAD_RETRY_COUNT do
+			ok, profile = pcall(function()
+				return profileStore:GetAsync(`Player_{player.UserId}`)
+			end)
+
+			if ok or attempt == PROFILE_LOAD_RETRY_COUNT or player.Parent ~= Players then
+				break
+			end
+
+			task.wait(0.35 * attempt)
+		end
 
 		if not ok then
 			profileLoadFailures += 1
+			-- Staying Failed keeps this session read-only: the stored profile
+			-- is real data we could not read, and writing blank in-memory
+			-- defaults over it would wipe the player.
+			markProfileLoadStatus(player, ProfilePersistence.LoadStatus.Failed)
 			warn(`[BlockBlast] Failed to load profile for {player.UserId}: {tostring(profile)}`)
 			return
 		end
+
+		-- The read succeeded. A nil result simply means a new player with no
+		-- saved profile yet, which is safe to write over.
+		markProfileLoadStatus(player, ProfilePersistence.LoadStatus.Loaded)
 
 		if typeof(profile) ~= "table" or player.Parent ~= Players then
 			return
@@ -786,28 +830,6 @@ local function serverHighScoreList()
 	return list
 end
 
-local function setProfileWithRetry(player, payload)
-	for attempt = 1, PROFILE_SAVE_RETRY_COUNT do
-		local ok, err = pcall(function()
-			profileStore:SetAsync(`Player_{player.UserId}`, payload)
-		end)
-
-		if ok then
-			return true
-		end
-
-		if attempt == PROFILE_SAVE_RETRY_COUNT then
-			profileSaveFailures += 1
-			warn(`[BlockBlast] Failed to save profile for {player.UserId}: {tostring(err)}`)
-			return false
-		end
-
-		task.wait(0.35 * attempt)
-	end
-
-	return false
-end
-
 local function profileStats(player)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	local bestScore = leaderstats and leaderstats:FindFirstChild("BestScore")
@@ -840,18 +862,17 @@ end
 
 local function mergedProfilePayload(player, existingProfile, stats)
 	existingProfile = typeof(existingProfile) == "table" and existingProfile or {}
-	local fulfilledPurchaseIds = typeof(playerFulfilledPurchaseIds[player]) == "table"
-			and table.clone(playerFulfilledPurchaseIds[player])
-		or typeof(existingProfile.fulfilledPurchaseIds) == "table" and table.clone(
-			existingProfile.fulfilledPurchaseIds
-		)
-		or {}
-	local redeemedCodes = typeof(playerRedeemedCodes[player]) == "table"
-			and table.clone(playerRedeemedCodes[player])
-		or typeof(existingProfile.redeemedCodes) == "table" and table.clone(
-			existingProfile.redeemedCodes
-		)
-		or {}
+	-- Receipt ids and redeemed codes only ever gain entries, so union them
+	-- rather than letting the in-memory copy replace the stored one. A save
+	-- can then never drop a receipt it did not happen to know about.
+	local fulfilledPurchaseIds = ProfilePersistence.mergeAppendOnlySet(
+		playerFulfilledPurchaseIds[player],
+		existingProfile.fulfilledPurchaseIds
+	)
+	local redeemedCodes = ProfilePersistence.mergeAppendOnlySet(
+		playerRedeemedCodes[player],
+		existingProfile.redeemedCodes
+	)
 	local lifetimeStats =
 		sanitizeLifetimeStats(playerLifetimeStats[player] or existingProfile.lifetimeStats)
 	local unlockedAchievements = typeof(playerUnlockedAchievements[player]) == "table"
@@ -877,13 +898,72 @@ local function mergedProfilePayload(player, existingProfile, stats)
 	}
 end
 
+-- Writes through UpdateAsync rather than SetAsync so the payload is built
+-- against whatever is actually stored, instead of assuming the in-memory
+-- session is the only writer.
+local function updateProfileWithRetry(player, stats)
+	-- Built up front, outside the transform: an UpdateAsync callback must
+	-- not yield, and assembling the payload touches cosmetic/entitlement
+	-- lookups that can. The transform itself stays a pure reconcile.
+	local payload = mergedProfilePayload(player, nil, stats)
+
+	for attempt = 1, PROFILE_SAVE_RETRY_COUNT do
+		local ok, err = pcall(function()
+			profileStore:UpdateAsync(`Player_{player.UserId}`, function(existingProfile)
+				return ProfilePersistence.reconcileWithStored(payload, existingProfile)
+			end)
+		end)
+
+		if ok then
+			return true
+		end
+
+		if attempt == PROFILE_SAVE_RETRY_COUNT then
+			profileSaveFailures += 1
+			warn(`[BlockBlast] Failed to save profile for {player.UserId}: {tostring(err)}`)
+			return false
+		end
+
+		task.wait(0.35 * attempt)
+	end
+
+	return false
+end
+
 local function saveProfile(player)
+	if not ProfilePersistence.canSave(playerProfileLoadStatus[player]) then
+		-- The profile has not been read back yet (or could not be), so the
+		-- in-memory session is still blank defaults. Writing it would wipe
+		-- the player's real saved data.
+		analytics.profileSavesSkippedBeforeLoad += 1
+		return false
+	end
+
 	local stats = profileStats(player)
 	if not stats then
 		return false
 	end
 
-	return setProfileWithRetry(player, mergedProfilePayload(player, nil, stats))
+	return updateProfileWithRetry(player, stats)
+end
+
+-- Save for a player who is going away (leaving, or the server shutting
+-- down). If their load is still in flight, briefly wait for it instead of
+-- skipping, so a short session's progress is still written.
+local function saveProfileBeforeExit(player)
+	local startedAt = os.clock()
+
+	while
+		ProfilePersistence.saveDecision(
+			playerProfileLoadStatus[player],
+			os.clock() - startedAt,
+			PROFILE_LOAD_WAIT_SECONDS
+		) == "wait"
+	do
+		task.wait(0.1)
+	end
+
+	return saveProfile(player)
 end
 
 local function productInfoForMarketplaceId(marketplaceId, infoType)
@@ -1586,16 +1666,29 @@ achievementsEvent.OnServerEvent:Connect(function(player, action)
 end)
 
 local function grantDeveloperProductReceipt(player, product, receiptKey)
+	-- Fulfilling against a pre-load session would write blank coins over the
+	-- stored balance. Returning false leaves the receipt unprocessed, so
+	-- Roblox retries it once the profile is loaded.
+	if not ProfilePersistence.canSave(playerProfileLoadStatus[player]) then
+		return false
+	end
+
 	local stats = profileStats(player)
 	if not stats or not profileStore then
 		return false
 	end
 
+	-- Same rule as updateProfileWithRetry: assemble outside, reconcile
+	-- inside, so nothing in the UpdateAsync transform can yield. The
+	-- transform may also run more than once on a write conflict, so the
+	-- coin grant is recomputed from the payload each time rather than
+	-- accumulated.
+	local basePayload = mergedProfilePayload(player, nil, stats)
 	local alreadyFulfilled = false
 	local nextCoins = nil
 	local ok, err = pcall(function()
 		profileStore:UpdateAsync(`Player_{player.UserId}`, function(existingProfile)
-			local payload = mergedProfilePayload(player, existingProfile, stats)
+			local payload = ProfilePersistence.reconcileWithStored(basePayload, existingProfile)
 			if payload.fulfilledPurchaseIds[receiptKey] == true then
 				alreadyFulfilled = true
 				nextCoins = payload.coins
@@ -3293,7 +3386,7 @@ Players.PlayerAdded:Connect(initializePlayer)
 Players.PlayerRemoving:Connect(function(player)
 	local removingState = playerStates[player]
 	if not (removingState and removingState.developerTestRun) then
-		saveProfile(player)
+		saveProfileBeforeExit(player)
 	end
 	local session = playerSessions[player]
 	if queuedPlayers[player] then
@@ -3324,6 +3417,7 @@ Players.PlayerRemoving:Connect(function(player)
 	playerLifetimeStats[player] = nil
 	playerUnlockedAchievements[player] = nil
 	playerCosmeticInventories[player] = nil
+	playerProfileLoadStatus[player] = nil
 	lastPlaceRequestAt[player] = nil
 	lastHandRequestAt[player] = nil
 	lastQueueRequestAt[player] = nil
@@ -3348,11 +3442,27 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 game:BindToClose(function()
+	-- Run the saves concurrently: each one may wait on an in-flight profile
+	-- load, and doing that serially could exhaust the shutdown budget with
+	-- a full server.
+	local pendingSaves = 0
+
 	for _, player in Players:GetPlayers() do
 		local state = playerStates[player]
 		if not (state and state.developerTestRun) then
-			saveProfile(player)
+			pendingSaves += 1
+			task.spawn(function()
+				saveProfileBeforeExit(player)
+				pendingSaves -= 1
+			end)
 		end
+	end
+
+	-- Bounded so a stuck DataStore cannot hold the shutdown open past the
+	-- 30 seconds Roblox allows.
+	local deadline = os.clock() + PROFILE_LOAD_WAIT_SECONDS + 12
+	while pendingSaves > 0 and os.clock() < deadline do
+		task.wait(0.1)
 	end
 end)
 
