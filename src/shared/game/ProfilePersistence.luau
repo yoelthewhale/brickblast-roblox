@@ -75,6 +75,26 @@ function ProfilePersistence.mergeAppendOnlySet(inMemory, existing)
 	return merged
 end
 
+-- Whether the "we could not read your save" notice should be sent right now.
+--
+-- `notice` is the player's notice bookkeeping: `clientReady` becomes true once
+-- the client has asked the server for its initial state, and `sent` records
+-- that the notice already went out. Both matter -- the notice fires at most
+-- once per session, and never before the client is listening, because a
+-- FireClient that lands before the client connects its handlers is silently
+-- dropped and the player would never hear about it.
+function ProfilePersistence.shouldNotifyLoadFailure(status, notice)
+	if status ~= ProfilePersistence.LoadStatus.Failed then
+		return false
+	end
+
+	if typeof(notice) ~= "table" then
+		return false
+	end
+
+	return notice.clientReady == true and notice.sent ~= true
+end
+
 -- Reconcile an already-built save payload against whatever is currently
 -- stored, producing the value to write.
 --

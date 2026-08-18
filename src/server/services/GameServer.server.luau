@@ -251,6 +251,7 @@ local playerLifetimeStats = {}
 local playerUnlockedAchievements = {}
 local playerCosmeticInventories = {}
 local playerProfileLoadStatus = {}
+local playerProfileNoticeState = {}
 local selectedStoryChapters = {}
 local lastPlaceRequestAt = {}
 local lastHandRequestAt = {}
@@ -618,6 +619,22 @@ local function sanitizeUnlockedAchievements(raw)
 	return clean
 end
 
+-- Tells the player their save could not be read, so they do not mistake a
+-- DataStore outage for having genuinely lost their progress. Since the
+-- load failed, this session is also read-only, which the message says.
+local function notifyProfileLoadFailure(player)
+	local notice = playerProfileNoticeState[player]
+	if not ProfilePersistence.shouldNotifyLoadFailure(playerProfileLoadStatus[player], notice) then
+		return
+	end
+
+	notice.sent = true
+	effectsEvent:FireClient(player, {
+		kind = "ProfileLoadFailed",
+		message = "Couldn't load your save. Nothing was lost, but this session won't save progress - rejoin to try again.",
+	})
+end
+
 -- Records the outcome of a player's profile load. Ignores players who are
 -- no longer tracked, so a load that resolves after PlayerRemoving cleaned
 -- up does not leak an entry back into the table.
@@ -627,6 +644,10 @@ local function markProfileLoadStatus(player, status)
 	end
 
 	playerProfileLoadStatus[player] = status
+
+	if status == ProfilePersistence.LoadStatus.Failed then
+		notifyProfileLoadFailure(player)
+	end
 end
 
 local function createLeaderstats(player)
@@ -634,6 +655,7 @@ local function createLeaderstats(player)
 	-- load at the bottom of this function resolves. Until then no save is
 	-- allowed -- see saveProfile.
 	playerProfileLoadStatus[player] = ProfilePersistence.LoadStatus.Pending
+	playerProfileNoticeState[player] = { clientReady = false, sent = false }
 
 	local leaderstats = Instance.new("Folder")
 	leaderstats.Name = "leaderstats"
@@ -3291,7 +3313,15 @@ end
 
 settingsEvent.OnServerEvent:Connect(function(player, action, nextSettings)
 	if action == "Request" then
+		-- The client's own startup handshake, so its remote handlers are
+		-- connected by now. A load failure detected before this point was
+		-- held back rather than fired into the void.
+		local notice = playerProfileNoticeState[player]
+		if notice then
+			notice.clientReady = true
+		end
 		sendSettings(player)
+		notifyProfileLoadFailure(player)
 		return
 	end
 
@@ -3439,6 +3469,7 @@ Players.PlayerRemoving:Connect(function(player)
 	playerUnlockedAchievements[player] = nil
 	playerCosmeticInventories[player] = nil
 	playerProfileLoadStatus[player] = nil
+	playerProfileNoticeState[player] = nil
 	lastPlaceRequestAt[player] = nil
 	lastHandRequestAt[player] = nil
 	lastQueueRequestAt[player] = nil
