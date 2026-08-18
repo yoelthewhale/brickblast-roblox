@@ -56,7 +56,10 @@
 ## Redeemable Codes
 
 - Players can redeem a code from the hub's Codes panel; redemption is validated server-side and each code can only be redeemed once per player (tracked in the saved profile).
-- The `yoel` code is a developer/testing code: it maxes out coins, XP, level, and story stars, and unlocks every cosmetic including gamepass-locked ones. It is intentionally not restricted to a specific account — this is a private project for a small group, not a live game with a real economy to protect.
+- The `yoel` code is a developer/testing code: it maxes out coins, XP, level, and story stars, and unlocks every cosmetic including gamepass-locked ones.
+- It is restricted to the accounts in `Config.DeveloperTools.AuthorizedUserIds`, the same allowlist that gates the developer command panel. This was a deliberate decision: the repository is public, so the code string is readable by anyone, and an unrestricted code that grants max stats and every gamepass cosmetic would be free for the taking once real players arrive.
+- A player who is not on the allowlist gets the ordinary "That code doesn't exist." response — the same reply an unknown code gets — so submitting it reveals nothing about who it is for.
+- Any future code intended only for developers should set `requiresDeveloperAuthorization = true` in the server's `CODES` table rather than relying on the string staying secret. The `CODES` table itself lives in the server script and is never replicated, so the strings are not readable from a client.
 
 ## Balance Notes
 

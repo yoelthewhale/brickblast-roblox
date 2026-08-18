@@ -1508,15 +1508,36 @@ local function equipCosmetic(player, cosmeticId)
 	sendShopSnapshot(player, `{cosmetic.name} equipped.`)
 end
 
+-- Kept server-side on purpose: this table is never replicated, so the code
+-- strings are not readable from a client.
 local CODES = {
-	yoel = { kind = "DevUnlock" },
+	-- Developer/testing code. Restricted to Config.DeveloperTools
+	-- .AuthorizedUserIds -- it maxes out every stat and unlocks all
+	-- cosmetics including gamepass-locked ones, and the string itself is
+	-- readable by anyone browsing the public repository.
+	yoel = { kind = "DevUnlock", requiresDeveloperAuthorization = true },
 }
+
+-- The single reply for "this code is not redeemable by you". Unknown codes
+-- and codes the player is not authorized for deliberately share it, so an
+-- unauthorized player cannot discover that a restricted code exists.
+local function sendUnknownCodeError(player)
+	codesEvent:FireClient(player, { kind = "Error", message = "That code doesn't exist." })
+end
 
 local function redeemCode(player, rawCode)
 	local normalizedCode = typeof(rawCode) == "string" and rawCode:gsub("%s", ""):lower() or ""
 	local definition = normalizedCode ~= "" and CODES[normalizedCode] or nil
 	if not definition then
-		codesEvent:FireClient(player, { kind = "Error", message = "That code doesn't exist." })
+		sendUnknownCodeError(player)
+		return
+	end
+
+	if
+		definition.requiresDeveloperAuthorization
+		and not DeveloperTools.isAuthorizedUserId(player.UserId)
+	then
+		sendUnknownCodeError(player)
 		return
 	end
 
