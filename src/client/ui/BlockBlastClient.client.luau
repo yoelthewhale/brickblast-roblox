@@ -3220,6 +3220,52 @@ day43Ui.applyPhoneHeaderLayout = function(layout)
 	end
 end
 
+-- Holds phone runs in portrait. A phone in landscape has no vertical room
+-- for a playable 8x8 board, so the run is locked upright for its duration
+-- and the player's original orientation is restored on the way back to the
+-- hub.
+--
+-- Only phones are affected: tablets have room either way, and on desktop
+-- ScreenOrientation does nothing at all. See SoloLayout.shouldLockPortrait.
+day43Ui.applyGameplayOrientation = function(inGameplay)
+	-- Never let a presentation detail take down the state handler this runs
+	-- inside; a failed rotation is cosmetic, a failed state update is not.
+	pcall(function()
+		local playerGui = player:FindFirstChildOfClass("PlayerGui")
+		if not playerGui then
+			return
+		end
+
+		local camera = Workspace.CurrentCamera
+		local shouldLock = inGameplay
+			and SoloLayout.shouldLockPortrait({
+				touchEnabled = UserInputService.TouchEnabled,
+				keyboardEnabled = UserInputService.KeyboardEnabled,
+				screenSize = camera and camera.ViewportSize or nil,
+			})
+
+		if shouldLock then
+			-- A non-nil saved orientation means the lock is already applied.
+			-- This runs on every state update, which is every placement, so it
+			-- must not rewrite the property each time.
+			if day43Ui.orientationBeforeRun ~= nil then
+				return
+			end
+
+			-- Captured rather than assumed, so a project-level
+			-- StarterGui.ScreenOrientation is put back exactly as it was.
+			day43Ui.orientationBeforeRun = playerGui.ScreenOrientation
+			playerGui.ScreenOrientation = Enum.ScreenOrientation.Portrait
+			return
+		end
+
+		if day43Ui.orientationBeforeRun ~= nil then
+			playerGui.ScreenOrientation = day43Ui.orientationBeforeRun
+			day43Ui.orientationBeforeRun = nil
+		end
+	end)
+end
+
 applyWindowLayout = function()
 	local layout = WINDOW_LAYOUT
 	local contentY = layout.top + layout.headerHeight + layout.headerGap
@@ -3817,6 +3863,9 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	currentState = nextState
 
 	if not currentState then
+		-- Released here rather than when the run ends, so the result panel is
+		-- not yanked sideways while the player is still reading it.
+		day43Ui.applyGameplayOrientation(false)
 		if workspaceInteraction then
 			workspaceInteraction.stop()
 		end
@@ -3843,6 +3892,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		return
 	end
 
+	day43Ui.applyGameplayOrientation(true)
 	if not root.Visible then
 		root.Visible = true
 		applyUiScale()

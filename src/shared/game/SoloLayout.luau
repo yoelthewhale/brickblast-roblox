@@ -63,6 +63,30 @@ function SoloLayout.isPhoneViewport(screenSize)
 	)
 end
 
+-- Whether a Solo run on this device should be locked to portrait.
+--
+-- A phone in landscape has no room for a playable board: after the safe-area
+-- inset, padding, and header there is barely any height left for the stack, so
+-- the 8x8 grid collapses to a few pixels per cell. That is not fixable by
+-- tuning while the board stays 8x8, so phones play in portrait.
+--
+-- Both conditions matter. Touch alone would catch tablets, which have plenty
+-- of room in either orientation and must not be restricted. Viewport size
+-- alone would catch a small desktop window, where locking orientation is
+-- meaningless (and a no-op in Roblox, but worth not asking for).
+function SoloLayout.shouldLockPortrait(device)
+	if typeof(device) ~= "table" then
+		return false
+	end
+
+	-- A laptop with a touchscreen reports a keyboard too, and is left alone.
+	if device.touchEnabled ~= true or device.keyboardEnabled == true then
+		return false
+	end
+
+	return SoloLayout.isPhoneViewport(device.screenSize)
+end
+
 -- Board metrics for a given outer board size. The grid has to divide exactly
 -- into 8 cells plus gaps and padding, so the usable size is recomputed from
 -- the parts rather than assumed.

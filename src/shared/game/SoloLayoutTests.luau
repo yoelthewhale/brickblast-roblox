@@ -183,6 +183,63 @@ tests.phoneBreakpointMatchesTheHub = function()
 	)
 end
 
+tests.phonesLockToPortraitButNothingElseDoes = function()
+	local function device(touch, keyboard, width, height)
+		return {
+			touchEnabled = touch,
+			keyboardEnabled = keyboard,
+			screenSize = Vector2.new(width, height),
+		}
+	end
+
+	-- The case this exists for: a phone held sideways has no room for a
+	-- playable board, in either orientation of the same device.
+	assertCondition(
+		SoloLayout.shouldLockPortrait(device(true, false, 667, 375)),
+		"A phone in landscape locks to portrait"
+	)
+	assertCondition(
+		SoloLayout.shouldLockPortrait(device(true, false, 375, 667)),
+		"A phone already in portrait still asks for the lock"
+	)
+	assertCondition(
+		SoloLayout.shouldLockPortrait(device(true, false, 430, 932)),
+		"A large phone locks to portrait"
+	)
+
+	-- Tablets have room in either orientation and must not be restricted.
+	assertCondition(
+		not SoloLayout.shouldLockPortrait(device(true, false, 768, 1024)),
+		"A tablet in portrait is not locked"
+	)
+	assertCondition(
+		not SoloLayout.shouldLockPortrait(device(true, false, 1024, 768)),
+		"A tablet in landscape is not locked"
+	)
+
+	assertCondition(
+		not SoloLayout.shouldLockPortrait(device(false, true, 1280, 720)),
+		"A desktop is not locked"
+	)
+	assertCondition(
+		not SoloLayout.shouldLockPortrait(device(false, true, 700, 500)),
+		"A small desktop window is not locked despite phone-sized dimensions"
+	)
+	assertCondition(
+		not SoloLayout.shouldLockPortrait(device(true, true, 700, 500)),
+		"A touchscreen laptop is not locked"
+	)
+end
+
+tests.orientationLockIgnoresMissingDeviceInformation = function()
+	assertCondition(not SoloLayout.shouldLockPortrait(nil), "No device info does not lock")
+	assertCondition(not SoloLayout.shouldLockPortrait({}), "An empty device table does not lock")
+	assertCondition(
+		not SoloLayout.shouldLockPortrait({ touchEnabled = true, keyboardEnabled = false }),
+		"A missing viewport falls back to the desktop default and does not lock"
+	)
+end
+
 tests.invalidValuesFallback = function()
 	local layout = SoloLayout.calculate(nil, 0 / 0, math.huge, nil)
 
