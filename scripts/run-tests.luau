@@ -92,6 +92,7 @@ end
 
 local TEST_MODULES = {
 	"AchievementsTests",
+	"CosmeticProgressionTests",
 	"DeveloperToolsTests",
 	"GameplayRulesTests",
 	"HandGeneratorTests",

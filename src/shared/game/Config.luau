@@ -256,6 +256,12 @@ Config.StoryMissions = {
 	},
 }
 
+-- Story mode is disabled (ExperienceConfig.Modes.Story), and nothing outside
+-- Story-mission completion grants story stars, so a storyStars requirement is
+-- unreachable for a Solo player. These four requirements were retargeted onto
+-- the level/coins axes Solo already advances, keeping their original relative
+-- difficulty. Their pre-Solo-pivot requirements are noted inline so they can
+-- be restored if Story mode comes back.
 Config.PieceSkinUnlocks = {
 	Rainbow = {
 		label = "Free",
@@ -264,14 +270,15 @@ Config.PieceSkinUnlocks = {
 		level = 2,
 		label = "Level 2",
 	},
+	-- Was: storyStars = 1.
 	Pastel = {
-		storyStars = 1,
-		label = "1 Story Star",
-	},
-	Ice = {
 		level = 3,
-		storyStars = 2,
-		label = "Level 3 + 2 Story Stars",
+		label = "Level 3",
+	},
+	-- Was: level = 3 + storyStars = 2. Kept as the hardest piece skin.
+	Ice = {
+		level = 5,
+		label = "Level 5",
 	},
 }
 
@@ -323,14 +330,16 @@ Config.BoardSkinUnlocks = {
 		coins = 150,
 		label = "150 coins",
 	},
+	-- Was: storyStars = 1. Follows Sugar's coin slot rather than adding a
+	-- third level-gated board skin.
 	Garden = {
-		storyStars = 1,
-		label = "1 Story Star",
+		coins = 300,
+		label = "300 coins",
 	},
+	-- Was: level = 4 + storyStars = 3. Kept as the hardest board skin.
 	Contrast = {
-		level = 4,
-		storyStars = 3,
-		label = "Level 4 + 3 Story Stars",
+		level = 6,
+		label = "Level 6",
 	},
 }
 
@@ -382,7 +391,7 @@ Config.Cosmetics = {
 		description = "Soft candy-colored block pieces.",
 		cosmeticCategory = Config.CosmeticCategories.PieceSkin,
 		rarity = "Uncommon",
-		unlockSource = "Story",
+		unlockSource = "Progression",
 		requirement = Config.PieceSkinUnlocks.Pastel,
 		preview = {
 			pieceSkin = "Pastel",
@@ -439,10 +448,10 @@ Config.Cosmetics = {
 	{
 		id = "BOARD_GARDEN",
 		name = "Garden Board",
-		description = "Green board colors unlocked through story play.",
+		description = "Green board colors earned by saving up coins.",
 		cosmeticCategory = Config.CosmeticCategories.BoardSkin,
 		rarity = "Uncommon",
-		unlockSource = "Story",
+		unlockSource = "Coins",
 		requirement = Config.BoardSkinUnlocks.Garden,
 		preview = {
 			boardSkin = "Garden",
