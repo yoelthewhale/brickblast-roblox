@@ -82,6 +82,44 @@ tests.boardGridInvariant = function()
 	)
 end
 
+tests.touchDrivesThePlacementPipelineAlongsideTheMouse = function()
+	-- The regression this guards: every stage of the drag pipeline was gated
+	-- on a mouse input type, so touch never armed a drag, never moved one, and
+	-- never got the ghost preview that rides on it.
+	assertCondition(UIControlRules.isPointerPressInput("MouseButton1"), "A left click presses")
+	assertCondition(UIControlRules.isPointerPressInput("Touch"), "A finger presses")
+	assertCondition(
+		UIControlRules.isPointerMoveInput("MouseMovement"),
+		"Mouse movement moves a drag"
+	)
+	assertCondition(
+		UIControlRules.isPointerMoveInput("Touch"),
+		"Touch reports movement under the same type it reports presses under"
+	)
+end
+
+tests.otherInputTypesDoNotDriveThePlacementPipeline = function()
+	for _, inputTypeName in { "MouseButton2", "MouseButton3", "Keyboard", "Gamepad1", "Gyro" } do
+		assertCondition(
+			not UIControlRules.isPointerPressInput(inputTypeName),
+			`{inputTypeName} should not arm or release a drag`
+		)
+	end
+
+	assertCondition(
+		not UIControlRules.isPointerMoveInput("MouseButton1"),
+		"A held button is not movement"
+	)
+	assertCondition(
+		not UIControlRules.isPointerMoveInput("Accelerometer"),
+		"Device motion is not pointer movement"
+	)
+
+	assertCondition(UIControlRules.isTouchInput("Touch"), "Touch is touch")
+	assertCondition(not UIControlRules.isTouchInput("MouseMovement"), "A mouse is not touch")
+	assertCondition(not UIControlRules.isTouchInput(nil), "Missing input type is not touch")
+end
+
 tests.achievementsPayloadSortsUnlockedFirstThenByStatAndThreshold = function()
 	local entries = UIControlRules.sanitizeAchievementsPayload({
 		{ stat = "totalRuns", name = "Runs 10", threshold = 10, unlocked = false },
