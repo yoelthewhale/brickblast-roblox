@@ -102,6 +102,7 @@ local TEST_MODULES = {
 	"StageProgressionTests",
 	"StageVisualsTests",
 	"UIControlRulesTests",
+	"VisualQualityTests",
 }
 
 local GAME_DIR = "../src/shared/game"
