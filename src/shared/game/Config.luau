@@ -10,6 +10,11 @@ Config.SuddenDeathGarbageRows = 1
 Config.PointsPerCell = 10
 Config.PointsPerLine = 100
 Config.ComboBonusPoints = 25
+-- Awarded per "step" of a simultaneous multi-line clear, deliberately the same
+-- rate as the combo bonus: clearing n lines at once should be worth what those
+-- n clears would have earned as consecutive combo placements. See
+-- GameplayRules.multiLineBonusForClear.
+Config.MultiLineClearBonusPoints = Config.ComboBonusPoints
 Config.GarbagePerLineCleared = 1
 Config.CoinsPerHundredScore = 4
 Config.WinnerBonusCoins = 40

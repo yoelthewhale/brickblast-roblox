@@ -3981,6 +3981,13 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 					`Ripple clear: {effect.linesCleared} line(s)!`,
 					Color3.fromRGB(30, 187, 255)
 				)
+			elseif effect.multiLineBonus and effect.multiLineBonus > 0 then
+				-- Say the multi-line bonus out loud, otherwise the points for
+				-- the hardest clear in the game arrive invisibly.
+				showBanner(
+					`{effect.linesCleared} lines at once! +{effect.multiLineBonus}`,
+					Color3.fromRGB(255, 210, 71)
+				)
 			else
 				showBanner(`Cleared {effect.linesCleared} line(s)!`, Color3.fromRGB(123, 237, 75))
 			end
