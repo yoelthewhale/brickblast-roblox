@@ -1890,7 +1890,9 @@ local function applyStagePalette()
 	end
 
 	if stageUi.card then
-		stageUi.card.Visible = hasSoloStage
+		-- Hidden on phones: the header has no room beside the control buttons,
+		-- and the title button already reads "STAGE n".
+		stageUi.card.Visible = hasSoloStage and not WINDOW_LAYOUT.phone
 		stageUi.card.BackgroundColor3 = preset.panel
 		applyStrokeColor(stageUi.card, preset.stage, 0)
 	end
@@ -1980,7 +1982,7 @@ local function renderStageDisplay()
 		and currentState.mode == "Solo"
 		and typeof(stageState) == "table"
 	if stageUi.card then
-		stageUi.card.Visible = hasSoloStage
+		stageUi.card.Visible = hasSoloStage and not WINDOW_LAYOUT.phone
 	end
 	if not hasSoloStage then
 		stageUi.lastStage = nil
@@ -2997,15 +2999,231 @@ clampWindowToScreen = function()
 	root.Size = UDim2.fromOffset(gui.AbsoluteSize.X, gui.AbsoluteSize.Y)
 end
 
+-- Background flourishes and the centred notice. Shared by both layouts, but
+-- the notice is clamped to the viewport so it cannot hang off the side of a
+-- phone.
+day43Ui.applyStageDecorations = function(layout)
+	for index, decor in stageUi.decorations do
+		local width = math.floor(layout.width * (0.14 + index * 0.018))
+		local height = math.floor(layout.height * (0.08 + index * 0.01))
+		decor.Size = UDim2.fromOffset(width, height)
+		decor.Position = UDim2.fromOffset(
+			(index % 2 == 0) and (layout.width - width - layout.outerPadding * index)
+				or layout.outerPadding * index,
+			layout.top + 48 + index * math.floor(layout.height * 0.105)
+		)
+	end
+	if stageUi.notice then
+		local noticeWidth = math.min(340, layout.contentWidth)
+		stageUi.notice.Size = UDim2.fromOffset(noticeWidth, 96)
+		stageUi.notice.Position = UDim2.new(0.5, -math.floor(noticeWidth / 2), 0, layout.top + 58)
+	end
+	if stageUi.wash then
+		stageUi.wash.Size = UDim2.fromScale(1, 1)
+	end
+end
+
+-- Board grid and piece tray. Identical for both layouts apart from the tray
+-- internals: a phone tray is shorter, so it drops the status line and gives
+-- the height to the piece previews instead.
+day43Ui.applyBoardAndTrayLayout = function(layout)
+	local gridSize = layout.boardSize
+	local boardInset = math.floor((layout.centerWidth - gridSize) / 2)
+
+	boardStage.Position = UDim2.fromOffset(0, 0)
+	boardStage.Size = UDim2.fromOffset(layout.centerWidth, layout.boardStageHeight)
+	trayStage.Position = UDim2.fromOffset(0, layout.boardStageHeight + layout.trayGap)
+	trayStage.Size = UDim2.fromOffset(layout.centerWidth, layout.trayHeight)
+
+	boardFrame.Position = UDim2.fromOffset(boardInset, 0)
+	boardFrame.Size = UDim2.fromOffset(gridSize, gridSize)
+	boardGridContainer.Position = UDim2.fromScale(0, 0)
+	boardGridContainer.Size = UDim2.fromScale(1, 1)
+	boardLayout.CellSize = UDim2.fromOffset(layout.boardCell, layout.boardCell)
+	boardLayout.CellPadding = UDim2.fromOffset(layout.boardGap, layout.boardGap)
+	boardPadding.PaddingTop = UDim.new(0, layout.boardPadding)
+	boardPadding.PaddingBottom = UDim.new(0, layout.boardPadding)
+	boardPadding.PaddingLeft = UDim.new(0, layout.boardPadding)
+	boardPadding.PaddingRight = UDim.new(0, layout.boardPadding)
+
+	local sideWidth = layout.centerWidth
+	stageUi.side.Position = UDim2.fromOffset(0, 0)
+	stageUi.side.Size = UDim2.fromOffset(sideWidth, layout.trayHeight)
+
+	-- The status line is a nice-to-have that also arrives as a banner, so a
+	-- phone spends its tray height on the pieces the player has to hit.
+	local slotTop = if layout.phone then 6 else 38
+	statusLabel.Visible = not layout.phone
+	statusLabel.Position = UDim2.fromOffset(18, 12)
+	statusLabel.Size = UDim2.fromOffset(sideWidth - 36, 22)
+	statusLabel.TextSize = 17
+	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+	local slotHeight = if layout.phone
+		then math.max(44, layout.trayHeight - slotTop - 6)
+		else math.max(74, layout.trayHeight - 42)
+	for slot, button in handButtons do
+		local buttonWidth =
+			math.floor((sideWidth - 36 - ((Config.InventorySize - 1) * 14)) / Config.InventorySize)
+		button.Position = UDim2.fromOffset(18 + (slot - 1) * (buttonWidth + 14), slotTop)
+		button.Size = UDim2.fromOffset(buttonWidth, slotHeight)
+
+		local preview = handPreviews[slot]
+		local previewSize = if layout.phone
+			then math.max(40, math.min(94, math.min(slotHeight - 18, buttonWidth - 8)))
+			else math.max(60, math.min(94, slotHeight - 10))
+		preview.Size = UDim2.fromOffset(previewSize, previewSize)
+		preview.Position =
+			UDim2.fromOffset(math.max(8, math.floor((buttonWidth - preview.Size.X.Offset) / 2)), 3)
+
+		local label = button:FindFirstChild("Label")
+		if label and label:IsA("TextLabel") then
+			label.Position = UDim2.fromOffset(6, if layout.phone then slotHeight - 16 else 46)
+			label.Size = UDim2.fromOffset(math.max(60, buttonWidth - 8), 14)
+			label.TextSize = 10
+			label.TextXAlignment = Enum.TextXAlignment.Center
+		end
+	end
+end
+
+-- Phone gameplay layout: one stacked column instead of three side-by-side.
+-- Reuses the existing leftColumn/centerColumn/rightColumn frames as rows
+-- rather than building a parallel mobile UI, so there is one set of
+-- instances and one code path creating them.
+--
+--   leftColumn   -> compact stats strip across the top
+--   centerColumn -> board + piece tray, full width
+--   rightColumn  -> action bar pinned to the bottom (leaderboard hidden)
+day43Ui.applyPhoneWorkspaceLayout = function(layout)
+	local contentHeight = layout.contentHeight
+	local stripHeight = layout.statsStripHeight
+	local boardTop = stripHeight + layout.statsStripGap
+	local stackHeight = layout.boardStageHeight + layout.trayGap + layout.trayHeight
+
+	-- Stats strip.
+	leftColumn.Position = UDim2.fromOffset(0, 0)
+	leftColumn.Size = UDim2.fromOffset(layout.contentWidth, stripHeight)
+
+	-- Board and tray.
+	centerColumn.Position = UDim2.fromOffset(0, boardTop)
+	centerColumn.Size = UDim2.fromOffset(layout.contentWidth, stackHeight)
+
+	-- Action bar pinned to the bottom of the content area, so any slack on a
+	-- tall phone sits above it instead of leaving it floating mid-screen.
+	rightColumn.Position = UDim2.fromOffset(0, contentHeight - layout.actionsHeight)
+	rightColumn.Size = UDim2.fromOffset(layout.contentWidth, layout.actionsHeight)
+
+	-- Stats laid out as four horizontal chips instead of a vertical column.
+	-- Score gets the widest share; it is the number players actually watch.
+	local chipGap = 6
+	local chipWidth = math.floor((layout.contentWidth - chipGap * 3) / 4)
+	local scoreWidth = layout.contentWidth - (chipWidth * 3) - (chipGap * 3)
+	stageUi.scoreCard.Position = UDim2.fromOffset(0, 0)
+	stageUi.scoreCard.Size = UDim2.fromOffset(scoreWidth, stripHeight)
+	scoreLabel.Position = UDim2.fromOffset(8, 2)
+	scoreLabel.Size = UDim2.fromOffset(scoreWidth - 16, math.floor(stripHeight * 0.6))
+	scoreLabel.TextSize = clampNumber(math.floor(stripHeight * 0.46), 18, 26)
+	bestScoreLabel.Position = UDim2.fromOffset(8, math.floor(stripHeight * 0.6))
+	bestScoreLabel.Size = UDim2.fromOffset(scoreWidth - 16, math.floor(stripHeight * 0.36))
+	bestScoreLabel.TextSize = clampNumber(math.floor(stripHeight * 0.24), 10, 14)
+
+	local chipTextSize = clampNumber(math.floor(stripHeight * 0.32), 12, 18)
+	local chips = { comboBadgeLabel, coinStatLabel, rankStatLabel }
+	for index, chip in chips do
+		chip.Position =
+			UDim2.fromOffset(scoreWidth + chipGap + (index - 1) * (chipWidth + chipGap), 0)
+		chip.Size = UDim2.fromOffset(chipWidth, stripHeight)
+		chip.TextSize = chipTextSize
+		chip.TextTransparency = 0
+		chip.BackgroundTransparency = 0.02
+		chip.TextStrokeTransparency = 0.08
+	end
+	comboBadgeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
+	rankStatLabel.TextColor3 = ArcadeUI.Color.gold
+
+	-- The leaderboard is dropped for the duration of a phone run. It is the
+	-- only element with no phone home, it is not decision-relevant mid-run,
+	-- and it still appears in the hub and on the result panel.
+	if leaderboardLabel then
+		leaderboardLabel.Visible = false
+	end
+
+	actionsPanel.Position = UDim2.fromOffset(0, 0)
+	actionsPanel.Size = UDim2.fromOffset(layout.contentWidth, layout.actionsHeight)
+
+	-- Return Hub and Play Again share the bar full width, tall enough to be a
+	-- comfortable touch target.
+	local actionGap = 10
+	local actionWidth = math.floor((layout.contentWidth - actionGap) / 2)
+	local actionHeight = math.min(layout.actionsHeight, 48)
+	local actionTop = math.floor((layout.actionsHeight - actionHeight) / 2)
+	returnHubButton.Position = UDim2.fromOffset(0, actionTop)
+	returnHubButton.Size = UDim2.fromOffset(actionWidth, actionHeight)
+	playAgainButton.Position = UDim2.fromOffset(actionWidth + actionGap, actionTop)
+	playAgainButton.Size = UDim2.fromOffset(actionWidth, actionHeight)
+
+	-- Custom Lab controls; hidden in Solo, but keep them inside the bar so
+	-- they cannot render off-screen if they are ever shown here.
+	rotatePieceButton.Position = UDim2.fromOffset(0, actionTop)
+	rotatePieceButton.Size = UDim2.fromOffset(actionWidth, actionHeight)
+	rerollPieceButton.Position = UDim2.fromOffset(actionWidth + actionGap, actionTop)
+	rerollPieceButton.Size = UDim2.fromOffset(actionWidth, actionHeight)
+end
+
+-- Header controls that only fit the desktop header. On a phone the header is
+-- barely wider than the buttons themselves, so the ones with a home
+-- elsewhere step aside: coins appear in the stats strip, and Customize is a
+-- hub feature. Settings, Help, and Close stay.
+day43Ui.applyPhoneHeaderLayout = function(layout)
+	local buttonSize = 38
+	local buttonGap = 6
+	local buttonTop = math.floor((layout.headerHeight - buttonSize) / 2)
+
+	stageUi.titleButton.Position = UDim2.fromOffset(12, buttonTop)
+	stageUi.titleButton.Size =
+		UDim2.fromOffset(math.max(90, layout.contentWidth - (buttonSize * 3) - 60), buttonSize)
+	stageUi.titleButton.TextSize = 16
+
+	progressionLabel.Visible = false
+	timerLabel.Visible = false
+	matchInfoLabel.Visible = false
+	if stageUi.card then
+		stageUi.card.Visible = false
+	end
+	if customizeButton then
+		customizeButton.Visible = false
+	end
+	if coinChipLabel then
+		coinChipLabel.Visible = false
+	end
+	if resetLayoutButton then
+		resetLayoutButton.Visible = false
+	end
+
+	local right = 0
+	if closeWorkspaceButton then
+		right += buttonSize
+		closeWorkspaceButton.Position = UDim2.new(1, -right, 0, buttonTop)
+		closeWorkspaceButton.Size = UDim2.fromOffset(buttonSize, buttonSize)
+		closeWorkspaceButton.TextSize = 18
+	end
+	if helpButton then
+		right += buttonSize + buttonGap
+		helpButton.Position = UDim2.new(1, -right, 0, buttonTop)
+		helpButton.Size = UDim2.fromOffset(buttonSize, buttonSize)
+	end
+	if settingsButton then
+		right += buttonSize + buttonGap
+		settingsButton.Position = UDim2.new(1, -right, 0, buttonTop)
+		settingsButton.Size = UDim2.fromOffset(buttonSize, buttonSize)
+	end
+end
+
 applyWindowLayout = function()
 	local layout = WINDOW_LAYOUT
 	local contentY = layout.top + layout.headerHeight + layout.headerGap
 	local contentHeight = layout.contentHeight
-	local gridSize = layout.boardSize
-	local boardPaddingPixels = layout.boardPadding
-	local boardCellPadding = layout.boardGap
-	local cellPixels = layout.boardCell
-	local boardInset = math.floor((layout.centerWidth - gridSize) / 2)
 
 	stageUi.titleButton.Visible = true
 	stageUi.titleButton.Position = UDim2.fromOffset(20, 6)
@@ -3019,6 +3237,15 @@ applyWindowLayout = function()
 	workspaceHeader.Size = UDim2.fromOffset(layout.contentWidth, layout.headerHeight)
 	workspaceContent.Position = UDim2.fromOffset(layout.outerPadding, contentY)
 	workspaceContent.Size = UDim2.fromOffset(layout.contentWidth, contentHeight)
+
+	if layout.phone then
+		day43Ui.applyPhoneHeaderLayout(layout)
+		day43Ui.applyPhoneWorkspaceLayout(layout)
+		day43Ui.applyBoardAndTrayLayout(layout)
+		day43Ui.applyStageDecorations(layout)
+		return
+	end
+
 	leftColumn.Position = UDim2.fromOffset(0, 0)
 	leftColumn.Size = UDim2.fromOffset(layout.leftWidth, contentHeight)
 	centerColumn.Position = UDim2.fromOffset(layout.leftWidth + layout.columnGap, 0)
@@ -3028,11 +3255,7 @@ applyWindowLayout = function()
 		0
 	)
 	rightColumn.Size = UDim2.fromOffset(layout.rightWidth, contentHeight)
-	boardStage.Position = UDim2.fromOffset(0, 0)
-	boardStage.Size = UDim2.fromOffset(layout.centerWidth, layout.boardStageHeight)
-	trayStage.Position = UDim2.fromOffset(0, layout.boardStageHeight + layout.trayGap)
-	trayStage.Size = UDim2.fromOffset(layout.centerWidth, layout.trayHeight)
-
+	day43Ui.applyBoardAndTrayLayout(layout)
 	progressionLabel.Position = UDim2.fromOffset(20, 34)
 	progressionLabel.Size = UDim2.fromOffset(math.max(260, layout.contentWidth - 820), 18)
 	progressionLabel.TextSize = 12
@@ -3128,47 +3351,6 @@ applyWindowLayout = function()
 	rankStatLabel.BackgroundTransparency = 0.02
 	rankStatLabel.TextStrokeTransparency = 0.08
 
-	boardFrame.Position = UDim2.fromOffset(boardInset, 0)
-	boardFrame.Size = UDim2.fromOffset(gridSize, gridSize)
-	boardGridContainer.Position = UDim2.fromScale(0, 0)
-	boardGridContainer.Size = UDim2.fromScale(1, 1)
-	boardLayout.CellSize = UDim2.fromOffset(cellPixels, cellPixels)
-	boardLayout.CellPadding = UDim2.fromOffset(boardCellPadding, boardCellPadding)
-	boardPadding.PaddingTop = UDim.new(0, boardPaddingPixels)
-	boardPadding.PaddingBottom = UDim.new(0, boardPaddingPixels)
-	boardPadding.PaddingLeft = UDim.new(0, boardPaddingPixels)
-	boardPadding.PaddingRight = UDim.new(0, boardPaddingPixels)
-
-	local sideWidth = layout.centerWidth
-	stageUi.side.Position = UDim2.fromOffset(0, 0)
-	stageUi.side.Size = UDim2.fromOffset(sideWidth, layout.trayHeight)
-	statusLabel.Position = UDim2.fromOffset(18, 12)
-	statusLabel.Size = UDim2.fromOffset(sideWidth - 36, 22)
-	statusLabel.TextSize = 17
-	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-	local slotHeight = math.max(74, layout.trayHeight - 42)
-	for slot, button in handButtons do
-		local buttonWidth =
-			math.floor((sideWidth - 36 - ((Config.InventorySize - 1) * 14)) / Config.InventorySize)
-		button.Position = UDim2.fromOffset(18 + (slot - 1) * (buttonWidth + 14), 38)
-		button.Size = UDim2.fromOffset(buttonWidth, slotHeight)
-
-		local preview = handPreviews[slot]
-		local previewSize = math.max(60, math.min(94, slotHeight - 10))
-		preview.Size = UDim2.fromOffset(previewSize, previewSize)
-		preview.Position =
-			UDim2.fromOffset(math.max(8, math.floor((buttonWidth - preview.Size.X.Offset) / 2)), 3)
-
-		local label = button:FindFirstChild("Label")
-		if label and label:IsA("TextLabel") then
-			label.Position = UDim2.fromOffset(6, 46)
-			label.Size = UDim2.fromOffset(math.max(60, buttonWidth - 8), 14)
-			label.TextSize = 10
-			label.TextXAlignment = Enum.TextXAlignment.Center
-		end
-	end
-
 	if leaderboardLabel then
 		leaderboardLabel.Visible = true
 		leaderboardLabel.Position = UDim2.fromOffset(0, 0)
@@ -3218,23 +3400,7 @@ applyWindowLayout = function()
 	rerollPieceButton.Position = UDim2.fromOffset(actionWidth + layout.actionGap, 56)
 	rerollPieceButton.Size = UDim2.fromOffset(actionWidth, 42)
 
-	for index, decor in stageUi.decorations do
-		local width = math.floor(layout.width * (0.14 + index * 0.018))
-		local height = math.floor(layout.height * (0.08 + index * 0.01))
-		decor.Size = UDim2.fromOffset(width, height)
-		decor.Position = UDim2.fromOffset(
-			(index % 2 == 0) and (layout.width - width - layout.outerPadding * index)
-				or layout.outerPadding * index,
-			layout.top + 48 + index * math.floor(layout.height * 0.105)
-		)
-	end
-	if stageUi.notice then
-		stageUi.notice.Size = UDim2.fromOffset(340, 96)
-		stageUi.notice.Position = UDim2.new(0.5, -170, 0, layout.top + 58)
-	end
-	if stageUi.wash then
-		stageUi.wash.Size = UDim2.fromScale(1, 1)
-	end
+	day43Ui.applyStageDecorations(layout)
 end
 
 returnHubButton.Activated:Connect(function()
