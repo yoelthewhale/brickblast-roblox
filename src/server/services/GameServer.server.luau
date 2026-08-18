@@ -258,6 +258,8 @@ local lastHandRequestAt = {}
 local lastQueueRequestAt = {}
 local lastDeveloperCommandAt = {}
 local lastShopRequestAt = {}
+local lastCodeRequestAt = {}
+local lastAchievementsRequestAt = {}
 local purchasePromptLocks = {}
 local processedReceipts = {}
 local settingsSaveScheduled = {}
@@ -307,6 +309,8 @@ local analytics = {
 	customLabHandRerolls = 0,
 	rejectedHandRequests = 0,
 	throttledHandRequests = 0,
+	throttledCodeRedemptions = 0,
+	throttledAchievementsRequests = 0,
 }
 
 pcall(function()
@@ -321,6 +325,11 @@ local PLACE_COOLDOWN_SECONDS = 0.08
 local HAND_ACTION_COOLDOWN_SECONDS = 0.18
 local QUEUE_ACTION_COOLDOWN_SECONDS = 0.35
 local SHOP_ACTION_COOLDOWN_SECONDS = 0.35
+-- Deliberately the slowest of the action cooldowns. Redeeming is a typed,
+-- one-at-a-time action, and this remote is the one an attacker would use to
+-- guess codes.
+local CODE_REDEEM_COOLDOWN_SECONDS = 1
+local ACHIEVEMENTS_ACTION_COOLDOWN_SECONDS = 0.35
 local ENTITLEMENT_CACHE_SECONDS = 120
 local SETTINGS_SAVE_DEBOUNCE_SECONDS = 1
 local PROFILE_SAVE_RETRY_COUNT = 3
@@ -1624,7 +1633,29 @@ local function redeemCode(player, rawCode)
 	)
 end
 
+local function canAcceptCodeRedemption(player)
+	local now = os.clock()
+	local lastRequestAt = lastCodeRequestAt[player] or 0
+	if now - lastRequestAt < CODE_REDEEM_COOLDOWN_SECONDS then
+		return false
+	end
+
+	lastCodeRequestAt[player] = now
+	return true
+end
+
 codesEvent.OnServerEvent:Connect(function(player, rawCode)
+	if not canAcceptCodeRedemption(player) then
+		analytics.throttledCodeRedemptions += 1
+		-- Answer rather than dropping it, so the panel's "Checking..." state
+		-- still resolves for a player who double-tapped the button.
+		codesEvent:FireClient(
+			player,
+			{ kind = "Error", message = "Slow down for a second, then try again." }
+		)
+		return
+	end
+
 	redeemCode(player, rawCode)
 end)
 
@@ -1699,13 +1730,33 @@ local function checkAchievements(player)
 	end
 end
 
-achievementsEvent.OnServerEvent:Connect(function(player, action)
-	if action == "RequestSnapshot" then
-		achievementsEvent:FireClient(player, {
-			kind = "Snapshot",
-			achievements = publicAchievementsSnapshot(player),
-		})
+local function canAcceptAchievementsAction(player)
+	local now = os.clock()
+	local lastRequestAt = lastAchievementsRequestAt[player] or 0
+	if now - lastRequestAt < ACHIEVEMENTS_ACTION_COOLDOWN_SECONDS then
+		return false
 	end
+
+	lastAchievementsRequestAt[player] = now
+	return true
+end
+
+achievementsEvent.OnServerEvent:Connect(function(player, action)
+	if action ~= "RequestSnapshot" then
+		return
+	end
+
+	if not canAcceptAchievementsAction(player) then
+		-- Dropped rather than answered: a throttled request means one was
+		-- already accepted within the cooldown, so a snapshot is on its way.
+		analytics.throttledAchievementsRequests += 1
+		return
+	end
+
+	achievementsEvent:FireClient(player, {
+		kind = "Snapshot",
+		achievements = publicAchievementsSnapshot(player),
+	})
 end)
 
 local function grantDeveloperProductReceipt(player, product, receiptKey)
@@ -3476,6 +3527,8 @@ Players.PlayerRemoving:Connect(function(player)
 	lastQueueRequestAt[player] = nil
 	lastDeveloperCommandAt[player] = nil
 	lastShopRequestAt[player] = nil
+	lastCodeRequestAt[player] = nil
+	lastAchievementsRequestAt[player] = nil
 	purchasePromptLocks[player] = nil
 	settingsSaveScheduled[player] = nil
 	if session then
