@@ -4,6 +4,67 @@ local UIControlRules = {}
 
 UIControlRules.ServerActionCooldownSeconds = 0.45
 
+-- How long a panel waits for a server reply before giving up and showing an
+-- actionable state. Several panels show a "loading"/"checking" placeholder
+-- while a remote is in flight; without a deadline, a dropped reply or a
+-- server-side error with no response leaves them there forever.
+UIControlRules.PanelResponseTimeoutSeconds = 6
+
+local function cleanNumber(value, fallback)
+	if typeof(value) ~= "number" or value ~= value then
+		return fallback
+	end
+
+	return value
+end
+
+-- Turn a raw achievements payload into entries that are safe to sort and draw.
+--
+-- The panel destroys its "Loading" label before rendering, so anything that
+-- errors partway through -- a missing threshold making the sort comparator
+-- throw, a nil progress reaching math.min -- used to leave a silently blank
+-- panel with nothing to tell the player. Entries that cannot be repaired are
+-- dropped rather than rendered half-formed.
+function UIControlRules.sanitizeAchievementsPayload(list)
+	local entries = {}
+
+	if typeof(list) ~= "table" then
+		return entries
+	end
+
+	for _, entry in list do
+		if
+			typeof(entry) == "table"
+			and typeof(entry.stat) == "string"
+			and typeof(entry.name) == "string"
+			and cleanNumber(entry.threshold, nil) ~= nil
+		then
+			table.insert(entries, {
+				id = entry.id,
+				stat = entry.stat,
+				name = entry.name,
+				tier = typeof(entry.tier) == "string" and entry.tier or "Bronze",
+				threshold = entry.threshold,
+				progress = math.max(0, cleanNumber(entry.progress, 0)),
+				rewardCoins = math.max(0, cleanNumber(entry.rewardCoins, 0)),
+				unlocked = entry.unlocked == true,
+			})
+		end
+	end
+
+	table.sort(entries, function(left, right)
+		if left.unlocked ~= right.unlocked then
+			return left.unlocked
+		end
+		if left.stat ~= right.stat then
+			return left.stat < right.stat
+		end
+		return left.threshold < right.threshold
+	end)
+
+	return entries
+end
+
 UIControlRules.HubControls = {
 	{
 		name = "playButton",
