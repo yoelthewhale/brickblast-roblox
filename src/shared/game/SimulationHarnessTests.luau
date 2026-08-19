@@ -90,6 +90,34 @@ tests.unknownStrategyErrors = function()
 	assertCondition(not ok, "Unknown strategy should error instead of silently succeeding")
 end
 
+tests.assistanceDoesNotDrainAcrossRuns = function()
+	-- The spiral this guards against: assistance charged on every crowded hand
+	-- whether or not it changed the hand, so the budget drained faster than the
+	-- positive-outcome triggers could refill it, and the players who most
+	-- needed rescue were the least able to earn it back.
+	--
+	-- This is a cheap property guard, not the regression test for that bug --
+	-- it passes on the old generator at this sample size, because whether any
+	-- four seeds happen to drain is noisy. The deterministic coverage lives in
+	-- HandGeneratorTests, where "a rescue the base scorer would have made
+	-- anyway must not spend assistance" fails outright on the old behaviour.
+	-- What this adds is a floor: if spending ever starts outrunning
+	-- restoration again in aggregate, it trips.
+	local totalUsed = 0
+	local totalRestored = 0
+
+	for _, seed in { 21, 22, 23, 24 } do
+		local result = runStrategy("spam", seed)
+		totalUsed += result.assistanceUsed
+		totalRestored += result.fairnessFloorTriggers.totalRestored
+	end
+
+	assertCondition(
+		totalRestored >= totalUsed,
+		`Assistance should not drain over a run: used {totalUsed}, restored {totalRestored}`
+	)
+end
+
 function SimulationHarnessTests.run()
 	local results = {}
 

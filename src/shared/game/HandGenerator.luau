@@ -199,6 +199,23 @@ function HandGenerator.handSignature(handOrIds)
 	return table.concat(ids, "|")
 end
 
+local function sameShapeIds(left, right)
+	if left == right then
+		return true
+	end
+	if typeof(left) ~= "table" or typeof(right) ~= "table" or #left ~= #right then
+		return false
+	end
+
+	for index, shapeId in left do
+		if right[index] ~= shapeId then
+			return false
+		end
+	end
+
+	return true
+end
+
 local function handContainsFittingShape(shapeIds, statsById)
 	for _, shapeId in shapeIds do
 		if statsById[shapeId] and statsById[shapeId].placements > 0 then
@@ -384,6 +401,11 @@ function HandGenerator.generate(board, options)
 		)
 	local bestIds = nil
 	local bestScore = -math.huge
+	-- The same contest re-run with assistance switched off. Comparing the two
+	-- winners is what tells us whether assistance actually changed anything,
+	-- rather than merely being eligible when a good hand turned up anyway.
+	local bestUnassistedIds = nil
+	local bestUnassistedScore = -math.huge
 	local candidatesScored = 0
 
 	for _ = 1, candidateLimit do
@@ -405,26 +427,48 @@ function HandGenerator.generate(board, options)
 			shapeIds[slot] = shapeId
 		end
 
-		local score = HandGenerator.scoreShapeIds(board, shapeIds, {
+		local scoreOptions = {
 			statsById = statsById,
 			recentHands = options.recentHands,
 			comboStreak = options.comboStreak,
 			stage = stage,
 			difficulty = difficulty,
 			assistanceActive = assistanceEligible,
-		})
-		score += randomizer:NextNumber(0, 11)
+		}
+		local score = HandGenerator.scoreShapeIds(board, shapeIds, scoreOptions)
+
+		-- One draw, shared by both scores. scoreShapeIds is pure, so scoring a
+		-- candidate twice costs no extra randomness and the seeded sequence is
+		-- byte-for-byte what it was before the counterfactual existed.
+		local jitter = randomizer:NextNumber(0, 11)
+		score += jitter
 		candidatesScored += 1
+
+		local unassistedScore = score
+		if assistanceEligible then
+			scoreOptions.assistanceActive = false
+			unassistedScore = HandGenerator.scoreShapeIds(board, shapeIds, scoreOptions) + jitter
+		end
 
 		if anyKnownShapeFits and not handContainsFittingShape(shapeIds, statsById) then
 			score -= 1000
+			unassistedScore -= 1000
 		end
 
 		if score > bestScore then
 			bestScore = score
 			bestIds = shapeIds
 		end
+
+		if unassistedScore > bestUnassistedScore then
+			bestUnassistedScore = unassistedScore
+			bestUnassistedIds = shapeIds
+		end
 	end
+
+	-- Captured before the forcing block below, which edits bestIds in place
+	-- and may be editing the very table bestUnassistedIds points at.
+	local assistedWinnerDiffers = not sameShapeIds(bestIds, bestUnassistedIds)
 
 	local forcedFitting = false
 	if anyKnownShapeFits and not handContainsFittingShape(bestIds, statsById) then
@@ -436,26 +480,18 @@ function HandGenerator.generate(board, options)
 	local consumedAssistance = false
 	local assistanceReason = "none"
 	if assistanceEligible and handContainsFittingShape(bestIds, statsById) then
-		local usedFlexibleRescue = false
-		for _, shapeId in bestIds do
-			local stats = statsById[shapeId]
-			if stats and stats.placements > 0 and isFlexible(shapeId) then
-				usedFlexibleRescue = true
-				break
-			end
-		end
-
-		if
-			forcedFitting
-			or crowdRatio >= Config.HandGeneration.CrowdedRescueThreshold
-			or usedFlexibleRescue
-		then
+		-- Charge only on evidence that assistance changed the hand.
+		--
+		-- The previous check charged whenever the board was crowded, which is
+		-- one of the conditions that made assistance eligible in the first place
+		-- -- a tautology that drained the budget on every crowded hand whether
+		-- or not it helped. Its other branch, "the winning hand happens to hold
+		-- a flexible piece", was a guess at the same question.
+		if forcedFitting or assistedWinnerDiffers then
 			assistance.remaining =
 				math.max(0, assistance.remaining - Config.HandGeneration.RescueCost)
 			consumedAssistance = true
-			assistanceReason = forcedFitting and "forced fitting piece"
-				or crowdRatio >= Config.HandGeneration.CrowdedRescueThreshold and "crowded board rescue"
-				or "flexible rescue"
+			assistanceReason = if forcedFitting then "forced fitting piece" else "assisted hand won"
 		end
 	end
 	assistance.lastHandConsumed = consumedAssistance
