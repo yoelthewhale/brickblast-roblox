@@ -109,6 +109,97 @@ tests.theFlushedSnapshotIsTakenAtDeltaTime = function()
 	)
 end
 
+tests.errorEntriesAreShapedForStorage = function()
+	local clean = Telemetry.sanitizeErrorEntry({
+		category = "ProfileSave",
+		message = "DataStoreService: 502",
+		userId = 564972790,
+		at = 1755000000,
+	})
+
+	assertCondition(clean.category == "ProfileSave", "The category is kept")
+	assertCondition(clean.message == "DataStoreService: 502", "The message is kept")
+	assertCondition(clean.userId == 564972790, "The affected player is kept")
+	assertCondition(clean.at == 1755000000, "The timestamp is kept")
+end
+
+tests.unusableErrorEntriesAreDroppedRatherThanStored = function()
+	assertCondition(Telemetry.sanitizeErrorEntry(nil) == nil, "Nothing is not an error report")
+	assertCondition(Telemetry.sanitizeErrorEntry("boom") == nil, "A bare string is not a report")
+	assertCondition(
+		Telemetry.sanitizeErrorEntry({ message = "no category" }) == nil,
+		"A report with no category cannot be acted on"
+	)
+	assertCondition(
+		Telemetry.sanitizeErrorEntry({ category = "" }) == nil,
+		"An empty category cannot be acted on"
+	)
+end
+
+tests.errorEntriesToleratePartialInformation = function()
+	local clean = Telemetry.sanitizeErrorEntry({ category = "ProfileLoad" })
+
+	assertCondition(clean ~= nil, "A category alone is enough to be worth storing")
+	assertCondition(clean.message == "", "A missing message becomes empty rather than nil")
+	assertCondition(clean.at == 0, "A missing timestamp becomes zero")
+	assertCondition(clean.userId == nil, "A missing player is simply absent")
+end
+
+tests.longErrorMessagesAreTruncated = function()
+	-- Errors arrive fastest when things are worst, so an unbounded message
+	-- would blow the DataStore value size exactly when it matters most.
+	local clean = Telemetry.sanitizeErrorEntry({
+		category = "ProfileSave",
+		message = string.rep("x", Telemetry.ErrorMessageLimit + 500),
+	})
+
+	assertCondition(
+		#clean.message <= Telemetry.ErrorMessageLimit + 3,
+		`Message should be truncated, got {#clean.message} characters`
+	)
+end
+
+tests.errorLogKeepsTheNewestAndDropsTheOldest = function()
+	local stored = {}
+	for index = 1, 10 do
+		table.insert(stored, { category = "ProfileSave", message = `old {index}`, at = index })
+	end
+
+	local merged = Telemetry.mergeErrorLog(stored, {
+		{ category = "ProfileLoad", message = "new one", at = 99 },
+	}, 5)
+
+	assertCondition(#merged == 5, `Log should be capped at 5, got {#merged}`)
+	assertCondition(merged[#merged].message == "new one", "The newest report survives")
+	assertCondition(merged[1].message == "old 7", "The oldest reports are dropped first")
+end
+
+tests.errorLogSurvivesACorruptStoredValue = function()
+	local merged = Telemetry.mergeErrorLog("not a list", {
+		{ category = "ProfileSave", message = "still recorded" },
+	})
+
+	assertCondition(#merged == 1, "A corrupt stored log does not block new reports")
+	assertCondition(merged[1].message == "still recorded", "The new report is stored")
+
+	merged = Telemetry.mergeErrorLog({ "junk", 42, { category = "ProfileLoad" } }, {})
+	assertCondition(#merged == 1, "Unusable stored entries are dropped on the next write")
+end
+
+tests.errorLogMergeIsSafeToRepeat = function()
+	-- Same UpdateAsync contract as the counters: a re-run against the same
+	-- stored value must not duplicate or mutate anything.
+	local stored = { { category = "ProfileSave", message = "a", at = 1 } }
+	local incoming = { { category = "ProfileLoad", message = "b", at = 2 } }
+
+	local first = Telemetry.mergeErrorLog(stored, incoming)
+	local second = Telemetry.mergeErrorLog(stored, incoming)
+
+	assertCondition(#first == 2 and #second == 2, "A repeated transform does not accumulate")
+	assertCondition(#stored == 1, "The stored log is not mutated")
+	assertCondition(#incoming == 1, "The incoming reports are not mutated")
+end
+
 tests.flushIntervalIsUsable = function()
 	assertCondition(
 		typeof(Telemetry.FlushIntervalSeconds) == "number" and Telemetry.FlushIntervalSeconds > 0,

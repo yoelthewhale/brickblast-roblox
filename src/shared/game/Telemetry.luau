@@ -85,6 +85,81 @@ function Telemetry.mergeTotals(stored, deltas, updatedAt)
 	return merged
 end
 
+-- How many recent high-severity errors are kept, and how much of each message.
+-- Both exist to bound a DataStore value that would otherwise grow without
+-- limit exactly when things are going wrong and errors arrive fastest.
+Telemetry.ErrorLogLimit = 50
+Telemetry.ErrorMessageLimit = 300
+
+-- Shape one error report into something safe to store.
+--
+-- Returns nil for anything unusable rather than storing a malformed entry,
+-- because this log is read when something has already gone wrong and a
+-- half-formed record is worse than no record.
+function Telemetry.sanitizeErrorEntry(entry)
+	if typeof(entry) ~= "table" then
+		return nil
+	end
+
+	local category = entry.category
+	if typeof(category) ~= "string" or category == "" then
+		return nil
+	end
+
+	local message = if typeof(entry.message) == "string" then entry.message else ""
+	if #message > Telemetry.ErrorMessageLimit then
+		message = string.sub(message, 1, Telemetry.ErrorMessageLimit) .. "..."
+	end
+
+	local clean = {
+		category = category,
+		message = message,
+		at = if isCountable(entry.at) then math.floor(entry.at) else 0,
+	}
+
+	if isCountable(entry.userId) then
+		clean.userId = math.floor(entry.userId)
+	end
+
+	return clean
+end
+
+-- Fold new error reports into the stored log, newest last, oldest dropped.
+--
+-- Like mergeTotals this runs inside an UpdateAsync transform, so it is pure
+-- and safe to re-run: it always rebuilds from the stored value it was handed.
+function Telemetry.mergeErrorLog(stored, incoming, limit)
+	limit = if isCountable(limit) and limit > 0 then math.floor(limit) else Telemetry.ErrorLogLimit
+
+	local merged = {}
+
+	if typeof(stored) == "table" then
+		for _, entry in stored do
+			local clean = Telemetry.sanitizeErrorEntry(entry)
+			if clean then
+				table.insert(merged, clean)
+			end
+		end
+	end
+
+	if typeof(incoming) == "table" then
+		for _, entry in incoming do
+			local clean = Telemetry.sanitizeErrorEntry(entry)
+			if clean then
+				table.insert(merged, clean)
+			end
+		end
+	end
+
+	-- Keep the newest, drop from the front. When errors are pouring in, the
+	-- most recent ones are the ones worth having.
+	while #merged > limit do
+		table.remove(merged, 1)
+	end
+
+	return merged
+end
+
 -- The snapshot to remember as "already flushed" once a write succeeds.
 --
 -- Taken from the counters as they were when the deltas were computed, not

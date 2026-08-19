@@ -327,10 +327,44 @@ end)
 local analyticsStore = nil
 local analyticsFlushFailures = 0
 local lastFlushedCounters = {}
+-- High-severity failures waiting to be written. Kept until a flush
+-- succeeds, so a failed write retries rather than losing the report.
+local pendingErrorReports = {}
 
 pcall(function()
 	analyticsStore = DataStoreService:GetDataStore("BlockBlastAnalyticsV1")
 end)
+
+-- Record a high-severity failure somewhere it can be read after the session
+-- ends.
+--
+-- Every failure path in this file used to warn() to the Output window and
+-- nothing else, so in a published experience nobody learns that (say)
+-- profile saves have started failing until a player complains. The warn
+-- stays for live Studio work; this adds the durable copy.
+--
+-- Deliberately not used for analytics-flush failures: reporting a storage
+-- failure into storage is circular, and those already have their own
+-- counter.
+local function reportError(category, message, userId)
+	local entry = Telemetry.sanitizeErrorEntry({
+		category = category,
+		message = message,
+		userId = userId,
+		at = os.time(),
+	})
+
+	if not entry then
+		return
+	end
+
+	-- Bounded here as well as at the merge: a server that cannot reach the
+	-- DataStore at all would otherwise accumulate reports forever.
+	table.insert(pendingErrorReports, entry)
+	while #pendingErrorReports > Telemetry.ErrorLogLimit do
+		table.remove(pendingErrorReports, 1)
+	end
+end
 
 -- Fold this server's counters into the shared totals.
 --
@@ -371,6 +405,40 @@ local function flushAnalytics()
 	end
 
 	lastFlushedCounters = snapshot
+	return true
+end
+
+-- Write the pending failure reports. Separate key from the counters: most
+-- flushes have no errors at all, so this write usually does not happen.
+local function flushErrorReports()
+	if not analyticsStore or #pendingErrorReports == 0 then
+		return true
+	end
+
+	local outgoing = pendingErrorReports
+	pendingErrorReports = {}
+
+	local ok, err = pcall(function()
+		analyticsStore:UpdateAsync("Errors", function(stored)
+			return Telemetry.mergeErrorLog(stored, outgoing, Telemetry.ErrorLogLimit)
+		end)
+	end)
+
+	if not ok then
+		-- Put them back in front of anything reported during the write, so
+		-- order is preserved and nothing is dropped by a transient failure.
+		for index = #outgoing, 1, -1 do
+			table.insert(pendingErrorReports, 1, outgoing[index])
+		end
+		while #pendingErrorReports > Telemetry.ErrorLogLimit do
+			table.remove(pendingErrorReports, 1)
+		end
+
+		analyticsFlushFailures += 1
+		warn(`[BlockBlast] Failed to flush error reports: {tostring(err)}`)
+		return false
+	end
+
 	return true
 end
 
@@ -794,6 +862,7 @@ local function createLeaderstats(player)
 
 		if not ok then
 			profileLoadFailures += 1
+			reportError("ProfileLoad", tostring(profile), player.UserId)
 			-- Staying Failed keeps this session read-only: the stored profile
 			-- is real data we could not read, and writing blank in-memory
 			-- defaults over it would wipe the player.
@@ -811,6 +880,11 @@ local function createLeaderstats(player)
 			-- back over real data. Same handling as an unreadable profile: the
 			-- session stays read-only and the player is told.
 			analytics.profilesAheadOfServer += 1
+			reportError(
+				"ProfileAheadOfServer",
+				`profile version {tostring(fromVersion)} exceeds {ProfilePersistence.Version}`,
+				player.UserId
+			)
 			markProfileLoadStatus(player, ProfilePersistence.LoadStatus.Failed)
 			warn(
 				`[BlockBlast] Profile for {player.UserId} is version {tostring(fromVersion)}, newer than {ProfilePersistence.Version}; refusing to load or overwrite it`
@@ -1038,6 +1112,7 @@ local function updateProfileWithRetry(player, stats)
 
 		if attempt == PROFILE_SAVE_RETRY_COUNT then
 			profileSaveFailures += 1
+			reportError("ProfileSave", tostring(err), player.UserId)
 			warn(`[BlockBlast] Failed to save profile for {player.UserId}: {tostring(err)}`)
 			return false
 		end
@@ -1869,6 +1944,7 @@ local function grantDeveloperProductReceipt(player, product, receiptKey)
 
 	if not ok then
 		profileSaveFailures += 1
+		reportError("ReceiptFulfilment", tostring(err), player.UserId)
 		warn(`[BlockBlast] Failed to fulfill receipt for {player.UserId}: {tostring(err)}`)
 		return false
 	end
@@ -3619,6 +3695,7 @@ game:BindToClose(function()
 	pendingSaves += 1
 	task.spawn(function()
 		flushAnalytics()
+		flushErrorReports()
 		pendingSaves -= 1
 	end)
 
@@ -3651,6 +3728,7 @@ task.spawn(function()
 	while true do
 		task.wait(Telemetry.FlushIntervalSeconds)
 		flushAnalytics()
+		flushErrorReports()
 	end
 end)
 
