@@ -3358,12 +3358,16 @@ applyWindowLayout = function()
 		return
 	end
 
-	leftColumn.Position = UDim2.fromOffset(0, 0)
+	-- The three columns can be narrower than the content area once the middle
+	-- column is capped, so the block is centred rather than left-aligned with
+	-- one large gutter on the right.
+	local columnsLeft = layout.columnsOffset
+	leftColumn.Position = UDim2.fromOffset(columnsLeft, 0)
 	leftColumn.Size = UDim2.fromOffset(layout.leftWidth, contentHeight)
-	centerColumn.Position = UDim2.fromOffset(layout.leftWidth + layout.columnGap, 0)
+	centerColumn.Position = UDim2.fromOffset(columnsLeft + layout.leftWidth + layout.columnGap, 0)
 	centerColumn.Size = UDim2.fromOffset(layout.centerWidth, contentHeight)
 	rightColumn.Position = UDim2.fromOffset(
-		layout.leftWidth + layout.columnGap + layout.centerWidth + layout.columnGap,
+		columnsLeft + layout.leftWidth + layout.columnGap + layout.centerWidth + layout.columnGap,
 		0
 	)
 	rightColumn.Size = UDim2.fromOffset(layout.rightWidth, contentHeight)
