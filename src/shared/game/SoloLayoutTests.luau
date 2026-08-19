@@ -39,6 +39,16 @@ local function assertViewport(width, height)
 	-- Return Hub and Play Again live in the actions panel. If it has no height,
 	-- the player cannot leave or restart a run.
 	assertCondition(layout.actionsHeight > 0, `{label}: run actions have measured space`)
+	assertCondition(layout.columnsOffset >= 0, `{label}: the column block is not pushed off-screen`)
+	assertCondition(
+		layout.columnsOffset * 2
+				+ layout.leftWidth
+				+ layout.centerWidth
+				+ layout.rightWidth
+				+ layout.columnGap * 2
+			<= layout.contentWidth,
+		`{label}: centring the columns keeps them inside the viewport`
+	)
 end
 
 -- Phone viewports stack vertically, so the horizontal invariant is not enough:
@@ -82,6 +92,77 @@ tests.supportedPcViewports = function()
 	assertViewport(1920, 1080)
 	assertViewport(2560, 1440)
 	assertViewport(3440, 1440)
+end
+
+tests.centreColumnGrowthIsBoundedOnWideScreens = function()
+	-- The regression this guards: centerWidth was max(boardSize,
+	-- availableCenter), so once the board hit its maximum every extra pixel of
+	-- screen width went into the tray. At 2560x1440 that produced an 1832px
+	-- column holding three small piece previews; at 3440x1440, 2712px.
+	for _, viewport in
+		{ { 1920, 1080 }, { 2560, 1440 }, { 3440, 1440 }, { 5120, 1440 }, { 7680, 2160 } }
+	do
+		local label = `{viewport[1]}x{viewport[2]}`
+		local layout = SoloLayout.calculate(Vector2.new(viewport[1], viewport[2]), 36, 0, 1)
+
+		-- Asserted first because it is the player-visible symptom, and because
+		-- it fails meaningfully against the old layout rather than tripping over
+		-- a constant that did not exist yet.
+		local slotWidth = math.floor(
+			(layout.centerWidth - 36 - ((Config.InventorySize - 1) * 14)) / Config.InventorySize
+		)
+		assertCondition(
+			slotWidth <= 320,
+			`{label}: tray slot width {slotWidth} is out of proportion to a piece preview`
+		)
+
+		assertCondition(
+			layout.centerWidth >= layout.boardSize,
+			`{label}: the board column is never narrower than the board`
+		)
+		assertCondition(
+			layout.centerWidth
+				<= math.max(
+					layout.boardSize,
+					math.floor(layout.boardSize * SoloLayout.MaxCenterWidthBoardRatio)
+				),
+			`{label}: board column {layout.centerWidth} outgrew the board {layout.boardSize}`
+		)
+	end
+end
+
+tests.wideScreensCentreTheColumnBlock = function()
+	-- Capping the middle column leaves slack. It has to be split evenly rather
+	-- than all landing on the right, or the whole screen reads as left-aligned.
+	for _, viewport in { { 2560, 1440 }, { 3440, 1440 } } do
+		local label = `{viewport[1]}x{viewport[2]}`
+		local layout = SoloLayout.calculate(Vector2.new(viewport[1], viewport[2]), 36, 0, 1)
+
+		local used = layout.leftWidth
+			+ layout.centerWidth
+			+ layout.rightWidth
+			+ layout.columnGap * 2
+		local rightGutter = layout.contentWidth - used - layout.columnsOffset
+
+		assertCondition(
+			layout.columnsOffset > 0,
+			`{label}: wide screens should have slack to centre`
+		)
+		assertCondition(
+			math.abs(rightGutter - layout.columnsOffset) <= 1,
+			`{label}: gutters should match ({layout.columnsOffset} vs {rightGutter})`
+		)
+	end
+end
+
+tests.narrowDesktopsDoNotGainAGutter = function()
+	-- Where the columns already fill the content area there is nothing to
+	-- centre, and the offset must stay at zero rather than shifting the layout.
+	local layout = SoloLayout.calculate(Vector2.new(1024, 768), 36, 0, 1)
+	assertCondition(
+		layout.columnsOffset >= 0,
+		"A viewport with no slack should not produce a negative offset"
+	)
 end
 
 tests.tabletViewportsKeepTheColumnLayout = function()

@@ -5,19 +5,25 @@ local SoloLayout = {}
 local MIN_BOARD_SIZE = 224
 local MAX_BOARD_SIZE = 760
 
+-- How much wider than the board the board/tray column may grow. Past this the
+-- column is stretching into dead space: the board stops growing at
+-- MAX_BOARD_SIZE, so on a wide screen every extra pixel lands in the tray,
+-- ballooning three small piece previews across the display. The slack becomes
+-- centred margin instead.
+SoloLayout.MaxCenterWidthBoardRatio = 1.15
+
 -- Phone layouts stack vertically, so the board is usually limited by height
--- rather than width. Clamping it back up to the desktop minimum is exactly
--- what made the old three-column layout overflow a phone screen, so phones
--- get a much lower floor and simply take whatever the stack leaves them.
+-- rather than width, and takes whatever the stack leaves it.
 local PHONE_MIN_TRAY_HEIGHT = 84
+local PHONE_MAX_TRAY_HEIGHT = 132
+
 -- Small boards cannot afford the desktop padding and gap floors: at a 48px
--- board they would eat 47 of the 48 pixels. Phones spend the pixels on
--- cells instead.
+-- board they would eat 47 of the 48 pixels. Phones spend the pixels on cells
+-- instead.
 local PHONE_MIN_BOARD_PADDING = 8
 local PHONE_MIN_BOARD_GAP = 2
 local DESKTOP_MIN_BOARD_PADDING = 13
 local DESKTOP_MIN_BOARD_GAP = 3
-local PHONE_MAX_TRAY_HEIGHT = 132
 
 -- The same breakpoint HUDController uses to decide the hub is on a phone, so
 -- the hub and the gameplay screen cannot disagree about what a phone is.
@@ -174,6 +180,7 @@ function SoloLayout.calculate(screenSize, topInset, bottomInset, uiScale)
 			headerHeight = headerHeight,
 			headerGap = headerGap,
 			columnGap = 0,
+			columnsOffset = 0,
 			leftWidth = 0,
 			centerWidth = contentWidth,
 			rightWidth = 0,
@@ -213,7 +220,19 @@ function SoloLayout.calculate(screenSize, topInset, bottomInset, uiScale)
 	)
 	local boardGap, boardPadding, boardCell, usedBoardPixels =
 		boardMetrics(boardSize, DESKTOP_MIN_BOARD_PADDING, DESKTOP_MIN_BOARD_GAP)
-	local centerWidth = math.max(boardSize, availableCenter)
+	-- Measured against the board that actually gets drawn, not the pre-rounded
+	-- size: they differ by a few pixels and the column should track what the
+	-- player sees.
+	local centerWidth = clamp(
+		availableCenter,
+		usedBoardPixels,
+		math.max(usedBoardPixels, math.floor(usedBoardPixels * SoloLayout.MaxCenterWidthBoardRatio))
+	)
+	-- Capping the middle column leaves the three columns narrower than the
+	-- content area, so centre the block rather than letting it pile up
+	-- against the left edge with one huge gutter on the right.
+	local columnsWidth = leftWidth + centerWidth + rightWidth + (columnGap * 2)
+	local columnsOffset = math.max(0, math.floor((contentWidth - columnsWidth) / 2))
 	local actionsHeight = clamp(math.floor(96 * scale), 86, 112)
 	local leaderboardHeight = math.max(260, contentHeight - actionsHeight - statGap)
 
@@ -226,6 +245,7 @@ function SoloLayout.calculate(screenSize, topInset, bottomInset, uiScale)
 		headerHeight = headerHeight,
 		headerGap = headerGap,
 		columnGap = columnGap,
+		columnsOffset = columnsOffset,
 		leftWidth = leftWidth,
 		centerWidth = centerWidth,
 		rightWidth = rightWidth,
