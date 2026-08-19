@@ -99,14 +99,77 @@ tests.crowdedBoardOnlySingleFits = function()
 		handHasAnyMove(board, hand),
 		"Crowded board hand should include the one fitting move"
 	)
+	-- This test previously asserted that assistance was spent here, which was
+	-- the bug rather than the behaviour: a hand missing every fitting shape is
+	-- already penalised by 1000 points, so the base scorer produces the single
+	-- on its own. The player was being charged for a rescue nothing performed.
+	assertCondition(
+		diagnostics.assistanceConsumed == false,
+		"A rescue the base scorer would have made anyway must not spend assistance"
+	)
+	assertCondition(
+		diagnostics.assistance.remaining == Config.HandGeneration.AssistanceStart,
+		"An unspent rescue should leave the budget untouched"
+	)
+	assertCondition(
+		diagnostics.assistanceReason == "none",
+		"An unspent rescue should not claim a reason"
+	)
+end
+
+tests.assistanceIsSpentWhenItForcesAFittingPiece = function()
+	-- With a single candidate to choose from, the winning hand can genuinely
+	-- lack any playable piece, and only then does the generator step in and
+	-- replace a slot. That is assistance doing real work, so it is charged.
+	local board = filledBoard()
+	board[Config.BoardSize][Config.BoardSize] = false
+
+	local hand, diagnostics = HandGenerator.generate(board, {
+		randomizer = Random.new(3454),
+		candidateLimit = 1,
+		assistance = HandGenerator.newAssistance(),
+	})
+
 	assertCondition(
 		diagnostics.assistanceConsumed == true,
-		"Crowded rescue should spend assistance"
+		"Forcing a fitting piece should spend assistance"
+	)
+	assertCondition(
+		diagnostics.assistanceReason == "forced fitting piece",
+		"A forced rescue should say so"
 	)
 	assertCondition(
 		diagnostics.assistance.remaining
 			== Config.HandGeneration.AssistanceStart - Config.HandGeneration.RescueCost,
-		"Crowded rescue should reduce assistance by the configured cost"
+		"A forced rescue should reduce assistance by the configured cost"
+	)
+	assertCondition(handHasAnyMove(board, hand), "A forced rescue should leave a playable hand")
+end
+
+tests.anExhaustedBudgetStillProducesAPlayableHand = function()
+	-- The struggling-player case: the budget is gone, the board is nearly
+	-- full, and the generator must still not hand out an unplayable hand. The
+	-- fitting-shape penalty does that work independently of assistance.
+	local board = filledBoard()
+	board[Config.BoardSize][Config.BoardSize] = false
+
+	local emptyBudget = HandGenerator.newAssistance()
+	emptyBudget.remaining = 0
+
+	local hand, diagnostics = HandGenerator.generate(board, {
+		randomizer = Random.new(404),
+		candidateLimit = 12,
+		assistance = emptyBudget,
+	})
+
+	assertCondition(
+		diagnostics.assistanceConsumed == false,
+		"An empty budget cannot be spent further"
+	)
+	assertCondition(diagnostics.assistance.remaining == 0, "An empty budget stays at zero")
+	assertCondition(
+		handHasAnyMove(board, hand),
+		"A player with no assistance left still gets a playable hand"
 	)
 end
 
