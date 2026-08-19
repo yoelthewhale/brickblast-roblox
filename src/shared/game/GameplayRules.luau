@@ -6,6 +6,28 @@ function GameplayRules.comboBonusForStreak(comboStreak)
 	return math.max(0, comboStreak - 1) * Config.ComboBonusPoints
 end
 
+-- The combo streak after a placement: it advances on any clearing placement
+-- and resets the moment one clears nothing.
+--
+-- This module owned the bonus formula but not the transition that feeds it, so
+-- the rule was written out by hand in the server and again in
+-- SimulationHarness. The two agreed, but nothing kept them agreeing, and the
+-- harness is what balance decisions are measured on -- a silent divergence
+-- there would mean measuring a different game than the one that ships.
+function GameplayRules.updateComboStreak(currentStreak, linesCleared)
+	local cleared = typeof(linesCleared) == "number" and linesCleared or 0
+	if cleared <= 0 then
+		return 0
+	end
+
+	local streak = typeof(currentStreak) == "number"
+			and currentStreak == currentStreak
+			and math.max(0, math.floor(currentStreak))
+		or 0
+
+	return streak + 1
+end
+
 -- Bonus for clearing several lines with a single placement.
 --
 -- Without this, a simultaneous multi-line clear scored strictly worse than

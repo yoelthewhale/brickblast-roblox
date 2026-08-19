@@ -233,12 +233,8 @@ function SimulationHarness.run(options)
 		Grid.place(state.board, move.shape, move.x, move.y)
 		state.hand[move.slot] = nil
 		local linesCleared = Grid.clearLines(state.board)
-		if linesCleared > 0 then
-			state.comboStreak += 1
-			state.highestCombo = math.max(state.highestCombo, state.comboStreak)
-		else
-			state.comboStreak = 0
-		end
+		state.comboStreak = GameplayRules.updateComboStreak(state.comboStreak, linesCleared)
+		state.highestCombo = math.max(state.highestCombo, state.comboStreak)
 
 		local scoreDelta =
 			GameplayRules.scoreForPlacement(#move.shape.cells, linesCleared, state.comboStreak)

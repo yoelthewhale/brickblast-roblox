@@ -3141,14 +3141,12 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 
 	state.hand[slot] = nil
 	local linesCleared = Grid.clearLines(state.board)
-	if linesCleared > 0 then
-		state.comboStreak += 1
+	state.comboStreak = GameplayRules.updateComboStreak(state.comboStreak, linesCleared)
+	if state.comboStreak > 0 then
 		state.highestCombo = math.max(state.highestCombo, state.comboStreak)
 		if state.comboStreak > 1 then
 			analytics.combosTriggered += 1
 		end
-	else
-		state.comboStreak = 0
 	end
 	local scoreDelta, comboBonus, multiLineBonus =
 		GameplayRules.scoreForPlacement(cellsPlaced, linesCleared, state.comboStreak)
