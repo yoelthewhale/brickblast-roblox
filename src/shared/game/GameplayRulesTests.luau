@@ -38,6 +38,47 @@ tests.scoreForPlacementMatchesFormula = function()
 	)
 end
 
+tests.comboStreakAdvancesOnAClearAndResetsWithout = function()
+	assertCondition(GameplayRules.updateComboStreak(0, 1) == 1, "A first clear starts the streak")
+	assertCondition(GameplayRules.updateComboStreak(1, 1) == 2, "A second clear advances it")
+	assertCondition(GameplayRules.updateComboStreak(4, 3) == 5, "Multi-line clears advance by one")
+	assertCondition(GameplayRules.updateComboStreak(5, 0) == 0, "Clearing nothing resets it")
+	assertCondition(GameplayRules.updateComboStreak(0, 0) == 0, "Staying at zero is stable")
+end
+
+tests.comboStreakToleratesUnusableInput = function()
+	assertCondition(GameplayRules.updateComboStreak(nil, 1) == 1, "A missing streak starts at zero")
+	assertCondition(GameplayRules.updateComboStreak("3", 1) == 1, "A string streak is not trusted")
+	assertCondition(GameplayRules.updateComboStreak(0 / 0, 1) == 1, "NaN is not trusted")
+	assertCondition(GameplayRules.updateComboStreak(-4, 1) == 1, "A negative streak floors at zero")
+	assertCondition(
+		GameplayRules.updateComboStreak(2.7, 1) == 3,
+		"A fractional streak floors first"
+	)
+	assertCondition(GameplayRules.updateComboStreak(3, nil) == 0, "A missing clear count resets")
+	assertCondition(GameplayRules.updateComboStreak(3, -1) == 0, "A negative clear count resets")
+end
+
+tests.comboStreakFeedsItsOwnBonus = function()
+	-- The transition and the bonus formula have to agree about what a streak
+	-- means, which is the reason for keeping them in the same module.
+	local streak = 0
+	local total = 0
+	for _ = 1, 3 do
+		streak = GameplayRules.updateComboStreak(streak, 1)
+		total += GameplayRules.comboBonusForStreak(streak)
+	end
+
+	assertCondition(streak == 3, "Three consecutive clears reach streak three")
+	assertCondition(total == 25 + 50, "Bonuses accumulate as 0 + 25 + 50 across the streak")
+
+	streak = GameplayRules.updateComboStreak(streak, 0)
+	assertCondition(
+		GameplayRules.comboBonusForStreak(streak) == 0,
+		"A broken streak earns no bonus"
+	)
+end
+
 tests.multiLineBonusOnlyAppliesToSimultaneousClears = function()
 	assertCondition(GameplayRules.multiLineBonusForClear(0) == 0, "no clear earns no bonus")
 	assertCondition(GameplayRules.multiLineBonusForClear(1) == 0, "a single line earns no bonus")
