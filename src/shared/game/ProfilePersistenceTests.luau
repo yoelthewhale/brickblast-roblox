@@ -12,6 +12,87 @@ end
 
 local tests = {}
 
+tests.aProfileAtTheCurrentVersionNeedsNoMigration = function()
+	local profile = { version = ProfilePersistence.Version, coins = 100 }
+	local status, migrated, fromVersion = ProfilePersistence.migrate(profile)
+
+	assertCondition(status == "current", `Expected "current", got "{status}"`)
+	assertCondition(migrated.coins == 100, "The profile passes through untouched")
+	assertCondition(fromVersion == ProfilePersistence.Version, "Reports the version it was at")
+end
+
+tests.anUnversionedProfileIsTreatedAsTheFirstVersion = function()
+	-- Saves written before versioning existed carry no version field. They are
+	-- old, not corrupt, and must migrate rather than being refused.
+	local status, migrated, fromVersion = ProfilePersistence.migrate({ coins = 50 })
+
+	assertCondition(status == "migrated", `Expected "migrated", got "{status}"`)
+	assertCondition(fromVersion == 1, "An absent version means version 1")
+	assertCondition(migrated.coins == 50, "Existing fields survive the migration")
+	assertCondition(
+		migrated.version == ProfilePersistence.Version,
+		"A migrated profile is stamped with the current version"
+	)
+end
+
+tests.aGarbledVersionIsTreatedAsTheFirstVersion = function()
+	for _, version in { "2", {}, 0 / 0, -5, 0 } do
+		local profile = { version = version, coins = 7 }
+		local status, migrated = ProfilePersistence.migrate(profile)
+
+		assertCondition(
+			status == "migrated",
+			`An unusable version should migrate rather than be trusted (got "{status}")`
+		)
+		assertCondition(migrated.coins == 7, "Existing fields survive")
+	end
+end
+
+tests.aProfileFromANewerBuildIsRefused = function()
+	-- The rollback case. This server cannot know what a newer build's fields
+	-- mean, so it must not load them and must not save over them.
+	local profile = { version = ProfilePersistence.Version + 1, coins = 999 }
+	local status, returned, fromVersion = ProfilePersistence.migrate(profile)
+
+	assertCondition(status == "future", `Expected "future", got "{status}"`)
+	assertCondition(fromVersion == ProfilePersistence.Version + 1, "Reports the version it found")
+	assertCondition(returned.coins == 999, "The stored profile is handed back unmodified")
+	assertCondition(
+		returned.version == ProfilePersistence.Version + 1,
+		"A refused profile is never restamped with this server's version"
+	)
+end
+
+tests.aRefusedProfileCannotBeSaved = function()
+	-- The whole point of refusing: the caller marks the load Failed, and a
+	-- Failed load is not allowed to write.
+	assertCondition(
+		not ProfilePersistence.canSave(LoadStatus.Failed),
+		"A refused profile's session must stay read-only"
+	)
+end
+
+tests.anAbsentProfileIsNotAMigration = function()
+	local status = ProfilePersistence.migrate(nil)
+	assertCondition(status == "empty", `A new player has nothing to migrate (got "{status}")`)
+
+	status = ProfilePersistence.migrate("not a table")
+	assertCondition(status == "empty", "A non-table stored value is treated as empty")
+end
+
+tests.profileVersionReadsWhatWasStamped = function()
+	assertCondition(ProfilePersistence.profileVersion(nil) == nil, "No profile has no version")
+	assertCondition(ProfilePersistence.profileVersion({}) == 1, "An unstamped profile is version 1")
+	assertCondition(
+		ProfilePersistence.profileVersion({ version = 2 }) == 2,
+		"A stamped version is read back"
+	)
+	assertCondition(
+		ProfilePersistence.profileVersion({ version = 2.9 }) == 2,
+		"A fractional version floors rather than being rejected"
+	)
+end
+
 tests.loadedProfilesMaySave = function()
 	assertCondition(ProfilePersistence.canSave(LoadStatus.Loaded), "Loaded profiles may save")
 	assertCondition(

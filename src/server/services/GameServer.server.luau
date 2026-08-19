@@ -288,6 +288,8 @@ local analytics = {
 	suddenDeathPressureRows = 0,
 	profileFieldsSanitized = 0,
 	profileSavesSkippedBeforeLoad = 0,
+	profilesMigrated = 0,
+	profilesAheadOfServer = 0,
 	forfeits = 0,
 	shopSnapshotsRequested = 0,
 	shopPromptRequests = 0,
@@ -347,7 +349,7 @@ local PROFILE_LIMITS = {
 	level = 1000,
 	storyStars = 100000,
 }
-local PROFILE_VERSION = 2
+local PROFILE_VERSION = ProfilePersistence.Version
 local leaveBattle = nil
 local scheduleReturnIfEliminated = nil
 local resolveBattleIfFinished = nil
@@ -746,9 +748,30 @@ local function createLeaderstats(player)
 			return
 		end
 
+		local migrationStatus, migratedProfile, fromVersion = ProfilePersistence.migrate(profile)
+
+		if migrationStatus == "future" then
+			-- Saved by a newer build than this server is running, most likely
+			-- after a rollback. This server cannot know what those fields mean,
+			-- so it refuses rather than misreading them and saving the result
+			-- back over real data. Same handling as an unreadable profile: the
+			-- session stays read-only and the player is told.
+			analytics.profilesAheadOfServer += 1
+			markProfileLoadStatus(player, ProfilePersistence.LoadStatus.Failed)
+			warn(
+				`[BlockBlast] Profile for {player.UserId} is version {tostring(fromVersion)}, newer than {ProfilePersistence.Version}; refusing to load or overwrite it`
+			)
+			return
+		end
+
 		-- The read succeeded. A nil result simply means a new player with no
 		-- saved profile yet, which is safe to write over.
 		markProfileLoadStatus(player, ProfilePersistence.LoadStatus.Loaded)
+
+		if migrationStatus == "migrated" then
+			analytics.profilesMigrated += 1
+		end
+		profile = migratedProfile
 
 		if typeof(profile) ~= "table" or player.Parent ~= Players then
 			return

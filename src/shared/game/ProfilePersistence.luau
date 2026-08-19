@@ -22,6 +22,77 @@ ProfilePersistence.LoadStatus = {
 	Failed = "Failed",
 }
 
+-- The schema version stamped onto every saved profile.
+ProfilePersistence.Version = 2
+
+-- Transforms keyed by the version they upgrade *from*: MIGRATIONS[n] takes a
+-- profile at version n and returns it at n + 1.
+--
+-- Empty today, and that is the point. Version 2 only added fields, which the
+-- per-field sanitizers already tolerate, so nothing needs transforming yet.
+-- What was missing was anywhere for the first migration to live: the version
+-- was written on every save and read nowhere, so a future change to what a
+-- field *means* would have silently misread old profiles instead of upgrading
+-- them.
+local MIGRATIONS = {}
+
+-- Profiles saved before versioning existed carry no version field. They are
+-- version 1 by definition, not corrupt.
+local FIRST_VERSION = 1
+
+function ProfilePersistence.profileVersion(profile)
+	if typeof(profile) ~= "table" then
+		return nil
+	end
+
+	local version = profile.version
+	if typeof(version) ~= "number" or version ~= version or version < FIRST_VERSION then
+		return FIRST_VERSION
+	end
+
+	return math.floor(version)
+end
+
+-- Bring a loaded profile up to the current schema.
+--
+-- Returns status, profile, fromVersion:
+--   "empty"    nothing stored yet; a new player, nothing to migrate
+--   "current"  already at ProfilePersistence.Version
+--   "migrated" upgraded; the returned table is the one to use
+--   "future"   written by a NEWER build than this server
+--
+-- "future" is the case worth being careful about. It happens when a server is
+-- rolled back and meets a profile saved by the newer build. This server cannot
+-- know what those fields mean, so the only safe answer is to refuse: the
+-- caller should treat it exactly like a failed load, leaving the session
+-- read-only rather than overwriting data it does not understand.
+function ProfilePersistence.migrate(profile)
+	if typeof(profile) ~= "table" then
+		return "empty", profile, nil
+	end
+
+	local fromVersion = ProfilePersistence.profileVersion(profile)
+
+	if fromVersion > ProfilePersistence.Version then
+		return "future", profile, fromVersion
+	end
+
+	if fromVersion == ProfilePersistence.Version then
+		return "current", profile, fromVersion
+	end
+
+	local migrated = profile
+	for version = fromVersion, ProfilePersistence.Version - 1 do
+		local transform = MIGRATIONS[version]
+		if transform then
+			migrated = transform(migrated)
+		end
+	end
+
+	migrated.version = ProfilePersistence.Version
+	return "migrated", migrated, fromVersion
+end
+
 -- What a save attempt should do right now.
 --   "save": in-memory state is trustworthy, write it.
 --   "wait": the load is still in flight and there is time budget left.
