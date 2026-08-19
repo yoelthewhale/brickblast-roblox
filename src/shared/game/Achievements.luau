@@ -182,6 +182,63 @@ Achievements.DefaultLifetimeStats = {
 	totalRuns = 0,
 }
 
+-- Upper bounds for saved lifetime stats. A profile is player-influenced data
+-- read back from a DataStore, so every field is clamped on load rather than
+-- trusted -- these are the ceilings a legitimate player can never reach.
+Achievements.LifetimeStatLimits = {
+	highestCombo = 999,
+	highestStage = 1000,
+	totalPerfectClears = 1000000,
+	totalLinesCleared = 100000000,
+	totalBlocksPlaced = 100000000,
+	totalRuns = 10000000,
+}
+
+-- The floor for each stat. Stage counts from 1; everything else from 0.
+local function minimumForStat(key)
+	return if key == "highestStage" then 1 else 0
+end
+
+local function isFiniteNumber(value)
+	return typeof(value) == "number"
+		and value == value
+		and value ~= math.huge
+		and value ~= -math.huge
+end
+
+-- Clamp a saved lifetime-stat table into something safe to use, matching
+-- StageProgression.sanitize and HandGenerator.sanitizeAssistance.
+--
+-- Returns the clean table and the number of fields that had to be corrected,
+-- which the server folds into its analytics counter.
+function Achievements.sanitizeLifetimeStats(raw)
+	local source = if typeof(raw) == "table" then raw else {}
+	local clean = {}
+	local corrected = 0
+
+	for key, defaultValue in Achievements.DefaultLifetimeStats do
+		local value = source[key]
+		if isFiniteNumber(value) then
+			local clamped = math.clamp(
+				math.floor(value),
+				minimumForStat(key),
+				Achievements.LifetimeStatLimits[key]
+			)
+			clean[key] = clamped
+			if clamped ~= value then
+				corrected += 1
+			end
+		else
+			clean[key] = defaultValue
+			if value ~= nil then
+				corrected += 1
+			end
+		end
+	end
+
+	return clean, corrected
+end
+
 function Achievements.getDefinition(id)
 	for _, definition in Achievements.Definitions do
 		if definition.id == id then

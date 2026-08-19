@@ -76,6 +76,80 @@ tests.tiersUnlockIndependentlyAtTheirOwnThreshold = function()
 	assertCondition(unlockedIds.RUNS_GOLD == nil, "gold tier should not unlock early")
 end
 
+tests.sanitizeLifetimeStatsFillsEveryDefinedStat = function()
+	local clean, corrected = Achievements.sanitizeLifetimeStats(nil)
+
+	for key, defaultValue in Achievements.DefaultLifetimeStats do
+		assertCondition(clean[key] == defaultValue, `Missing {key} should fall back to its default`)
+	end
+	assertCondition(corrected == 0, "An absent table is not a correction, just a new player")
+end
+
+tests.sanitizeLifetimeStatsClampsToTheConfiguredCeilings = function()
+	local clean, corrected = Achievements.sanitizeLifetimeStats({
+		highestCombo = 99999,
+		totalRuns = math.huge,
+		totalLinesCleared = -50,
+	})
+
+	assertCondition(
+		clean.highestCombo == Achievements.LifetimeStatLimits.highestCombo,
+		"An impossible combo should clamp to the ceiling"
+	)
+	assertCondition(clean.totalRuns == 0, "A non-finite run count should fall back to the default")
+	assertCondition(clean.totalLinesCleared == 0, "A negative line count should clamp to zero")
+	assertCondition(corrected == 3, `Three fields were corrected, counted {corrected}`)
+end
+
+tests.sanitizeLifetimeStatsRespectsPerStatFloors = function()
+	local clean = Achievements.sanitizeLifetimeStats({ highestStage = 0, highestCombo = 0 })
+
+	assertCondition(clean.highestStage == 1, "Stage counts from one, not zero")
+	assertCondition(clean.highestCombo == 0, "Combo legitimately starts at zero")
+end
+
+tests.sanitizeLifetimeStatsRejectsNonNumbers = function()
+	local clean, corrected = Achievements.sanitizeLifetimeStats({
+		highestCombo = "999",
+		totalRuns = {},
+		totalBlocksPlaced = true,
+	})
+
+	assertCondition(clean.highestCombo == 0, "A numeric string is not a number")
+	assertCondition(clean.totalRuns == 0, "A table is not a number")
+	assertCondition(clean.totalBlocksPlaced == 0, "A boolean is not a number")
+	assertCondition(corrected == 3, "Each rejected field counts as a correction")
+end
+
+tests.sanitizeLifetimeStatsDropsUnknownKeys = function()
+	-- A saved profile could carry fields from an older schema, or ones an
+	-- exploiter invented. Only the defined stats survive.
+	local clean = Achievements.sanitizeLifetimeStats({ totalRuns = 5, coins = 999999 })
+
+	assertCondition(clean.totalRuns == 5, "A legitimate value passes through")
+	assertCondition(clean.coins == nil, "An undefined stat should not be carried over")
+end
+
+tests.sanitizeLifetimeStatsTruncatesFractions = function()
+	local clean = Achievements.sanitizeLifetimeStats({ totalRuns = 7.9 })
+
+	assertCondition(clean.totalRuns == 7, "Fractional counts should floor to whole numbers")
+end
+
+tests.sanitizedStatsFeedTheUnlockCheck = function()
+	-- The reason this sanitizer matters: a clamped stat must not hand out an
+	-- achievement the player never earned.
+	local clean = Achievements.sanitizeLifetimeStats({ totalRuns = "75" })
+	local newly = Achievements.newlyUnlocked(clean, {})
+
+	for _, definition in newly do
+		assertCondition(
+			definition.stat ~= "totalRuns",
+			"A rejected run count must not unlock a run achievement"
+		)
+	end
+end
+
 function AchievementsTests.run()
 	local results = {}
 
