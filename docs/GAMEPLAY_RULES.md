@@ -9,6 +9,7 @@
 - Cleared rows and columns score `Config.PointsPerLine` each.
 - A combo advances when a placement clears at least one line and resets to 0 when a placement clears none.
 - Combo bonus is `(comboStreak - 1) * Config.ComboBonusPoints`.
+- Clearing several lines with one placement also scores a multi-line bonus of `linesCleared * (linesCleared - 1) / 2 * Config.MultiLineClearBonusPoints`. That is exactly the combo bonus those clears would have earned as consecutive placements, so a simultaneous clear is never worth less than clearing the same lines one at a time.
 - The run is over when the current hand has no legal move after the board and hand update.
 
 ## Lines, Combos, And Stages
@@ -33,7 +34,8 @@
 ## Assistance Limits
 
 - Solo runs carry a small server-side assistance budget.
-- Assistance can be spent only when the board is crowded or very few known shapes fit.
+- Assistance becomes *eligible* only when the board is crowded or very few known shapes fit.
+- Eligibility is not the same as spending. The budget is charged only when assistance demonstrably changed the hand: the generator scores every candidate a second time with assistance switched off, and charges only if the winner differs, or if it had to force a fitting piece into an otherwise unplayable hand. A crowded board that the base scorer would have rescued anyway costs nothing.
 - Spending assistance increases the score weight of playable, flexible rescue pieces for that hand only.
 - Assistance is not unlimited. It starts at `Config.HandGeneration.AssistanceStart`, caps at `Config.HandGeneration.AssistanceMax`, and spends `Config.HandGeneration.RescueCost`.
 - Assistance can be restored by stage advancement, combo milestones, and perfect clears, but never above the cap.
