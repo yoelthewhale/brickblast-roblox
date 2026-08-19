@@ -51,6 +51,14 @@ jobs:
       - name: Run tests (Lune)
         run: lune run scripts/run-tests.luau
 
+      # Luau allows only 200 top-level locals per chunk. Two scripts in this
+      # project sit close to it, and crossing it makes the whole script fail to
+      # compile at runtime with nothing else in the pipeline noticing -- Rojo
+      # packages source without compiling it, Selene does not model registers,
+      # and the Lune suite cannot load server scripts. See #96.
+      - name: Check top-level local budgets
+        run: lune run scripts/check-local-registers.luau
+
       # Proves the project still assembles into a working Roblox place file.
       # Catches broken Rojo config or files that cannot be synced.
       # *.rbxl is gitignored, so this output does not dirty the tree.

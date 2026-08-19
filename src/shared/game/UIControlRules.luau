@@ -201,6 +201,30 @@ end
 --
 -- Returns ok, problems, cellCount. `problems` is a list of human-readable
 -- strings so the caller can surface exactly what is wrong.
+-- The timestamp half of a rate-limit gate: decide, then record.
+--
+-- Seven server remotes each had their own copy of "read the last timestamp,
+-- compare it to a cooldown, record the new one". Callers keep their own
+-- timestamp table, cooldown, and preconditions; only the shared, tested
+-- decision lives here.
+--
+-- Records the new timestamp only when the request is accepted, so a rejected
+-- burst cannot keep pushing the window forward.
+function UIControlRules.consumeActionCooldown(timestamps, key, cooldownSeconds, now)
+	if typeof(timestamps) ~= "table" or key == nil then
+		return false
+	end
+
+	now = if typeof(now) == "number" then now else os.clock()
+
+	if not UIControlRules.canFireServerAction(timestamps[key] or 0, now, cooldownSeconds) then
+		return false
+	end
+
+	timestamps[key] = now
+	return true
+end
+
 function UIControlRules.validateBoardGridChildren(children)
 	local expected = Config.BoardSize * Config.BoardSize
 	local problems = {}
