@@ -65,20 +65,90 @@ tests.resetAndReturnDebounce = function()
 	)
 end
 
-tests.boardGridInvariant = function()
-	local childClassNames = { "UIPadding", "UIGridLayout" }
-	for _ = 1, 64 do
-		table.insert(childClassNames, "TextButton")
+local function boardGridChildren()
+	local children = { { className = "UIPadding" }, { className = "UIGridLayout" } }
+
+	for y = 1, 8 do
+		for x = 1, 8 do
+			table.insert(children, {
+				className = "TextButton",
+				name = `{x}_{y}`,
+				isBoardCell = true,
+				boardX = x,
+				boardY = y,
+			})
+		end
 	end
 
-	local valid, buttonCount = UIControlRules.boardGridChildrenAreValid(childClassNames)
-	assertCondition(valid, "Board grid should allow only layout helpers and 64 cell buttons")
-	assertCondition(buttonCount == 64, "Board grid should count exactly 64 cells")
+	return children
+end
 
-	table.insert(childClassNames, "Frame")
+tests.boardGridInvariant = function()
+	local valid, problems, cellCount = UIControlRules.validateBoardGridChildren(boardGridChildren())
+
 	assertCondition(
-		not UIControlRules.boardGridChildrenAreValid(childClassNames),
-		"Decorative direct children should be rejected"
+		valid,
+		`A correct 8x8 grid should validate, got: {table.concat(problems, "; ")}`
+	)
+	assertCondition(cellCount == 64, "Board grid should count exactly 64 cells")
+end
+
+tests.boardGridRejectsDecorativeChildren = function()
+	local children = boardGridChildren()
+	table.insert(children, { className = "Frame", name = "Sparkle" })
+
+	local valid, problems = UIControlRules.validateBoardGridChildren(children)
+	assertCondition(not valid, "A decorative direct child should be rejected")
+	assertCondition(#problems >= 1, "A rejection should explain itself")
+end
+
+tests.boardGridRejectsAWrongCellCount = function()
+	local children = boardGridChildren()
+	table.remove(children)
+
+	assertCondition(
+		not UIControlRules.validateBoardGridChildren(children),
+		"63 cells should be rejected"
+	)
+
+	children = boardGridChildren()
+	table.insert(children, {
+		className = "TextButton",
+		name = "extra",
+		isBoardCell = true,
+		boardX = 1,
+		boardY = 1,
+	})
+	assertCondition(
+		not UIControlRules.validateBoardGridChildren(children),
+		"65 cells should be rejected"
+	)
+end
+
+tests.boardGridRejectsBadCoordinates = function()
+	-- These are the checks the live client had and the shared rule did not, so
+	-- adopting the shared rule naively would have quietly weakened the guard on
+	-- the locked board invariant.
+	local children = boardGridChildren()
+	children[3].boardX = 99
+	assertCondition(
+		not UIControlRules.validateBoardGridChildren(children),
+		"Out-of-range coordinates should be rejected"
+	)
+
+	children = boardGridChildren()
+	children[3].boardX = children[4].boardX
+	children[3].boardY = children[4].boardY
+	assertCondition(
+		not UIControlRules.validateBoardGridChildren(children),
+		"Duplicate coordinates should be rejected"
+	)
+
+	children = boardGridChildren()
+	children[5].isBoardCell = false
+	assertCondition(
+		not UIControlRules.validateBoardGridChildren(children),
+		"A TextButton that is not tagged as a board cell should be rejected"
 	)
 end
 

@@ -190,18 +190,65 @@ function UIControlRules.canFireServerAction(lastRequestAt, now, cooldownSeconds)
 	return now - lastRequestAt >= cooldownSeconds
 end
 
-function UIControlRules.boardGridChildrenAreValid(childClassNames)
-	local buttonCount = 0
+-- Validate the direct children of BoardGridContainer against the locked board
+-- invariant: exactly BoardSize x BoardSize cell buttons, each carrying valid
+-- unique coordinates, and no decorative siblings beyond the layout helpers.
+--
+-- Takes plain descriptions rather than Instances so the rule is testable
+-- outside Roblox, and so there is one implementation rather than a tested copy
+-- and a separately-maintained live copy that can silently disagree:
+--   { className = "TextButton", isBoardCell = true, boardX = 1, boardY = 1 }
+--
+-- Returns ok, problems, cellCount. `problems` is a list of human-readable
+-- strings so the caller can surface exactly what is wrong.
+function UIControlRules.validateBoardGridChildren(children)
+	local expected = Config.BoardSize * Config.BoardSize
+	local problems = {}
+	local cellCount = 0
+	local seenCoordinates = {}
 
-	for _, className in childClassNames or {} do
-		if className == "TextButton" then
-			buttonCount += 1
-		elseif className ~= "UIPadding" and className ~= "UIGridLayout" then
-			return false, buttonCount
+	for _, child in children or {} do
+		local className = if typeof(child) == "table" then child.className else nil
+		local name = if typeof(child) == "table" and child.name ~= nil
+			then tostring(child.name)
+			else tostring(className)
+
+		if className == "UIPadding" or className == "UIGridLayout" then
+			continue
 		end
+
+		cellCount += 1
+
+		local x = if typeof(child) == "table" then child.boardX else nil
+		local y = if typeof(child) == "table" then child.boardY else nil
+		local coordinateKey = `{tostring(x)}:{tostring(y)}`
+		local isCell = className == "TextButton"
+			and typeof(child) == "table"
+			and child.isBoardCell == true
+
+		if not isCell then
+			table.insert(problems, `{name} ({tostring(className)}) is not a board cell`)
+		elseif
+			typeof(x) ~= "number"
+			or typeof(y) ~= "number"
+			or x < 1
+			or x > Config.BoardSize
+			or y < 1
+			or y > Config.BoardSize
+		then
+			table.insert(problems, `{name} has out-of-range coordinates {coordinateKey}`)
+		elseif seenCoordinates[coordinateKey] then
+			table.insert(problems, `{name} duplicates board coordinates {coordinateKey}`)
+		end
+
+		seenCoordinates[coordinateKey] = true
 	end
 
-	return buttonCount == Config.BoardSize * Config.BoardSize, buttonCount
+	if cellCount ~= expected then
+		table.insert(problems, `expected {expected} board cells, found {cellCount}`)
+	end
+
+	return #problems == 0, problems, cellCount
 end
 
 return UIControlRules
