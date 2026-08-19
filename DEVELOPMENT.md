@@ -2,12 +2,26 @@
 
 This file tracks production-readiness work, priorities, known issues, and technical debt.
 
-## Day38 Data Safety, Security, and Reliability Pass - 2026-08-18
+## Checkpoint Numbering
 
-Autonomous session working the GitHub backlog by priority (Yoel's "Day 35"
-session; the DayNN numbering in this file is its own sequence). GitHub is the
-source of truth for status — every item below is traceable through its issue,
-branch, PR, and CI run.
+Read this before writing a new DayNN heading or building a numbered `.rbxl`.
+
+- **Latest completed numbered checkpoint: Day43** (`BlockBlastBattle-Day43.rbxl`, 2026-08-17). Corroborated by the `day43Ui` table in `BlockBlastClient.client.luau`, the Day43 references in `AGENTS.md`, `CONTRIBUTING.md`, and `.github/copilot-instructions.md`, and by `docs/archive/UI_CONTROL_AUDIT.md`.
+- **Next numbered checkpoint: Day44.**
+- **GitHub `master` is the source of truth for code.** The `.rbxl` files in the repository root are local, generated, gitignored build checkpoints: snapshots for Studio testing, never the authoritative source. A missing or stale `.rbxl` says nothing about the state of the code.
+- **Sessions after Day43 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit between Day43 and the Day44 checkpoint. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
+- **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
+
+## Session Update - 2026-08-18 Data Safety, Security, and Reliability Pass
+
+Autonomous session working the GitHub backlog by priority. This entry was
+originally headed "Day38", which was wrong on two counts:
+`BlockBlastBattle-Day38.rbxl` already existed from 2026-08-14, and this work
+happened after Day43, not before it. Retitled by date rather than renumbered,
+per the rules above.
+
+GitHub is the source of truth for status: every item below is traceable through
+its issue, branch, PR, and CI run.
 
 ### Completed
 
