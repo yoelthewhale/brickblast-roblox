@@ -346,14 +346,6 @@ local PROFILE_LIMITS = {
 	level = 1000,
 	storyStars = 100000,
 }
-local LIFETIME_STAT_LIMITS = {
-	highestCombo = 999,
-	highestStage = 1000,
-	totalPerfectClears = 1000000,
-	totalLinesCleared = 100000000,
-	totalBlocksPlaced = 100000000,
-	totalRuns = 10000000,
-}
 local PROFILE_VERSION = 2
 local leaveBattle = nil
 local scheduleReturnIfEliminated = nil
@@ -600,16 +592,12 @@ local function sanitizedStatValue(stat, minimum, maximum, fallback)
 	return clean
 end
 
+-- Thin wrapper so the clamping rules live in shared/game with the other
+-- sanitizers and stay unit-testable; the server keeps only the analytics
+-- bookkeeping.
 local function sanitizeLifetimeStats(raw)
-	raw = typeof(raw) == "table" and raw or {}
-	local clean = {}
-	for key, defaultValue in Achievements.DefaultLifetimeStats do
-		local minimum = key == "highestStage" and 1 or 0
-		local value =
-			sanitizeProfileInteger(raw[key], minimum, LIFETIME_STAT_LIMITS[key], defaultValue)
-		clean[key] = value
-	end
-
+	local clean, corrected = Achievements.sanitizeLifetimeStats(raw)
+	analytics.profileFieldsSanitized += corrected
 	return clean
 end
 
