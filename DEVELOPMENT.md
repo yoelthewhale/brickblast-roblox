@@ -7,10 +7,91 @@ This file tracks production-readiness work, priorities, known issues, and techni
 Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
 - **Latest completed numbered checkpoint: Day43** (`BlockBlastBattle-Day43.rbxl`, 2026-08-17). Corroborated by the `day43Ui` table in `BlockBlastClient.client.luau`, the Day43 references in `AGENTS.md`, `CONTRIBUTING.md`, and `.github/copilot-instructions.md`, and by `docs/archive/UI_CONTROL_AUDIT.md`.
-- **Next numbered checkpoint: Day44.**
+- **Current known-good Studio checkpoint: `BlockBlastBattle-Day44-1.rbxl`** (2026-08-19), built from master after the #97 register fix and verified in a real Studio startup test. Open this one.
+- **`BlockBlastBattle-Day44.rbxl` is broken and kept deliberately.** It was built while `GameServer.server.luau` was over Luau's 200-local limit, so the server compiled nothing: no hub, no remotes, players on the bare bootstrap floor. It is retained as the artifact of the #96 incident. Do not open it expecting a working game, and do not delete it to tidy up.
+- **Next numbered checkpoint: Day45.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
 - **GitHub `master` is the source of truth for code.** The `.rbxl` files in the repository root are local, generated, gitignored build checkpoints: snapshots for Studio testing, never the authoritative source. A missing or stale `.rbxl` says nothing about the state of the code.
-- **Sessions after Day43 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit between Day43 and the Day44 checkpoint. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
+- **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
+
+## Session Update - 2026-08-19 Consolidation, Telemetry, and the Register Incident
+
+Not a numbered Day. Sits between Day43 and the Day44 checkpoint, per the rules
+above. GitHub is the source of truth for status; every item below is traceable
+through its issue, branch, PR, and CI run.
+
+### Completed
+
+- **#34 (high, technical debt)** — seven near-identical `canAccept*` cooldown
+  gates and two competing implementations of the 8x8 board invariant, where the
+  tested one was not the one that ran. Both consolidated into shared rules
+  (`UIControlRules`, `consumeActionCooldown`). PR #90.
+- **#51 (data)** — `PROFILE_VERSION` was written on every save and read nowhere,
+  so the schema could not be changed safely. The version is now read on load and
+  migrations have somewhere to live. PR #91.
+- **#64 (reliability)** — analytics counters were discarded on every server
+  restart. Now persisted. PR #92.
+- **#65 (reliability)** — production errors were invisible unless somebody was
+  watching Output. High-severity failure reports now persist past the session.
+  PR #93.
+- **#56 (technical debt)** — the combo-streak transition was written out twice;
+  now shared. PR #94.
+- **Day checkpoint numbering** — the Day sequence had drifted from chat labels
+  badly enough to produce a duplicate `Day38`. Rules written into this file's
+  header. PR #95.
+- **#96 (release-blocking regression)** — see below. PR #97.
+
+### The local-register incident (#96 / PR #97)
+
+`GameServer.server.luau` crossed Luau's 200-top-level-local limit and stopped
+compiling. Because the whole chunk failed, *nothing on the server ran*: no hub
+was built, `BlockBlastRemotes` was never created so the client hung on
+`WaitForChild`, and even `BlockBlastEmergencySpawn` did not exist. Players
+landed on the bare `BootstrapHubSafetyFloor` from `default.project.json` — a
+flat grass slab and a glowing cyan pad.
+
+The file had been sitting at 197 locals with nobody tracking it. This session's
+own work pushed it to 206: #34 added two, #64 added five, #65 added three.
+
+What makes this worth remembering is that **the entire pipeline stayed green**.
+Rojo packages source without compiling it, Selene does not model register
+allocation, StyLua only formats, and the Lune suite cannot load server scripts
+at all. The only symptom anywhere was one line in Studio's Output.
+
+Two lasting consequences:
+
+- The telemetry concern moved out into `TelemetryReporter.luau`, a ModuleScript
+  with its own register budget. It owns the counters, failure tallies, DataStore
+  handle, pending report buffer, and flush loop. GameServer keeps one alias so
+  the ~40 existing `analytics.foo += 1` call sites were untouched.
+- `scripts/check-local-registers.luau` now runs in CI as a **ratchet**, with a
+  per-file budget set just above each file's current count (GameServer 191,
+  BlockBlastClient 198). Adding a top-level local to either file fails CI. The
+  fix is always to remove one or extract a module — never to raise the budget,
+  and never to add locals elsewhere merely to reorganize code.
+
+**Both monoliths are register-sensitive.** `BlockBlastClient.client.luau` broke
+the same way earlier and took the HUD with it. `AGENTS.md`, `CONTRIBUTING.md`,
+and `.github/copilot-instructions.md` now say so for both files rather than
+only the client.
+
+### Verified in a real Studio session
+
+After the fix, a genuine Studio startup test confirmed: the game and server
+start, a populated hub is created, remotes are created, the HUD initializes,
+the board holds the exact 64-cell invariant, Studio Output is clean, and hub
+orientation behaves. `BlockBlastBattle-Day44-1.rbxl` is that build.
+
+This is startup and desktop verification only. The device/viewport matrix in
+#67 — touch, phones, tablets, reduced motion, gamepad traversal — remains
+unexecuted, and today's result must not be read as covering it.
+
+### Current State
+
+- Master is green. Working tree clean.
+- Visual overhaul approved as **Bubblegum Toybox** (`docs/VISUAL_DIRECTION.md`)
+  but not started; the implementation session was cut short by usage limits
+  before any code changed. No partial visual work exists in any branch.
 
 ## Session Update - 2026-08-18 Data Safety, Security, and Reliability Pass
 

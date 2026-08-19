@@ -6,6 +6,8 @@ BrickBlast is currently a solo-first Roblox block-puzzle game. Prioritize the PC
 
 The planned identity is fast-flowing puzzle gameplay with smart but not automatic hands, satisfying combos, Perfect Clears, stage progression, and cosmetics called Themes.
 
+The approved visual direction is **Bubblegum Toybox**, settled on 2026-08-19 and not an open question. It is specified once in [`docs/VISUAL_DIRECTION.md`](docs/VISUAL_DIRECTION.md) — read that before doing any visual work. The single most misreadable point: the game must **not** collapse into one static palette. One coherent identity, with the board, pieces, accents, HUD, effects, and atmosphere growing more energetic as combos, stages, and run intensity build.
+
 ## Important Entry Points
 
 - `src/client/ui/BlockBlastClient.client.luau`: main local client controller and current PC solo puzzle UI orchestration. This file is oversized and should be reduced gradually through focused extractions. It is also a **single top-level Luau chunk close to the compiler's 200-local-register limit** — new top-level `local` declarations (including local functions) should be attached to the existing `day43Ui` table instead of declared fresh, or the whole script can fail to compile with no obvious error beyond "Out of local registers" in the Output window and the entire HUD silently not rendering.
@@ -19,7 +21,7 @@ The planned identity is fast-flowing puzzle gameplay with smart but not automati
 - `src/client/ui/SoundController.luau`: client sound cue playback.
 - `src/client/ui/UITheme.luau`: shared theme values for the older HUD/menu system.
 - `src/client/ui/UIAssets.luau`: centralized Roblox image asset IDs. Keep unapproved or rejected art out of upload candidates.
-- `src/server/services/GameServer.server.luau`: server-authoritative gameplay, profiles, receipts, remotes, session lifecycle, rewards, analytics, achievements, redeemable codes, and disabled legacy modes. This file is oversized.
+- `src/server/services/GameServer.server.luau`: server-authoritative gameplay, profiles, receipts, remotes, session lifecycle, rewards, analytics, achievements, redeemable codes, and disabled legacy modes. This file is oversized. Like the client controller above, it is a **single top-level Luau chunk close to the compiler's 200-local-register limit** — and on 2026-08-19 it crossed that limit and stopped compiling entirely, so the server built no hub, created no remotes, and players spawned onto the bare bootstrap floor (#96 / PR #97). Attach new values to an existing table, or move the concern into a ModuleScript, which gets its own register budget. Do not add a fresh top-level `local`.
 - `src/server/world/HubBuilder.luau`: generated toybox hub, spawn, prompts, and optional disabled Battle/Story routes.
 - `src/shared/game/Blocks.luau`: piece definitions, colors, rotation, and random hand creation.
 - `src/shared/game/Grid.luau`: reusable board rules: create, clone, can place, place, clear lines, move detection, and garbage rows.
@@ -62,7 +64,7 @@ git diff --check
 
 ## Safe Cleanup Order
 
-1. Extract pure rule helpers from `GameServer.server.luau` only when behavior is covered by source checks or tests.
+1. Extract pure rule helpers from `GameServer.server.luau` only when behavior is covered by source checks or tests. This file has also already hit the 200-local-register ceiling once, so extractions that move whole concerns into ModuleScripts (as `TelemetryReporter.luau` did) buy real headroom.
 2. Move solo hand generation to a shared/server module before adding smart randomness or stage progression.
 3. Split PC puzzle workspace UI from `BlockBlastClient.client.luau` after preserving drag, resize, clamping, board input, scoring display, result actions, and reduced-motion behavior. This is no longer just a cleanliness goal — the file has already hit Luau's 200-local-register ceiling once (see Entry Points above), so it should shrink rather than keep growing.
 4. Remove disabled Battle/Story code only after deciding whether those modes are permanently out of scope.
