@@ -100,6 +100,7 @@ local TEST_MODULES = {
 	"SimulationHarnessTests",
 	"SoloLayoutTests",
 	"StageProgressionTests",
+	"TelemetryTests",
 	"StageVisualsTests",
 	"UIControlRulesTests",
 	"VisualQualityTests",

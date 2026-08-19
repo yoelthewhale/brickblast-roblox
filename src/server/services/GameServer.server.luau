@@ -32,6 +32,7 @@ local Grid = require(GameShared.Grid)
 local HandGenerator = require(GameShared.HandGenerator)
 local ProfilePersistence = require(GameShared.ProfilePersistence)
 local StageProgression = require(GameShared.StageProgression)
+local Telemetry = require(GameShared.Telemetry)
 local UIControlRules = require(GameShared.UIControlRules)
 local HubBuilder = require(script.Parent.Parent.world.HubBuilder)
 
@@ -319,6 +320,59 @@ local analytics = {
 pcall(function()
 	profileStore = DataStoreService:GetDataStore("BlockBlastProfilesV1")
 end)
+
+-- Cross-server analytics totals. Separate store from profiles so a problem
+-- with one cannot affect the other, and so analytics writes never share a
+-- key with player data.
+local analyticsStore = nil
+local analyticsFlushFailures = 0
+local lastFlushedCounters = {}
+
+pcall(function()
+	analyticsStore = DataStoreService:GetDataStore("BlockBlastAnalyticsV1")
+end)
+
+-- Fold this server's counters into the shared totals.
+--
+-- Every counter used to live only in memory, so a restart discarded the lot
+-- and nothing was ever aggregated across servers. This writes deltas rather
+-- than totals, so several servers can accumulate into one key without
+-- overwriting each other.
+--
+-- Returns true when the counters are safely stored (including when there is
+-- nothing to store).
+local function flushAnalytics()
+	if not analyticsStore then
+		return false
+	end
+
+	local deltas, hasAny = Telemetry.counterDeltas(analytics, lastFlushedCounters)
+	if not hasAny then
+		return true
+	end
+
+	-- Snapshot before the write, not after: a counter that ticks while the
+	-- request is in flight belongs to the next flush.
+	local snapshot = Telemetry.flushedSnapshot(analytics)
+	local updatedAt = os.time()
+
+	local ok, err = pcall(function()
+		analyticsStore:UpdateAsync("Totals", function(stored)
+			return Telemetry.mergeTotals(stored, deltas, updatedAt)
+		end)
+	end)
+
+	if not ok then
+		-- lastFlushedCounters is deliberately left alone, so these deltas are
+		-- retried on the next flush instead of being lost.
+		analyticsFlushFailures += 1
+		warn(`[BlockBlast] Failed to flush analytics: {tostring(err)}`)
+		return false
+	end
+
+	lastFlushedCounters = snapshot
+	return true
+end
 
 local BATTLE_MIN_PLAYERS = 2
 local SOLO_TEST_SECONDS = 8
@@ -2290,6 +2344,7 @@ sendHubState = function(player, message)
 		dailyBonusText = "Solo rewards are based on score and personal bests.",
 		profileLoadFailures = profileLoadFailures,
 		profileSaveFailures = profileSaveFailures,
+		analyticsFlushFailures = analyticsFlushFailures,
 		analytics = table.clone(analytics),
 		developer = DeveloperTools.publicAccessForPlayer(player),
 		serverHighScores = serverHighScoreList(),
@@ -3559,6 +3614,14 @@ game:BindToClose(function()
 	-- a full server.
 	local pendingSaves = 0
 
+	-- Whatever this server counted since the last interval would otherwise be
+	-- discarded, which is the exact loss this persistence exists to stop.
+	pendingSaves += 1
+	task.spawn(function()
+		flushAnalytics()
+		pendingSaves -= 1
+	end)
+
 	for _, player in Players:GetPlayers() do
 		local state = playerStates[player]
 		if not (state and state.developerTestRun) then
@@ -3583,6 +3646,13 @@ for _, player in Players:GetPlayers() do
 		initializePlayer(player)
 	end
 end
+
+task.spawn(function()
+	while true do
+		task.wait(Telemetry.FlushIntervalSeconds)
+		flushAnalytics()
+	end
+end)
 
 task.spawn(function()
 	while true do
