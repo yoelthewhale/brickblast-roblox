@@ -32,9 +32,9 @@ local Grid = require(GameShared.Grid)
 local HandGenerator = require(GameShared.HandGenerator)
 local ProfilePersistence = require(GameShared.ProfilePersistence)
 local StageProgression = require(GameShared.StageProgression)
-local Telemetry = require(GameShared.Telemetry)
 local UIControlRules = require(GameShared.UIControlRules)
 local HubBuilder = require(script.Parent.Parent.world.HubBuilder)
+local TelemetryReporter = require(script.Parent.TelemetryReporter)
 
 local remotes = Instance.new("Folder")
 remotes.Name = "BlockBlastRemotes"
@@ -255,13 +255,18 @@ local playerCosmeticInventories = {}
 local playerProfileLoadStatus = {}
 local playerProfileNoticeState = {}
 local selectedStoryChapters = {}
-local lastPlaceRequestAt = {}
-local lastHandRequestAt = {}
-local lastQueueRequestAt = {}
-local lastDeveloperCommandAt = {}
-local lastShopRequestAt = {}
-local lastCodeRequestAt = {}
-local lastAchievementsRequestAt = {}
+-- One table per rate-limited action, grouped rather than seven top-level
+-- locals. This file is a single Luau chunk with a hard 200-local ceiling
+-- and has already blown through it once (#96).
+local actionTimestamps = {
+	place = {},
+	hand = {},
+	queue = {},
+	developerCommand = {},
+	shop = {},
+	code = {},
+	achievements = {},
+}
 local purchasePromptLocks = {}
 local processedReceipts = {}
 local settingsSaveScheduled = {}
@@ -269,178 +274,13 @@ local queueStartedAt = nil
 local nextSessionId = 0
 local serverHighScores = {}
 local profileStore = nil
-local profileLoadFailures = 0
-local profileSaveFailures = 0
-local analytics = {
-	soloSessionsStarted = 0,
-	soloSessionsFinished = 0,
-	battleSessionsStarted = 0,
-	storySessionsStarted = 0,
-	battleSessionsFinished = 0,
-	storyMissionsCompleted = 0,
-	queueJoins = 0,
-	queueLeaves = 0,
-	placements = 0,
-	linesCleared = 0,
-	invalidPlacements = 0,
-	combosTriggered = 0,
-	rejectedPlaceRequests = 0,
-	throttledPlaceRequests = 0,
-	suddenDeathPressureRows = 0,
-	profileFieldsSanitized = 0,
-	profileSavesSkippedBeforeLoad = 0,
-	profilesMigrated = 0,
-	profilesAheadOfServer = 0,
-	forfeits = 0,
-	shopSnapshotsRequested = 0,
-	shopPromptRequests = 0,
-	shopPromptRejected = 0,
-	shopPromptCompleted = 0,
-	shopPromptCancelled = 0,
-	shopOwnershipRefreshes = 0,
-	developerProductReceiptsGranted = 0,
-	developerProductReceiptsRetried = 0,
-	shopOpened = 0,
-	shopTabsSelected = 0,
-	cosmeticsPreviewed = 0,
-	cosmeticPurchaseAttempts = 0,
-	cosmeticPurchaseSucceeded = 0,
-	cosmeticPurchaseFailed = 0,
-	cosmeticEquips = 0,
-	gamePassPromptOpened = 0,
-	customLabSessionsStarted = 0,
-	customLabHandRotations = 0,
-	customLabHandRerolls = 0,
-	rejectedHandRequests = 0,
-	throttledHandRequests = 0,
-	throttledCodeRedemptions = 0,
-	throttledAchievementsRequests = 0,
-}
+-- Alias so the ~40 existing `analytics.foo += 1` call sites keep working
+-- while the table itself lives in TelemetryReporter.
+local analytics = TelemetryReporter.counters
 
 pcall(function()
 	profileStore = DataStoreService:GetDataStore("BlockBlastProfilesV1")
 end)
-
--- Cross-server analytics totals. Separate store from profiles so a problem
--- with one cannot affect the other, and so analytics writes never share a
--- key with player data.
-local analyticsStore = nil
-local analyticsFlushFailures = 0
-local lastFlushedCounters = {}
--- High-severity failures waiting to be written. Kept until a flush
--- succeeds, so a failed write retries rather than losing the report.
-local pendingErrorReports = {}
-
-pcall(function()
-	analyticsStore = DataStoreService:GetDataStore("BlockBlastAnalyticsV1")
-end)
-
--- Record a high-severity failure somewhere it can be read after the session
--- ends.
---
--- Every failure path in this file used to warn() to the Output window and
--- nothing else, so in a published experience nobody learns that (say)
--- profile saves have started failing until a player complains. The warn
--- stays for live Studio work; this adds the durable copy.
---
--- Deliberately not used for analytics-flush failures: reporting a storage
--- failure into storage is circular, and those already have their own
--- counter.
-local function reportError(category, message, userId)
-	local entry = Telemetry.sanitizeErrorEntry({
-		category = category,
-		message = message,
-		userId = userId,
-		at = os.time(),
-	})
-
-	if not entry then
-		return
-	end
-
-	-- Bounded here as well as at the merge: a server that cannot reach the
-	-- DataStore at all would otherwise accumulate reports forever.
-	table.insert(pendingErrorReports, entry)
-	while #pendingErrorReports > Telemetry.ErrorLogLimit do
-		table.remove(pendingErrorReports, 1)
-	end
-end
-
--- Fold this server's counters into the shared totals.
---
--- Every counter used to live only in memory, so a restart discarded the lot
--- and nothing was ever aggregated across servers. This writes deltas rather
--- than totals, so several servers can accumulate into one key without
--- overwriting each other.
---
--- Returns true when the counters are safely stored (including when there is
--- nothing to store).
-local function flushAnalytics()
-	if not analyticsStore then
-		return false
-	end
-
-	local deltas, hasAny = Telemetry.counterDeltas(analytics, lastFlushedCounters)
-	if not hasAny then
-		return true
-	end
-
-	-- Snapshot before the write, not after: a counter that ticks while the
-	-- request is in flight belongs to the next flush.
-	local snapshot = Telemetry.flushedSnapshot(analytics)
-	local updatedAt = os.time()
-
-	local ok, err = pcall(function()
-		analyticsStore:UpdateAsync("Totals", function(stored)
-			return Telemetry.mergeTotals(stored, deltas, updatedAt)
-		end)
-	end)
-
-	if not ok then
-		-- lastFlushedCounters is deliberately left alone, so these deltas are
-		-- retried on the next flush instead of being lost.
-		analyticsFlushFailures += 1
-		warn(`[BlockBlast] Failed to flush analytics: {tostring(err)}`)
-		return false
-	end
-
-	lastFlushedCounters = snapshot
-	return true
-end
-
--- Write the pending failure reports. Separate key from the counters: most
--- flushes have no errors at all, so this write usually does not happen.
-local function flushErrorReports()
-	if not analyticsStore or #pendingErrorReports == 0 then
-		return true
-	end
-
-	local outgoing = pendingErrorReports
-	pendingErrorReports = {}
-
-	local ok, err = pcall(function()
-		analyticsStore:UpdateAsync("Errors", function(stored)
-			return Telemetry.mergeErrorLog(stored, outgoing, Telemetry.ErrorLogLimit)
-		end)
-	end)
-
-	if not ok then
-		-- Put them back in front of anything reported during the write, so
-		-- order is preserved and nothing is dropped by a transient failure.
-		for index = #outgoing, 1, -1 do
-			table.insert(pendingErrorReports, 1, outgoing[index])
-		end
-		while #pendingErrorReports > Telemetry.ErrorLogLimit do
-			table.remove(pendingErrorReports, 1)
-		end
-
-		analyticsFlushFailures += 1
-		warn(`[BlockBlast] Failed to flush error reports: {tostring(err)}`)
-		return false
-	end
-
-	return true
-end
 
 local BATTLE_MIN_PLAYERS = 2
 local SOLO_TEST_SECONDS = 8
@@ -704,27 +544,6 @@ local function applyLoadedProfileStat(profile, stat, key, minimum, maximum, fall
 	return sanitized and 1 or 0
 end
 
--- The timestamp half of every rate-limit gate on this server.
---
--- Seven remotes had their own copy of "read the last timestamp, compare it
--- to a cooldown, record the new one". Two of those copies were added the
--- same day this was written, because following the existing pattern meant
--- pasting it again. The decision itself now comes from
--- UIControlRules.canFireServerAction, which is unit-tested; callers keep
--- their own timestamps, cooldowns, and preconditions.
---
--- Records the new timestamp only when the request is accepted, so a
--- rejected burst cannot keep pushing the window forward.
-local function consumeActionCooldown(timestamps, player, cooldownSeconds)
-	local now = os.clock()
-	if not UIControlRules.canFireServerAction(timestamps[player] or 0, now, cooldownSeconds) then
-		return false
-	end
-
-	timestamps[player] = now
-	return true
-end
-
 local function sanitizedStatValue(stat, minimum, maximum, fallback)
 	local clean, sanitized = sanitizeProfileInteger(stat and stat.Value, minimum, maximum, fallback)
 	if sanitized and stat then
@@ -861,8 +680,8 @@ local function createLeaderstats(player)
 		end
 
 		if not ok then
-			profileLoadFailures += 1
-			reportError("ProfileLoad", tostring(profile), player.UserId)
+			TelemetryReporter.failures.profileLoad += 1
+			TelemetryReporter.reportError("ProfileLoad", tostring(profile), player.UserId)
 			-- Staying Failed keeps this session read-only: the stored profile
 			-- is real data we could not read, and writing blank in-memory
 			-- defaults over it would wipe the player.
@@ -880,7 +699,7 @@ local function createLeaderstats(player)
 			-- back over real data. Same handling as an unreadable profile: the
 			-- session stays read-only and the player is told.
 			analytics.profilesAheadOfServer += 1
-			reportError(
+			TelemetryReporter.reportError(
 				"ProfileAheadOfServer",
 				`profile version {tostring(fromVersion)} exceeds {ProfilePersistence.Version}`,
 				player.UserId
@@ -1111,8 +930,8 @@ local function updateProfileWithRetry(player, stats)
 		end
 
 		if attempt == PROFILE_SAVE_RETRY_COUNT then
-			profileSaveFailures += 1
-			reportError("ProfileSave", tostring(err), player.UserId)
+			TelemetryReporter.failures.profileSave += 1
+			TelemetryReporter.reportError("ProfileSave", tostring(err), player.UserId)
 			warn(`[BlockBlast] Failed to save profile for {player.UserId}: {tostring(err)}`)
 			return false
 		end
@@ -1567,7 +1386,11 @@ sendShopSnapshot = function(player, message, pendingId)
 end
 
 local function canAcceptShopAction(player)
-	return consumeActionCooldown(lastShopRequestAt, player, SHOP_ACTION_COOLDOWN_SECONDS)
+	return UIControlRules.consumeActionCooldown(
+		actionTimestamps.shop,
+		player,
+		SHOP_ACTION_COOLDOWN_SECONDS
+	)
 end
 
 local function findPurchasableDefinition(itemType, itemId)
@@ -1789,7 +1612,11 @@ local function redeemCode(player, rawCode)
 end
 
 local function canAcceptCodeRedemption(player)
-	return consumeActionCooldown(lastCodeRequestAt, player, CODE_REDEEM_COOLDOWN_SECONDS)
+	return UIControlRules.consumeActionCooldown(
+		actionTimestamps.code,
+		player,
+		CODE_REDEEM_COOLDOWN_SECONDS
+	)
 end
 
 codesEvent.OnServerEvent:Connect(function(player, rawCode)
@@ -1879,8 +1706,8 @@ local function checkAchievements(player)
 end
 
 local function canAcceptAchievementsAction(player)
-	return consumeActionCooldown(
-		lastAchievementsRequestAt,
+	return UIControlRules.consumeActionCooldown(
+		actionTimestamps.achievements,
 		player,
 		ACHIEVEMENTS_ACTION_COOLDOWN_SECONDS
 	)
@@ -1943,8 +1770,8 @@ local function grantDeveloperProductReceipt(player, product, receiptKey)
 	end)
 
 	if not ok then
-		profileSaveFailures += 1
-		reportError("ReceiptFulfilment", tostring(err), player.UserId)
+		TelemetryReporter.failures.profileSave += 1
+		TelemetryReporter.reportError("ReceiptFulfilment", tostring(err), player.UserId)
 		warn(`[BlockBlast] Failed to fulfill receipt for {player.UserId}: {tostring(err)}`)
 		return false
 	end
@@ -2235,7 +2062,13 @@ local function canAcceptPlaceRequest(player, slot, x, y)
 		return false, "InvalidPayload"
 	end
 
-	if not consumeActionCooldown(lastPlaceRequestAt, player, PLACE_COOLDOWN_SECONDS) then
+	if
+		not UIControlRules.consumeActionCooldown(
+			actionTimestamps.place,
+			player,
+			PLACE_COOLDOWN_SECONDS
+		)
+	then
 		return false, "Cooldown"
 	end
 
@@ -2252,7 +2085,13 @@ local function canAcceptHandAction(player, action, slot)
 		return false, "InvalidPayload"
 	end
 
-	if not consumeActionCooldown(lastHandRequestAt, player, HAND_ACTION_COOLDOWN_SECONDS) then
+	if
+		not UIControlRules.consumeActionCooldown(
+			actionTimestamps.hand,
+			player,
+			HAND_ACTION_COOLDOWN_SECONDS
+		)
+	then
 		return false, "Cooldown"
 	end
 
@@ -2260,7 +2099,11 @@ local function canAcceptHandAction(player, action, slot)
 end
 
 local function canAcceptQueueAction(player)
-	return consumeActionCooldown(lastQueueRequestAt, player, QUEUE_ACTION_COOLDOWN_SECONDS)
+	return UIControlRules.consumeActionCooldown(
+		actionTimestamps.queue,
+		player,
+		QUEUE_ACTION_COOLDOWN_SECONDS
+	)
 end
 
 local function canAcceptDeveloperCommand(player)
@@ -2269,8 +2112,8 @@ local function canAcceptDeveloperCommand(player)
 	end
 
 	if
-		not consumeActionCooldown(
-			lastDeveloperCommandAt,
+		not UIControlRules.consumeActionCooldown(
+			actionTimestamps.developerCommand,
 			player,
 			Config.DeveloperTools.CommandCooldownSeconds
 		)
@@ -2418,9 +2261,9 @@ sendHubState = function(player, message)
 		storyStars = progress.storyStars,
 		dailyBonusAvailable = dailyBonusAvailable,
 		dailyBonusText = "Solo rewards are based on score and personal bests.",
-		profileLoadFailures = profileLoadFailures,
-		profileSaveFailures = profileSaveFailures,
-		analyticsFlushFailures = analyticsFlushFailures,
+		profileLoadFailures = TelemetryReporter.failures.profileLoad,
+		profileSaveFailures = TelemetryReporter.failures.profileSave,
+		analyticsFlushFailures = TelemetryReporter.failures.analyticsFlush,
 		analytics = table.clone(analytics),
 		developer = DeveloperTools.publicAccessForPlayer(player),
 		serverHighScores = serverHighScoreList(),
@@ -3657,13 +3500,13 @@ Players.PlayerRemoving:Connect(function(player)
 	playerCosmeticInventories[player] = nil
 	playerProfileLoadStatus[player] = nil
 	playerProfileNoticeState[player] = nil
-	lastPlaceRequestAt[player] = nil
-	lastHandRequestAt[player] = nil
-	lastQueueRequestAt[player] = nil
-	lastDeveloperCommandAt[player] = nil
-	lastShopRequestAt[player] = nil
-	lastCodeRequestAt[player] = nil
-	lastAchievementsRequestAt[player] = nil
+	actionTimestamps.place[player] = nil
+	actionTimestamps.hand[player] = nil
+	actionTimestamps.queue[player] = nil
+	actionTimestamps.developerCommand[player] = nil
+	actionTimestamps.shop[player] = nil
+	actionTimestamps.code[player] = nil
+	actionTimestamps.achievements[player] = nil
 	purchasePromptLocks[player] = nil
 	settingsSaveScheduled[player] = nil
 	if session then
@@ -3692,8 +3535,7 @@ game:BindToClose(function()
 	-- discarded, which is the exact loss this persistence exists to stop.
 	pendingSaves += 1
 	task.spawn(function()
-		flushAnalytics()
-		flushErrorReports()
+		TelemetryReporter.flushAll()
 		pendingSaves -= 1
 	end)
 
@@ -3722,13 +3564,7 @@ for _, player in Players:GetPlayers() do
 	end
 end
 
-task.spawn(function()
-	while true do
-		task.wait(Telemetry.FlushIntervalSeconds)
-		flushAnalytics()
-		flushErrorReports()
-	end
-end)
+TelemetryReporter.startFlushLoop()
 
 task.spawn(function()
 	while true do
