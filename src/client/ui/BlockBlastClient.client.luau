@@ -145,6 +145,9 @@ local day43Ui = {
 	codesEvent = remotes:WaitForChild("Codes"),
 	achievementsEvent = remotes:WaitForChild("Achievements"),
 	previousHandOccupied = {},
+	-- Cached rather than required per call: the input handlers that use it
+	-- run on every pointer move.
+	uiControlRules = require(GameShared.UIControlRules),
 }
 
 local function isUiReducedMotion()
@@ -2472,6 +2475,41 @@ for y = 1, Config.BoardSize do
 			end
 		end)
 
+		button.InputBegan:Connect(function(input)
+			-- Tap-to-place: pressing a cell shows the preview, and releasing
+			-- over it commits via Activated. Sliding off cancels, so the
+			-- player sees where the piece lands before committing to it. The
+			-- mouse gets this from MouseEnter below.
+			if not day43Ui.uiControlRules.isTouchInput(input.UserInputType.Name) then
+				return
+			end
+			if not currentState or day43Ui.drag.state.active then
+				return
+			end
+
+			hoverX = button:GetAttribute("BoardX")
+			hoverY = button:GetAttribute("BoardY")
+			renderGhostPreview()
+		end)
+
+		button.InputEnded:Connect(function(input)
+			-- Activated fires on release and places using its own coordinates,
+			-- so clearing the hover here cannot cancel the placement -- it only
+			-- stops the ghost lingering under a finger that has lifted.
+			if not day43Ui.uiControlRules.isTouchInput(input.UserInputType.Name) then
+				return
+			end
+			if day43Ui.drag.state.active then
+				return
+			end
+
+			hoverX = nil
+			hoverY = nil
+			if currentState then
+				renderGhostPreview()
+			end
+		end)
+
 		button.MouseEnter:Connect(function()
 			hoverX = button:GetAttribute("BoardX")
 			hoverY = button:GetAttribute("BoardY")
@@ -2601,6 +2639,10 @@ day43Ui.drag = {
 		shape = nil,
 		startPosition = nil,
 		icon = nil,
+		-- Set only for touch drags, and used two ways: to ignore a second
+		-- finger landing mid-drag, and to know on release that no cursor is
+		-- left behind to keep the preview honest.
+		touchInput = nil,
 	},
 }
 
@@ -2676,12 +2718,23 @@ function day43Ui.drag.finish(screenX, screenY)
 		end
 	end
 
+	local wasTouchDrag = day43Ui.drag.state.touchInput ~= nil
+
 	day43Ui.drag.destroyIcon()
 	day43Ui.drag.state.active = false
 	day43Ui.drag.state.dragging = false
 	day43Ui.drag.state.slot = nil
 	day43Ui.drag.state.shape = nil
 	day43Ui.drag.state.startPosition = nil
+	day43Ui.drag.state.touchInput = nil
+
+	if wasTouchDrag then
+		-- A finger leaves nothing hovering the board, unlike a mouse, so the
+		-- ghost would otherwise stay stuck on the last cell the drag crossed.
+		hoverX = nil
+		hoverY = nil
+		renderGhostPreview()
+	end
 end
 
 for slot = 1, Config.InventorySize do
@@ -2743,7 +2796,7 @@ for slot = 1, Config.InventorySize do
 	end)
 
 	button.InputBegan:Connect(function(input)
-		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+		if not day43Ui.uiControlRules.isPointerPressInput(input.UserInputType.Name) then
 			return
 		end
 		if not currentState then
@@ -2759,14 +2812,24 @@ for slot = 1, Config.InventorySize do
 		day43Ui.drag.state.slot = slot
 		day43Ui.drag.state.shape = shape
 		day43Ui.drag.state.startPosition = input.Position
+		day43Ui.drag.state.touchInput = if day43Ui.uiControlRules.isTouchInput(
+				input.UserInputType.Name
+			)
+			then input
+			else nil
 	end)
 end
 
 UserInputService.InputChanged:Connect(function(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseMovement then
+	if not day43Ui.uiControlRules.isPointerMoveInput(input.UserInputType.Name) then
 		return
 	end
 	if not day43Ui.drag.state.active or not day43Ui.drag.state.startPosition then
+		return
+	end
+	-- A second finger landing mid-drag reports movement too; only the one
+	-- that started the drag may steer it.
+	if day43Ui.drag.state.touchInput ~= nil and input ~= day43Ui.drag.state.touchInput then
 		return
 	end
 
@@ -2796,7 +2859,10 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+	if not day43Ui.uiControlRules.isPointerPressInput(input.UserInputType.Name) then
+		return
+	end
+	if day43Ui.drag.state.touchInput ~= nil and input ~= day43Ui.drag.state.touchInput then
 		return
 	end
 	if day43Ui.drag.state.active then

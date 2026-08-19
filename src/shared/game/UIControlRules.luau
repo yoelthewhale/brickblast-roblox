@@ -10,6 +10,27 @@ UIControlRules.ServerActionCooldownSeconds = 0.45
 -- server-side error with no response leaves them there forever.
 UIControlRules.PanelResponseTimeoutSeconds = 6
 
+-- Input-type classification for the placement pipeline.
+--
+-- Arming a drag, tracking it, and releasing it were each gated on a mouse
+-- input type, which quietly made the whole pipeline -- including the ghost
+-- preview that rides on it -- mouse-only. Touch reports movement under the
+-- same `Touch` type it reports presses under, so it belongs in both sets.
+--
+-- These take `input.UserInputType.Name` rather than the EnumItem so the rule
+-- is testable outside Roblox.
+function UIControlRules.isPointerPressInput(inputTypeName)
+	return inputTypeName == "MouseButton1" or inputTypeName == "Touch"
+end
+
+function UIControlRules.isPointerMoveInput(inputTypeName)
+	return inputTypeName == "MouseMovement" or inputTypeName == "Touch"
+end
+
+function UIControlRules.isTouchInput(inputTypeName)
+	return inputTypeName == "Touch"
+end
+
 local function cleanNumber(value, fallback)
 	if typeof(value) ~= "number" or value ~= value then
 		return fallback
