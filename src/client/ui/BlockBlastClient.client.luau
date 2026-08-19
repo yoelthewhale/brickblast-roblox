@@ -136,7 +136,9 @@ local WINDOW_LAYOUT = SoloLayout.calculate(Vector2.new(1280, 720), 36, 0, 1)
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local day43Ui = {
-	serverActionCooldownSeconds = 0.45,
+	-- Canonical value lives in UIControlRules; duplicating the number here is
+	-- what let the client and the shared rule drift apart.
+	serverActionCooldownSeconds = require(GameShared.UIControlRules).ServerActionCooldownSeconds,
 	placeActionCooldownSeconds = 0.08,
 	lastServerActionAt = 0,
 	lastPlaceActionAt = 0,
@@ -2533,41 +2535,32 @@ for y = 1, Config.BoardSize do
 	end
 end
 
+-- Describes the grid's children and hands the verdict to the shared rule in
+-- UIControlRules, so the implementation that is unit-tested is the same one
+-- that actually runs. This used to be a second, separately-maintained copy
+-- of the locked board invariant.
 local function validateBoardGridHierarchy()
-	local directGuiObjects = 0
-	local seenCoordinates = {}
+	local children = {}
 
 	for _, child in boardGridContainer:GetChildren() do
-		if child:IsA("GuiObject") then
-			directGuiObjects += 1
-			local isCell = child:IsA("TextButton") and child:GetAttribute("IsBoardCell") == true
-			local x = child:GetAttribute("BoardX")
-			local y = child:GetAttribute("BoardY")
-			local coordinateKey = `{tostring(x)}:{tostring(y)}`
-
-			if
-				not isCell
-				or typeof(x) ~= "number"
-				or typeof(y) ~= "number"
-				or x < 1
-				or x > Config.BoardSize
-				or y < 1
-				or y > Config.BoardSize
-				or seenCoordinates[coordinateKey]
-			then
-				warn(
-					`Invalid board grid child: {child.Name} ({child.ClassName}) at {coordinateKey}`
-				)
-			end
-
-			seenCoordinates[coordinateKey] = true
+		if child:IsA("GuiObject") or child:IsA("UIPadding") or child:IsA("UIGridLayout") then
+			table.insert(children, {
+				className = child.ClassName,
+				name = child.Name,
+				isBoardCell = child:GetAttribute("IsBoardCell") == true,
+				boardX = child:GetAttribute("BoardX"),
+				boardY = child:GetAttribute("BoardY"),
+			})
 		end
 	end
 
-	if directGuiObjects ~= Config.BoardSize * Config.BoardSize then
-		warn(
-			`BoardGridContainer expected {Config.BoardSize * Config.BoardSize} direct GuiObjects, found {directGuiObjects}`
-		)
+	local ok, problems = day43Ui.uiControlRules.validateBoardGridChildren(children)
+	if ok then
+		return
+	end
+
+	for _, problem in problems do
+		warn(`BoardGridContainer: {problem}`)
 	end
 end
 

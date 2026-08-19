@@ -32,6 +32,7 @@ local Grid = require(GameShared.Grid)
 local HandGenerator = require(GameShared.HandGenerator)
 local ProfilePersistence = require(GameShared.ProfilePersistence)
 local StageProgression = require(GameShared.StageProgression)
+local UIControlRules = require(GameShared.UIControlRules)
 local HubBuilder = require(script.Parent.Parent.world.HubBuilder)
 
 local remotes = Instance.new("Folder")
@@ -577,6 +578,27 @@ local function applyLoadedProfileStat(profile, stat, key, minimum, maximum, fall
 	local clean, sanitized = sanitizeProfileInteger(profile[key], minimum, maximum, fallback)
 	stat.Value = clean
 	return sanitized and 1 or 0
+end
+
+-- The timestamp half of every rate-limit gate on this server.
+--
+-- Seven remotes had their own copy of "read the last timestamp, compare it
+-- to a cooldown, record the new one". Two of those copies were added the
+-- same day this was written, because following the existing pattern meant
+-- pasting it again. The decision itself now comes from
+-- UIControlRules.canFireServerAction, which is unit-tested; callers keep
+-- their own timestamps, cooldowns, and preconditions.
+--
+-- Records the new timestamp only when the request is accepted, so a
+-- rejected burst cannot keep pushing the window forward.
+local function consumeActionCooldown(timestamps, player, cooldownSeconds)
+	local now = os.clock()
+	if not UIControlRules.canFireServerAction(timestamps[player] or 0, now, cooldownSeconds) then
+		return false
+	end
+
+	timestamps[player] = now
+	return true
 end
 
 local function sanitizedStatValue(stat, minimum, maximum, fallback)
@@ -1393,14 +1415,7 @@ sendShopSnapshot = function(player, message, pendingId)
 end
 
 local function canAcceptShopAction(player)
-	local now = os.clock()
-	local lastRequestAt = lastShopRequestAt[player] or 0
-	if now - lastRequestAt < SHOP_ACTION_COOLDOWN_SECONDS then
-		return false
-	end
-
-	lastShopRequestAt[player] = now
-	return true
+	return consumeActionCooldown(lastShopRequestAt, player, SHOP_ACTION_COOLDOWN_SECONDS)
 end
 
 local function findPurchasableDefinition(itemType, itemId)
@@ -1622,14 +1637,7 @@ local function redeemCode(player, rawCode)
 end
 
 local function canAcceptCodeRedemption(player)
-	local now = os.clock()
-	local lastRequestAt = lastCodeRequestAt[player] or 0
-	if now - lastRequestAt < CODE_REDEEM_COOLDOWN_SECONDS then
-		return false
-	end
-
-	lastCodeRequestAt[player] = now
-	return true
+	return consumeActionCooldown(lastCodeRequestAt, player, CODE_REDEEM_COOLDOWN_SECONDS)
 end
 
 codesEvent.OnServerEvent:Connect(function(player, rawCode)
@@ -1719,14 +1727,11 @@ local function checkAchievements(player)
 end
 
 local function canAcceptAchievementsAction(player)
-	local now = os.clock()
-	local lastRequestAt = lastAchievementsRequestAt[player] or 0
-	if now - lastRequestAt < ACHIEVEMENTS_ACTION_COOLDOWN_SECONDS then
-		return false
-	end
-
-	lastAchievementsRequestAt[player] = now
-	return true
+	return consumeActionCooldown(
+		lastAchievementsRequestAt,
+		player,
+		ACHIEVEMENTS_ACTION_COOLDOWN_SECONDS
+	)
 end
 
 achievementsEvent.OnServerEvent:Connect(function(player, action)
@@ -2077,13 +2082,10 @@ local function canAcceptPlaceRequest(player, slot, x, y)
 		return false, "InvalidPayload"
 	end
 
-	local now = os.clock()
-	local lastRequestAt = lastPlaceRequestAt[player] or 0
-	if now - lastRequestAt < PLACE_COOLDOWN_SECONDS then
+	if not consumeActionCooldown(lastPlaceRequestAt, player, PLACE_COOLDOWN_SECONDS) then
 		return false, "Cooldown"
 	end
 
-	lastPlaceRequestAt[player] = now
 	return true, nil
 end
 
@@ -2097,25 +2099,15 @@ local function canAcceptHandAction(player, action, slot)
 		return false, "InvalidPayload"
 	end
 
-	local now = os.clock()
-	local lastRequestAt = lastHandRequestAt[player] or 0
-	if now - lastRequestAt < HAND_ACTION_COOLDOWN_SECONDS then
+	if not consumeActionCooldown(lastHandRequestAt, player, HAND_ACTION_COOLDOWN_SECONDS) then
 		return false, "Cooldown"
 	end
 
-	lastHandRequestAt[player] = now
 	return true, nil
 end
 
 local function canAcceptQueueAction(player)
-	local now = os.clock()
-	local lastRequestAt = lastQueueRequestAt[player] or 0
-	if now - lastRequestAt < QUEUE_ACTION_COOLDOWN_SECONDS then
-		return false
-	end
-
-	lastQueueRequestAt[player] = now
-	return true
+	return consumeActionCooldown(lastQueueRequestAt, player, QUEUE_ACTION_COOLDOWN_SECONDS)
 end
 
 local function canAcceptDeveloperCommand(player)
@@ -2123,13 +2115,16 @@ local function canAcceptDeveloperCommand(player)
 		return false, "Unauthorized"
 	end
 
-	local now = os.clock()
-	local lastRequestAt = lastDeveloperCommandAt[player] or 0
-	if now - lastRequestAt < Config.DeveloperTools.CommandCooldownSeconds then
+	if
+		not consumeActionCooldown(
+			lastDeveloperCommandAt,
+			player,
+			Config.DeveloperTools.CommandCooldownSeconds
+		)
+	then
 		return false, "Cooldown"
 	end
 
-	lastDeveloperCommandAt[player] = now
 	return true, nil
 end
 

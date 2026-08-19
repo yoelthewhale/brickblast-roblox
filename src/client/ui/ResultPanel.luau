@@ -1,9 +1,13 @@
 local GuiService = game:GetService("GuiService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local ArcadeUI = require(script.Parent.ArcadeUI)
 local UITheme = require(script.Parent.UITheme)
+local UIControlRules = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game"):WaitForChild("UIControlRules")
+)
 
 local ResultPanel = {}
 ResultPanel.__index = ResultPanel
@@ -22,7 +26,8 @@ function ResultPanel.new(gui, queueEvent, options)
 	self.hasCurrentRun = options.hasCurrentRun or function()
 		return false
 	end
-	self.requestCooldownSeconds = options.requestCooldownSeconds or 0.45
+	self.requestCooldownSeconds = options.requestCooldownSeconds
+		or UIControlRules.ServerActionCooldownSeconds
 	self.lastRequestAt = 0
 
 	local panel = Instance.new("Frame")
