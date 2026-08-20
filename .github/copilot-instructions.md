@@ -11,8 +11,11 @@ BrickBlast is a Roblox block-puzzle game written in Luau, synced into Roblox Stu
 
 - **8x8 board invariant.** The board is exactly `Config.BoardSize` squared (currently 64 cells). `BoardGridContainer` must contain exactly 64 direct cell buttons and no decorative children. Board math uses `AbsolutePosition`/`AbsoluteSize`.
 - **Server authority.** Score, currency, XP, rewards, cosmetic ownership, and saved data are decided on the server only. Never accept a client-supplied value for these without server-side validation against real state.
-- **`src/client/ui/BlockBlastClient.client.luau` is near Luau's 200-local-register limit** and has already failed to compile once, silently breaking the entire HUD. Do not add new top-level `local` declarations (including local functions) to this file — attach values to the existing `day43Ui` table instead.
-- **`src/server/services/GameServer.server.luau` is a large, sensitive monolith** (~3,400 lines) containing profile saving, purchases, and rewards. Make small, targeted edits. Do not restructure it opportunistically.
+- **Both major monoliths are register-sensitive.** Each is a single top-level Luau chunk close to the compiler's 200-local-register limit, and each has already blown past it once, failing to compile with no symptom beyond one "Out of local registers" line in Studio's Output:
+  - `src/client/ui/BlockBlastClient.client.luau` — silently broke the entire HUD. Attach values to the existing `day43Ui` table.
+  - `src/server/services/GameServer.server.luau` — silently broke the entire server on 2026-08-19 (#96 / PR #97): no hub, no remotes, players on the bare bootstrap floor. Attach values to an existing table, or move the concern into a ModuleScript.
+  In neither file may you add a new top-level `local` declaration, including a local function. `lune run scripts/check-local-registers.luau` enforces a budget per file in CI; the fix for a failure is to remove a local, never to raise the budget.
+- **`src/server/services/GameServer.server.luau` is also a large, sensitive monolith** (~3,400 lines) containing profile saving, purchases, and rewards. Make small, targeted edits. Do not restructure it opportunistically.
 
 ## Sensitive areas — extra care required
 

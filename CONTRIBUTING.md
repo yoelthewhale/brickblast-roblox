@@ -99,7 +99,10 @@ Prefixes: `fix/` (bug), `feat/` (new capability), `docs/` (documentation), `chor
 - **BrickBlast is Solo-first.** Battle, Story, and Custom Lab exist in the code but are switched off behind flags in `src/shared/game/ExperienceConfig.luau`. Do not re-enable or extend them unless an issue explicitly asks.
 - **The board is always 8x8.** Exactly 64 cell buttons under `BoardGridContainer`, and no decorative objects added as direct children of it. See the "Locked Board Invariant" section in [`AGENTS.md`](AGENTS.md).
 - **The server is the authority.** Anything involving score, currency, rewards, ownership, or saved data must be decided on the server. Never let the client send a value the server simply trusts.
-- **`src/client/ui/BlockBlastClient.client.luau` is near a hard Luau limit** on top-level variables. It has already broken the entire HUD once by exceeding it. Attach new values to the existing `day43Ui` table instead of adding new top-level `local`s.
+- **Two files are near a hard Luau limit** on top-level variables (200 of them). Both have already broken the game by exceeding it, and the only symptom either time was a single "Out of local registers" line in Studio's Output:
+  - `src/client/ui/BlockBlastClient.client.luau` — broke the entire HUD. Attach new values to the existing `day43Ui` table.
+  - `src/server/services/GameServer.server.luau` — broke the entire server: no hub was built, no remotes were created, and players spawned onto a bare grass slab. Attach new values to an existing table, or move the concern into a new ModuleScript, which gets its own budget.
+  In neither file should you add a new top-level `local`, including a local function. CI checks this (`lune run scripts/check-local-registers.luau`). If it fails, remove a local — do not raise the budget in that script, and do not add locals elsewhere just to reorganize code.
 
 ### Areas to leave alone unless the issue says otherwise
 
