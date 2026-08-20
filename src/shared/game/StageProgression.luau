@@ -57,12 +57,6 @@ function StageProgression.sanitize(state)
 	}
 end
 
-function StageProgression.paletteForStage(stage)
-	local palettes = Rules.Palettes
-	local index = ((cleanInteger(stage, 1, 1) - 1) % #palettes) + 1
-	return palettes[index]
-end
-
 function StageProgression.isBoardEmpty(board)
 	if typeof(board) ~= "table" then
 		return false
