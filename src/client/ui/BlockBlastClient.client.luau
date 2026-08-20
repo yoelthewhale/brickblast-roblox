@@ -1804,12 +1804,22 @@ helpButton.Activated:Connect(function()
 	playSound("Button")
 end)
 
+-- Single chokepoint for stage presentation: every render path resolves its
+-- colors through here. Routing it via presetForRun rather than presetForStage
+-- is what makes the palette respond to the run in progress -- combo streak
+-- and perfect clears raise intensity within the stage's flavor, so a hot
+-- streak visibly heats the board and a fresh run cools back down. See
+-- docs/VISUAL_DIRECTION.md; the game is not meant to hold one static palette.
 local function activeStageVisual()
 	local stageState = currentState and currentState.stage
 	local hasSoloStage = currentState
 		and currentState.mode == "Solo"
 		and typeof(stageState) == "table"
-	return StageVisuals.presetForStage(hasSoloStage and stageState.currentStage or 1), hasSoloStage
+	if not hasSoloStage then
+		return StageVisuals.presetForStage(1), false
+	end
+
+	return StageVisuals.presetForRun(currentState), true
 end
 
 local function applyStrokeColor(parent, color, transparency)
@@ -1845,7 +1855,12 @@ local function applyStagePalette()
 	local hasSoloStage = currentState
 		and currentState.mode == "Solo"
 		and typeof(stageState) == "table"
-	local preset = StageVisuals.presetForStage(hasSoloStage and stageState.currentStage or 1)
+	-- Energy-aware: this pass paints the background, panels, board and tray. If
+	-- it resolved at rest while the per-element paths resolved hot, half the
+	-- screen would heat up during a streak and half would not.
+	local preset = if hasSoloStage
+		then StageVisuals.presetForRun(currentState)
+		else StageVisuals.presetForStage(1)
 	local boardSkin = Config.BoardSkins[boardSkinIndex] or Config.BoardSkins[1]
 	local theme = themePresets[themeIndex]
 	local emptyColor = if hasSoloStage then preset.boardEmpty else boardSkin.empty or theme.board
@@ -1940,7 +1955,7 @@ local function applyStagePalette()
 end
 
 local function playStageTransition(stage)
-	local preset = StageVisuals.presetForStage(stage)
+	local preset = StageVisuals.presetForStage(stage, StageVisuals.energyForRun(currentState))
 	local transition = StageVisuals.transitionForStage(stage, reducedMotion)
 	stageUi.noticeToken = (stageUi.noticeToken or 0) + 1
 	local token = stageUi.noticeToken
@@ -1997,7 +2012,10 @@ local function renderStageDisplay()
 	local cleanStage = StageProgression.publicState(stageState)
 	local progress = math.clamp(cleanStage.stageProgress, 0, cleanStage.stageProgressRequired)
 	local ratio = progress / math.max(1, cleanStage.stageProgressRequired)
-	local preset = StageVisuals.presetForStage(cleanStage.currentStage)
+	local preset = StageVisuals.presetForStage(
+		cleanStage.currentStage,
+		StageVisuals.energyForRun(currentState)
+	)
 	-- Stage-advance visuals (wash tween, title flash, banner) are owned solely
 	-- by the explicit "StageUp" effect handler, not derived here from a diff,
 	-- so they only fire once per advance instead of twice.
@@ -4393,7 +4411,10 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 				end)
 			end
 		end
-		local preset = StageVisuals.presetForStage(effect.currentStage or 1)
+		local preset = StageVisuals.presetForStage(
+			effect.currentStage or 1,
+			StageVisuals.energyForRun(currentState)
+		)
 		showBanner(`Stage {effect.currentStage or "?"}!`, preset.stage)
 	elseif effect.kind == "AchievementUnlocked" then
 		playSound("PerfectClear")
