@@ -267,4 +267,92 @@ function SoloLayout.calculate(screenSize, topInset, bottomInset, uiScale)
 	}
 end
 
+-- Internal layout of the score card: heading, score, divider, best.
+--
+-- These four used to be positioned at construction time and then only
+-- partly updated. `scoreLabel` and `bestScoreLabel` were repositioned by both
+-- responsive layout paths; `scoreHeading` and the divider were not, so they
+-- stayed pinned to coordinates chosen for a 210x170 card while the card
+-- itself resized underneath them. At the construction size the heading
+-- already overlapped the score number (y 12..38 against y 16..74), and at any
+-- other size the divider stranded or fell outside the card entirely.
+--
+-- Deriving all four here keeps them in one place, proportional to the real
+-- card, and covered by tests -- the geometry is no longer something a future
+-- layout tweak can silently desynchronize.
+--
+-- `compact` is the phone/strip arrangement: a short horizontal chip with no
+-- room for a heading or a rule, so those are reported hidden rather than
+-- squeezed into an unreadable sliver.
+function SoloLayout.scoreCardLayout(width, height, compact)
+	local cardWidth = math.max(1, math.floor(cleanNumber(width, 1)))
+	local cardHeight = math.max(1, math.floor(cleanNumber(height, 1)))
+	local inset = clamp(math.floor(cardWidth * 0.08), 4, 22)
+	local innerWidth = math.max(1, cardWidth - inset * 2)
+
+	if compact then
+		return {
+			heading = {
+				visible = false,
+				x = inset,
+				y = 0,
+				width = innerWidth,
+				height = 0,
+				textSize = 0,
+			},
+			score = {
+				visible = true,
+				x = inset,
+				y = math.floor(cardHeight * 0.04),
+				width = innerWidth,
+				height = math.max(1, math.floor(cardHeight * 0.56)),
+				textSize = clamp(math.floor(cardHeight * 0.44), 14, 30),
+			},
+			divider = { visible = false, x = inset, y = 0, width = innerWidth, height = 0 },
+			best = {
+				visible = true,
+				x = inset,
+				y = math.floor(cardHeight * 0.62),
+				width = innerWidth,
+				height = math.max(1, math.floor(cardHeight * 0.32)),
+				textSize = clamp(math.floor(cardHeight * 0.24), 10, 16),
+			},
+		}
+	end
+
+	return {
+		heading = {
+			visible = true,
+			x = inset,
+			y = math.floor(cardHeight * 0.07),
+			width = innerWidth,
+			height = math.max(1, math.floor(cardHeight * 0.13)),
+			textSize = clamp(math.floor(cardHeight * 0.12), 11, 22),
+		},
+		score = {
+			visible = true,
+			x = inset,
+			y = math.floor(cardHeight * 0.22),
+			width = innerWidth,
+			height = math.max(1, math.floor(cardHeight * 0.40)),
+			textSize = clamp(math.floor(cardHeight * 0.34), 20, 54),
+		},
+		divider = {
+			visible = true,
+			x = inset + math.floor(innerWidth * 0.06),
+			y = math.floor(cardHeight * 0.655),
+			width = math.max(1, innerWidth - math.floor(innerWidth * 0.12)),
+			height = math.max(2, math.floor(cardHeight * 0.02)),
+		},
+		best = {
+			visible = true,
+			x = inset,
+			y = math.floor(cardHeight * 0.71),
+			width = innerWidth,
+			height = math.max(1, math.floor(cardHeight * 0.22)),
+			textSize = clamp(math.floor(cardHeight * 0.13), 10, 22),
+		},
+	}
+end
+
 return SoloLayout
