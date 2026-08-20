@@ -14,6 +14,95 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
 
+## Session Update - 2026-08-20 Bubblegum Toybox, Phases 1, 2 and 5
+
+Not a numbered Day. First implementation session of the visual overhaul
+(#98). Direction and constraints live in `docs/VISUAL_DIRECTION.md`; phase
+status lives on #98. This entry records what happened and what is still
+unverified.
+
+### Merged
+
+- **PR #105** -- yesterday's documentation: the visual direction, both
+  register-sensitive monoliths, and the corrected checkpoint header.
+- **#106 / PR #107 -- phase 1, visual token architecture.** Closes #60.
+- **PR #108 -- phase 2, objective visual defects.** Closes #103.
+- **PR #109 -- phase 5 core, live energy.**
+
+### What the token work actually fixed
+
+The game had four competing color systems. `StageVisuals` cycled four
+*unrelated* themes by stage (teal, pink, brown, red) while `ArcadeUI.Color`
+framed them in a near-black neon arcade cabinet matching none of them,
+`UITheme` served the older menus, and `StageProgression.paletteForStage` was
+dead code with no callers.
+
+Note the shape of that variance: four identities selected by stage. Variety
+without identity, which is the inverse of the approved direction.
+
+`VisualTokens.luau` replaces it with one identity and two axes:
+
+- **identity** never varies -- cream surfaces, deep-grape ink, gloss.
+- **flavor** varies by stage -- a hue family inside the identity, so stage 2
+  is a different candy rather than a different game.
+- **energy** varies by run intensity, 0..1, from combo streak, stage depth
+  and perfect clears.
+
+`StageVisuals` is now a thin shim over it with an unchanged public API.
+`ArcadeUI.Color` and `UITheme` were deliberately left alone; they belong to
+phases 4 and 7.
+
+**Energy is the load-bearing idea and the one a future refactor is most
+likely to flatten away.** It is what keeps the game from collapsing into one
+static palette. It is commented as such in `VisualTokens.luau` and in
+`activeStageVisual`, and pinned by tests. If the game ever looks static
+again, that axis is what broke -- repair it rather than removing it.
+
+### The score card was stranding half its children
+
+The card has four children. `scoreLabel` and `bestScoreLabel` were
+repositioned by both responsive layout paths; `scoreHeading` and
+`scoreDivider` were positioned once at construction and never touched again,
+so they stayed pinned to coordinates chosen for a 210x170 card while the card
+resized underneath them.
+
+This was broken even at the construction size: the heading occupies y 12..38
+and the score number occupies y 16..74, so they had always overlapped. All
+four now derive from `SoloLayout.scoreCardLayout`, a pure tested function.
+
+This is very likely the root cause of both #99 and #101, but both stay open
+pending Studio confirmation rather than being closed on inference.
+
+### Two audit findings that were not what they looked like
+
+- **#102** -- the DEV button's gating is already correct. It is gated on
+  `developer.authorized`, so it appears for allowlisted developers by design.
+  What remains is that it is unstyled and does not participate in responsive
+  layout. Rescoped, not fixed.
+- **#100** -- does not reproduce from the code. `SetGameplayFocus` hides the
+  hub resource bar during play, so the two best-score displays should not be
+  on screen together. Left open pending a screenshot.
+
+### Current State
+
+- Master is green. 174 automated tests across 14 modules, up from 142.
+- Register budgets unchanged at 191/191 and 198/198. The energy math lives in
+  `StageVisuals` rather than the client specifically so no new top-level
+  require was needed there.
+
+### The gap that matters
+
+**None of this has been seen rendered.** The build environment has no Roblox
+Studio and no Studio MCP, so every claim above is about logic, geometry and
+contrast math -- not about whether the game looks good. The colors are
+deliberately cheap to retune: flavor anchors are one table at the top of
+`VisualTokens.luau`, energy weights are four numbers in `VisualTokens.ENERGY`,
+and neither requires touching logic.
+
+The next session should not start phase 3 until someone has played
+`BlockBlastBattle-Day44-1.rbxl` and judged whether the direction is landing.
+Everything after phase 3 compounds on that judgment.
+
 ## Session Update - 2026-08-19 Consolidation, Telemetry, and the Register Incident
 
 Not a numbered Day. Sits between Day43 and the Day44 checkpoint, per the rules
