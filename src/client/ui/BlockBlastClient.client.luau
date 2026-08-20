@@ -2160,6 +2160,35 @@ scoreDivider.Size = UDim2.new(1, -48, 0, 3)
 scoreDivider.Parent = stageUi.scoreCard
 UITheme.corner(scoreDivider, 3)
 
+-- Applies a SoloLayout.scoreCardLayout result to the four score-card
+-- children. Before this existed, scoreLabel and bestScoreLabel were
+-- repositioned by both responsive layout paths while scoreHeading and
+-- scoreDivider kept the coordinates they were built with, so the heading sat
+-- on top of the score number and the divider stranded whenever the card was
+-- not exactly its construction size. Routing all four through one tested
+-- function is what stops that drifting apart again.
+--
+-- Lives on day43Ui rather than as a new top-level local: this file sits at
+-- Luau's 200-register ceiling. See CONTRIBUTING.md.
+function day43Ui.applyScoreCardLayout(cardLayout)
+	local function place(instance, part)
+		instance.Visible = part.visible
+		if not part.visible then
+			return
+		end
+		instance.Position = UDim2.fromOffset(part.x, part.y)
+		instance.Size = UDim2.fromOffset(part.width, part.height)
+		if part.textSize then
+			instance.TextSize = part.textSize
+		end
+	end
+
+	place(stageUi.scoreHeading, cardLayout.heading)
+	place(scoreLabel, cardLayout.score)
+	place(scoreDivider, cardLayout.divider)
+	place(bestScoreLabel, cardLayout.best)
+end
+
 bestScoreLabel = Instance.new("TextLabel")
 bestScoreLabel.BackgroundTransparency = 1
 bestScoreLabel.Position = UDim2.fromOffset(18, 82)
@@ -3179,12 +3208,7 @@ day43Ui.applyPhoneWorkspaceLayout = function(layout)
 	local scoreWidth = layout.contentWidth - (chipWidth * 3) - (chipGap * 3)
 	stageUi.scoreCard.Position = UDim2.fromOffset(0, 0)
 	stageUi.scoreCard.Size = UDim2.fromOffset(scoreWidth, stripHeight)
-	scoreLabel.Position = UDim2.fromOffset(8, 2)
-	scoreLabel.Size = UDim2.fromOffset(scoreWidth - 16, math.floor(stripHeight * 0.6))
-	scoreLabel.TextSize = clampNumber(math.floor(stripHeight * 0.46), 18, 26)
-	bestScoreLabel.Position = UDim2.fromOffset(8, math.floor(stripHeight * 0.6))
-	bestScoreLabel.Size = UDim2.fromOffset(scoreWidth - 16, math.floor(stripHeight * 0.36))
-	bestScoreLabel.TextSize = clampNumber(math.floor(stripHeight * 0.24), 10, 14)
+	day43Ui.applyScoreCardLayout(SoloLayout.scoreCardLayout(scoreWidth, stripHeight, true))
 
 	local chipTextSize = clampNumber(math.floor(stripHeight * 0.32), 12, 18)
 	local chips = { comboBadgeLabel, coinStatLabel, rankStatLabel }
@@ -3425,12 +3449,9 @@ applyWindowLayout = function()
 
 	stageUi.scoreCard.Position = UDim2.fromOffset(0, 0)
 	stageUi.scoreCard.Size = UDim2.fromOffset(layout.leftWidth, math.floor(contentHeight * 0.23))
-	scoreLabel.Position = UDim2.fromOffset(14, 18)
-	scoreLabel.Size = UDim2.new(1, -28, 0, 60)
-	scoreLabel.TextSize = clampNumber(math.floor(layout.leftWidth * 0.2), 34, 54)
-	bestScoreLabel.Position = UDim2.fromOffset(18, math.floor(contentHeight * 0.15))
-	bestScoreLabel.Size = UDim2.new(1, -36, 0, 34)
-	bestScoreLabel.TextSize = clampNumber(math.floor(layout.leftWidth * 0.085), 16, 22)
+	day43Ui.applyScoreCardLayout(
+		SoloLayout.scoreCardLayout(layout.leftWidth, math.floor(contentHeight * 0.23), false)
+	)
 
 	local scoreHeight = stageUi.scoreCard.Size.Y.Offset
 	local statHeight = math.floor((contentHeight - scoreHeight - layout.statGap * 3) / 3)
@@ -3738,10 +3759,16 @@ renderHand = function()
 			day43Ui.playTrayEntrance(button, slot)
 		end
 		day43Ui.previousHandOccupied[slot] = isOccupied
+		-- The slot caption used to read "Used" or "Ready", which looked like
+		-- placeholder text that shipped by mistake -- and said nothing the
+		-- preview above it does not already show: an empty slot renders with
+		-- no piece in it. Hidden rather than deleted because the tray is
+		-- redesigned in phase 3 of #98, which decides what (if anything)
+		-- belongs here.
 		local label = button:FindFirstChild("Label")
 		if label then
-			label.Text = ArcadeUI.HandSlotText(shape)
-			label.TextColor3 = hasSoloStage and preset.panelText or Color3.fromRGB(245, 247, 251)
+			label.Text = ""
+			label.Visible = false
 		end
 		ArcadeUI.RenderShapePreview(handPreviews[slot], shape, {
 			blockColors = hasSoloStage and preset.blockPalette or nil,

@@ -337,6 +337,88 @@ tests.boardCellInvariant = function()
 	)
 end
 
+tests.scoreCardChildrenNeverOverlap = function()
+	-- The regression this guards: heading and divider were pinned to
+	-- construction coordinates while the card resized, so they drifted into
+	-- the score number and each other.
+	local sizes = {
+		{ 210, 170 },
+		{ 180, 96 },
+		{ 320, 240 },
+		{ 120, 60 },
+		{ 460, 400 },
+		{ 90, 44 },
+	}
+
+	for _, size in sizes do
+		local layout = SoloLayout.scoreCardLayout(size[1], size[2], false)
+		local ordered = { layout.heading, layout.score, layout.divider, layout.best }
+
+		for index = 1, #ordered - 1 do
+			local current = ordered[index]
+			local following = ordered[index + 1]
+			assertCondition(
+				current.y + current.height <= following.y,
+				`Score card children overlapped at {size[1]}x{size[2]} (child {index})`
+			)
+		end
+	end
+end
+
+tests.scoreCardChildrenStayInsideTheCard = function()
+	for width = 80, 480, 40 do
+		for height = 40, 420, 40 do
+			local layout = SoloLayout.scoreCardLayout(width, height, false)
+			for name, part in layout do
+				if part.visible then
+					assertCondition(
+						part.y >= 0 and part.y + part.height <= height,
+						`{name} escaped the card vertically at {width}x{height}`
+					)
+					assertCondition(
+						part.x >= 0 and part.x + part.width <= width,
+						`{name} escaped the card horizontally at {width}x{height}`
+					)
+				end
+			end
+		end
+	end
+end
+
+tests.compactScoreCardHidesHeadingAndDivider = function()
+	local layout = SoloLayout.scoreCardLayout(160, 54, true)
+	assertCondition(not layout.heading.visible, "A compact strip has no room for a SCORE heading")
+	assertCondition(not layout.divider.visible, "A compact strip has no room for a divider rule")
+	assertCondition(layout.score.visible, "The score itself must stay visible when compact")
+	assertCondition(layout.best.visible, "The best score must stay visible when compact")
+	assertCondition(
+		layout.score.y + layout.score.height <= layout.best.y,
+		"Compact score and best must not overlap"
+	)
+end
+
+tests.scoreCardSurvivesGarbageInput = function()
+	for _, bad in { nil, 0 / 0, -50, math.huge, "wide" } do
+		local layout = SoloLayout.scoreCardLayout(bad, bad, false)
+		assertCondition(layout.score.height >= 1, "Score card should stay usable on garbage input")
+		assertCondition(layout.best.height >= 1, "Best label should stay usable on garbage input")
+	end
+end
+
+tests.scoreCardTextSizesStayLegible = function()
+	for height = 40, 420, 20 do
+		local layout = SoloLayout.scoreCardLayout(220, height, false)
+		assertCondition(
+			layout.score.textSize >= 20 and layout.score.textSize <= 54,
+			`Score text size left its legible range at height {height}`
+		)
+		assertCondition(
+			layout.best.textSize >= 10 and layout.best.textSize <= 22,
+			`Best text size left its legible range at height {height}`
+		)
+	end
+end
+
 function SoloLayoutTests.run()
 	local results = {}
 

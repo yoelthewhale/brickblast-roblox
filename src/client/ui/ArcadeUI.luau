@@ -242,14 +242,6 @@ function ArcadeUI.RenderShapePreview(preview, shape, options)
 	end
 end
 
-function ArcadeUI.HandSlotText(shape)
-	if not shape then
-		return "Used"
-	end
-
-	return "Ready"
-end
-
 function ArcadeUI.StoryGoalText(state)
 	local mission = state and state.storyMission
 	if not mission then
