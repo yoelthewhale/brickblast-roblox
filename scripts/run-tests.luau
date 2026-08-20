@@ -102,6 +102,7 @@ local TEST_MODULES = {
 	"StageProgressionTests",
 	"TelemetryTests",
 	"StageVisualsTests",
+	"VisualTokensTests",
 	"UIControlRulesTests",
 	"VisualQualityTests",
 }
