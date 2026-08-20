@@ -58,9 +58,8 @@ local function cleanStage(stage)
 	return math.max(1, math.floor(stage))
 end
 
--- Presets are rendered at rest (energy 0). Live gameplay should drive energy
--- from real run state via VisualTokens.energyFor; that wiring is phase 5 of
--- #98 and deliberately not done here.
+-- Presets default to rest (energy 0). Live gameplay drives energy from real
+-- run state through StageVisuals.presetForRun below.
 local function presetFromTokens(tokens)
 	return {
 		id = tokens.flavorId,
@@ -100,13 +99,42 @@ function StageVisuals.requiredFields()
 	return table.clone(REQUIRED_FIELDS)
 end
 
-function StageVisuals.presetForStage(stage)
-	local tokens = VisualTokens.resolve(stage, 0)
+function StageVisuals.presetForStage(stage, energy)
+	local tokens = VisualTokens.resolve(stage, energy or 0)
 	local preset = presetFromTokens(tokens)
 	preset.stageNumber = tokens.stageNumber
 	preset.cycle = tokens.cycle
 	preset.presetIndex = tokens.flavorIndex
 	return preset
+end
+
+-- The live entry point: derives energy from real run state, then resolves the
+-- preset at that intensity.
+--
+-- This is what makes the palette dynamic rather than static. Stage alone
+-- picks the flavor; combo streak and perfect clears push intensity within it,
+-- so a hot streak visibly heats the board and a fresh run cools it back down.
+-- Deleting this and calling presetForStage directly would silently flatten
+-- the game to one palette per stage -- exactly the outcome
+-- docs/VISUAL_DIRECTION.md warns against.
+--
+-- The energy math lives in VisualTokens and is computed here rather than in
+-- the client so that BlockBlastClient.client.luau does not need a new
+-- top-level require; it sits two registers from Luau's ceiling.
+function StageVisuals.energyForRun(runState)
+	local stageState = typeof(runState) == "table" and runState.stage or nil
+	return VisualTokens.energyFor({
+		comboStreak = typeof(runState) == "table" and runState.comboStreak or 0,
+		stage = typeof(stageState) == "table" and stageState.currentStage or 1,
+		perfectClears = typeof(stageState) == "table" and stageState.totalPerfectClears or 0,
+	})
+end
+
+function StageVisuals.presetForRun(runState)
+	local stageState = typeof(runState) == "table" and runState.stage or nil
+	local stage = typeof(stageState) == "table" and stageState.currentStage or 1
+	local energy = StageVisuals.energyForRun(runState)
+	return StageVisuals.presetForStage(stage, energy), energy
 end
 
 function StageVisuals.validatePreset(preset)
