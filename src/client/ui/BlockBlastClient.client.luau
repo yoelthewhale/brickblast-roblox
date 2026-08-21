@@ -3586,6 +3586,108 @@ rerollPieceButton.Activated:Connect(function()
 	requestSelectedHandAction("Reroll")
 end)
 
+function day43Ui.firstAvailableHandButton()
+	if not currentState or not currentState.hand then
+		return nil
+	end
+	for slot = 1, Config.InventorySize do
+		if currentState.hand[slot] and handButtons[slot] then
+			return handButtons[slot]
+		end
+	end
+	return nil
+end
+
+function day43Ui.isGameplaySelectionUsable()
+	local selected = GuiService.SelectedObject
+	return selected ~= nil
+		and root ~= nil
+		and root.Visible
+		and selected:IsDescendantOf(root)
+		and selected.Visible
+		and selected.Selectable
+end
+
+function day43Ui.setGameplayGamepadFocus(force)
+	if not UserInputService.GamepadEnabled or not currentState or not root.Visible then
+		return
+	end
+	if not force and day43Ui.isGameplaySelectionUsable() then
+		return
+	end
+
+	local target = day43Ui.firstAvailableHandButton() or cells[1] and cells[1][1] or returnHubButton
+	if target and target.Visible and target.Selectable then
+		GuiService.SelectedObject = target
+	end
+end
+
+function day43Ui.clearGameplayGamepadFocus()
+	local selected = GuiService.SelectedObject
+	if selected and root and selected:IsDescendantOf(root) then
+		GuiService.SelectedObject = nil
+	end
+end
+
+function day43Ui.configureGameplayGamepadNavigation()
+	local handTarget = day43Ui.firstAvailableHandButton() or handButtons[1]
+	for y = 1, Config.BoardSize do
+		for x = 1, Config.BoardSize do
+			local cell = cells[y] and cells[y][x]
+			if not cell then
+				continue
+			end
+			cell.Selectable = true
+			cell.NextSelectionLeft = x > 1 and cells[y][x - 1] or handTarget
+			cell.NextSelectionRight = x < Config.BoardSize and cells[y][x + 1] or returnHubButton
+			cell.NextSelectionUp = y > 1 and cells[y - 1][x] or customizeButton
+			cell.NextSelectionDown = y < Config.BoardSize and cells[y + 1][x] or handTarget
+		end
+	end
+
+	local bottomLeft = cells[Config.BoardSize] and cells[Config.BoardSize][1]
+	local bottomCenter = cells[Config.BoardSize]
+		and cells[Config.BoardSize][math.ceil(Config.BoardSize / 2)]
+	local bottomRight = cells[Config.BoardSize] and cells[Config.BoardSize][Config.BoardSize]
+	for slot = 1, Config.InventorySize do
+		local button = handButtons[slot]
+		if not button then
+			continue
+		end
+		button.Selectable = currentState ~= nil
+			and currentState.hand ~= nil
+			and currentState.hand[slot] ~= nil
+		button.NextSelectionLeft = slot > 1 and handButtons[slot - 1] or bottomLeft
+		button.NextSelectionRight = slot < Config.InventorySize and handButtons[slot + 1]
+			or bottomRight
+		button.NextSelectionUp = slot == 1 and bottomLeft
+			or slot == Config.InventorySize and bottomRight
+			or bottomCenter
+		button.NextSelectionDown = returnHubButton
+	end
+
+	customizeButton.NextSelectionDown = cells[1] and cells[1][math.ceil(Config.BoardSize / 2)]
+		or handTarget
+	resetLayoutButton.NextSelectionDown = cells[1] and cells[1][Config.BoardSize] or handTarget
+	closeWorkspaceButton.NextSelectionDown = returnHubButton
+	returnHubButton.NextSelectionLeft = handTarget or bottomRight
+	returnHubButton.NextSelectionRight = playAgainButton
+	returnHubButton.NextSelectionUp = bottomRight or handTarget
+	playAgainButton.NextSelectionLeft = returnHubButton
+	playAgainButton.NextSelectionRight = rotatePieceButton
+	playAgainButton.NextSelectionUp = bottomRight or handTarget
+	rotatePieceButton.NextSelectionLeft = playAgainButton
+	rotatePieceButton.NextSelectionRight = rerollPieceButton
+	rotatePieceButton.NextSelectionUp = returnHubButton
+	rerollPieceButton.NextSelectionLeft = rotatePieceButton
+	rerollPieceButton.NextSelectionUp = playAgainButton
+end
+
+UserInputService.GamepadConnected:Connect(function()
+	day43Ui.configureGameplayGamepadNavigation()
+	day43Ui.setGameplayGamepadFocus(false)
+end)
+
 workspaceInteraction = {
 	stop = function() end,
 }
@@ -3982,6 +4084,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 			stageUi.card.Visible = false
 		end
 		stageUi.lastStage = nil
+		day43Ui.clearGameplayGamepadFocus()
 		rotatePieceButton.Visible = false
 		rerollPieceButton.Visible = false
 		if hudController then
@@ -4070,6 +4173,8 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		quickTween = QUICK_TWEEN,
 	}, oldBoard, currentState.board)
 	renderHand()
+	day43Ui.configureGameplayGamepadNavigation()
+	day43Ui.setGameplayGamepadFocus(false)
 	renderLeaderboard(leaderboard)
 	ArcadeUI.RenderProgression({
 		player = player,

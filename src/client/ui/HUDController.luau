@@ -1,6 +1,7 @@
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 
 local MenuController = require(script.Parent.MenuController)
 local UITheme = require(script.Parent.UITheme)
@@ -366,6 +367,9 @@ function HUDController.new(gui, options)
 	self:BuildRightNav()
 	self:BuildTopHud()
 
+	connect(self, UserInputService.GamepadConnected, function()
+		self:SetDefaultGamepadFocus(false)
+	end)
 	connect(self, gui:GetPropertyChangedSignal("AbsoluteSize"), function()
 		self:RefreshResponsiveLayout()
 	end)
@@ -788,6 +792,81 @@ function HUDController:RefreshResponsiveLayout()
 		self.topBar.Size =
 			UDim2.fromOffset(math.clamp(screenSize.X - 36, 320, 560), phone and 44 or 48)
 	end
+
+	self:RefreshGamepadNavigation(phone)
+end
+
+function HUDController:RefreshGamepadNavigation(phone)
+	local ordered = {}
+	for _, data in LEFT_BUTTONS do
+		local button = self.buttons[data.key]
+		if button then
+			table.insert(ordered, button)
+		end
+	end
+	for _, data in RIGHT_BUTTONS do
+		local button = self.buttons[data.key]
+		if button then
+			table.insert(ordered, button)
+		end
+	end
+
+	for index, button in ordered do
+		button.NextSelectionLeft = phone and ordered[index - 1] or self.buttons.play
+		button.NextSelectionRight = phone and ordered[index + 1] or self.buttons.play
+		button.NextSelectionUp = phone and nil or ordered[index - 1]
+		button.NextSelectionDown = phone and nil or ordered[index + 1]
+	end
+
+	if phone then
+		return
+	end
+
+	local leftTarget = self.buttons.modes
+		or self.buttons.rewards
+		or self.buttons.codes
+		or self.buttons.achievements
+	for index, data in RIGHT_BUTTONS do
+		local button = self.buttons[data.key]
+		if button then
+			button.NextSelectionLeft = leftTarget
+			button.NextSelectionUp = index > 1 and self.buttons[RIGHT_BUTTONS[index - 1].key] or nil
+			button.NextSelectionDown = index < #RIGHT_BUTTONS
+					and self.buttons[RIGHT_BUTTONS[index + 1].key]
+				or nil
+		end
+	end
+	for index, data in LEFT_BUTTONS do
+		local button = self.buttons[data.key]
+		if button then
+			button.NextSelectionRight = self.buttons.play
+			button.NextSelectionUp = index > 1 and self.buttons[LEFT_BUTTONS[index - 1].key] or nil
+			button.NextSelectionDown = index < #LEFT_BUTTONS
+					and self.buttons[LEFT_BUTTONS[index + 1].key]
+				or nil
+		end
+	end
+end
+
+function HUDController:SetDefaultGamepadFocus(force)
+	if self.gameplayFocus or not UserInputService.GamepadEnabled then
+		return
+	end
+	if self.menu and self.menu.panel and self.menu.panel.Visible then
+		return
+	end
+	if
+		not force
+		and GuiService.SelectedObject
+		and GuiService.SelectedObject:IsDescendantOf(self.gui)
+	then
+		return
+	end
+
+	local target = self.buttons.play or self.buttons.modes or self.buttons.rewards
+	if target and target.Visible and target.Selectable then
+		GuiService.SelectedObject = target
+	end
 end
 
 function HUDController:SetGameplayFocus(enabled)
@@ -807,6 +886,8 @@ function HUDController:SetGameplayFocus(enabled)
 	end
 	if self.gameplayFocus and self.menu then
 		self.menu:Close()
+	elseif not self.gameplayFocus then
+		self:SetDefaultGamepadFocus(false)
 	end
 end
 
@@ -937,6 +1018,7 @@ function HUDController:UpdateHubState(hubState)
 		self.zoneLabel.Text = hubState.message or `Floating Hub - {openArenas} arena(s) open`
 	end
 	self:UpdateProgression()
+	self:SetDefaultGamepadFocus(false)
 end
 
 function HUDController:UpdateGameState(state)
