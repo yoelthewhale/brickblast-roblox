@@ -1,24 +1,21 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local VisualTokens = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game"):WaitForChild("VisualTokens")
+)
+
 local ArcadeUI = {}
 
--- B2 "Polished Arcade" palette
-ArcadeUI.Color = {
-	shell = Color3.fromRGB(9, 13, 25),
-	shellTop = Color3.fromRGB(23, 44, 82),
-	shellBottom = Color3.fromRGB(5, 8, 18),
-	inner = Color3.fromRGB(17, 32, 60),
-	innerBottom = Color3.fromRGB(7, 13, 27),
-	edge = Color3.fromRGB(5, 9, 20),
-	rim = Color3.fromRGB(30, 187, 255),
-	rimBright = Color3.fromRGB(110, 244, 255),
-	text = Color3.fromRGB(255, 255, 255),
-	muted = Color3.fromRGB(190, 210, 233),
-	score = Color3.fromRGB(255, 210, 71),
-	best = Color3.fromRGB(110, 244, 255),
-	combo = Color3.fromRGB(255, 93, 200),
-	gold = Color3.fromRGB(255, 210, 71),
-	silver = Color3.fromRGB(213, 225, 241),
-	bronze = Color3.fromRGB(255, 139, 61),
-}
+-- The chassis palette. This was the "B2 Polished Arcade" set -- a near-black
+-- navy cabinet with a neon cyan rim -- which fought the Bubblegum Toybox board
+-- it was framing. It is now derived from the shared identity
+-- (docs/VISUAL_DIRECTION.md, #98) but keeps every key name, so all existing
+-- call sites are untouched.
+--
+-- Text roles are contrast-derived rather than hand-picked: see
+-- VisualTokens.readableOn. Do not replace one with a literal Color3 -- several
+-- of these sit on cream now, where a hand-picked candy color is unreadable.
+ArcadeUI.Color = VisualTokens.chrome()
 
 local function corner(parent, radius)
 	local item = Instance.new("UICorner")
@@ -58,8 +55,8 @@ local function decorateShell(frame, radius, rimColor, strokeThickness)
 
 	local highlight = Instance.new("Frame")
 	highlight.Name = "ArcadeTopHighlight"
-	highlight.BackgroundColor3 = Color3.fromRGB(140, 222, 255)
-	highlight.BackgroundTransparency = 0.7
+	highlight.BackgroundColor3 = VisualTokens.identity().gloss
+	highlight.BackgroundTransparency = 0.45
 	highlight.BorderSizePixel = 0
 	highlight.Position = UDim2.new(0, 18, 0, 8)
 	highlight.Size = UDim2.new(1, -36, 0, 5)
@@ -85,12 +82,7 @@ function ArcadeUI.InnerPanel(frame, options)
 	frame.BorderSizePixel = 0
 	frame.BackgroundColor3 = ArcadeUI.Color.inner
 	corner(frame, options.radius or 18)
-	stroke(
-		frame,
-		options.rimColor or Color3.fromRGB(28, 92, 161),
-		options.strokeThickness or 2,
-		0.2
-	)
+	stroke(frame, options.rimColor or ArcadeUI.Color.edge, options.strokeThickness or 2, 0.2)
 	gradient(frame, ArcadeUI.Color.inner, ArcadeUI.Color.innerBottom, 90)
 	return frame
 end
@@ -104,8 +96,10 @@ function ArcadeUI.Text(label, role)
 		or role == "gold" and ArcadeUI.Color.gold
 		or role == "muted" and ArcadeUI.Color.muted
 		or ArcadeUI.Color.text
-	label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	label.TextStrokeTransparency = role == "muted" and 0.75 or 0.45
+	-- Ink rather than black, and much lighter: a hard black outline was right
+	-- for neon-on-black and reads as grime on cream.
+	label.TextStrokeColor3 = VisualTokens.identity().ink
+	label.TextStrokeTransparency = role == "muted" and 0.92 or 0.82
 	return label
 end
 
@@ -137,10 +131,18 @@ end
 function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	parent.ClipsDescendants = true
 
+	-- Pieces are the most-looked-at object in the game, so their shading is
+	-- worth being fussy about. Everything below used pure black -- correct for
+	-- neon-on-black, but on candy colors black shading reads as dirt rather
+	-- than depth. Shadows and outlines now come from the identity's grape
+	-- shadow and from the piece's own hue, which is what makes a toy look like
+	-- molded plastic instead of a flat sticker.
+	local identity = VisualTokens.identity()
+
 	local shadow = Instance.new("Frame")
 	shadow.Name = `{name or "Block"}Shadow`
-	shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	shadow.BackgroundTransparency = 0.42
+	shadow.BackgroundColor3 = identity.shadow
+	shadow.BackgroundTransparency = 0.55
 	shadow.BorderSizePixel = 0
 	shadow.Position = position + UDim2.fromOffset(3, 5)
 	shadow.Size = size
@@ -156,20 +158,17 @@ function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	block.Size = size
 	block.Active = false
 	block.Parent = parent
-	corner(block, 9)
-	stroke(block, Color3.fromRGB(0, 0, 0), 2, 0.45)
-	stroke(block, color:Lerp(Color3.fromRGB(255, 255, 255), 0.38), 1, 0.1)
-	gradient(
-		block,
-		color:Lerp(Color3.fromRGB(255, 255, 255), 0.38),
-		color:Lerp(Color3.fromRGB(0, 0, 0), 0.16),
-		90
-	)
+	corner(block, VisualTokens.Radius.piece)
+	-- Outline in a deepened version of the piece's own hue rather than black,
+	-- so each candy keeps its identity at the edge.
+	stroke(block, color:Lerp(identity.shadow, 0.55), 2, 0.25)
+	stroke(block, color:Lerp(identity.gloss, 0.42), 1, 0.1)
+	gradient(block, color:Lerp(identity.gloss, 0.42), color:Lerp(identity.shadow, 0.22), 90)
 
 	local shine = Instance.new("Frame")
 	shine.Name = "Shine"
-	shine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	shine.BackgroundTransparency = 0.42
+	shine.BackgroundColor3 = identity.gloss
+	shine.BackgroundTransparency = 0.3
 	shine.BorderSizePixel = 0
 	shine.Position = UDim2.new(0, 6, 0, 5)
 	shine.Size = UDim2.new(0.5, -5, 0, 6)
@@ -184,7 +183,7 @@ function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	emboss.Size = UDim2.fromScale(0.56, 0.58)
 	emboss.Font = Enum.Font.GothamBlack
 	emboss.Text = "+"
-	emboss.TextColor3 = color:Lerp(Color3.fromRGB(0, 0, 0), 0.28)
+	emboss.TextColor3 = color:Lerp(identity.shadow, 0.3)
 	emboss.TextTransparency = 0.65
 	emboss.TextScaled = true
 	emboss.Active = false
@@ -466,7 +465,7 @@ function ArcadeUI.ScorePopup(context, amount)
 	label.Font = Enum.Font.GothamBlack
 	label.Text = `+{amount}`
 	label.TextColor3 = Color3.fromRGB(123, 237, 75)
-	label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+	label.TextStrokeColor3 = VisualTokens.identity().ink
 	label.TextStrokeTransparency = 0.2
 	label.TextSize = 24
 	label.ZIndex = 20
@@ -675,19 +674,24 @@ function ArcadeUI.AttachWorkspaceInteraction(context)
 end
 
 function ArcadeUI.BoardCell(button)
+	local tokens = VisualTokens.resolve(1, 0)
 	button.BorderSizePixel = 0
-	button.BackgroundColor3 = Color3.fromRGB(12, 29, 56)
+	button.BackgroundColor3 = tokens.boardCell
 	button.ClipsDescendants = true
-	corner(button, 9)
-	stroke(button, Color3.fromRGB(47, 72, 112), 2, 0.18)
-	gradient(button, Color3.fromRGB(18, 39, 73), Color3.fromRGB(7, 17, 37), 90)
+	corner(button, VisualTokens.Radius.cell)
+	stroke(button, tokens.boardCellEdge, 2, 0.35)
+	-- The client repaints BackgroundColor3 per stage but never touches this
+	-- gradient, so the old navy one was silently darkening every candy cell it
+	-- was laid over. A near-neutral gloss-to-transparent sheen keeps the
+	-- stage color reading true while still giving the cell some depth.
+	gradient(button, tokens.gloss, tokens.boardCell, 90)
 	return button
 end
 
 function ArcadeUI.PieceSlot(button)
 	ArcadeUI.InnerPanel(button, {
 		radius = 18,
-		rimColor = Color3.fromRGB(33, 103, 177),
+		rimColor = ArcadeUI.Color.rim,
 		strokeThickness = 2,
 	})
 	return button
@@ -702,8 +706,8 @@ function ArcadeUI.LeaderboardRow(parent, index)
 	row.Active = false
 	row.Parent = parent
 	corner(row, 12)
-	stroke(row, Color3.fromRGB(31, 90, 151), 1, 0.28)
-	gradient(row, Color3.fromRGB(13, 36, 70), Color3.fromRGB(5, 17, 40), 90)
+	stroke(row, ArcadeUI.Color.edge, 1, 0.28)
+	gradient(row, ArcadeUI.Color.inner, ArcadeUI.Color.innerBottom, 90)
 	return row
 end
 
