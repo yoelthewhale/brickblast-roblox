@@ -6,6 +6,12 @@ local VisualTokens = require(
 local BubblegumAssets = require(script.Parent.BubblegumAssets)
 
 local ArcadeUI = {}
+local CONFETTI_ASSET_KEYS = {
+	"ConfettiRect",
+	"ConfettiDot",
+	"ConfettiStar",
+	"ConfettiSquiggle",
+}
 
 -- The chassis palette. This was the "B2 Polished Arcade" set -- a near-black
 -- navy cabinet with a neon cyan rim -- which fought the Bubblegum Toybox board
@@ -631,6 +637,39 @@ function ArcadeUI.PerfectClearFlash(context)
 	task.delay(0.5, function()
 		flash:Destroy()
 	end)
+
+	for index, key in CONFETTI_ASSET_KEYS do
+		local confetti = ArcadeUI.DecorativeImage(context.boardFrame, key, {
+			name = `PerfectClearConfetti{index}`,
+			position = UDim2.new(0.18 + index * 0.14, 0, 0.08, 0),
+			size = UDim2.fromOffset(index % 2 == 0 and 18 or 14, index % 2 == 0 and 18 or 14),
+			anchorPoint = Vector2.new(0.5, 0.5),
+			rotation = -20 + index * 18,
+			imageColor = index == 1 and ArcadeUI.Color.gold
+				or index == 2 and ArcadeUI.Color.rimBright
+				or index == 3 and ArcadeUI.Color.combo
+				or ArcadeUI.Color.best,
+			zIndex = 31,
+		})
+		if confetti then
+			context.TweenService
+				:Create(
+					confetti,
+					TweenInfo.new(0.65, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+					{
+						Position = confetti.Position + UDim2.fromOffset(0, 34 + index * 4),
+						ImageTransparency = 1,
+						Rotation = confetti.Rotation + 38,
+					}
+				)
+				:Play()
+			task.delay(0.7, function()
+				if confetti.Parent then
+					confetti:Destroy()
+				end
+			end)
+		end
+	end
 end
 
 function ArcadeUI.ShakeWindow(context)

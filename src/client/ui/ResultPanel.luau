@@ -48,10 +48,25 @@ function ResultPanel.new(gui, queueEvent, options)
 	})
 	self.panel = panel
 
+	ArcadeUI.DecorativeImage(panel, "CandyFlourishCorner", {
+		name = "CandyFlourish",
+		position = UDim2.new(1, -58, 0, 8),
+		size = UDim2.fromOffset(42, 42),
+		transparency = 0.08,
+		zIndex = 36,
+	})
+	ArcadeUI.DecorativeImage(panel, "LollipopMark", {
+		name = "LollipopMark",
+		position = UDim2.new(0, 16, 0, 14),
+		size = UDim2.fromOffset(28, 28),
+		transparency = 0.02,
+		zIndex = 36,
+	})
+
 	local titleLabel = Instance.new("TextLabel")
 	titleLabel.BackgroundTransparency = 1
-	titleLabel.Position = UDim2.fromOffset(18, 14)
-	titleLabel.Size = UDim2.fromOffset(268, 30)
+	titleLabel.Position = UDim2.fromOffset(50, 14)
+	titleLabel.Size = UDim2.fromOffset(236, 30)
 	titleLabel.Text = "Run Complete"
 	titleLabel.TextSize = 22
 	titleLabel.TextXAlignment = Enum.TextXAlignment.Left
