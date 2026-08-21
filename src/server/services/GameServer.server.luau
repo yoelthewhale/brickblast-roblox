@@ -2160,6 +2160,7 @@ local function publicState(player)
 		storyMission = state.storyMission,
 		storyComplete = state.mode == "Story" and isStoryMissionComplete(state) or false,
 		stage = state.mode == "Solo" and StageProgression.publicState(state.stage) or nil,
+		difficulty = state.difficulty,
 		developer = {
 			enabled = DeveloperTools.isEnabled(),
 			authorized = DeveloperTools.isAuthorizedUserId(player.UserId),
@@ -2328,6 +2329,7 @@ local function giveNewHand(state)
 			comboStreak = state.comboStreak,
 			recentHands = state.recentHands,
 			assistance = state.assistance,
+			difficultyId = state.difficulty,
 			stage = state.stage and state.stage.currentStage or 1,
 		})
 		state.hand = hand
@@ -2459,7 +2461,7 @@ local function applySuddenDeathPressure(session)
 	end
 end
 
-local function createPlayerState(player, mode, storyChapter)
+local function createPlayerState(player, mode, storyChapter, difficultyId)
 	local randomizer = Random.new(os.clock() * 100000 + player.UserId)
 	local state = {
 		board = Grid.create(),
@@ -2478,7 +2480,11 @@ local function createPlayerState(player, mode, storyChapter)
 		comboStreak = 0,
 		highestCombo = 0,
 		stage = mode == "Solo" and StageProgression.newRun() or nil,
-		assistance = mode == "Solo" and HandGenerator.newAssistance() or nil,
+		-- Difficulty is sanitized here rather than trusted from the client: it
+		-- drives the rescue budget and the pressure curve, so an unvalidated
+		-- string would let a client hand itself an easier run.
+		difficulty = mode == "Solo" and HandGenerator.sanitizeDifficulty(difficultyId) or nil,
+		assistance = mode == "Solo" and HandGenerator.newAssistance(difficultyId) or nil,
 		lastHandGeneration = nil,
 		developerTestRun = false,
 		rewardsGranted = false,
@@ -2492,7 +2498,7 @@ local function createPlayerState(player, mode, storyChapter)
 	updateLeaderstats(player, 0, true)
 end
 
-local function startBattle(players, mode, storyChapter)
+local function startBattle(players, mode, storyChapter, difficultyId)
 	mode = mode or "Battle"
 	if not ExperienceConfig.isModeEnabled(mode) then
 		for _, player in players do
@@ -2561,7 +2567,7 @@ local function startBattle(players, mode, storyChapter)
 		playerModes[player] = mode
 		playerSessions[player] = session
 		table.insert(session.players, player)
-		createPlayerState(player, mode, storyChapter)
+		createPlayerState(player, mode, storyChapter, difficultyId)
 		local state = playerStates[player]
 		if state then
 			state.startedAt = session.startedAt
@@ -2752,7 +2758,7 @@ local function startCustomLab(player)
 	startBattle({ player }, "Custom")
 end
 
-local function startSoloRun(player)
+local function startSoloRun(player, difficultyId)
 	if
 		playerModes[player] == "Battle"
 		or playerModes[player] == "Story"
@@ -2763,7 +2769,7 @@ local function startSoloRun(player)
 		return
 	end
 
-	startBattle({ player }, "Solo")
+	startBattle({ player }, "Solo", nil, difficultyId)
 end
 
 local function playAgainBattle(player)
@@ -3161,13 +3167,13 @@ devCommandFunction.OnServerInvoke = function(player, command)
 	}
 end
 
-queueEvent.OnServerEvent:Connect(function(player, mode, requestedChapter)
+queueEvent.OnServerEvent:Connect(function(player, mode, requestedChapter, requestedDifficulty)
 	if not canAcceptQueueAction(player) then
 		return
 	end
 
 	if mode == "Solo" then
-		startSoloRun(player)
+		startSoloRun(player, requestedDifficulty)
 	elseif mode == "Battle" then
 		joinBattleQueue(player)
 	elseif mode == "LeaveQueue" then

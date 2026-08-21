@@ -288,6 +288,162 @@ tests.fixedCandidateLimit = function()
 	)
 end
 
+tests.difficultySanitizesUnknownInput = function()
+	for _, bad in { nil, "", "impossible", 42, {}, true } do
+		assertCondition(
+			HandGenerator.sanitizeDifficulty(bad) == Config.Difficulties.Default,
+			"Unknown difficulty should fall back to the default"
+		)
+	end
+
+	for _, id in Config.Difficulties.Order do
+		assertCondition(
+			HandGenerator.sanitizeDifficulty(id) == id,
+			`Known difficulty {id} should survive sanitizing`
+		)
+	end
+end
+
+tests.classicDifficultyIsUnchangedBehaviour = function()
+	-- The whole safety argument for this feature is that the default profile is
+	-- a no-op, so existing runs behave exactly as before. If this breaks, the
+	-- feature has silently rebalanced the game.
+	local profile = HandGenerator.difficultyProfile("classic")
+	assertCondition(profile.assistanceBonus == 0, "Classic must not change the rescue budget")
+	assertCondition(profile.pressureScale == 1, "Classic must not scale pressure")
+	assertCondition(profile.pressureStartOffset == 0, "Classic must not shift pressure start")
+
+	local assistance = HandGenerator.newAssistance("classic")
+	assertCondition(
+		assistance.remaining == Config.HandGeneration.AssistanceStart,
+		"Classic should start with the configured assistance"
+	)
+	assertCondition(
+		assistance.cap == Config.HandGeneration.AssistanceMax,
+		"Classic should cap at the configured assistance"
+	)
+
+	for stage = 1, 20 do
+		local withId = HandGenerator.difficultyForStage(stage, "classic")
+		local withoutId = HandGenerator.difficultyForStage(stage)
+		assertCondition(
+			math.abs(withId.pressure - withoutId.pressure) < 1e-9,
+			`Classic pressure diverged from the default at stage {stage}`
+		)
+	end
+end
+
+tests.difficultyOrdersAssistanceBudgets = function()
+	local chill = HandGenerator.newAssistance("chill")
+	local classic = HandGenerator.newAssistance("classic")
+	local spicy = HandGenerator.newAssistance("spicy")
+
+	assertCondition(
+		chill.remaining > classic.remaining and classic.remaining > spicy.remaining,
+		"Rescue budgets should decrease from chill to spicy"
+	)
+	assertCondition(chill.cap > spicy.cap, "Rescue caps should decrease from chill to spicy")
+end
+
+tests.everyDifficultyKeepsAtLeastOneRescue = function()
+	for _, id in Config.Difficulties.Order do
+		local assistance = HandGenerator.newAssistance(id)
+		assertCondition(
+			assistance.remaining >= 1 and assistance.cap >= 1,
+			`Difficulty {id} left the player with no rescues at all`
+		)
+		assertCondition(
+			assistance.remaining <= assistance.cap,
+			`Difficulty {id} starts above its own cap`
+		)
+	end
+end
+
+tests.difficultyOrdersPressure = function()
+	-- Compared at a mid-run stage, where all three profiles are active.
+	local chill = HandGenerator.difficultyForStage(10, "chill")
+	local classic = HandGenerator.difficultyForStage(10, "classic")
+	local spicy = HandGenerator.difficultyForStage(10, "spicy")
+
+	assertCondition(
+		chill.pressure < classic.pressure and classic.pressure < spicy.pressure,
+		"Pressure at stage 10 should increase from chill to spicy"
+	)
+end
+
+tests.chillDelaysPressureOnset = function()
+	-- Classic starts biting at stage 3; chill offsets that by two stages.
+	assertCondition(
+		HandGenerator.difficultyForStage(3, "chill").pressure == 0,
+		"Chill should still be pressure-free at stage 3"
+	)
+	assertCondition(
+		HandGenerator.difficultyForStage(3, "classic").pressure > 0,
+		"Classic should already apply pressure at stage 3"
+	)
+end
+
+tests.pressureStaysWithinBoundsForEveryDifficulty = function()
+	for _, id in Config.Difficulties.Order do
+		for stage = 1, 60 do
+			local difficulty = HandGenerator.difficultyForStage(stage, id)
+			assertCondition(
+				difficulty.pressure >= 0
+					and difficulty.pressure <= Config.HandGeneration.LateMaxPressure,
+				`Difficulty {id} escaped the pressure bounds at stage {stage}`
+			)
+			assertCondition(
+				difficulty.assistanceMultiplier >= 0,
+				`Difficulty {id} produced a negative assistance multiplier at stage {stage}`
+			)
+		end
+	end
+end
+
+tests.difficultyIsMonotonicInStageForEveryProfile = function()
+	for _, id in Config.Difficulties.Order do
+		local previous = -1
+		for stage = 1, 40 do
+			local pressure = HandGenerator.difficultyForStage(stage, id).pressure
+			assertCondition(
+				pressure >= previous - 1e-9,
+				`Difficulty {id} pressure dropped as stage rose to {stage}`
+			)
+			previous = pressure
+		end
+	end
+end
+
+tests.assistanceRemembersItsDifficultyAcrossSanitize = function()
+	-- A run carries its difficulty on the assistance table. If a sanitize call
+	-- that is not told the difficulty resets the cap to the default, a chill
+	-- run silently loses rescues mid-game.
+	local chill = HandGenerator.newAssistance("chill")
+	local roundTripped = HandGenerator.sanitizeAssistance(chill)
+
+	assertCondition(roundTripped.difficulty == "chill", "Sanitize dropped the run's difficulty")
+	assertCondition(
+		roundTripped.cap == chill.cap,
+		"Sanitize reset a chill run's rescue cap to the default"
+	)
+	assertCondition(
+		roundTripped.remaining == chill.remaining,
+		"Sanitize changed a chill run's remaining rescues"
+	)
+end
+
+tests.generateHonoursTheRunDifficulty = function()
+	local board = Grid.create()
+	local hand = HandGenerator.generate(board, {
+		randomizer = Random.new(99),
+		count = Config.InventorySize,
+		assistance = HandGenerator.newAssistance("chill"),
+		stage = 6,
+	})
+
+	assertCondition(#hand == Config.InventorySize, "Generation should still return a full hand")
+end
+
 function HandGeneratorTests.run()
 	local results = {}
 
