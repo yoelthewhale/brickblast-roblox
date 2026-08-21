@@ -147,6 +147,11 @@ local day43Ui = {
 	codesEvent = remotes:WaitForChild("Codes"),
 	achievementsEvent = remotes:WaitForChild("Achievements"),
 	previousHandOccupied = {},
+	initialServerSync = {
+		responded = false,
+		generation = 0,
+		warningKey = "InitialServerSyncTimeout",
+	},
 	-- Cached rather than required per call: the input handlers that use it
 	-- run on every pointer move.
 	uiControlRules = require(GameShared.UIControlRules),
@@ -859,6 +864,48 @@ local function showBanner(message, color)
 				banner.Visible = false
 			end
 		end)
+	end)
+end
+
+function day43Ui.markInitialServerResponse()
+	if day43Ui.initialServerSync.responded then
+		return
+	end
+
+	day43Ui.initialServerSync.responded = true
+	day43Ui.initialServerSync.generation += 1
+	if notificationController then
+		notificationController:Dismiss(day43Ui.initialServerSync.warningKey)
+	end
+end
+
+function day43Ui.showInitialSyncTimeoutWarning()
+	local message =
+		"Server connection is taking longer than expected. Rejoin if your data does not appear."
+	if notificationController then
+		notificationController:Show(message, "error", {
+			duration = 6,
+			key = day43Ui.initialServerSync.warningKey,
+		})
+		return
+	end
+
+	showBanner(message, Color3.fromRGB(255, 86, 107))
+end
+
+function day43Ui.startInitialSyncTimeout(seconds)
+	day43Ui.initialServerSync.generation += 1
+	local generation = day43Ui.initialServerSync.generation
+	task.delay(seconds, function()
+		if
+			day43Ui.initialServerSync.generation ~= generation
+			or day43Ui.initialServerSync.responded
+		then
+			return
+		end
+
+		dismissLoading()
+		day43Ui.showInitialSyncTimeoutWarning()
 	end)
 end
 
@@ -4068,6 +4115,7 @@ renderDiagnostics = function()
 end
 
 stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
+	day43Ui.markInitialServerResponse()
 	dismissLoading()
 	local oldBoard = previousBoard
 	currentState = nextState
@@ -4253,6 +4301,7 @@ task.spawn(function()
 end)
 
 hubEvent.OnClientEvent:Connect(function(hubState)
+	day43Ui.markInitialServerResponse()
 	dismissLoading()
 	if not hubState then
 		return
@@ -4416,6 +4465,8 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		return
 	end
 
+	day43Ui.markInitialServerResponse()
+
 	if effect.kind == "InvalidPlace" then
 		playSound("Blocked")
 		ArcadeUI.ShakeWindow({
@@ -4549,6 +4600,7 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 end)
 
 settingsEvent.OnClientEvent:Connect(function(settings)
+	day43Ui.markInitialServerResponse()
 	dismissLoading()
 	if typeof(settings) ~= "table" then
 		return
@@ -4620,4 +4672,4 @@ applyTheme()
 applyUiScale()
 applySoundSettings()
 settingsEvent:FireServer("Request")
-task.delay(6, dismissLoading)
+day43Ui.startInitialSyncTimeout(6)

@@ -32,6 +32,7 @@ function NotificationController.new(gui, options)
 	end
 	self.connections = {}
 	self.items = {}
+	self.keyedItems = {}
 	self.lastShownAt = {}
 
 	local container = Instance.new("Frame")
@@ -77,6 +78,9 @@ function NotificationController:Show(message, kind, options)
 	end
 
 	kind = kind or "info"
+	if options.key then
+		self:Dismiss(options.key)
+	end
 	local key = `{kind}:{message}`
 	local now = os.clock()
 	if self.lastShownAt[key] and now - self.lastShownAt[key] < 0.75 then
@@ -130,6 +134,9 @@ function NotificationController:Show(message, kind, options)
 	label.Parent = card
 
 	table.insert(self.items, card)
+	if options.key then
+		self.keyedItems[options.key] = card
+	end
 
 	if not self.isReducedMotion() then
 		card.Position = UDim2.fromOffset(0, -10)
@@ -154,6 +161,9 @@ function NotificationController:Show(message, kind, options)
 					break
 				end
 			end
+			if options.key and self.keyedItems[options.key] == card then
+				self.keyedItems[options.key] = nil
+			end
 			card:Destroy()
 		end
 
@@ -170,6 +180,22 @@ function NotificationController:Show(message, kind, options)
 		tween:Play()
 		tween.Completed:Once(removeCard)
 	end)
+end
+
+function NotificationController:Dismiss(key)
+	local card = self.keyedItems[key]
+	if not card then
+		return
+	end
+
+	for index, item in self.items do
+		if item == card then
+			table.remove(self.items, index)
+			break
+		end
+	end
+	self.keyedItems[key] = nil
+	card:Destroy()
 end
 
 function NotificationController:Destroy()
