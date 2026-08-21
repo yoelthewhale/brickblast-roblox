@@ -14,8 +14,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
-local ArcadeUI = require(script.Parent.ArcadeUI)
-
 local GameShared = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game")
 local ExperienceConfig = require(GameShared:WaitForChild("ExperienceConfig"))
 local HandGenerator = require(GameShared:WaitForChild("HandGenerator"))
