@@ -8,6 +8,12 @@ Tracked on GitHub by the Bubblegum Toybox visual-overhaul umbrella issue.
 This file holds the *direction*; the umbrella issue holds the *phases and
 status*. Keep them from drifting: describe intent here, progress there.
 
+The concrete implementation plan against the approved 2026-08-21 reference
+mockup lives in [`VISUAL_TARGET_SPEC.md`](VISUAL_TARGET_SPEC.md): element-by-
+element classification, the asset inventory, token mapping, and phasing. That
+reference shows **one flavor at low energy** (Bubblegum, stage 1) -- it is a
+composition target, not an instruction to make the game permanently pink.
+
 ---
 
 ## The direction in one paragraph
