@@ -1210,7 +1210,7 @@ hudController = HUDController.new(gui, {
 						"Battle, Story, and Custom Lab are disabled in this build.",
 						Color3.fromRGB(30, 187, 255),
 						function()
-							day43Ui.fireQueueRequest("Solo")
+							day43Ui.openModeSelect()
 						end
 					)
 				end
@@ -1624,7 +1624,7 @@ homePanelController = HomePanel.new(gui, {
 				ExperienceConfig.isModeEnabled("Solo")
 				and not ExperienceConfig.isModeEnabled("Battle")
 			then
-				day43Ui.fireQueueRequest("Solo")
+				day43Ui.openModeSelect()
 			else
 				day43Ui.fireQueueRequest(queued and "LeaveQueue" or "Battle")
 			end
@@ -4502,6 +4502,12 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 	end
 
 	day43Ui.markInitialServerResponse()
+
+	if effect.kind == "OpenModeSelect" then
+		day43Ui.closeMajorPanels()
+		day43Ui.openModeSelect()
+		return
+	end
 
 	if effect.kind == "InvalidPlace" then
 		playSound("Blocked")

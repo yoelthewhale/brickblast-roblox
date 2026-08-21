@@ -3371,7 +3371,22 @@ settingsEvent.OnServerEvent:Connect(function(player, action, nextSettings)
 end)
 
 if hubParts.soloPrompt then
-	hubParts.soloPrompt.Triggered:Connect(startSoloRun)
+	-- The in-world Play pad asks the client to open mode select rather than
+	-- starting a run outright. Wiring the prompt straight to startSoloRun meant
+	-- the pad bypassed difficulty selection entirely, which is the most natural
+	-- way into a run and so the one players actually hit.
+	hubParts.soloPrompt.Triggered:Connect(function(player)
+		if not canAcceptQueueAction(player) then
+			return
+		end
+
+		if playerStates[player] or playerSessions[player] then
+			sendHubState(player, "Finish your current run first")
+			return
+		end
+
+		effectsEvent:FireClient(player, { kind = "OpenModeSelect" })
+	end)
 end
 
 if hubParts.battlePrompt and ExperienceConfig.isModeEnabled("Battle") then
