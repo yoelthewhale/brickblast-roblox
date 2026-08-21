@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local MenuController = require(script.Parent.MenuController)
+local BubblegumAssets = require(script.Parent.BubblegumAssets)
 local UITheme = require(script.Parent.UITheme)
 local ExperienceConfig = require(
 	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game"):WaitForChild("ExperienceConfig")
@@ -29,6 +30,7 @@ local LEFT_BUTTONS = {
 		key = "achievements",
 		label = "Achievements",
 		icon = "Trophy",
+		assetKey = "Trophy",
 		accent = Color3.fromRGB(255, 210, 71),
 	},
 }
@@ -74,21 +76,25 @@ local RESOURCE_ITEMS = {
 	{
 		key = "level",
 		label = "LV",
+		assetKey = "Stage",
 		accent = Color3.fromRGB(52, 215, 255),
 	},
 	{
 		key = "xp",
 		label = "XP",
+		assetKey = "XP",
 		accent = Color3.fromRGB(112, 237, 71),
 	},
 	{
 		key = "coins",
 		label = "Coins",
+		assetKey = "Coin",
 		accent = Color3.fromRGB(255, 210, 71),
 	},
 	{
 		key = "bestScore",
 		label = "Best",
+		assetKey = "BestScore",
 		accent = Color3.fromRGB(255, 255, 255),
 	},
 }
@@ -180,6 +186,23 @@ local function makeLabel(parent, name, text, font, size, color)
 end
 
 local function makeShadow(parent, radius)
+	local shadowImage = BubblegumAssets.imageFor("ShadowSoft")
+	if shadowImage then
+		local shadow = Instance.new("ImageLabel")
+		shadow.Name = "Shadow"
+		shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+		shadow.Position = UDim2.new(0.5, 0, 0.5, 8)
+		shadow.Size = UDim2.new(1, 26, 1, 26)
+		shadow.BackgroundTransparency = 1
+		shadow.ImageTransparency = 0.18
+		shadow.ZIndex = parent.ZIndex - 1
+		shadow.Parent = parent
+		BubblegumAssets.applyTo(shadow, "ShadowSoft", {
+			imageColor = Color3.fromRGB(44, 74, 141),
+		})
+		return shadow
+	end
+
 	local shadow = Instance.new("Frame")
 	shadow.Name = "Shadow"
 	shadow.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -205,6 +228,20 @@ local function makeIcon(parent, iconType, chipColor, glyphColor)
 	iconFrame.Parent = parent
 	addCorner(iconFrame, 10)
 	addStroke(iconFrame, glyphColor, 2, 0.55)
+
+	local assetKey = iconType == "Trophy" and "Trophy" or nil
+	if assetKey then
+		local image = Instance.new("ImageLabel")
+		image.Name = "ProductionIcon"
+		image.Position = UDim2.fromOffset(5, 5)
+		image.Size = UDim2.new(1, -10, 1, -10)
+		image.ZIndex = iconFrame.ZIndex + 1
+		image.Parent = iconFrame
+		if BubblegumAssets.applyTo(image, assetKey) then
+			return iconFrame
+		end
+		image:Destroy()
+	end
 
 	local function block(name, position, size, colorOverride)
 		local frame = Instance.new("Frame")
@@ -292,7 +329,7 @@ local function makeNavButton(parent, data, compact)
 
 	local iconFrame = makeIcon(
 		button,
-		data.icon,
+		data.assetKey or data.icon,
 		data.primary and Color3.fromRGB(255, 255, 255) or data.accent,
 		data.primary and Color3.fromRGB(38, 132, 62) or Color3.fromRGB(255, 255, 255)
 	)
@@ -469,6 +506,20 @@ function HUDController:BuildResourceBar()
 		iconDot.ZIndex = chip.ZIndex + 1
 		iconDot.Parent = chip
 		addCorner(iconDot, 3)
+
+		if item.assetKey then
+			local iconImage = Instance.new("ImageLabel")
+			iconImage.Name = "ProductionIcon"
+			iconImage.LayoutOrder = 1
+			iconImage.Size = UDim2.fromOffset(22, 22)
+			iconImage.ZIndex = chip.ZIndex + 1
+			iconImage.Parent = chip
+			if BubblegumAssets.applyTo(iconImage, item.assetKey) then
+				iconDot.Visible = false
+			else
+				iconImage:Destroy()
+			end
+		end
 
 		local label = makeLabel(
 			chip,

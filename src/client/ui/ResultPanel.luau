@@ -4,6 +4,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local ArcadeUI = require(script.Parent.ArcadeUI)
+local BubblegumAssets = require(script.Parent.BubblegumAssets)
 local UITheme = require(script.Parent.UITheme)
 local UIControlRules = require(
 	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game"):WaitForChild("UIControlRules")
@@ -100,10 +101,21 @@ function ResultPanel.new(gui, queueEvent, options)
 		strokeTransparency = 0.18,
 	})
 
+	local rewardCrate = Instance.new("ImageLabel")
+	rewardCrate.Name = "RewardCrate"
+	rewardCrate.AnchorPoint = Vector2.new(1, 0.5)
+	rewardCrate.Position = UDim2.new(1, -10, 0.5, 0)
+	rewardCrate.Size = UDim2.fromOffset(34, 34)
+	rewardCrate.ZIndex = 37
+	rewardCrate.Parent = rewardCard
+	BubblegumAssets.applyTo(rewardCrate, "RewardCrateClosed")
+	self.rewardCrate = rewardCrate
+
 	local rewardLabel = Instance.new("TextLabel")
 	rewardLabel.BackgroundTransparency = 1
 	rewardLabel.Position = UDim2.fromOffset(14, 8)
-	rewardLabel.Size = UDim2.new(1, -28, 1, -16)
+	rewardLabel.Size = rewardCrate.Visible and UDim2.new(1, -58, 1, -16)
+		or UDim2.new(1, -28, 1, -16)
 	rewardLabel.Text = "+0 coins   +0 XP"
 	rewardLabel.TextSize = 18
 	rewardLabel.TextWrapped = true
@@ -212,6 +224,16 @@ function ResultPanel:Show(result, message, won)
 		or message
 		or `Score {score} | {linesCleared} lines | Best combo x{math.max(1, highestCombo)}`
 	self.rewardLabel.Text = rewardText
+	if self.rewardCrate then
+		local hasReward = coins > 0
+			or xp > 0
+			or storyStars > 0
+			or dailyBonusCoins > 0
+			or dailyBonusXp > 0
+		local crateKey = hasReward and "RewardCrateOpen" or "RewardCrateClosed"
+		local visible = BubblegumAssets.applyTo(self.rewardCrate, crateKey)
+		self.rewardLabel.Size = visible and UDim2.new(1, -58, 1, -16) or UDim2.new(1, -28, 1, -16)
+	end
 	self.progressLabel.Text = bestDelta > 0 and `New best score: {bestScore} (+{bestDelta})`
 		or duration and `Best score: {bestScore} | Combo x{math.max(1, highestCombo)} | {duration}s`
 		or `Best score: {bestScore} | Combo x{math.max(1, highestCombo)}`

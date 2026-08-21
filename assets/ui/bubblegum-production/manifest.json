@@ -1,0 +1,123 @@
+{
+  "package": "BrickBlast Bubblegum Toybox UI Assets",
+  "notes": [
+    "All floating UI artwork is PNG RGBA.",
+    "Particles are neutral white and intended for runtime ImageColor3/ParticleEmitter tinting.",
+    "shadow_soft_9slice.png is grayscale/alpha-only with symmetric padding; recommended ScaleType=Slice.",
+    "Do not recolor semantic medal metals at runtime unless design explicitly changes."
+  ],
+  "assets": [
+    {
+      "file": "icons/icon_coin.png",
+      "usage": "Coins/currency icon",
+      "runtime_tint": false,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "icons/icon_xp.png",
+      "usage": "XP icon",
+      "runtime_tint": false,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "icons/icon_best.png",
+      "usage": "Best-score badge",
+      "runtime_tint": false,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "icons/icon_trophy.png",
+      "usage": "Trophy/rank stat",
+      "runtime_tint": false,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "icons/icon_stage.png",
+      "usage": "Stage/progression icon",
+      "runtime_tint": false,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "medals/medal_first.png",
+      "usage": "1st place medal",
+      "runtime_tint": false,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "medals/medal_second.png",
+      "usage": "2nd place medal",
+      "runtime_tint": false,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "medals/medal_third.png",
+      "usage": "3rd place medal",
+      "runtime_tint": false,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "rewards/crate_reward_closed.png",
+      "usage": "Closed reward crate",
+      "runtime_tint": false,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "rewards/crate_reward_open.png",
+      "usage": "Opened reward crate",
+      "runtime_tint": false,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "particles/sparkle_particle.png",
+      "usage": "Sparkle/burst particle",
+      "runtime_tint": true,
+      "scale_type": "Fit",
+      "note": "White source; tint at runtime."
+    },
+    {
+      "file": "particles/confetti_rect.png",
+      "usage": "Confetti particle",
+      "runtime_tint": true,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "particles/confetti_dot.png",
+      "usage": "Confetti particle",
+      "runtime_tint": true,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "particles/confetti_star.png",
+      "usage": "Confetti particle",
+      "runtime_tint": true,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "particles/confetti_squiggle.png",
+      "usage": "Confetti particle",
+      "runtime_tint": true,
+      "scale_type": "Fit"
+    },
+    {
+      "file": "ui/shadow_soft_9slice.png",
+      "usage": "Reusable soft card/panel shadow",
+      "runtime_tint": true,
+      "scale_type": "Slice",
+      "slice_center": "Rect(64,64,192,192)",
+      "note": "256x256 source; preserve outer 64px border. Start with SliceScale=1 and tune per UI scale."
+    },
+    {
+      "file": "decor/candy_flourish_corner.png",
+      "usage": "Decorative corner flourish",
+      "runtime_tint": false,
+      "scale_type": "Fit",
+      "note": "Mirror at runtime for opposite corner."
+    },
+    {
+      "file": "decor/lollipop_mark.png",
+      "usage": "Decorative lollipop mark",
+      "runtime_tint": false,
+      "scale_type": "Fit"
+    }
+  ]
+}

@@ -2282,17 +2282,27 @@ ArcadeUI.StatCard(comboBadgeLabel)
 ArcadeUI.Text(comboBadgeLabel, "combo")
 
 for sparkleIndex = 1, 4 do
-	local sparkle = Instance.new("Frame")
-	sparkle.Name = `ComboSparkle{sparkleIndex}`
-	sparkle.BackgroundColor3 = sparkleIndex % 2 == 0 and ArcadeUI.Color.gold
-		or ArcadeUI.Color.rimBright
-	sparkle.BorderSizePixel = 0
-	sparkle.Position = UDim2.fromOffset(26 + sparkleIndex * 36, sparkleIndex % 2 == 0 and 24 or 76)
-	sparkle.Size = UDim2.fromOffset(7, 7)
-	sparkle.BackgroundTransparency = 1
-	sparkle.Active = false
-	sparkle.Parent = comboBadgeLabel
-	UITheme.corner(sparkle, 7)
+	local sparkle = ArcadeUI.DecorativeImage(comboBadgeLabel, "SparkleParticle", {
+		name = `ComboSparkle{sparkleIndex}`,
+		position = UDim2.fromOffset(24 + sparkleIndex * 35, sparkleIndex % 2 == 0 and 20 or 72),
+		size = UDim2.fromOffset(14, 14),
+		transparency = 1,
+		imageColor = sparkleIndex % 2 == 0 and ArcadeUI.Color.gold or ArcadeUI.Color.rimBright,
+	})
+	if not sparkle then
+		sparkle = Instance.new("Frame")
+		sparkle.Name = `ComboSparkle{sparkleIndex}`
+		sparkle.BackgroundColor3 = sparkleIndex % 2 == 0 and ArcadeUI.Color.gold
+			or ArcadeUI.Color.rimBright
+		sparkle.BorderSizePixel = 0
+		sparkle.Position =
+			UDim2.fromOffset(26 + sparkleIndex * 36, sparkleIndex % 2 == 0 and 24 or 76)
+		sparkle.Size = UDim2.fromOffset(7, 7)
+		sparkle.BackgroundTransparency = 1
+		sparkle.Active = false
+		sparkle.Parent = comboBadgeLabel
+		UITheme.corner(sparkle, 7)
+	end
 end
 
 coinStatLabel = Instance.new("TextLabel")
@@ -3990,7 +4000,9 @@ local function renderLeaderboard(leaderboard)
 		end
 
 		local rank = row:FindFirstChild("Rank")
+		local hasMedal = ArcadeUI.SetLeaderboardMedal(row, index)
 		if rank and rank:IsA("TextLabel") then
+			rank.Visible = not hasMedal
 			rank.Text = index <= 3 and tostring(index) or tostring(index)
 			rank.TextColor3 = index == 1 and ArcadeUI.Color.gold
 				or index == 2 and ArcadeUI.Color.silver

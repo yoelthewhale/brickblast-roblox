@@ -14,6 +14,20 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
 
+## Session Update - 2026-08-21 Bubblegum Production Asset Integration Prep
+
+- Found `brickblast_bubblegum_assets.zip` in `C:\Users\Bear4\Downloads` and extracted it into `assets/ui/bubblegum-production/` without an extra nested wrapper folder.
+- Verified the production package contains `README.md`, `manifest.json`, the expected `icons/`, `medals/`, `rewards/`, `particles/`, `ui/`, and `decor/` folders, and all 18 manifest PNGs.
+- Added `src/client/ui/BubblegumAssets.luau` as the single registry for future Roblox `rbxassetid://...` values plus per-asset metadata, ScaleType handling, 9-slice shadow settings, runtime-tint flags, and rank-to-medal mapping.
+- Preserved `src/client/ui/UIAssets.luau` compatibility by routing existing legacy image lookups through the new Bubblegum registry.
+- Prepared the HUD resource bar, Trophy nav icon, reusable panel shadows, combo sparkle effect, Server Top rank medals, and result reward crate to use production assets automatically once real Roblox IDs are pasted.
+- Added `ASSET_UPLOAD_GUIDE.md` with every local PNG, registry key, intended use, tint requirement, ScaleType, and `ShadowSoft` SliceCenter.
+- No fake Roblox asset IDs were introduced. Runtime UI continues to fall back to native Frames/Text until uploads are completed.
+
+### Remaining Manual Step
+
+Upload the 18 PNGs in `assets/ui/bubblegum-production/` to Roblox and paste the returned IDs into `BubblegumAssets.Images`.
+
 ## Session Update - 2026-08-20 Bubblegum Toybox, Phases 1, 2 and 5
 
 Not a numbered Day. First implementation session of the visual overhaul
