@@ -174,6 +174,108 @@ local function energize(color, amount)
 	return Color3.fromHSV(hue, nextSaturation, nextValue)
 end
 
+-- Proper sRGB relative luminance (WCAG 2.x), gamma-linearized. The naive
+-- weighted-average version is wrong by enough to matter when deciding whether
+-- candy text clears 4.5:1 on cream.
+local function relativeLuminance(color)
+	local function channel(value)
+		if value <= 0.03928 then
+			return value / 12.92
+		end
+		return ((value + 0.055) / 1.055) ^ 2.4
+	end
+
+	return 0.2126 * channel(color.R) + 0.7152 * channel(color.G) + 0.0722 * channel(color.B)
+end
+
+function VisualTokens.contrastRatio(a, b)
+	local first = relativeLuminance(a)
+	local second = relativeLuminance(b)
+	local lighter = math.max(first, second)
+	local darker = math.min(first, second)
+	return (lighter + 0.05) / (darker + 0.05)
+end
+
+-- Darkens a color, preserving hue and saturation, until it clears `target`
+-- contrast against `background`.
+--
+-- This exists because the chrome palette was tuned for a near-black arcade
+-- cabinet and now sits on cream. Retuning eight text roles by eye is how a
+-- redesign ships an accessibility regression; deriving them keeps candy hues
+-- readable automatically, including after someone retunes the flavor anchors.
+function VisualTokens.readableOn(color, background, target)
+	local goal = clampNumber(target, 1, 21)
+	if VisualTokens.contrastRatio(color, background) >= goal then
+		return color
+	end
+
+	local hue, saturation, value = color:ToHSV()
+	local candidate = color
+
+	-- Walk the value down in fixed steps rather than binary-searching: the
+	-- search space is tiny and a deterministic walk keeps results stable
+	-- across runs, which matters because these land in tests.
+	for step = 1, 100 do
+		local nextValue = math.max(0, value * (1 - step / 100))
+		candidate = Color3.fromHSV(hue, saturation, nextValue)
+		if VisualTokens.contrastRatio(candidate, background) >= goal then
+			return candidate
+		end
+	end
+
+	return candidate
+end
+
+-- The chassis palette: shaped key-for-key like the old ArcadeUI.Color so all
+-- 59 call sites keep working, but derived from the Bubblegum identity instead
+-- of the "B2 Polished Arcade" near-black cabinet.
+--
+-- Chrome is deliberately STABLE -- it does not take stage or energy. The
+-- chassis is the identity; progression-driven variation belongs on the board
+-- and its accents, where StageVisuals.presetForRun already puts it. Making
+-- chrome dynamic too would smear the effect across the whole screen and make
+-- the energy axis harder to read, not easier.
+local TEXT_CONTRAST_TARGET = 4.5
+
+function VisualTokens.chrome()
+	local signature = FLAVORS[1]
+	local surface = IDENTITY.cream
+	local sunken = IDENTITY.creamShade
+	-- Text roles must clear the target on the darker of the two grounds they
+	-- can land on, so a label is readable on a sunken card as well as a panel.
+	local ground = if relativeLuminance(sunken) < relativeLuminance(surface)
+		then sunken
+		else surface
+
+	local function readable(color)
+		return VisualTokens.readableOn(color, ground, TEXT_CONTRAST_TARGET)
+	end
+
+	return {
+		shell = surface,
+		shellTop = mix(surface, IDENTITY.gloss, 0.5),
+		shellBottom = sunken,
+		inner = mix(surface, sunken, 0.55),
+		innerBottom = mix(sunken, IDENTITY.shadow, 0.12),
+		-- Soft grape rather than black: toy plastic has no true black, and a
+		-- black edge on cream reads as a sticker cut-out.
+		edge = mix(sunken, IDENTITY.shadow, 0.45),
+
+		-- Rims are strokes, not text, so they stay bright and candy.
+		rim = signature.primary,
+		rimBright = mix(signature.primary, IDENTITY.gloss, 0.35),
+
+		text = IDENTITY.ink,
+		muted = readable(IDENTITY.inkSoft),
+		score = readable(Color3.fromRGB(255, 176, 32)),
+		best = readable(Color3.fromRGB(38, 200, 168)),
+		combo = readable(signature.hot),
+		gold = readable(Color3.fromRGB(255, 196, 54)),
+		silver = readable(Color3.fromRGB(176, 186, 204)),
+		bronze = readable(Color3.fromRGB(226, 138, 74)),
+	}
+end
+
 function VisualTokens.identity()
 	return table.clone(IDENTITY)
 end

@@ -256,6 +256,122 @@ tests.scalesAreOrdered = function()
 	)
 end
 
+-- --- Chrome (the chassis palette ArcadeUI consumes) ----------------------
+
+tests.contrastRatioMatchesKnownValues = function()
+	local white = Color3.fromRGB(255, 255, 255)
+	local black = Color3.fromRGB(0, 0, 0)
+	assertNear(
+		VisualTokens.contrastRatio(white, black),
+		21,
+		0.05,
+		"Black on white should be the 21:1 maximum"
+	)
+	assertNear(
+		VisualTokens.contrastRatio(white, white),
+		1,
+		0.001,
+		"A color against itself should be 1:1"
+	)
+end
+
+tests.readableOnDarkensUntilItClearsTheTarget = function()
+	local cream = VisualTokens.identity().cream
+	-- Pale candy yellow on cream is roughly 1.3:1 -- the exact case that made
+	-- the old `score` role unreadable once the chassis went light.
+	local pale = Color3.fromRGB(255, 210, 71)
+	assertCondition(
+		VisualTokens.contrastRatio(pale, cream) < 4.5,
+		"Precondition: pale yellow should start unreadable on cream"
+	)
+
+	local fixed = VisualTokens.readableOn(pale, cream, 4.5)
+	assertCondition(
+		VisualTokens.contrastRatio(fixed, cream) >= 4.5,
+		"readableOn should darken until the target is met"
+	)
+
+	local hue = select(1, pale:ToHSV())
+	local fixedHue = select(1, fixed:ToHSV())
+	assertNear(fixedHue, hue, 0.02, "readableOn must preserve hue, not wash the color out")
+end
+
+tests.readableOnLeavesAlreadyReadableColorsAlone = function()
+	local cream = VisualTokens.identity().cream
+	local ink = VisualTokens.identity().ink
+	assertCondition(
+		VisualTokens.readableOn(ink, cream, 4.5) == ink,
+		"A color that already clears the target should be returned untouched"
+	)
+end
+
+tests.everyChromeTextRoleIsReadableOnBothGrounds = function()
+	local chrome = VisualTokens.chrome()
+	local identity = VisualTokens.identity()
+	local textRoles = { "text", "muted", "score", "best", "combo", "gold", "silver", "bronze" }
+
+	for _, role in textRoles do
+		for groundName, ground in { surface = identity.cream, sunken = identity.creamShade } do
+			local ratio = VisualTokens.contrastRatio(chrome[role], ground)
+			assertCondition(
+				ratio >= 4.5,
+				`Chrome role {role} is unreadable on {groundName} ({ratio}:1)`
+			)
+		end
+	end
+end
+
+tests.chromeKeepsEveryKeyArcadeUiConsumes = function()
+	-- ArcadeUI.Color is consumed at ~59 call sites that were deliberately left
+	-- untouched, so dropping a key here breaks the client at runtime with no
+	-- compile-time signal.
+	local chrome = VisualTokens.chrome()
+	local required = {
+		"shell",
+		"shellTop",
+		"shellBottom",
+		"inner",
+		"innerBottom",
+		"edge",
+		"rim",
+		"rimBright",
+		"text",
+		"muted",
+		"score",
+		"best",
+		"combo",
+		"gold",
+		"silver",
+		"bronze",
+	}
+
+	for _, key in required do
+		assertCondition(chrome[key] ~= nil, `Chrome palette lost the {key} key`)
+		assertCondition(typeof(chrome[key]) == "Color3", `Chrome key {key} is not a Color3`)
+	end
+end
+
+tests.chromeIsStableAcrossRuns = function()
+	-- Chrome is the chassis: it must NOT vary with stage or energy, or the
+	-- energy axis stops reading as "the board is heating up" and becomes "the
+	-- whole screen is flickering".
+	local first = VisualTokens.chrome()
+	local second = VisualTokens.chrome()
+	for key, value in first do
+		assertCondition(second[key] == value, `Chrome key {key} is not deterministic`)
+	end
+end
+
+tests.chromeRolesStayDistinguishable = function()
+	local chrome = VisualTokens.chrome()
+	-- score/combo/best carry different meanings in the HUD; if contrast
+	-- derivation collapses them onto the same value the HUD loses information.
+	assertCondition(chrome.score ~= chrome.combo, "score and combo must stay distinct")
+	assertCondition(chrome.best ~= chrome.combo, "best and combo must stay distinct")
+	assertCondition(chrome.gold ~= chrome.silver, "gold and silver must stay distinct")
+	assertCondition(chrome.silver ~= chrome.bronze, "silver and bronze must stay distinct")
+end
+
 function VisualTokensTests.run()
 	local names = {}
 	for name, body in tests do
