@@ -14,6 +14,82 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
 
+## Session Update - 2026-08-21 Chassis Repaint, Codex Lane, and the Reference Target
+
+Not a numbered Day. No new checkpoint was built; `BlockBlastBattle-Day44-1.rbxl`
+remains the known-good build. Work split across parallel lanes for the first
+time: Codex on implementation, Claude on visual architecture.
+
+### Codex lane
+
+- **#46 (PR #113)** - gamepad focus for hub and solo puzzle.
+- **#54 (PR #114)** - extended the late-run hand difficulty curve.
+- **#49 (PR #115)** - initial server sync timeout warning.
+
+All three closed their issues.
+
+### Visual lane
+
+- **#111 (PR #112)** - the chassis repaint. `ArcadeUI.Color` was still the "B2
+  Polished Arcade" palette across 59 call sites: near-black navy shell, neon
+  cyan rim, white text, framing the cream Bubblegum board from phases 1-2. It
+  now derives from `VisualTokens.chrome()`, keeping every key name so no call
+  site changed.
+
+Two findings from that work matter more than the repaint:
+
+- **`ArcadeUI.BoardCell` was painting a navy stroke and gradient onto all 64
+  cells**, and the client only ever overrides `BackgroundColor3`. Every
+  per-stage candy colour was being laid under a dark gradient nothing reset.
+  **Any visual impression of the board formed before PR #112 was of that bug,
+  not of the tokens.**
+- **Pieces were shaded in pure black** - shadow, outline, gradient foot, emboss.
+  Correct for neon-on-black, reads as dirt on candy. They now cast the
+  identity's grape shadow and outline in a deepened version of their own hue.
+
+Contrast was handled computationally rather than by eye. Six text roles were
+tuned for a near-black ground (`score` was about 1.3:1 on cream).
+`VisualTokens.readableOn` walks a hue's value down until it clears 4.5:1 while
+preserving hue and saturation, so roles stay candy rather than mud and stay
+readable automatically if the flavor anchors are retuned later.
+
+### Visual target approved
+
+A reference mockup was approved and translated into `docs/VISUAL_TARGET_SPEC.md`
+(PR #116): element-by-element classification, asset inventory, token mapping,
+and phasing. The reference shows **one flavor at low energy** (Bubblegum, stage
+1). It is a composition target, not an instruction to make the game permanently
+pink; the identity/flavor/energy model is unchanged.
+
+Two scope findings recorded there:
+
+- **Solo has no timer.** `endsAt` is `nil` for Solo and `timeLeft` is always 0.
+  The reference's TIME widget has no system behind it, and the only Solo loss
+  condition is having no legal move.
+- **The results breakdown is mostly free.** `resultSummary` already carries
+  score, best, previous best, coins, XP, lines cleared, highest combo and the
+  next-unlock text. Only base-score/combo-bonus attribution and time bonus
+  would be new systems.
+
+Phasing was reordered for a code reason: the HUD must come out of
+`BlockBlastClient.client.luau` before any large HUD code lands, since it sits at
+198 of Luau's 200 locals and that is exactly how #96 happened.
+
+### Playtest finding
+
+First real play of the current build: Solo runs end quickly and moment-to-moment
+play does not feel satisfying. Recorded as **#118**, deliberately separating the
+two observed facts from eight untested hypotheses, with a recommendation to
+instrument and measure before changing any balance values.
+
+### Current State
+
+- Master is green. 181 tests across 14 modules. Registers at 191 and 198.
+- **Nothing in the visual overhaul has been seen rendered.** There is no Studio
+  or Studio MCP in the agent environment, so phases 1, 2, 5 and the chassis
+  repaint are verified as logic and contrast math only. A Studio pass on current
+  master is now worth more than further implementation.
+
 ## Session Update - 2026-08-20 Bubblegum Toybox, Phases 1, 2 and 5
 
 Not a numbered Day. First implementation session of the visual overhaul
