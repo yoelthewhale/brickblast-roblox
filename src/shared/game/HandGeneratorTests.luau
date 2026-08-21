@@ -248,12 +248,26 @@ end
 
 tests.stagePressureIncreases = function()
 	local early = HandGenerator.difficultyForStage(1)
-	local late = HandGenerator.difficultyForStage(8)
+	local cappedBase = HandGenerator.difficultyForStage(8)
+	local extended = HandGenerator.difficultyForStage(15)
+	local longRun = HandGenerator.difficultyForStage(30)
 
-	assertCondition(early.pressure <= late.pressure, "Later stages should add pressure")
+	assertCondition(early.pressure <= cappedBase.pressure, "Later stages should add pressure")
 	assertCondition(
-		late.pressure <= Config.HandGeneration.MaxPressure,
-		"Pressure should stay capped"
+		math.abs(cappedBase.pressure - Config.HandGeneration.MaxPressure) < 0.0001,
+		"Stage 8 should preserve the original pressure cap"
+	)
+	assertCondition(
+		extended.pressure > cappedBase.pressure,
+		"Stage 15 should continue escalating beyond the original cap"
+	)
+	assertCondition(
+		longRun.pressure <= Config.HandGeneration.LateMaxPressure,
+		"Long-run pressure should stay capped"
+	)
+	assertCondition(
+		longRun.assistanceMultiplier == 1 - longRun.pressure,
+		"Assistance multiplier should remain tied to pressure"
 	)
 end
 

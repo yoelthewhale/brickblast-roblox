@@ -175,10 +175,17 @@ function HandGenerator.difficultyForStage(stage)
 
 	local pressureStage =
 		math.max(0, math.floor(stage) - Config.HandGeneration.StagePressureStart + 1)
-	local pressure = clamp(
+	local basePressure = clamp(
 		pressureStage * Config.HandGeneration.PressurePerStage,
 		0,
 		Config.HandGeneration.MaxPressure
+	)
+	local latePressureStage =
+		math.max(0, math.floor(stage) - Config.HandGeneration.LatePressureStart + 1)
+	local pressure = clamp(
+		basePressure + latePressureStage * Config.HandGeneration.LatePressurePerStage,
+		0,
+		Config.HandGeneration.LateMaxPressure
 	)
 	return {
 		stage = math.max(1, math.floor(stage)),
