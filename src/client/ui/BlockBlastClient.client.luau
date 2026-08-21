@@ -617,19 +617,43 @@ local function saveSettings()
 	settingsEvent:FireServer("Update", settingsPayload())
 end
 
-function day43Ui.fireQueueRequest(action, payload)
+function day43Ui.fireQueueRequest(action, payload, extra)
 	local now = os.clock()
 	if now - day43Ui.lastServerActionAt < day43Ui.serverActionCooldownSeconds then
 		return false
 	end
 
 	day43Ui.lastServerActionAt = now
-	if payload ~= nil then
+	-- `extra` carries the Solo difficulty id. The server sanitizes it; nothing
+	-- here is trusted.
+	if extra ~= nil then
+		queueEvent:FireServer(action, payload, extra)
+	elseif payload ~= nil then
 		queueEvent:FireServer(action, payload)
 	else
 		queueEvent:FireServer(action)
 	end
 	return true
+end
+
+-- Mode/difficulty selection lives in its own ModuleScript with its own register
+-- budget. It is required inline and stored on day43Ui rather than as a
+-- top-level local, because this chunk sits two registers from Luau's 200 limit
+-- and a fresh top-level local here fails CI (see #96).
+function day43Ui.openModeSelect()
+	if not day43Ui.modeSelect then
+		day43Ui.modeSelect = require(script.Parent.ModeSelectPanel).new(gui, {
+			playSound = playSound,
+			isReducedMotion = function()
+				return reducedMotion
+			end,
+			onConfirm = function(mode, difficulty)
+				day43Ui.fireQueueRequest(mode, nil, difficulty)
+			end,
+		})
+	end
+
+	day43Ui.modeSelect:Open()
 end
 
 local function localCosmeticProgress()
@@ -1079,7 +1103,7 @@ hudController = HUDController.new(gui, {
 				ExperienceConfig.isModeEnabled("Solo")
 				and not ExperienceConfig.isModeEnabled("Battle")
 			then
-				day43Ui.fireQueueRequest("Solo")
+				day43Ui.openModeSelect()
 			elseif currentHubState and currentHubState.queued then
 				day43Ui.fireQueueRequest("LeaveQueue")
 			else

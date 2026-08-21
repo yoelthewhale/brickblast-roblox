@@ -126,29 +126,86 @@ local function shapeStatsById(board)
 	return statsById, fittingIds
 end
 
-function HandGenerator.newAssistance()
+-- Every difficulty entry point defaults to Config.Difficulties.Default, and the
+-- default profile's modifiers are all no-ops. So a caller that passes nothing
+-- -- which is every pre-existing caller -- gets exactly the old behaviour.
+
+function HandGenerator.sanitizeDifficulty(difficultyId)
+	if typeof(difficultyId) == "string" and Config.Difficulties.Profiles[difficultyId] ~= nil then
+		return difficultyId
+	end
+
+	return Config.Difficulties.Default
+end
+
+-- Internal, non-copying lookup. Hand generation calls this on every hand, so
+-- cloning here is measurable in the simulation suite. Callers must treat the
+-- result as read-only; anything crossing the module boundary goes through
+-- difficultyProfile below.
+local function profileFor(difficultyId)
+	return Config.Difficulties.Profiles[HandGenerator.sanitizeDifficulty(difficultyId)]
+end
+
+function HandGenerator.difficultyProfile(difficultyId)
+	return table.clone(profileFor(difficultyId))
+end
+
+function HandGenerator.difficultyOptions()
+	local options = {}
+	for _, id in Config.Difficulties.Order do
+		local profile = Config.Difficulties.Profiles[id]
+		if profile then
+			table.insert(options, table.clone(profile))
+		end
+	end
+	return options
+end
+
+-- The rescue budget for a difficulty. Never drops below one rescue, however
+-- punishing a future profile is: a run with zero rescues is a different game,
+-- not a harder one.
+function HandGenerator.assistanceBudget(difficultyId)
+	local profile = profileFor(difficultyId)
+	local cap = math.max(1, Config.HandGeneration.AssistanceMax + profile.assistanceBonus)
+	local start = clamp(Config.HandGeneration.AssistanceStart + profile.assistanceBonus, 1, cap)
+	return start, cap
+end
+
+function HandGenerator.newAssistance(difficultyId)
+	local start, cap = HandGenerator.assistanceBudget(difficultyId)
 	return {
-		remaining = Config.HandGeneration.AssistanceStart,
-		cap = Config.HandGeneration.AssistanceMax,
+		remaining = start,
+		cap = cap,
+		difficulty = HandGenerator.sanitizeDifficulty(difficultyId),
 		lastHandConsumed = false,
 		lastHandReason = "new run",
 	}
 end
 
-function HandGenerator.sanitizeAssistance(assistance)
-	local cap = Config.HandGeneration.AssistanceMax
+function HandGenerator.sanitizeAssistance(assistance, difficultyId)
+	-- A run carries its difficulty on the assistance table, so a sanitize call
+	-- that is not told the difficulty can still recover it rather than silently
+	-- resetting the player to the default budget mid-run.
+	if difficultyId == nil and typeof(assistance) == "table" then
+		difficultyId = assistance.difficulty
+	end
+
+	local resolved = HandGenerator.sanitizeDifficulty(difficultyId)
+	local start, cap = HandGenerator.assistanceBudget(resolved)
+
 	if typeof(assistance) ~= "table" then
-		return HandGenerator.newAssistance()
+		return HandGenerator.newAssistance(resolved)
 	end
 
 	local remaining = assistance.remaining
 	if typeof(remaining) ~= "number" or remaining ~= remaining then
-		remaining = Config.HandGeneration.AssistanceStart
+		remaining = start
 	end
 
 	return {
 		remaining = clamp(math.floor(remaining), 0, cap),
 		cap = cap,
+		difficulty = resolved,
 		lastHandConsumed = assistance.lastHandConsumed == true,
 		lastHandReason = typeof(assistance.lastHandReason) == "string"
 				and assistance.lastHandReason
@@ -168,13 +225,18 @@ function HandGenerator.restoreAssistance(assistance, amount, reason)
 	return nextAssistance
 end
 
-function HandGenerator.difficultyForStage(stage)
+function HandGenerator.difficultyForStage(stage, difficultyId)
 	if typeof(stage) ~= "number" or stage ~= stage or stage < 1 then
 		stage = 1
 	end
 
-	local pressureStage =
-		math.max(0, math.floor(stage) - Config.HandGeneration.StagePressureStart + 1)
+	local profile = profileFor(difficultyId)
+	-- A profile can delay or advance the stage at which pressure starts biting.
+	-- Clamped to 1 so no profile can make pressure begin before the run does.
+	local pressureStart =
+		math.max(1, Config.HandGeneration.StagePressureStart + profile.pressureStartOffset)
+
+	local pressureStage = math.max(0, math.floor(stage) - pressureStart + 1)
 	local basePressure = clamp(
 		pressureStage * Config.HandGeneration.PressurePerStage,
 		0,
@@ -187,8 +249,14 @@ function HandGenerator.difficultyForStage(stage)
 		0,
 		Config.HandGeneration.LateMaxPressure
 	)
+
+	-- Scaling after the clamp, not before, so an easier profile genuinely sits
+	-- below the shared ceiling rather than just reaching it more slowly.
+	pressure = clamp(pressure * profile.pressureScale, 0, Config.HandGeneration.LateMaxPressure)
+
 	return {
 		stage = math.max(1, math.floor(stage)),
+		difficulty = profile.id,
 		pressure = pressure,
 		assistanceMultiplier = 1 - pressure,
 		restrictiveBias = pressure,
@@ -314,7 +382,8 @@ function HandGenerator.scoreShapeIds(board, shapeIds, options)
 	local statsById = options.statsById or shapeStatsById(board)
 	local recentHands = options.recentHands or {}
 	local comboStreak = options.comboStreak or 0
-	local difficulty = options.difficulty or HandGenerator.difficultyForStage(options.stage or 1)
+	local difficulty = options.difficulty
+		or HandGenerator.difficultyForStage(options.stage or 1, options.difficultyId)
 	local assistanceActive = options.assistanceActive == true
 	local flexibleFatigue = recentFlexibleCount(recentHands)
 	local crowdRatio = countOccupied(board) / (Config.BoardSize * Config.BoardSize)
@@ -396,9 +465,13 @@ function HandGenerator.generate(board, options)
 		math.max(1, math.floor(options.candidateLimit or HandGenerator.CandidateLimit))
 	local statsById, fittingIds = shapeStatsById(board)
 	local anyKnownShapeFits = #fittingIds > 0
-	local assistance = HandGenerator.sanitizeAssistance(options.assistance)
+	local difficultyId = HandGenerator.sanitizeDifficulty(
+		options.difficultyId
+			or (typeof(options.assistance) == "table" and options.assistance.difficulty or nil)
+	)
+	local assistance = HandGenerator.sanitizeAssistance(options.assistance, difficultyId)
 	local stage = options.stage or 1
-	local difficulty = HandGenerator.difficultyForStage(stage)
+	local difficulty = HandGenerator.difficultyForStage(stage, difficultyId)
 	local crowdRatio = countOccupied(board) / (Config.BoardSize * Config.BoardSize)
 	local assistanceEligible = assistance.remaining > 0
 		and anyKnownShapeFits

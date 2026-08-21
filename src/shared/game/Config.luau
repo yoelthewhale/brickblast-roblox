@@ -32,6 +32,51 @@ Config.StageProgression = {
 	ComboProgressCap = 9,
 }
 
+-- Player-selectable Solo difficulty.
+--
+-- Difficulty deliberately does NOT change the board (locked at 8x8) or the
+-- scoring rules. It changes the two things that actually govern how long a run
+-- survives: how many rescue hands the generator may spend, and how fast stage
+-- pressure ramps. Both are existing HandGeneration knobs, so this adds no new
+-- gameplay system -- see GitHub #118 for why run length is the lever worth
+-- exposing.
+--
+-- `classic` must stay numerically identical to the pre-difficulty behaviour:
+-- its modifiers are all no-ops, so an existing run is unaffected.
+Config.Difficulties = {
+	Default = "classic",
+	Order = { "chill", "classic", "spicy" },
+	Profiles = {
+		chill = {
+			id = "chill",
+			name = "Chill",
+			blurb = "Extra rescues and a slower squeeze.",
+			detail = "Pressure holds off two stages longer.",
+			assistanceBonus = 2,
+			pressureScale = 0.6,
+			pressureStartOffset = 2,
+		},
+		classic = {
+			id = "classic",
+			name = "Classic",
+			blurb = "The standard BrickBlast run.",
+			detail = "Balanced pressure from stage 3.",
+			assistanceBonus = 0,
+			pressureScale = 1,
+			pressureStartOffset = 0,
+		},
+		spicy = {
+			id = "spicy",
+			name = "Spicy",
+			blurb = "Fewer rescues, pressure arrives early.",
+			detail = "For chasing a high score.",
+			assistanceBonus = -1,
+			pressureScale = 1.35,
+			pressureStartOffset = -1,
+		},
+	},
+}
+
 Config.HandGeneration = {
 	CandidateLimit = 40,
 	RecentHistoryLimit = 5,
