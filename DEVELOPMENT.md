@@ -26,7 +26,7 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
 ### Remaining Manual Step
 
-Upload the 18 PNGs in `assets/ui/bubblegum-production/` to Roblox and paste the returned IDs into `BubblegumAssets.Images`.
+Completed later on 2026-08-21: the 18 PNGs were uploaded through the official Roblox Studio MCP image-upload flow and the returned IDs were pasted into `BubblegumAssets.Images`.
 
 ## Session Update - 2026-08-20 Bubblegum Toybox, Phases 1, 2 and 5
 

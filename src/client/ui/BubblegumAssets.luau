@@ -1,26 +1,26 @@
 local BubblegumAssets = {}
 
--- Paste real Roblox image asset ids here after uploading the PNGs listed in
--- ASSET_UPLOAD_GUIDE.md. Keep empty strings in source control until upload.
+-- Real Roblox image asset ids from the approved Bubblegum production package.
+-- Keep all UI callers routed through this table; do not scatter ids elsewhere.
 BubblegumAssets.Images = {
-	Coin = "",
-	XP = "",
-	BestScore = "",
-	Trophy = "",
-	Stage = "",
-	MedalFirst = "",
-	MedalSecond = "",
-	MedalThird = "",
-	RewardCrateClosed = "",
-	RewardCrateOpen = "",
-	SparkleParticle = "",
-	ConfettiRect = "",
-	ConfettiDot = "",
-	ConfettiStar = "",
-	ConfettiSquiggle = "",
-	ShadowSoft = "",
-	CandyFlourishCorner = "",
-	LollipopMark = "",
+	Coin = "rbxassetid://71385619350306",
+	XP = "rbxassetid://110597096643027",
+	BestScore = "rbxassetid://111998552125153",
+	Trophy = "rbxassetid://104591227123281",
+	Stage = "rbxassetid://119977561034295",
+	MedalFirst = "rbxassetid://97093206983103",
+	MedalSecond = "rbxassetid://75444676121332",
+	MedalThird = "rbxassetid://118622519676127",
+	RewardCrateClosed = "rbxassetid://128643456863208",
+	RewardCrateOpen = "rbxassetid://131335880682800",
+	SparkleParticle = "rbxassetid://128357824254870",
+	ConfettiRect = "rbxassetid://138448664648507",
+	ConfettiDot = "rbxassetid://130014295275059",
+	ConfettiStar = "rbxassetid://122223931821086",
+	ConfettiSquiggle = "rbxassetid://105496120597000",
+	ShadowSoft = "rbxassetid://129679451767397",
+	CandyFlourishCorner = "rbxassetid://134743329714974",
+	LollipopMark = "rbxassetid://88045772402344",
 }
 
 BubblegumAssets.Metadata = {
