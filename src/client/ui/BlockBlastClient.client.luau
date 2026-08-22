@@ -3177,146 +3177,35 @@ styleButton(resizeHandle, "secondary")
 UITheme.stroke(resizeHandle, Color3.fromRGB(47, 199, 255), 3, 0.06)
 markInteractive(resizeHandle)
 
+-- The offer panel lives in its own ModuleScript with its own register budget.
+-- It is required inline and stored on day43Ui rather than as a top-level local,
+-- because this chunk sits two registers from Luau's 200 limit (see #96).
 function day43Ui.ensureContinueOfferPanel()
-	if day43Ui.continueOfferPanel then
-		return day43Ui.continueOfferPanel
+	if not day43Ui.continueOfferPanel then
+		day43Ui.continueOfferPanel = require(script.Parent.ContinuePanel).new(root, {
+			playSound = playSound,
+			isReducedMotion = function()
+				return reducedMotion
+			end,
+			onAccept = function()
+				day43Ui.fireQueueRequest("ContinueRun")
+			end,
+			onDecline = function()
+				day43Ui.fireQueueRequest("EndRun")
+			end,
+		})
 	end
 
-	local overlay = Instance.new("Frame")
-	overlay.Name = "OneMoreChanceOverlay"
-	overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	overlay.BackgroundTransparency = 0.42
-	overlay.BorderSizePixel = 0
-	overlay.Position = UDim2.fromScale(0, 0)
-	overlay.Size = UDim2.fromScale(1, 1)
-	overlay.Visible = false
-	overlay.ZIndex = 80
-	overlay.Active = true
-	overlay.Parent = root
-	markInteractive(overlay)
-
-	local card = Instance.new("Frame")
-	card.Name = "OneMoreChanceCard"
-	card.AnchorPoint = Vector2.new(0.5, 0.5)
-	card.BackgroundColor3 = Color3.fromRGB(8, 17, 35)
-	card.BorderSizePixel = 0
-	card.Position = UDim2.fromScale(0.5, 0.5)
-	card.Size = UDim2.fromOffset(420, 250)
-	card.ZIndex = 81
-	card.Parent = overlay
-	ArcadeUI.Panel(card, {
-		radius = 28,
-		rimColor = Color3.fromRGB(47, 199, 255),
-		strokeThickness = 4,
-	})
-
-	local title = Instance.new("TextLabel")
-	title.Name = "Title"
-	title.BackgroundTransparency = 1
-	title.Font = Enum.Font.GothamBlack
-	title.Position = UDim2.fromOffset(28, 24)
-	title.Size = UDim2.new(1, -56, 0, 46)
-	title.Text = "ONE MORE CHANCE"
-	title.TextColor3 = Color3.fromRGB(255, 255, 255)
-	title.TextSize = 27
-	title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-	title.TextStrokeTransparency = 0.55
-	title.TextWrapped = true
-	title.ZIndex = 82
-	title.Parent = card
-
-	local body = Instance.new("TextLabel")
-	body.Name = "Body"
-	body.BackgroundTransparency = 1
-	body.Font = Enum.Font.GothamBold
-	body.Position = UDim2.fromOffset(38, 82)
-	body.Size = UDim2.new(1, -76, 0, 58)
-	body.Text = "Rewind one move and get a fresh hand that fits."
-	body.TextColor3 = Color3.fromRGB(209, 233, 255)
-	body.TextSize = 18
-	body.TextWrapped = true
-	body.ZIndex = 82
-	body.Parent = card
-
-	local meta = Instance.new("TextLabel")
-	meta.Name = "Meta"
-	meta.BackgroundTransparency = 1
-	meta.Font = Enum.Font.GothamBold
-	meta.Position = UDim2.fromOffset(38, 138)
-	meta.Size = UDim2.new(1, -76, 0, 26)
-	meta.Text = "Free prototype: 1 of 1 available this run"
-	meta.TextColor3 = Color3.fromRGB(255, 210, 71)
-	meta.TextSize = 15
-	meta.TextWrapped = true
-	meta.ZIndex = 82
-	meta.Parent = card
-
-	local primary = Instance.new("TextButton")
-	primary.Name = "UseContinue"
-	primary.BackgroundColor3 = Color3.fromRGB(26, 204, 43)
-	primary.BorderSizePixel = 0
-	primary.Font = Enum.Font.GothamBlack
-	primary.Position = UDim2.fromOffset(38, 178)
-	primary.Size = UDim2.fromOffset(164, 46)
-	primary.Text = "One More Chance"
-	primary.TextColor3 = Color3.fromRGB(255, 255, 255)
-	primary.TextSize = 15
-	primary.ZIndex = 82
-	primary.Parent = card
-	styleButton(primary, "primary")
-	markInteractive(primary)
-
-	local secondary = Instance.new("TextButton")
-	secondary.Name = "EndRun"
-	secondary.BackgroundColor3 = Color3.fromRGB(42, 57, 96)
-	secondary.BorderSizePixel = 0
-	secondary.Font = Enum.Font.GothamBlack
-	secondary.Position = UDim2.fromOffset(218, 178)
-	secondary.Size = UDim2.fromOffset(164, 46)
-	secondary.Text = "End Run"
-	secondary.TextColor3 = Color3.fromRGB(255, 255, 255)
-	secondary.TextSize = 17
-	secondary.ZIndex = 82
-	secondary.Parent = card
-	styleButton(secondary, "secondary")
-	markInteractive(secondary)
-
-	primary.Activated:Connect(function()
-		if day43Ui.fireQueueRequest("ContinueRun") then
-			playSound("Queue")
-			primary.Text = "Working..."
-		end
-	end)
-	secondary.Activated:Connect(function()
-		if day43Ui.fireQueueRequest("EndRun") then
-			playSound("Blocked")
-		end
-	end)
-
-	day43Ui.continueOfferPanel = {
-		overlay = overlay,
-		primary = primary,
-		secondary = secondary,
-		meta = meta,
-	}
 	return day43Ui.continueOfferPanel
 end
 
 function day43Ui.updateContinueOffer(state)
-	local panel = day43Ui.ensureContinueOfferPanel()
-	local offer = state and state.continueOffer
-	local visible = state ~= nil
-		and state.mode == "Solo"
-		and state.alive == false
-		and typeof(offer) == "table"
-		and offer.available == true
-
-	panel.overlay.Visible = visible
-	if visible then
-		panel.primary.Text = "One More Chance"
-		panel.meta.Text =
-			`{offer.capThisRun - offer.usedThisRun} of {offer.capThisRun} available this run`
-	end
+	local offer = state ~= nil
+			and state.mode == "Solo"
+			and state.alive == false
+			and state.continueOffer
+		or nil
+	day43Ui.ensureContinueOfferPanel():Update(offer)
 end
 
 local function clampNumber(value, minimum, maximum)
