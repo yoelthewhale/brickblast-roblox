@@ -1,13 +1,32 @@
 {
   "files.exclude": {
-    "**/*.rbxl.lock": true
+    "**/*.rbxl.lock": true,
+    ".claude": true,
+    "backups": true,
+    "checkpoints": true,
+    "generated": true,
+    "logs": true,
+    "test-builds": true,
+    "sourcemap.json": true,
+    "BlockBlastBattle-Day43.rbxl": true,
+    "BlockBlastBattle-Day44.rbxl": true,
+    "BlockBlastBattle-Day44-1.rbxl": true,
+    "BlockBlastBattle-Day45.rbxl": true,
+    "BrickBlast-Day50-LatestTest.rbxl": true
   },
   "files.associations": {
     "*.luau": "luau"
   },
   "search.exclude": {
+    ".claude/**": true,
     "**/*.rbxl": true,
     "**/*.rbxl.lock": true,
+    "**/*.rbxlx": true,
+    "backups/**": true,
+    "checkpoints/**": true,
+    "generated/**": true,
+    "logs/**": true,
+    "test-builds/**": true,
     "tools/**": true
   },
   "editor.tabSize": 2,
