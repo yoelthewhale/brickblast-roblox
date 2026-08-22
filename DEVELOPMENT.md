@@ -6,12 +6,12 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
-- **Latest completed numbered checkpoint: Day49** (`BlockBlastBattle-Day49.rbxl`, 2026-08-22). Adds the free One More Chance prototype for Solo runs.
-- **Current build to open: `BlockBlastBattle-Day49.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
+- **Latest completed numbered checkpoint: Day50** (`BlockBlastBattle-Day50.rbxl`, 2026-08-22). Adds Claude's reviewed Bubblegum One More Chance panel and the Solo end-flow fix on top of the Day49 free continue prototype.
+- **Current build to open: `BlockBlastBattle-Day50.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
 - **`BlockBlastBattle-Day44.rbxl` is broken and kept deliberately.** It was built while `GameServer.server.luau` was over Luau's 200-local limit, so the server compiled nothing: no hub, no remotes, players on the bare bootstrap floor. It is retained as the artifact of the #96 incident. Do not open it expecting a working game, and do not delete it to tidy up.
-- **Next numbered checkpoint: Day50.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
+- **Next numbered checkpoint: Day51.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
 - **GitHub `master` is the source of truth for code.** The `.rbxl` files in the repository root are local, generated, gitignored build checkpoints: snapshots for Studio testing, never the authoritative source. A missing or stale `.rbxl` says nothing about the state of the code.
-- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day48.rbxl` stays in the repository root because it is the current game to open.
+- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day50.rbxl` stays in the repository root because it is the current game to open.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
 
@@ -21,10 +21,13 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - Captures a pre-placement Solo snapshot before each valid move so a failed run can rewind one move.
 - Holds a Solo run in a pending offer state when the server detects no legal moves and the one-per-run free continue is available.
 - Added a client-rendered offer panel that reads only the server's `continueOffer` contract and sends `ContinueRun` or `EndRun` requests through the existing Queue remote.
+- Integrated Claude's reviewed Bubblegum continue panel module with `VisualTokens`, phone-safe stacked buttons, and End Run as the default gamepad/keyboard focus.
 - Refreshes the hand server-side after the rewind using the existing assistance-aware hand generator, so the new hand has a fair chance to fit.
+- Only consumes the continue after the refreshed run is confirmed playable, avoiding a paid-token-style "spent and got nothing" failure mode.
+- Keeps the Solo puzzle workspace visible when the player ends the run, so the results panel no longer floats over the hub after an automatic return.
 - Added low-volume telemetry counters for shown, accepted, declined, unavailable, and fulfilled continue offers.
 - Added shared tests covering hidden-before-pending, board/stat rewind, and one-use cap behavior.
-- Built `BlockBlastBattle-Day49.rbxl` for Studio inspection.
+- Built `BlockBlastBattle-Day50.rbxl` for Studio inspection.
 
 ### Remaining Manual Checks
 
