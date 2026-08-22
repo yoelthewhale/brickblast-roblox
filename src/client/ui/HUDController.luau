@@ -540,19 +540,27 @@ function HUDController:BuildResourceBar()
 end
 
 function HUDController:BuildLeftNav()
+	-- Transparent, so the buttons float like the right-hand nav does. This
+	-- frame used to paint a solid Color3.fromRGB(15, 25, 48) slab with a neon
+	-- cyan stroke -- the old "B2 Polished Arcade" chassis that PR #112 replaced
+	-- everywhere else. Left unconverted it read as a dead black column bolted
+	-- onto the candy hub.
+	--
+	-- It also carried a makeShadow child. UIListLayout lays out *every* child,
+	-- and that shadow is sized UDim2.new(1, 26, 1, 26) -- scale 1 on Y -- so
+	-- with AutomaticSize.Y the frame grew to fit a child defined as taller than
+	-- itself. That is why an ~258px stack of buttons rendered as a near
+	-- full-height column. The right-hand nav has no container shadow, so
+	-- dropping it here also makes the two sides symmetric.
 	local stack = Instance.new("Frame")
 	stack.Name = "LeftArcadeNav"
 	stack.Position = UDim2.fromOffset(24, 156)
 	stack.AutomaticSize = Enum.AutomaticSize.Y
 	stack.Size = UDim2.fromOffset(150, 0)
-	stack.BackgroundColor3 = Color3.fromRGB(15, 25, 48)
+	stack.BackgroundTransparency = 1
 	stack.BorderSizePixel = 0
 	stack.ZIndex = UITheme.Z.hud
 	stack.Parent = self.gui
-	addCorner(stack, 20)
-	addStroke(stack, Color3.fromRGB(30, 187, 255), 3, 0)
-	makeShadow(stack, 20)
-	addPadding(stack, 12, 12, 12, 12)
 	addList(
 		stack,
 		Enum.FillDirection.Vertical,
