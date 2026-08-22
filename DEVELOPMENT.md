@@ -6,19 +6,56 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
-- **Latest completed numbered checkpoint: Day43** (`BlockBlastBattle-Day43.rbxl`, 2026-08-17). Corroborated by the `day43Ui` table in `BlockBlastClient.client.luau`, the Day43 references in `AGENTS.md`, `CONTRIBUTING.md`, and `.github/copilot-instructions.md`, and by `docs/archive/UI_CONTROL_AUDIT.md`.
-- **Current known-good Studio checkpoint: `BlockBlastBattle-Day44-1.rbxl`** (2026-08-19), built from master after the #97 register fix and verified in a real Studio startup test. Open this one.
+- **Latest completed numbered checkpoint: Day46** (`BlockBlastBattle-Day46.rbxl`, 2026-08-22). Built from synced `origin/master` at `6bebe239b1708fbfd3fafc3404c4afa862f6c88b` after #122 and #123 landed.
+- **Current build to open: `BlockBlastBattle-Day46.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
 - **`BlockBlastBattle-Day44.rbxl` is broken and kept deliberately.** It was built while `GameServer.server.luau` was over Luau's 200-local limit, so the server compiled nothing: no hub, no remotes, players on the bare bootstrap floor. It is retained as the artifact of the #96 incident. Do not open it expecting a working game, and do not delete it to tidy up.
-- **Next numbered checkpoint: Day45.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
+- **Next numbered checkpoint: Day47.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
 - **GitHub `master` is the source of truth for code.** The `.rbxl` files in the repository root are local, generated, gitignored build checkpoints: snapshots for Studio testing, never the authoritative source. A missing or stale `.rbxl` says nothing about the state of the code.
+- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day46.rbxl` stays in the repository root because it is the current game to open.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
 
+## Session Update - 2026-08-22 VS Code / Repository Organization Pass
+
+- Preserved source, configs, current docs, production Bubblegum assets, scripts, tools, and `BlockBlastBattle-Day46.rbxl`.
+- Moved safe historical `.rbxl` checkpoints out of the repository root into `checkpoints/` so the VS Code root is no longer dominated by old place files.
+- Left `BlockBlastBattle-Day43.rbxl`, `BlockBlastBattle-Day44.rbxl`, `BlockBlastBattle-Day44-1.rbxl`, and `BlockBlastBattle-Day45.rbxl` in root because Windows denied access while a background `RobloxStudioBeta` process was present. VS Code now hides those obsolete root leftovers.
+- Kept `BlockBlastBattle-Day46.rbxl` in root as the obvious current game.
+- Confirmed `BrickBlast-Day50-LatestTest.rbxl` was an accidental local alias, not a legitimate checkpoint, and hid it in VS Code Explorer. Windows denied moving it.
+- Moved generated inspection `.rbxlx` files into `generated/inspection-builds/`.
+- Moved Rojo logs into `logs/`.
+- Kept all registered `.claude/worktrees/` entries. They have no unique commits relative to master, but one contains uncommitted changes and the others may still be useful Claude infrastructure. VS Code now hides `.claude/` instead of deleting it.
+- Updated `.vscode/settings.json`, `BlockBlastBattle.code-workspace`, and `BUILD_INDEX.md` to make the current root view focused on active project files.
+
+## Session Update - 2026-08-22 Local Build Cleanup
+
+- Fetched `origin/master` and fast-forwarded local `master` from `1f8a13542f830400dcb9fe6dca4bfac66a359c74` to `6bebe239b1708fbfd3fafc3404c4afa862f6c88b`.
+- Confirmed Day50 was not a legitimate checkpoint. It was a temporary local alias created for quick testing and is superseded by Day46.
+- Built `BlockBlastBattle-Day46.rbxl` from current `origin/master`.
+- Moved proven temporary feature/test `.rbxl` artifacts into `test-builds/` without deleting historical Day checkpoints.
+- Left `BrickBlast-Day50-LatestTest.rbxl` in the main folder because Windows denied the move while cleaning up. It is documented as obsolete in `BUILD_INDEX.md`.
+- Updated `BUILD_INDEX.md` so the first visible instruction is to open `BlockBlastBattle-Day46.rbxl`.
+
+## Session Update - 2026-08-21 Bubblegum Production Asset Integration Prep
+
+- Found `brickblast_bubblegum_assets.zip` in `C:\Users\Bear4\Downloads` and extracted it into `assets/ui/bubblegum-production/` without an extra nested wrapper folder.
+- Verified the production package contains `README.md`, `manifest.json`, the expected `icons/`, `medals/`, `rewards/`, `particles/`, `ui/`, and `decor/` folders, and all 18 manifest PNGs.
+- Added `src/client/ui/BubblegumAssets.luau` as the single registry for future Roblox `rbxassetid://...` values plus per-asset metadata, ScaleType handling, 9-slice shadow settings, runtime-tint flags, and rank-to-medal mapping.
+- Preserved `src/client/ui/UIAssets.luau` compatibility by routing existing legacy image lookups through the new Bubblegum registry.
+- Prepared the HUD resource bar, Trophy nav icon, reusable panel shadows, combo sparkle effect, Server Top rank medals, and result reward crate to use production assets automatically once real Roblox IDs are pasted.
+- Added `ASSET_UPLOAD_GUIDE.md` with every local PNG, registry key, intended use, tint requirement, ScaleType, and `ShadowSoft` SliceCenter.
+- No fake Roblox asset IDs were introduced. Runtime UI continues to fall back to native Frames/Text until uploads are completed.
+
+### Remaining Manual Step
+
+Completed later on 2026-08-21: the 18 PNGs were uploaded through the official Roblox Studio MCP image-upload flow and the returned IDs were pasted into `BubblegumAssets.Images`.
 ## Session Update - 2026-08-21 Chassis Repaint, Codex Lane, and the Reference Target
 
-Not a numbered Day. No new checkpoint was built; `BlockBlastBattle-Day44-1.rbxl`
-remains the known-good build. Work split across parallel lanes for the first
-time: Codex on implementation, Claude on visual architecture.
+Not a numbered Day. No checkpoint was built during this session; `Day44-1` was
+the current build at the time, later superseded by `BlockBlastBattle-Day46.rbxl`
+-- see the Checkpoint Numbering block above for the current one. Work split
+across parallel lanes for the first time: Codex on implementation, Claude on
+visual architecture.
 
 ### Codex lane
 
@@ -176,7 +213,7 @@ deliberately cheap to retune: flavor anchors are one table at the top of
 and neither requires touching logic.
 
 The next session should not start phase 3 until someone has played
-`BlockBlastBattle-Day44-1.rbxl` and judged whether the direction is landing.
+the current checkpoint and judged whether the direction is landing.
 Everything after phase 3 compounds on that judgment.
 
 ## Session Update - 2026-08-19 Consolidation, Telemetry, and the Register Incident

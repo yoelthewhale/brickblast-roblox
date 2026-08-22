@@ -3,8 +3,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VisualTokens = require(
 	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game"):WaitForChild("VisualTokens")
 )
+local BubblegumAssets = require(script.Parent.BubblegumAssets)
 
 local ArcadeUI = {}
+local CONFETTI_ASSET_KEYS = {
+	"ConfettiRect",
+	"ConfettiDot",
+	"ConfettiStar",
+	"ConfettiSquiggle",
+}
 
 -- The chassis palette. This was the "B2 Polished Arcade" set -- a near-black
 -- navy cabinet with a neon cyan rim -- which fought the Bubblegum Toybox board
@@ -63,6 +70,22 @@ local function decorateShell(frame, radius, rimColor, strokeThickness)
 	highlight.Active = false
 	highlight.Parent = frame
 	corner(highlight, radius)
+
+	if BubblegumAssets.imageFor("ShadowSoft") then
+		local shadow = Instance.new("ImageLabel")
+		shadow.Name = "BubblegumSoftShadow"
+		shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+		shadow.Position = UDim2.new(0.5, 0, 0.5, 10)
+		shadow.Size = UDim2.new(1, 28, 1, 28)
+		shadow.BackgroundTransparency = 1
+		shadow.ImageTransparency = 0.2
+		shadow.ZIndex = math.max(frame.ZIndex - 1, 0)
+		shadow.Active = false
+		shadow.Parent = frame
+		BubblegumAssets.applyTo(shadow, "ShadowSoft", {
+			imageColor = VisualTokens.identity().shadow,
+		})
+	end
 
 	return frame
 end
@@ -523,17 +546,71 @@ function ArcadeUI.PulseCombo(context)
 	end)
 
 	for _, sparkle in context.comboBadge:GetChildren() do
-		if sparkle:IsA("Frame") and sparkle.Name:match("^ComboSparkle") then
-			sparkle.BackgroundTransparency = 0
+		if sparkle:IsA("GuiObject") and sparkle.Name:match("^ComboSparkle") then
+			if sparkle:IsA("ImageLabel") then
+				sparkle.ImageTransparency = 0
+			elseif sparkle:IsA("Frame") then
+				sparkle.BackgroundTransparency = 0
+			end
 			context.TweenService
 				:Create(
 					sparkle,
 					TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-					{ BackgroundTransparency = 1 }
+					sparkle:IsA("ImageLabel") and { ImageTransparency = 1 }
+						or { BackgroundTransparency = 1 }
 				)
 				:Play()
 		end
 	end
+end
+
+function ArcadeUI.DecorativeImage(parent, key, options)
+	options = options or {}
+	local image = Instance.new("ImageLabel")
+	image.Name = options.name or key
+	image.BackgroundTransparency = 1
+	image.Position = options.position or UDim2.fromOffset(0, 0)
+	image.Size = options.size or UDim2.fromOffset(48, 48)
+	image.AnchorPoint = options.anchorPoint or Vector2.new(0, 0)
+	image.Rotation = options.rotation or 0
+	image.ImageTransparency = options.transparency or 0
+	image.ZIndex = options.zIndex or parent.ZIndex + 1
+	image.Active = false
+	image.Parent = parent
+	if
+		not BubblegumAssets.applyTo(image, key, {
+			imageColor = options.imageColor,
+			allowSemanticTint = options.allowSemanticTint,
+		})
+	then
+		image:Destroy()
+		return nil
+	end
+
+	return image
+end
+
+function ArcadeUI.SetLeaderboardMedal(row, rank)
+	local medalKey = BubblegumAssets.medalKeyForRank(rank)
+	local medal = row:FindFirstChild("RankMedal")
+	if not medal then
+		medal = Instance.new("ImageLabel")
+		medal.Name = "RankMedal"
+		medal.BackgroundTransparency = 1
+		medal.Position = UDim2.fromOffset(5, 4)
+		medal.Size = UDim2.fromOffset(32, 32)
+		medal.ZIndex = row.ZIndex + 2
+		medal.Active = false
+		medal.Parent = row
+	end
+
+	if not medalKey then
+		medal.Image = ""
+		medal.Visible = false
+		return false
+	end
+
+	return BubblegumAssets.applyTo(medal, medalKey)
 end
 
 function ArcadeUI.PerfectClearFlash(context)
@@ -560,6 +637,39 @@ function ArcadeUI.PerfectClearFlash(context)
 	task.delay(0.5, function()
 		flash:Destroy()
 	end)
+
+	for index, key in CONFETTI_ASSET_KEYS do
+		local confetti = ArcadeUI.DecorativeImage(context.boardFrame, key, {
+			name = `PerfectClearConfetti{index}`,
+			position = UDim2.new(0.18 + index * 0.14, 0, 0.08, 0),
+			size = UDim2.fromOffset(index % 2 == 0 and 18 or 14, index % 2 == 0 and 18 or 14),
+			anchorPoint = Vector2.new(0.5, 0.5),
+			rotation = -20 + index * 18,
+			imageColor = index == 1 and ArcadeUI.Color.gold
+				or index == 2 and ArcadeUI.Color.rimBright
+				or index == 3 and ArcadeUI.Color.combo
+				or ArcadeUI.Color.best,
+			zIndex = 31,
+		})
+		if confetti then
+			context.TweenService
+				:Create(
+					confetti,
+					TweenInfo.new(0.65, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+					{
+						Position = confetti.Position + UDim2.fromOffset(0, 34 + index * 4),
+						ImageTransparency = 1,
+						Rotation = confetti.Rotation + 38,
+					}
+				)
+				:Play()
+			task.delay(0.7, function()
+				if confetti.Parent then
+					confetti:Destroy()
+				end
+			end)
+		end
+	end
 end
 
 function ArcadeUI.ShakeWindow(context)
@@ -708,6 +818,7 @@ function ArcadeUI.LeaderboardRow(parent, index)
 	corner(row, 12)
 	stroke(row, ArcadeUI.Color.edge, 1, 0.28)
 	gradient(row, ArcadeUI.Color.inner, ArcadeUI.Color.innerBottom, 90)
+	ArcadeUI.SetLeaderboardMedal(row, index)
 	return row
 end
 

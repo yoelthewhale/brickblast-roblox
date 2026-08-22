@@ -617,19 +617,43 @@ local function saveSettings()
 	settingsEvent:FireServer("Update", settingsPayload())
 end
 
-function day43Ui.fireQueueRequest(action, payload)
+function day43Ui.fireQueueRequest(action, payload, extra)
 	local now = os.clock()
 	if now - day43Ui.lastServerActionAt < day43Ui.serverActionCooldownSeconds then
 		return false
 	end
 
 	day43Ui.lastServerActionAt = now
-	if payload ~= nil then
+	-- `extra` carries the Solo difficulty id. The server sanitizes it; nothing
+	-- here is trusted.
+	if extra ~= nil then
+		queueEvent:FireServer(action, payload, extra)
+	elseif payload ~= nil then
 		queueEvent:FireServer(action, payload)
 	else
 		queueEvent:FireServer(action)
 	end
 	return true
+end
+
+-- Mode/difficulty selection lives in its own ModuleScript with its own register
+-- budget. It is required inline and stored on day43Ui rather than as a
+-- top-level local, because this chunk sits two registers from Luau's 200 limit
+-- and a fresh top-level local here fails CI (see #96).
+function day43Ui.openModeSelect()
+	if not day43Ui.modeSelect then
+		day43Ui.modeSelect = require(script.Parent.ModeSelectPanel).new(gui, {
+			playSound = playSound,
+			isReducedMotion = function()
+				return reducedMotion
+			end,
+			onConfirm = function(mode, difficulty)
+				day43Ui.fireQueueRequest(mode, nil, difficulty)
+			end,
+		})
+	end
+
+	day43Ui.modeSelect:Open()
 end
 
 local function localCosmeticProgress()
@@ -1079,7 +1103,7 @@ hudController = HUDController.new(gui, {
 				ExperienceConfig.isModeEnabled("Solo")
 				and not ExperienceConfig.isModeEnabled("Battle")
 			then
-				day43Ui.fireQueueRequest("Solo")
+				day43Ui.openModeSelect()
 			elseif currentHubState and currentHubState.queued then
 				day43Ui.fireQueueRequest("LeaveQueue")
 			else
@@ -1186,7 +1210,7 @@ hudController = HUDController.new(gui, {
 						"Battle, Story, and Custom Lab are disabled in this build.",
 						Color3.fromRGB(30, 187, 255),
 						function()
-							day43Ui.fireQueueRequest("Solo")
+							day43Ui.openModeSelect()
 						end
 					)
 				end
@@ -1600,7 +1624,7 @@ homePanelController = HomePanel.new(gui, {
 				ExperienceConfig.isModeEnabled("Solo")
 				and not ExperienceConfig.isModeEnabled("Battle")
 			then
-				day43Ui.fireQueueRequest("Solo")
+				day43Ui.openModeSelect()
 			else
 				day43Ui.fireQueueRequest(queued and "LeaveQueue" or "Battle")
 			end
@@ -2282,17 +2306,27 @@ ArcadeUI.StatCard(comboBadgeLabel)
 ArcadeUI.Text(comboBadgeLabel, "combo")
 
 for sparkleIndex = 1, 4 do
-	local sparkle = Instance.new("Frame")
-	sparkle.Name = `ComboSparkle{sparkleIndex}`
-	sparkle.BackgroundColor3 = sparkleIndex % 2 == 0 and ArcadeUI.Color.gold
-		or ArcadeUI.Color.rimBright
-	sparkle.BorderSizePixel = 0
-	sparkle.Position = UDim2.fromOffset(26 + sparkleIndex * 36, sparkleIndex % 2 == 0 and 24 or 76)
-	sparkle.Size = UDim2.fromOffset(7, 7)
-	sparkle.BackgroundTransparency = 1
-	sparkle.Active = false
-	sparkle.Parent = comboBadgeLabel
-	UITheme.corner(sparkle, 7)
+	local sparkle = ArcadeUI.DecorativeImage(comboBadgeLabel, "SparkleParticle", {
+		name = `ComboSparkle{sparkleIndex}`,
+		position = UDim2.fromOffset(24 + sparkleIndex * 35, sparkleIndex % 2 == 0 and 20 or 72),
+		size = UDim2.fromOffset(14, 14),
+		transparency = 1,
+		imageColor = sparkleIndex % 2 == 0 and ArcadeUI.Color.gold or ArcadeUI.Color.rimBright,
+	})
+	if not sparkle then
+		sparkle = Instance.new("Frame")
+		sparkle.Name = `ComboSparkle{sparkleIndex}`
+		sparkle.BackgroundColor3 = sparkleIndex % 2 == 0 and ArcadeUI.Color.gold
+			or ArcadeUI.Color.rimBright
+		sparkle.BorderSizePixel = 0
+		sparkle.Position =
+			UDim2.fromOffset(26 + sparkleIndex * 36, sparkleIndex % 2 == 0 and 24 or 76)
+		sparkle.Size = UDim2.fromOffset(7, 7)
+		sparkle.BackgroundTransparency = 1
+		sparkle.Active = false
+		sparkle.Parent = comboBadgeLabel
+		UITheme.corner(sparkle, 7)
+	end
 end
 
 coinStatLabel = Instance.new("TextLabel")
@@ -3990,7 +4024,9 @@ local function renderLeaderboard(leaderboard)
 		end
 
 		local rank = row:FindFirstChild("Rank")
+		local hasMedal = ArcadeUI.SetLeaderboardMedal(row, index)
 		if rank and rank:IsA("TextLabel") then
+			rank.Visible = not hasMedal
 			rank.Text = index <= 3 and tostring(index) or tostring(index)
 			rank.TextColor3 = index == 1 and ArcadeUI.Color.gold
 				or index == 2 and ArcadeUI.Color.silver
@@ -4466,6 +4502,12 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 	end
 
 	day43Ui.markInitialServerResponse()
+
+	if effect.kind == "OpenModeSelect" then
+		day43Ui.closeMajorPanels()
+		day43Ui.openModeSelect()
+		return
+	end
 
 	if effect.kind == "InvalidPlace" then
 		playSound("Blocked")
