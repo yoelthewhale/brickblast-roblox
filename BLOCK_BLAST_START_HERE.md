@@ -66,7 +66,10 @@ Or from PowerShell directly:
 .\tools\lune.exe run scripts/run-tests.luau
 ```
 
-Latest generated builds stay in this folder as `BlockBlastBattle-Day*.rbxl` — never overwrite an earlier one, always build to a new filename.
+The current generated build stays in the repository root as `BlockBlastBattle-Day*.rbxl`.
+Older permanent snapshots live in `checkpoints/`, and temporary feature builds
+live in `test-builds/`. Never overwrite an earlier checkpoint; always build to
+a new filename.
 
 ## Tracking Work
 
