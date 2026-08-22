@@ -27,6 +27,15 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - Kept all registered `.claude/worktrees/` entries. They have no unique commits relative to master, but one contains uncommitted changes and the others may still be useful Claude infrastructure. VS Code now hides `.claude/` instead of deleting it.
 - Updated `.vscode/settings.json`, `BlockBlastBattle.code-workspace`, and `BUILD_INDEX.md` to make the current root view focused on active project files.
 
+## Session Update - 2026-08-22 Rejected UI Asset Cleanup
+
+- Removed the rejected early HUD icon pack.
+- Removed the rejected blocky BedWars-style icon pack.
+- Removed old UI mockup/previews, including the design approval mockups and upload preview sheets.
+- Removed the stale generator scripts that recreated those rejected packs and mockups.
+- Preserved `assets/ui/bubblegum-production/` unchanged as the current production asset package.
+- Updated archived asset-upload documentation so future sessions do not try to upload removed/rejected PNGs.
+
 ## Session Update - 2026-08-22 Local Build Cleanup
 
 - Fetched `origin/master` and fast-forwarded local `master` from `1f8a13542f830400dcb9fe6dca4bfac66a359c74` to `6bebe239b1708fbfd3fafc3404c4afa862f6c88b`.
@@ -1469,9 +1478,9 @@ Open `BlockBlastBattle-Day28.rbxl`, press Play, and capture desktop/mobile scree
 ### Completed
 
 - Generated a blocky competitive / BedWars-inspired icon language draft that was later rejected.
-- Generated a separate chosen icon pack under `assets/ui/icons-blocky-bedwars`.
-- Added `assets/ui/mockups/blocky-bedwars-icon-pack-preview.png` as a preview sheet.
-- Added `scripts/generate-blocky-ui-icons.ps1` so the chosen pack can be regenerated.
+- Generated a separate chosen icon pack. The old files were removed during the 2026-08-22 rejected UI asset cleanup.
+- Added a preview sheet. The old preview was removed during the 2026-08-22 rejected UI asset cleanup.
+- Added a generator script. The stale generator was removed during the 2026-08-22 rejected UI asset cleanup so the rejected pack is not recreated accidentally.
 - The later Day28 correction marks this pack as rejected-only and not approved for upload.
 
 ### Current State
@@ -1487,20 +1496,20 @@ Approve the Day28 native UI direction from Play-mode screenshots before producin
 
 ### Completed
 
-- Generated a free project-owned HUD icon pack for Play, Shop, Quests, Settings, Coins, Wins, and Story Stars.
-- Added `assets/ui/icons/*.png` source upload files and `assets/ui/mockups/hud-icon-upload-pack-preview.png`.
-- Added `scripts/generate-ui-icons.ps1` so the icon pack can be regenerated without paid assets.
-- Added `docs/UI_ICON_UPLOAD_MANIFEST.md` mapping every PNG to its `UIAssets.luau` key.
+- Generated a free project-owned HUD icon pack for Play, Shop, Quests, Settings, Coins, Wins, and Story Stars. This pack was later rejected and removed during the 2026-08-22 rejected UI asset cleanup.
+- Added old source upload files and a preview sheet. Those rejected files were removed during the 2026-08-22 rejected UI asset cleanup.
+- Added a generator script. The stale generator was removed during the 2026-08-22 rejected UI asset cleanup so the rejected pack is not recreated accidentally.
+- Added archived upload documentation. It now records that the pack was rejected and removed.
 - Rebuilt `BlockBlastBattle-Day26.rbxl`.
 
 ### Current State
 
-- The PNG files are ready to upload, but the Roblox UI cannot display them until Roblox image asset IDs are pasted into `UIAssets.luau`.
-- Day26 still safely falls back to text badges if the IDs are blank.
+- The rejected PNG files were removed. The current production art path is `assets/ui/bubblegum-production/` through `BubblegumAssets.luau`.
+- Day26 still safely falls back to text badges in historical builds if the old IDs are blank.
 
 ### Next Priority
 
-Upload the seven PNGs in `assets/ui/icons`, paste the returned IDs into `UIAssets.luau`, then rebuild the next Day file so the in-game HUD uses real images.
+Use the approved Bubblegum production asset package instead of the removed rejected icon pack.
 
 ## Day25 Free UI Asset Pipeline - 2026-08-02
 
