@@ -69,7 +69,12 @@ tests.restoreRewindsBoardAndRunStats = function()
 	assertCondition(state.comboStreak == 2, "Combo should rewind")
 	assertCondition(state.highestCombo == 4, "Highest combo should rewind")
 	assertCondition(state.alive == true, "Continue should revive the run")
-	assertCondition(state.usedContinue == true, "Run should record continue usage")
+	assertCondition(state.continueUses == 0, "Restore alone should not consume a continue")
+	assertCondition(
+		OneMoreChance.confirmPlayableUse(state) == true,
+		"Playable restore should consume"
+	)
+	assertCondition(state.usedContinue == true, "Run should record confirmed continue usage")
 end
 
 tests.capPreventsSecondFreeContinue = function()
@@ -78,6 +83,10 @@ tests.capPreventsSecondFreeContinue = function()
 	OneMoreChance.captureSnapshot(state)
 	OneMoreChance.beginOffer(state)
 	assertCondition(OneMoreChance.restore(state) == true, "First continue should work")
+	assertCondition(
+		OneMoreChance.confirmPlayableUse(state) == true,
+		"First continue should consume"
+	)
 
 	state.alive = false
 	OneMoreChance.beginOffer(state)

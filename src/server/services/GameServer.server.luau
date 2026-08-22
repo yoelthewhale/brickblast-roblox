@@ -2377,6 +2377,13 @@ TelemetryReporter.useOneMoreChance = function(player)
 
 	giveNewHand(state)
 	state.alive = Grid.hasAnyMove(state.board, state.hand)
+	if not TelemetryReporter.OneMoreChance.confirmPlayableUse(state) then
+		TelemetryReporter.OneMoreChance.reopenOffer(state)
+		analytics.continueOfferUnavailable += 1
+		broadcast(session)
+		return
+	end
+
 	analytics.continueOfferAccepted += 1
 	analytics.continuePrototypeFulfilled += 1
 	updateLeaderstats(player, state.score, true)
@@ -2386,9 +2393,6 @@ TelemetryReporter.useOneMoreChance = function(player)
 		detail = "Rewound one move and refreshed your hand.",
 	})
 	broadcast(session)
-	if not state.alive then
-		scheduleReturnIfEliminated(player, state)
-	end
 end
 
 TelemetryReporter.declineOneMoreChance = function(player)

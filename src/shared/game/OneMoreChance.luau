@@ -97,13 +97,34 @@ function OneMoreChance.restore(state)
 	state.linesCleared = snapshot.linesCleared
 	state.comboStreak = snapshot.comboStreak
 	state.highestCombo = snapshot.highestCombo
-	state.continueUses += 1
 	state.continuePending = false
-	state.usedContinue = true
 	state.alive = true
 	state.message = "One More Chance"
 	state.returnScheduled = false
 	state.resultSummary = nil
+	return true
+end
+
+function OneMoreChance.confirmPlayableUse(state)
+	if typeof(state) ~= "table" or not Grid.hasAnyMove(state.board, state.hand) then
+		return false
+	end
+
+	state.continueUses += 1
+	state.usedContinue = true
+	state.continuePending = false
+	state.message = "One More Chance"
+	return true
+end
+
+function OneMoreChance.reopenOffer(state)
+	if not OneMoreChance.canOffer(state) then
+		return false
+	end
+
+	state.continuePending = true
+	state.alive = false
+	state.message = "No moves left"
 	return true
 end
 
