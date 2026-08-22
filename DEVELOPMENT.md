@@ -6,14 +6,22 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
-- **Latest completed numbered checkpoint: Day46** (`BlockBlastBattle-Day46.rbxl`, 2026-08-22). Built from synced `origin/master` at `6bebe239b1708fbfd3fafc3404c4afa862f6c88b` after #122 and #123 landed.
-- **Current build to open: `BlockBlastBattle-Day46.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
+- **Latest completed numbered checkpoint: Day47** (`BlockBlastBattle-Day47.rbxl`, 2026-08-22). Simplifies the runtime hub to a small solo-focused test island.
+- **Current build to open: `BlockBlastBattle-Day47.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
 - **`BlockBlastBattle-Day44.rbxl` is broken and kept deliberately.** It was built while `GameServer.server.luau` was over Luau's 200-local limit, so the server compiled nothing: no hub, no remotes, players on the bare bootstrap floor. It is retained as the artifact of the #96 incident. Do not open it expecting a working game, and do not delete it to tidy up.
-- **Next numbered checkpoint: Day47.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
+- **Next numbered checkpoint: Day48.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
 - **GitHub `master` is the source of truth for code.** The `.rbxl` files in the repository root are local, generated, gitignored build checkpoints: snapshots for Studio testing, never the authoritative source. A missing or stale `.rbxl` says nothing about the state of the code.
-- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day46.rbxl` stays in the repository root because it is the current game to open.
+- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day47.rbxl` stays in the repository root because it is the current game to open.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
+
+## Session Update - 2026-08-22 Simple Solo Hub Reset
+
+- Replaced the active runtime hub generation path with an intentionally simple solo test hub.
+- Removed the current toybox/fantasy hub from the active build path without deleting its legacy helper code yet.
+- The new hub contains one grass platform, one stone plaza, a visible `HubSpawn`, a dominant `SoloPlayPad`, simple score/guide boards, low safety rails, small color markers, and the existing void recovery platform.
+- Preserved the expected `BlockBlastHub`, `HubSpawn`, and `SoloPlayPad` contracts so spawn safety and the Solo prompt flow continue to work.
+- Battle and Story world prompts are not generated while those modes remain disabled in `ExperienceConfig`.
 
 ## Session Update - 2026-08-22 VS Code / Repository Organization Pass
 

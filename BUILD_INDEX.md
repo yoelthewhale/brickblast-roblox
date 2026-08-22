@@ -2,14 +2,15 @@
 
 ## CURRENT GAME TO OPEN
 
-`BlockBlastBattle-Day46.rbxl`
+`BlockBlastBattle-Day47.rbxl`
 
-- Current master SHA: `6bebe239b1708fbfd3fafc3404c4afa862f6c88b`
-- Built: `2026-08-22 12:26:53`
+- Source branch: `chore/remove-stale-ui-assets`
+- Source commit: simple hub reset commit on this branch
+- Built: `2026-08-22 13:41:12`
 - Location: repository root
-- Purpose: current local checkpoint built from synced `origin/master`.
+- Purpose: current local checkpoint with the simplified solo test hub.
 
-Double-click `BlockBlastBattle-Day46.rbxl` when you want to test the newest
+Double-click `BlockBlastBattle-Day47.rbxl` when you want to test the newest
 real BrickBlast game.
 
 ## Folder Layout
@@ -70,6 +71,6 @@ checkpoint. It is hidden in VS Code Explorer and should be ignored.
 ## Checkpoint Rule
 
 Do not invent Day numbers. The next Day number comes from the highest existing
-real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day46.
+real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day47.
 
-Next real numbered checkpoint: Day47.
+Next real numbered checkpoint: Day48.

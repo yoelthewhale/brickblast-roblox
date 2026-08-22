@@ -901,7 +901,7 @@ local function configureLighting()
 	depth.Parent = Lighting
 end
 
-local function buildMainIsland(parent)
+local function _buildMainIsland(parent)
 	clearHubTerrain()
 
 	local island = makeZoneFolder(parent, "CentralHubIsland")
@@ -1202,7 +1202,7 @@ local function buildMainIsland(parent)
 	return island, walkSurface, spawn, soloPrompt
 end
 
-local function buildSideIslands(parent)
+local function _buildSideIslands(parent)
 	if not ExperienceConfig.isBattleVisible() and not ExperienceConfig.isStoryVisible() then
 		return nil, nil
 	end
@@ -1522,7 +1522,7 @@ local function buildArena(parent, arenaIndex, arenaCenter)
 	}
 end
 
-local function buildBackground(parent)
+local function _buildBackground(parent)
 	local scenery = Instance.new("Folder")
 	scenery.Name = "DistantFloatingScenery"
 	scenery.Parent = parent
@@ -1931,7 +1931,7 @@ local function makeLollipopProp(parent, name, center, scale, color)
 	return prop
 end
 
-local function buildToyboxHub(parent)
+local function _buildToyboxHub(parent)
 	local hub = makeZoneFolder(parent, "BubblegumSoloHub")
 
 	local floor = makePart(
@@ -2502,35 +2502,131 @@ local function buildToyboxHub(parent)
 end
 
 local function buildHub(parent)
-	if ExperienceConfig.World.UseToyboxHub then
-		return buildToyboxHub(parent)
-	end
+	clearHubTerrain()
 
-	local _, _, spawn, soloPrompt = buildMainIsland(parent)
-	local battlePrompt, storyPrompt = buildSideIslands(parent)
-	buildBackground(parent)
+	local hub = makeZoneFolder(parent, "SimpleSoloHub")
 
-	local battleSpawn = nil
-	if ExperienceConfig.World.BuildBattleArenas then
-		battleSpawn = makePart(
-			parent,
-			"BattleArenaSpawn",
-			Vector3.new(14, 1, 14),
-			Vector3.new(0, 18, -172),
-			PALETTE.gold,
+	local base = makePart(
+		hub,
+		"SimpleGrassPlatform",
+		Vector3.new(96, 3, 96),
+		Vector3.new(0, 0, 0),
+		Color3.fromRGB(117, 218, 112),
+		Enum.Material.Grass
+	)
+	base.CanCollide = true
+
+	local plaza = makePart(
+		hub,
+		"SimpleStonePlaza",
+		Vector3.new(58, 1, 46),
+		Vector3.new(0, 2.1, 10),
+		Color3.fromRGB(232, 226, 213),
+		Enum.Material.SmoothPlastic
+	)
+	plaza.CanCollide = true
+
+	local spawn = Instance.new("SpawnLocation")
+	spawn.Name = "HubSpawn"
+	spawn.Anchored = true
+	spawn.Size = Vector3.new(14, 1, 14)
+	spawn.CFrame = CFrame.new(0, 3.25, 28) * CFrame.Angles(0, math.rad(180), 0)
+	spawn.Color = Color3.fromRGB(103, 210, 255)
+	spawn.Material = Enum.Material.SmoothPlastic
+	spawn.CastShadow = false
+	spawn.Neutral = true
+	spawn.Duration = 0
+	spawn.Enabled = true
+	spawn.CanCollide = true
+	spawn.CanTouch = false
+	spawn.CanQuery = true
+	spawn.Transparency = 0.15
+	spawn.Parent = hub
+
+	local playPad = makePart(
+		hub,
+		"SoloPlayPad",
+		Vector3.new(30, 1, 18),
+		Vector3.new(0, 3.3, -20),
+		Color3.fromRGB(35, 187, 255),
+		Enum.Material.Neon
+	)
+	playPad:SetAttribute("QueueMode", "Solo")
+	local soloPrompt = addPrompt(playPad, "Play", "Solo Puzzle")
+	addStatusBillboard(
+		playPad,
+		"SoloPlayStatus",
+		"PLAY SOLO",
+		"Step here to pick a difficulty",
+		Vector3.new(0, 5.5, 0)
+	)
+
+	local scoreBoard = makePart(
+		hub,
+		"SimpleLeaderboardBoard",
+		Vector3.new(26, 14, 1),
+		Vector3.new(-31, 9, -18),
+		Color3.fromRGB(22, 35, 54),
+		Enum.Material.SmoothPlastic
+	)
+	addSurfaceText(scoreBoard, "BEST SCORES", Enum.NormalId.Front, Color3.fromRGB(255, 255, 255))
+
+	local guideBoard = makePart(
+		hub,
+		"SimpleGuideBoard",
+		Vector3.new(24, 10, 1),
+		Vector3.new(31, 7, -18),
+		Color3.fromRGB(31, 48, 70),
+		Enum.Material.SmoothPlastic
+	)
+	addSurfaceText(
+		guideBoard,
+		"PLACE BLOCKS\nCLEAR LINES\nBEAT YOUR BEST",
+		Enum.NormalId.Front,
+		Color3.fromRGB(255, 255, 255)
+	)
+
+	for _, rail in
+		{
+			{ "NorthRail", Vector3.new(92, 3, 2), Vector3.new(0, 3.5, -48) },
+			{ "SouthRail", Vector3.new(92, 3, 2), Vector3.new(0, 3.5, 48) },
+			{ "WestRail", Vector3.new(2, 3, 92), Vector3.new(-48, 3.5, 0) },
+			{ "EastRail", Vector3.new(2, 3, 92), Vector3.new(48, 3.5, 0) },
+		}
+	do
+		makePart(
+			hub,
+			rail[1],
+			rail[2],
+			rail[3],
+			Color3.fromRGB(64, 92, 124),
 			Enum.Material.SmoothPlastic
 		)
-		makeBridge(
-			parent,
-			"ArenaMainBridge",
-			Vector3.new(0, 15.2, -146),
-			Vector3.new(0, 10.6, -270),
-			13,
-			-1
-		)
 	end
 
-	return spawn, battlePrompt, storyPrompt, battleSpawn, soloPrompt
+	for index, info in
+		{
+			{ Vector3.new(-18, 3.35, 31), Color3.fromRGB(255, 210, 72) },
+			{ Vector3.new(18, 3.35, 31), Color3.fromRGB(255, 110, 181) },
+			{ Vector3.new(-18, 3.35, -7), Color3.fromRGB(130, 235, 94) },
+			{ Vector3.new(18, 3.35, -7), Color3.fromRGB(169, 124, 255) },
+		}
+	do
+		local marker = makePart(
+			hub,
+			`SimpleColorMarker{index}`,
+			Vector3.new(6, 0.7, 6),
+			info[1],
+			info[2],
+			Enum.Material.SmoothPlastic,
+			{ canCollide = false }
+		)
+		marker.Shape = Enum.PartType.Cylinder
+	end
+
+	addBillboard(spawn, "BRICKBLAST", "Simple test hub", Vector3.new(0, 5.2, 0))
+
+	return spawn, nil, nil, nil, soloPrompt
 end
 
 local function buildRecoveryPlatform(parent, hubSpawn)
