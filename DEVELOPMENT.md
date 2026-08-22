@@ -6,14 +6,33 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
-- **Latest completed numbered checkpoint: Day48** (`BlockBlastBattle-Day48.rbxl`, 2026-08-22). Combines the simplified solo hub with Claude's merged left-nav HUD fix.
-- **Current build to open: `BlockBlastBattle-Day48.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
+- **Latest completed numbered checkpoint: Day49** (`BlockBlastBattle-Day49.rbxl`, 2026-08-22). Adds the free One More Chance prototype for Solo runs.
+- **Current build to open: `BlockBlastBattle-Day49.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
 - **`BlockBlastBattle-Day44.rbxl` is broken and kept deliberately.** It was built while `GameServer.server.luau` was over Luau's 200-local limit, so the server compiled nothing: no hub, no remotes, players on the bare bootstrap floor. It is retained as the artifact of the #96 incident. Do not open it expecting a working game, and do not delete it to tidy up.
-- **Next numbered checkpoint: Day49.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
+- **Next numbered checkpoint: Day50.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
 - **GitHub `master` is the source of truth for code.** The `.rbxl` files in the repository root are local, generated, gitignored build checkpoints: snapshots for Studio testing, never the authoritative source. A missing or stale `.rbxl` says nothing about the state of the code.
 - **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day48.rbxl` stays in the repository root because it is the current game to open.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
+
+## Session Update - 2026-08-22 One More Chance Prototype
+
+- Added a server-authoritative free Solo continue prototype using Claude's One More Chance spec as the product direction.
+- Captures a pre-placement Solo snapshot before each valid move so a failed run can rewind one move.
+- Holds a Solo run in a pending offer state when the server detects no legal moves and the one-per-run free continue is available.
+- Added a client-rendered offer panel that reads only the server's `continueOffer` contract and sends `ContinueRun` or `EndRun` requests through the existing Queue remote.
+- Refreshes the hand server-side after the rewind using the existing assistance-aware hand generator, so the new hand has a fair chance to fit.
+- Added low-volume telemetry counters for shown, accepted, declined, unavailable, and fulfilled continue offers.
+- Added shared tests covering hidden-before-pending, board/stat rewind, and one-use cap behavior.
+- Built `BlockBlastBattle-Day49.rbxl` for Studio inspection.
+
+### Remaining Manual Checks
+
+- Studio-test a Solo run that reaches no legal moves and confirm the One More Chance panel appears.
+- Verify Use Free rewinds one move, refreshes the hand, and allows continued placement.
+- Verify End Run finalizes normally and returns the player safely.
+- Verify no duplicate panel behavior after Play Again, Return Hub, reset, or reopening Solo.
+- Later Robux work still needs Creator Dashboard product IDs, `ProcessReceipt`, persisted token fallback, idempotent receipt ledger, and Claude's final Bubblegum presentation.
 
 ## Session Update - 2026-08-22 Simple Solo Hub Reset
 

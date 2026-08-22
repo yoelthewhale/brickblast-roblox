@@ -2,15 +2,15 @@
 
 ## CURRENT GAME TO OPEN
 
-`BlockBlastBattle-Day48.rbxl`
+`BlockBlastBattle-Day49.rbxl`
 
-- Source branch: `chore/remove-stale-ui-assets`
-- Source commit: `79f5a0d`
-- Built: `2026-08-22 14:04:29`
+- Source branch: `feature/one-more-chance-free-prototype`
+- Source commit: pending Day49 commit
+- Built: `2026-08-22 14:58:00`
 - Location: repository root
-- Purpose: current local checkpoint with the simplified solo test hub and Claude's merged left-nav HUD fix.
+- Purpose: current local checkpoint with the simplified solo test hub, Claude's merged left-nav HUD fix, and the free One More Chance Solo prototype.
 
-Double-click `BlockBlastBattle-Day48.rbxl` when you want to test the newest
+Double-click `BlockBlastBattle-Day49.rbxl` when you want to test the newest
 real BrickBlast game.
 
 ## Folder Layout
@@ -71,6 +71,6 @@ checkpoint. It is hidden in VS Code Explorer and should be ignored.
 ## Checkpoint Rule
 
 Do not invent Day numbers. The next Day number comes from the highest existing
-real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day48.
+real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day49.
 
-Next real numbered checkpoint: Day49.
+Next real numbered checkpoint: Day50.

@@ -96,6 +96,7 @@ local TEST_MODULES = {
 	"DeveloperToolsTests",
 	"GameplayRulesTests",
 	"HandGeneratorTests",
+	"OneMoreChanceTests",
 	"ProfilePersistenceTests",
 	"SimulationHarnessTests",
 	"SoloLayoutTests",
