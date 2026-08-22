@@ -3258,9 +3258,9 @@ function day43Ui.ensureContinueOfferPanel()
 	primary.Font = Enum.Font.GothamBlack
 	primary.Position = UDim2.fromOffset(38, 178)
 	primary.Size = UDim2.fromOffset(164, 46)
-	primary.Text = "Use Free"
+	primary.Text = "One More Chance"
 	primary.TextColor3 = Color3.fromRGB(255, 255, 255)
-	primary.TextSize = 17
+	primary.TextSize = 15
 	primary.ZIndex = 82
 	primary.Parent = card
 	styleButton(primary, "primary")
@@ -3313,7 +3313,7 @@ function day43Ui.updateContinueOffer(state)
 
 	panel.overlay.Visible = visible
 	if visible then
-		panel.primary.Text = "Use Free"
+		panel.primary.Text = "One More Chance"
 		panel.meta.Text =
 			`{offer.capThisRun - offer.usedThisRun} of {offer.capThisRun} available this run`
 	end

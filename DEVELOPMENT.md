@@ -29,7 +29,7 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 ### Remaining Manual Checks
 
 - Studio-test a Solo run that reaches no legal moves and confirm the One More Chance panel appears.
-- Verify Use Free rewinds one move, refreshes the hand, and allows continued placement.
+- Verify One More Chance rewinds one move, refreshes the hand, and allows continued placement.
 - Verify End Run finalizes normally and returns the player safely.
 - Verify no duplicate panel behavior after Play Again, Return Hub, reset, or reopening Solo.
 - Later Robux work still needs Creator Dashboard product IDs, `ProcessReceipt`, persisted token fallback, idempotent receipt ledger, and Claude's final Bubblegum presentation.
