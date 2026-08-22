@@ -14,11 +14,24 @@ status*. Keep them from drifting: describe intent here, progress there.
 
 BrickBlast should read as a **bubblegum toybox** — a bright, soft, chunky,
 tactile plastic-toy world. Rounded forms, candy-adjacent colors, glossy
-highlights, satisfying physical-feeling pieces. The hub already gestures at
-this (`HubBuilder.luau` literally builds a `BubblegumSoloHub`); the gameplay
-screen does not yet, and the menus read as bolted-on from a different game
-(#50). The overhaul's job is to make one coherent visual language across the
-whole experience.
+highlights, satisfying physical-feeling pieces. The gameplay screen is moving
+toward this; the menus still read as bolted-on from a different game (#50). The
+overhaul's job is to make one coherent visual language across the whole
+experience.
+
+**The hub is deliberately not part of that yet.** `HubBuilder.buildHub` now
+builds `SimpleSoloHub` -- a bare platform, plaza, spawn, Solo pad, boards and
+rails -- because Yoel asked for the map to be stripped right down for gameplay
+testing. That is a temporary test environment, not the visual direction, and it
+should not be read as one.
+
+The previous candy hub still exists in the file as `_buildToyboxHub`, ~569
+lines, unreferenced. It is the closest thing the project has to a built
+Bubblegum environment, so it is worth keeping as reference material rather than
+deleting. But note that it is now the *second* superseded hub carried in that
+file -- #32 already tracks ~580 lines of an earlier one -- so rebuilding the
+hub environment should be scoped as its own task that resolves both, not as an
+incidental part of another change.
 
 ## The part that is easy to get wrong
 
@@ -73,7 +86,8 @@ even if the issue is reorganized.
 5. Progression-driven visual states
 6. Juice and effects
 7. Menus, shop, cosmetics, results
-8. Hub polish
+8. Hub environment rebuild (the current `SimpleSoloHub` is a test map, not a
+   design; this phase is a rebuild rather than a polish pass)
 9. Typography and consistency sweep
 10. Mobile and device visual verification
 
