@@ -5,7 +5,7 @@
 `BlockBlastBattle-Day49.rbxl`
 
 - Source branch: `feature/one-more-chance-free-prototype`
-- Source commit: pending Day49 commit
+- Source commit: `1ba833e`
 - Built: `2026-08-22 14:58:00`
 - Location: repository root
 - Purpose: current local checkpoint with the simplified solo test hub, Claude's merged left-nav HUD fix, and the free One More Chance Solo prototype.
