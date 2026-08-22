@@ -3011,6 +3011,20 @@ scheduleReturnIfEliminated = function(player, state)
 		return
 	end
 
+	if session and session.mode == "Solo" then
+		state.returnScheduled = true
+		state.finishedAt = state.finishedAt or os.clock()
+		grantBattleRewards(player, state, false)
+		if not state.resultShown then
+			fireResult(player, state, false)
+		end
+		if not state.developerTestRun then
+			saveProfile(player)
+		end
+		broadcast(session)
+		return
+	end
+
 	state.returnScheduled = true
 	task.delay(OUT_OF_MOVES_RETURN_SECONDS, function()
 		if playerStates[player] == state and not state.alive and not state.continuePending then

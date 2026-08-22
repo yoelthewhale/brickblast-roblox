@@ -4307,6 +4307,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		end
 		root.Visible = false
 		day43Ui.updateContinueOffer(nil)
+		resultPanelController:Hide()
 		if stageUi.card then
 			stageUi.card.Visible = false
 		end
