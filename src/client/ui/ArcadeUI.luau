@@ -809,6 +809,24 @@ function ArcadeUI.BoardCell(button)
 	return button
 end
 
+-- Paints a button and derives its label color from the fill it just got.
+--
+-- The action buttons were painted from stage preset roles while their text
+-- stayed the near-white it was built with, so `playAgainButton` -- filled
+-- with the soft ink role -- was white on pale lavender at roughly 1.9:1. That
+-- is the failure mode of assigning backgrounds and text in two different
+-- places: nothing checks the pair. Here they are set together, and the label
+-- is solved against the actual fill rather than assumed.
+function ArcadeUI.PaintButton(button, background)
+	if not button then
+		return button
+	end
+
+	button.BackgroundColor3 = background
+	button.TextColor3 = VisualTokens.readableOn(VisualTokens.identity().ink, background, 4.5)
+	return button
+end
+
 function ArcadeUI.PieceSlot(button)
 	ArcadeUI.InnerPanel(button, {
 		radius = 18,
