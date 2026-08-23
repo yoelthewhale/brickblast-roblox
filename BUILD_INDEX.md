@@ -2,15 +2,15 @@
 
 ## CURRENT GAME TO OPEN
 
-`BlockBlastBattle-Day50.rbxl`
+`BlockBlastBattle-Day51.rbxl`
 
 - Source branch: `feature/one-more-chance-free-prototype`
-- Source commit: `1eba99f`
-- Built: `2026-08-22 15:38:48 -04:00`
+- Source commit: `9a8dc63`
+- Built: `2026-08-23 13:06:47 -04:00`
 - Location: repository root
-- Purpose: current local checkpoint with the simplified solo test hub, Claude's merged left-nav HUD fix, the free One More Chance Solo prototype, the reviewed Bubblegum continue panel, and the Solo end-flow fix that keeps results anchored to the puzzle workspace.
+- Purpose: current local checkpoint with the simplified solo test hub, Claude's merged left-nav HUD fix, the free One More Chance Solo prototype, the Solo end-flow fix that keeps results anchored to the puzzle workspace, and the approved reference-style One More Chance hero card.
 
-Double-click `BlockBlastBattle-Day50.rbxl` when you want to test the newest
+Double-click `BlockBlastBattle-Day51.rbxl` when you want to test the newest
 real BrickBlast game.
 
 ## Folder Layout
@@ -71,6 +71,6 @@ checkpoint. It is hidden in VS Code Explorer and should be ignored.
 ## Checkpoint Rule
 
 Do not invent Day numbers. The next Day number comes from the highest existing
-real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day50.
+real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day51.
 
-Next real numbered checkpoint: Day51.
+Next real numbered checkpoint: Day52.
