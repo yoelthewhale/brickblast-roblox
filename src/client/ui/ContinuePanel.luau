@@ -252,6 +252,7 @@ function ContinuePanel:BuildAccept(card, tokens)
 		ColorSequenceKeypoint.new(1, tokens.hot),
 	})
 	sheen.Parent = button
+	self.acceptSheen = sheen
 
 	button.Activated:Connect(function()
 		if button:GetAttribute("Busy") then
@@ -336,6 +337,10 @@ function ContinuePanel:Repaint(tokens)
 		ColorSequenceKeypoint.new(1, tokens.accent),
 	})
 	self.accept.BackgroundColor3 = tokens.hot
+	self.acceptSheen.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, tokens.hot:Lerp(tokens.gloss, 0.3)),
+		ColorSequenceKeypoint.new(1, tokens.hot),
+	})
 	self.title.TextColor3 = tokens.ink
 	self.summary.TextColor3 = tokens.ink
 end
