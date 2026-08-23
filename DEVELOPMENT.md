@@ -6,12 +6,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
-- **Latest completed numbered checkpoint: Day46** (`BlockBlastBattle-Day46.rbxl`, 2026-08-22). Built from synced `origin/master` at `6bebe239b1708fbfd3fafc3404c4afa862f6c88b` after #122 and #123 landed.
-- **Current build to open: `BlockBlastBattle-Day46.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
+- **Latest completed numbered checkpoint: Day52** (`BlockBlastBattle-Day52.rbxl`, 2026-08-23). Built from `master` at `15b080c`, the first local checkpoint with the approved Deep Board visual direction from PR #132.
+- **Current build to open: `BlockBlastBattle-Day52.rbxl`**. This is the one obvious current local checkpoint for Studio testing the newest `master`.
+- **Day49-Day51 are feature-branch checkpoints, not current master.** They contain the One More Chance prototype/card work from `feature/one-more-chance-free-prototype`, but they predate Deep Board and should not be opened to inspect the current visual direction.
 - **`BlockBlastBattle-Day44.rbxl` is broken and kept deliberately.** It was built while `GameServer.server.luau` was over Luau's 200-local limit, so the server compiled nothing: no hub, no remotes, players on the bare bootstrap floor. It is retained as the artifact of the #96 incident. Do not open it expecting a working game, and do not delete it to tidy up.
-- **Next numbered checkpoint: Day47.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
+- **Next numbered checkpoint: Day53.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
 - **GitHub `master` is the source of truth for code.** The `.rbxl` files in the repository root are local, generated, gitignored build checkpoints: snapshots for Studio testing, never the authoritative source. A missing or stale `.rbxl` says nothing about the state of the code.
-- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day46.rbxl` stays in the repository root because it is the current game to open.
+- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day52.rbxl` stays in the repository root because it is the current game to open.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
 
@@ -26,6 +27,15 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - Moved Rojo logs into `logs/`.
 - Kept all registered `.claude/worktrees/` entries. They have no unique commits relative to master, but one contains uncommitted changes and the others may still be useful Claude infrastructure. VS Code now hides `.claude/` instead of deleting it.
 - Updated `.vscode/settings.json`, `BlockBlastBattle.code-workspace`, and `BUILD_INDEX.md` to make the current root view focused on active project files.
+
+## Session Update - 2026-08-23 Deep Board Master Checkpoint
+
+- Fetched and fast-forwarded local `master` to `15b080c`, which merges PR #132 and replaces Bubblegum Toybox with the approved Deep Board visual direction.
+- Read the rewritten `docs/VISUAL_DIRECTION.md`; visual work should now use the dark navy room, dark board well, saturated hard-edged block palette, and room-based stage/energy progression.
+- Confirmed real numbered build naming remains `BlockBlastBattle-DayNN.rbxl` with the hyphen. `BrickBlast-Day50-LatestTest.rbxl` remains a temporary alias, not a checkpoint convention.
+- Built `BlockBlastBattle-Day52.rbxl` from `master` at `15b080c`.
+- Updated `BUILD_INDEX.md` to list Day47-Day52 and to clarify that Day49-Day51 were One More Chance feature-branch checkpoints, while Day52 is the current Deep Board master build.
+- Asset read: coin, XP, best-score, trophy, stage, medals, reward crates, shadow, and tintable particle/confetti assets remain plausible or actively referenced; `CandyFlourishCorner` and `LollipopMark` survive only as registry/package entries and should not be used for Deep Board unless the direction changes again.
 
 ## Session Update - 2026-08-22 Local Build Cleanup
 

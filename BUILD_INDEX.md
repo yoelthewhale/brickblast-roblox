@@ -2,15 +2,20 @@
 
 ## CURRENT GAME TO OPEN
 
-`BlockBlastBattle-Day46.rbxl`
+`BlockBlastBattle-Day52.rbxl`
 
-- Current master SHA: `6bebe239b1708fbfd3fafc3404c4afa862f6c88b`
-- Built: `2026-08-22 12:26:53`
+- Current master SHA: `15b080c`
+- Built: `2026-08-23 14:15:00 -04:00`
 - Location: repository root
-- Purpose: current local checkpoint built from synced `origin/master`.
+- Purpose: current local checkpoint built from synced `origin/master`; first build with the approved Deep Board visual direction from PR #132.
 
-Double-click `BlockBlastBattle-Day46.rbxl` when you want to test the newest
-real BrickBlast game.
+Double-click `BlockBlastBattle-Day52.rbxl` when you want to test the newest
+real BrickBlast game from `master`.
+
+Important: Day49-Day51 were local feature-branch checkpoints for the One More
+Chance prototype and card experiments. Day52 is newer and is the first Deep
+Board build, but it does **not** include that unmerged One More Chance feature
+branch yet.
 
 ## Folder Layout
 
@@ -42,10 +47,32 @@ while a background `RobloxStudioBeta` process was present:
 - `BlockBlastBattle-Day44.rbxl`
 - `BlockBlastBattle-Day44-1.rbxl`
 - `BlockBlastBattle-Day45.rbxl`
+- `BlockBlastBattle-Day46.rbxl`
+- `BlockBlastBattle-Day47.rbxl`
+- `BlockBlastBattle-Day48.rbxl`
+- `BlockBlastBattle-Day49.rbxl`
+- `BlockBlastBattle-Day50.rbxl`
+- `BlockBlastBattle-Day51.rbxl`
 
 Those files are obsolete for day-to-day testing and are hidden in VS Code
 Explorer. Keep them unless we deliberately close the locking process and move
 them later.
+
+## Recent Root Checkpoints
+
+| Build | Source | Purpose |
+| --- | --- | --- |
+| `BlockBlastBattle-Day46.rbxl` | `master` at `6bebe23` | Synced master after #122/#123; previous documented current build. |
+| `BlockBlastBattle-Day47.rbxl` | local feature work | Rejected UI asset cleanup and/or simple Solo hub work; kept for history, not current testing. |
+| `BlockBlastBattle-Day48.rbxl` | local feature work + `origin/master` at `2c9022b` | Simple Solo hub plus Claude's left-nav HUD slab fix. |
+| `BlockBlastBattle-Day49.rbxl` | `feature/one-more-chance-free-prototype` | Free One More Chance Solo prototype. |
+| `BlockBlastBattle-Day50.rbxl` | `feature/one-more-chance-free-prototype` | Day49 plus reviewed responsive One More Chance panel and Solo end-flow fix. |
+| `BlockBlastBattle-Day51.rbxl` | `feature/one-more-chance-free-prototype` | Reference-style One More Chance hero card. Superseded visually by Day52 until the feature branch is rebased onto Deep Board. |
+| `BlockBlastBattle-Day52.rbxl` | `master` at `15b080c` | First Deep Board master build. Current build to open. |
+
+Naming convention: real numbered checkpoints use
+`BlockBlastBattle-DayNN.rbxl` with the hyphen. `BrickBlast-Day50-LatestTest.rbxl`
+was an accidental temporary alias and is not a valid numbered checkpoint.
 
 ## Temporary Test Builds
 
@@ -70,6 +97,6 @@ checkpoint. It is hidden in VS Code Explorer and should be ignored.
 ## Checkpoint Rule
 
 Do not invent Day numbers. The next Day number comes from the highest existing
-real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day46.
+real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day52.
 
-Next real numbered checkpoint: Day47.
+Next real numbered checkpoint: Day53.
