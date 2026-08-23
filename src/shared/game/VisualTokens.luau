@@ -2,7 +2,7 @@
 -- docs/VISUAL_DIRECTION.md for the approved direction and GitHub #98 for the
 -- phased rollout.
 --
--- The direction changed on 2026-08-22 from the light "Bubblegum Toybox" look to
+-- The direction changed on 2026-08-23 from the light "Bubblegum Toybox" look to
 -- a dark board with saturated beveled blocks, matching a reference Yoel
 -- approved. The two-axis architecture below survived that pivot unchanged --
 -- only the values moved -- which is the whole reason it was built this way.
@@ -209,7 +209,8 @@ end
 
 -- Proper sRGB relative luminance (WCAG 2.x), gamma-linearized. The naive
 -- weighted-average version is wrong by enough to matter when deciding whether
--- candy text clears 4.5:1 on cream.
+-- a text role clears 4.5:1, and it is wrong in the dangerous direction on a
+-- dark chassis: it scores light-on-navy far lower than it really is.
 local function relativeLuminance(color)
 	local function channel(value)
 		if value <= 0.03928 then
@@ -232,10 +233,11 @@ end
 -- Darkens a color, preserving hue and saturation, until it clears `target`
 -- contrast against `background`.
 --
--- This exists because the chrome palette was tuned for a near-black arcade
--- cabinet and now sits on cream. Retuning eight text roles by eye is how a
--- redesign ships an accessibility regression; deriving them keeps candy hues
--- readable automatically, including after someone retunes the flavor anchors.
+-- This exists because the chrome palette has now been retuned twice -- once
+-- from a near-black arcade cabinet to cream, then from cream to navy.
+-- Retuning eight text roles by eye each time is how a redesign ships an
+-- accessibility regression; deriving them keeps every role readable
+-- automatically, including after someone retunes the flavor anchors.
 function VisualTokens.readableOn(color, background, target)
 	local goal = clampNumber(target, 1, 21)
 	if VisualTokens.contrastRatio(color, background) >= goal then
@@ -277,8 +279,8 @@ function VisualTokens.readableOn(color, background, target)
 end
 
 -- The chassis palette: shaped key-for-key like the old ArcadeUI.Color so all
--- 59 call sites keep working, but derived from the Bubblegum identity instead
--- of the "B2 Polished Arcade" near-black cabinet.
+-- 59 call sites keep working, but derived from the shared identity instead of
+-- the "B2 Polished Arcade" near-black cabinet it started as.
 --
 -- Chrome is deliberately STABLE -- it does not take stage or energy. The
 -- chassis is the identity; progression-driven variation belongs on the board

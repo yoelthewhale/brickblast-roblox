@@ -14,14 +14,14 @@ local CONFETTI_ASSET_KEYS = {
 }
 
 -- The chassis palette. This was the "B2 Polished Arcade" set -- a near-black
--- navy cabinet with a neon cyan rim -- which fought the Bubblegum Toybox board
--- it was framing. It is now derived from the shared identity
--- (docs/VISUAL_DIRECTION.md, #98) but keeps every key name, so all existing
--- call sites are untouched.
+-- navy cabinet with a neon cyan rim -- picked before the game had a direction.
+-- It is now derived from the shared identity (docs/VISUAL_DIRECTION.md, #98)
+-- but keeps every key name, so all existing call sites are untouched.
 --
 -- Text roles are contrast-derived rather than hand-picked: see
--- VisualTokens.readableOn. Do not replace one with a literal Color3 -- several
--- of these sit on cream now, where a hand-picked candy color is unreadable.
+-- VisualTokens.readableOn. Do not replace one with a literal Color3. The
+-- direction has flipped polarity twice already, and a literal that happens to
+-- be readable today is the thing that quietly stops being readable next time.
 ArcadeUI.Color = VisualTokens.chrome()
 
 local function corner(parent, radius)
@@ -119,9 +119,10 @@ function ArcadeUI.Text(label, role)
 		or role == "gold" and ArcadeUI.Color.gold
 		or role == "muted" and ArcadeUI.Color.muted
 		or ArcadeUI.Color.text
-	-- Ink rather than black, and much lighter: a hard black outline was right
-	-- for neon-on-black and reads as grime on cream.
-	label.TextStrokeColor3 = VisualTokens.identity().ink
+	-- The stroke has to sit *behind* the type, so it follows the ground rather
+	-- than the ink. On cream that meant near-white; on a dark chassis the same
+	-- value would halo light text into a smear, so it is the shadow again.
+	label.TextStrokeColor3 = VisualTokens.identity().shadow
 	label.TextStrokeTransparency = role == "muted" and 0.92 or 0.82
 	return label
 end
