@@ -155,23 +155,30 @@ function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	parent.ClipsDescendants = true
 
 	-- Pieces are the most-looked-at object in the game, so their shading is
-	-- worth being fussy about. Everything below used pure black -- correct for
-	-- neon-on-black, but on candy colors black shading reads as dirt rather
-	-- than depth. Shadows and outlines now come from the identity's grape
-	-- shadow and from the piece's own hue, which is what makes a toy look like
-	-- molded plastic instead of a flat sticker.
+	-- worth being fussy about. This used to be a candy: big radius, a floating
+	-- highlight bar, and an embossed "+" glyph. The approved reference is not
+	-- candy -- it is a molded plastic tile, and what sells that is a hard
+	-- three-tone bevel rather than a gloss.
+	--
+	-- Three faces, all derived from the piece's own hue so every color in the
+	-- palette bevels consistently: a lit top face, the body, and a shaded
+	-- bottom face. Deriving them rather than shipping three palettes means a
+	-- new block color needs no extra tuning to look molded.
 	local identity = VisualTokens.identity()
+	local lit = color:Lerp(identity.gloss, 0.34)
+	local shade = color:Lerp(identity.shadow, 0.42)
+	local outline = color:Lerp(identity.shadow, 0.62)
 
 	local shadow = Instance.new("Frame")
 	shadow.Name = `{name or "Block"}Shadow`
 	shadow.BackgroundColor3 = identity.shadow
-	shadow.BackgroundTransparency = 0.55
+	shadow.BackgroundTransparency = 0.45
 	shadow.BorderSizePixel = 0
-	shadow.Position = position + UDim2.fromOffset(3, 5)
+	shadow.Position = position + UDim2.fromOffset(2, 3)
 	shadow.Size = size
 	shadow.Active = false
 	shadow.Parent = parent
-	corner(shadow, 9)
+	corner(shadow, VisualTokens.Radius.piece)
 
 	local block = Instance.new("Frame")
 	block.Name = name or "GlossyBlock"
@@ -180,37 +187,40 @@ function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	block.Position = position
 	block.Size = size
 	block.Active = false
+	block.ClipsDescendants = true
 	block.Parent = parent
 	corner(block, VisualTokens.Radius.piece)
-	-- Outline in a deepened version of the piece's own hue rather than black,
-	-- so each candy keeps its identity at the edge.
-	stroke(block, color:Lerp(identity.shadow, 0.55), 2, 0.25)
-	stroke(block, color:Lerp(identity.gloss, 0.42), 1, 0.1)
-	gradient(block, color:Lerp(identity.gloss, 0.42), color:Lerp(identity.shadow, 0.22), 90)
+	-- One outline, in a deepened version of the piece's own hue rather than
+	-- black, so tiles read as separate objects against each other and against
+	-- the dark well without any of them picking up a grey rim.
+	stroke(block, outline, 2, 0)
 
-	local shine = Instance.new("Frame")
-	shine.Name = "Shine"
-	shine.BackgroundColor3 = identity.gloss
-	shine.BackgroundTransparency = 0.3
-	shine.BorderSizePixel = 0
-	shine.Position = UDim2.new(0, 6, 0, 5)
-	shine.Size = UDim2.new(0.5, -5, 0, 6)
-	shine.Active = false
-	shine.Parent = block
-	corner(shine, 5)
+	-- The faces are clipped by the block's own corner radius, so they need no
+	-- radius of their own; giving them one would round the inner edge and turn
+	-- the bevel back into a highlight bar.
+	local topFace = Instance.new("Frame")
+	topFace.Name = "BevelTop"
+	topFace.BackgroundColor3 = lit
+	topFace.BorderSizePixel = 0
+	topFace.Position = UDim2.fromScale(0, 0)
+	topFace.Size = UDim2.new(1, 0, 0.24, 0)
+	topFace.Active = false
+	topFace.ZIndex = block.ZIndex
+	topFace.Parent = block
 
-	local emboss = Instance.new("TextLabel")
-	emboss.Name = "Emboss"
-	emboss.BackgroundTransparency = 1
-	emboss.Position = UDim2.fromScale(0.22, 0.18)
-	emboss.Size = UDim2.fromScale(0.56, 0.58)
-	emboss.Font = Enum.Font.GothamBlack
-	emboss.Text = "+"
-	emboss.TextColor3 = color:Lerp(identity.shadow, 0.3)
-	emboss.TextTransparency = 0.65
-	emboss.TextScaled = true
-	emboss.Active = false
-	emboss.Parent = block
+	local bottomFace = Instance.new("Frame")
+	bottomFace.Name = "BevelBottom"
+	bottomFace.BackgroundColor3 = shade
+	bottomFace.BorderSizePixel = 0
+	bottomFace.Position = UDim2.fromScale(0, 0.78)
+	bottomFace.Size = UDim2.new(1, 0, 0.22, 0)
+	bottomFace.Active = false
+	bottomFace.ZIndex = block.ZIndex
+	bottomFace.Parent = block
+
+	-- A very slight vertical fall across the body ties the two faces together
+	-- so the bevel reads as one lit solid rather than three stacked stripes.
+	gradient(block, color:Lerp(identity.gloss, 0.08), color:Lerp(identity.shadow, 0.1), 90)
 
 	return block
 end
@@ -789,12 +799,13 @@ function ArcadeUI.BoardCell(button)
 	button.BackgroundColor3 = tokens.boardCell
 	button.ClipsDescendants = true
 	corner(button, VisualTokens.Radius.cell)
-	stroke(button, tokens.boardCellEdge, 2, 0.35)
-	-- The client repaints BackgroundColor3 per stage but never touches this
-	-- gradient, so the old navy one was silently darkening every candy cell it
-	-- was laid over. A near-neutral gloss-to-transparent sheen keeps the
-	-- stage color reading true while still giving the cell some depth.
-	gradient(button, tokens.gloss, tokens.boardCell, 90)
+	-- An empty cell is a recess in a dark well, not a tile. It gets a thin
+	-- edge a shade lighter than itself -- enough to draw the grid, not enough
+	-- to compete with a placed block -- and no gloss at all. The gloss
+	-- gradient that used to sit here was laid over every stage color and read
+	-- as a haze across the whole board once the chassis went dark.
+	stroke(button, tokens.boardCellEdge, 1, 0.45)
+	gradient(button, tokens.boardCell, tokens.boardWell, 90)
 	return button
 end
 

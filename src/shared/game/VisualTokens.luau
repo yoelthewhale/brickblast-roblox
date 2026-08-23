@@ -123,11 +123,13 @@ local ENERGY = {
 	PerfectFull = 3,
 }
 
--- Non-color tokens. Chunky toy forms want large radii and generous spacing;
--- these are the vocabulary phases 3 and 4 build the board and HUD from.
+-- Non-color tokens. Panels stay chunky, but the board itself does not: the
+-- reference's blocks are hard-edged molded tiles with only the corners taken
+-- off, so cell and piece radii are small enough to keep a filled row reading
+-- as a continuous bar rather than a string of lozenges.
 VisualTokens.Radius = {
-	cell = 10,
-	piece = 9,
+	cell = 8,
+	piece = 6,
 	chip = 14,
 	card = 20,
 	panel = 26,
