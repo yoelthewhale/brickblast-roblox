@@ -3,22 +3,28 @@
 --
 -- Its own ModuleScript for the same two reasons as ModeSelectPanel: it gets an
 -- independent Luau register budget, which BlockBlastClient.client.luau does not
--- have to spare at 198/200, and it keeps a growing concern out of the monolith
--- rather than adding another 160 lines to it.
+-- have to spare at 198/200, and it keeps a growing concern out of the monolith.
 --
--- Three things here are requirements from the spec rather than styling, and
--- each is easy to erode without noticing:
+-- Presentation follows the reference Yoel approved: a bright gradient card, a
+-- sunken preview panel showing what the offer actually gives you, one chunky
+-- primary action, and a quieter decline beneath it. Two deliberate departures
+-- from that reference, both explained where they happen:
 --
---   * No countdown timer, anywhere, ever. A ticking clock on this panel is the
---     clearest dark pattern in the genre, and it is the single change most
---     likely to make a paid version read as predatory.
---   * End Run carries equal visual weight -- same height, same text size, same
---     contrast. It may be quieter in colour; it must never be greyed, shrunk,
---     or hidden.
---   * End Run holds default keyboard/gamepad focus. A player mashing A or
+--   * Body text is ink, not white. The reference puts white text on a light
+--     gradient, which is poor contrast; ink on the same gradient is far more
+--     readable and costs nothing.
+--   * The decline stays a real, full-width button rather than a small
+--     underlined text link. The reference is a rewarded ad, where nudging
+--     costs the player nothing. Ours becomes a Robux purchase, and a
+--     hard-to-hit decline next to a big spend button is the line between a
+--     lifeline and a shakedown. It is quieter than the primary; it is not
+--     hidden.
+--
+-- Also, and non-negotiably:
+--
+--   * No countdown timer, anywhere, ever.
+--   * The decline holds default keyboard/gamepad focus. A player mashing A or
 --     Enter at the moment they lose must never be able to spend by reflex.
---     Harmless while the continue is free; the habit has to exist before the
---     Robux path lands.
 --
 -- The panel renders purely from the server's `continueOffer` payload. It never
 -- decides entitlement, never computes price, and never assumes a source, so
@@ -34,12 +40,8 @@ local VisualTokens = require(GameShared:WaitForChild("VisualTokens"))
 local ContinuePanel = {}
 ContinuePanel.__index = ContinuePanel
 
-local OPEN_TWEEN = TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-
--- Wide enough to read comfortably, capped so it never exceeds a phone's width.
--- The card itself is scale-sized against the overlay, so the cap is the only
--- number that needs to exist.
-local MAX_CARD_WIDTH = 420
+local OPEN_TWEEN = TweenInfo.new(0.24, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+local MAX_CARD_WIDTH = 440
 
 local function corner(parent, radius)
 	local item = Instance.new("UICorner")
@@ -58,7 +60,7 @@ local function stroke(parent, color, thickness, transparency)
 	return item
 end
 
-local function label(parent, name, text, font, size, color, order)
+local function label(parent, name, text, font, size, color, order, align)
 	local item = Instance.new("TextLabel")
 	item.Name = name
 	item.BackgroundTransparency = 1
@@ -67,35 +69,13 @@ local function label(parent, name, text, font, size, color, order)
 	item.TextColor3 = color
 	item.TextSize = size
 	item.TextWrapped = true
-	item.TextXAlignment = Enum.TextXAlignment.Left
+	item.TextXAlignment = align or Enum.TextXAlignment.Center
 	item.AutomaticSize = Enum.AutomaticSize.Y
 	item.Size = UDim2.new(1, 0, 0, 0)
 	item.LayoutOrder = order
 	item.ZIndex = parent.ZIndex + 1
 	item.Parent = parent
 	return item
-end
-
--- Both buttons are built by the same function with the same geometry, so
--- "equal visual weight" is structural rather than something to remember.
-local function actionButton(parent, name, text, fill, ink, order)
-	local button = Instance.new("TextButton")
-	button.Name = name
-	button.AutoButtonColor = false
-	button.BackgroundColor3 = fill
-	button.BorderSizePixel = 0
-	button.Font = Enum.Font.GothamBlack
-	button.Text = text
-	button.TextColor3 = ink
-	button.TextSize = 18
-	button.Size = UDim2.new(1, 0, 0, 54)
-	button.LayoutOrder = order
-	button.ZIndex = parent.ZIndex + 1
-	button.Selectable = true
-	button:SetAttribute("BlocksWorkspaceDrag", true)
-	button.Parent = parent
-	corner(button, VisualTokens.Radius.card)
-	return button
 end
 
 function ContinuePanel.new(parent, options)
@@ -115,7 +95,10 @@ function ContinuePanel.new(parent, options)
 	local overlay = Instance.new("Frame")
 	overlay.Name = "OneMoreChanceOverlay"
 	overlay.BackgroundColor3 = tokens.ink
-	overlay.BackgroundTransparency = 0.42
+	-- Darker than a normal modal scrim. The reference dims the board hard so the
+	-- card is unmistakably the only live thing on screen, and the dead board
+	-- stops competing for attention.
+	overlay.BackgroundTransparency = 0.25
 	overlay.BorderSizePixel = 0
 	overlay.Size = UDim2.fromScale(1, 1)
 	overlay.Visible = false
@@ -129,19 +112,31 @@ function ContinuePanel.new(parent, options)
 	card.Name = "OneMoreChanceCard"
 	card.AnchorPoint = Vector2.new(0.5, 0.5)
 	card.Position = UDim2.fromScale(0.5, 0.5)
-	-- Scale width minus a margin, capped by the constraint below: fills a phone
-	-- with a gutter, stops at a comfortable reading width on desktop. The old
-	-- panel used a fixed 420px offset, which overflowed a 375pt phone entirely.
+	-- Scale width with a cap: fills a phone with a gutter, stops at a
+	-- comfortable reading width on desktop.
 	card.Size = UDim2.new(1, -48, 0, 0)
 	card.AutomaticSize = Enum.AutomaticSize.Y
-	card.BackgroundColor3 = tokens.surface
+	card.BackgroundColor3 = tokens.secondary
 	card.BorderSizePixel = 0
 	card.ZIndex = 81
 	card:SetAttribute("BlocksWorkspaceDrag", true)
 	card.Parent = overlay
 	corner(card, VisualTokens.Radius.panel)
-	stroke(card, tokens.boardRim, 4, 0.1)
+	stroke(card, tokens.gloss, 3, 0.55)
 	self.card = card
+
+	-- The reference's signature: a bright diagonal gradient across the whole
+	-- card. Built from flavor tokens rather than fixed hues, so the card is
+	-- mint on a Spearmint stage and bubblegum on a Bubblegum one.
+	local gradient = Instance.new("UIGradient")
+	gradient.Rotation = 35
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, tokens.tertiary),
+		ColorSequenceKeypoint.new(0.5, tokens.secondary),
+		ColorSequenceKeypoint.new(1, tokens.accent),
+	})
+	gradient.Parent = card
+	self.gradient = gradient
 
 	local sizeCap = Instance.new("UISizeConstraint")
 	sizeCap.MaxSize = Vector2.new(MAX_CARD_WIDTH, math.huge)
@@ -154,90 +149,199 @@ function ContinuePanel.new(parent, options)
 	padding.PaddingRight = UDim.new(0, VisualTokens.Space.loose)
 	padding.Parent = card
 
-	-- No shadow child here, deliberately. UIListLayout lays out every child, and
-	-- a shadow sized larger than its parent with no LayoutOrder sorts first and
-	-- pushes real content off-screen -- the bug that hid the hub's left nav.
+	-- No shadow child on a list-laid-out frame. A shadow sized larger than its
+	-- parent with no LayoutOrder sorts first and pushes real content off-screen
+	-- -- the bug that hid the hub's left nav (#125, #126).
 	local list = Instance.new("UIListLayout")
 	list.FillDirection = Enum.FillDirection.Vertical
 	list.SortOrder = Enum.SortOrder.LayoutOrder
+	list.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	list.Padding = UDim.new(0, VisualTokens.Space.base)
 	list.Parent = card
 
-	self.title = label(card, "Title", "No moves left", Enum.Font.GothamBlack, 26, tokens.ink, 1)
-	self.summary = label(card, "Summary", "", Enum.Font.GothamMedium, 15, tokens.inkSoft, 2)
-	self.body = label(
-		card,
-		"Body",
-		"Rewind one move and get a fresh hand that fits",
-		Enum.Font.GothamMedium,
-		15,
-		tokens.inkSoft,
-		3
+	self.title = label(card, "Title", "No moves left", Enum.Font.GothamBlack, 25, tokens.ink, 1)
+	self.summary = label(card, "Summary", "", Enum.Font.GothamMedium, 15, tokens.ink, 2)
+
+	self:BuildPreview(card, tokens)
+
+	self.accept = self:BuildAccept(card, tokens)
+	self.decline = self:BuildDecline(card, tokens)
+
+	return self
+end
+
+-- The best idea in the reference: a sunken panel showing what the offer
+-- actually gives you, so the player is not agreeing to an abstraction. Ours
+-- states the two concrete effects rather than illustrating pieces, because the
+-- replacement hand is generated server-side after the choice and cannot be
+-- previewed honestly before it exists.
+function ContinuePanel:BuildPreview(card, tokens)
+	local well = Instance.new("Frame")
+	well.Name = "OfferPreview"
+	well.BackgroundColor3 = tokens.ink
+	well.BackgroundTransparency = 0.82
+	well.BorderSizePixel = 0
+	well.Size = UDim2.new(1, 0, 0, 0)
+	well.AutomaticSize = Enum.AutomaticSize.Y
+	well.LayoutOrder = 3
+	well.ZIndex = card.ZIndex + 1
+	well.Parent = card
+	corner(well, VisualTokens.Radius.card)
+	stroke(well, tokens.gloss, 2, 0.65)
+
+	local wellPadding = Instance.new("UIPadding")
+	wellPadding.PaddingTop = UDim.new(0, VisualTokens.Space.base)
+	wellPadding.PaddingBottom = UDim.new(0, VisualTokens.Space.base)
+	wellPadding.PaddingLeft = UDim.new(0, VisualTokens.Space.roomy)
+	wellPadding.PaddingRight = UDim.new(0, VisualTokens.Space.roomy)
+	wellPadding.Parent = well
+
+	local wellList = Instance.new("UIListLayout")
+	wellList.FillDirection = Enum.FillDirection.Vertical
+	wellList.SortOrder = Enum.SortOrder.LayoutOrder
+	wellList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	wellList.Padding = UDim.new(0, VisualTokens.Space.snug)
+	wellList.Parent = well
+
+	label(
+		well,
+		"PreviewRewind",
+		"Your last move is undone",
+		Enum.Font.GothamBold,
+		16,
+		tokens.ink,
+		1
 	)
-	self.meta = label(card, "Meta", "", Enum.Font.GothamBold, 14, tokens.inkSoft, 4)
+	label(
+		well,
+		"PreviewHand",
+		"You get a fresh hand that fits",
+		Enum.Font.GothamBold,
+		16,
+		tokens.ink,
+		2
+	)
 
-	-- Buttons stack full-width rather than sitting side by side. Side-by-side
-	-- at a fail state invites a mis-tap on the option that will eventually cost
-	-- money, and it is what forced the old panel to shrink its primary label to
-	-- fit.
-	self.accept = actionButton(card, "UseContinue", "ONE MORE CHANCE", tokens.accent, tokens.ink, 5)
-	stroke(self.accept, tokens.hot, 3, 0.1)
+	self.preview = well
+end
 
-	self.decline = actionButton(card, "EndRun", "END RUN", tokens.surfaceSunken, tokens.ink, 6)
-	stroke(self.decline, tokens.boardCellEdge, 2, 0.3)
+function ContinuePanel:BuildAccept(card, tokens)
+	local button = Instance.new("TextButton")
+	button.Name = "UseContinue"
+	button.AutoButtonColor = false
+	button.BackgroundColor3 = tokens.hot
+	button.BorderSizePixel = 0
+	button.Font = Enum.Font.GothamBlack
+	button.Text = "ONE MORE CHANCE"
+	button.TextColor3 = tokens.gloss
+	button.TextSize = 20
+	button.Size = UDim2.new(1, 0, 0, 62)
+	button.LayoutOrder = 5
+	button.ZIndex = card.ZIndex + 1
+	button.Selectable = true
+	button:SetAttribute("BlocksWorkspaceDrag", true)
+	button.Parent = card
+	corner(button, VisualTokens.Radius.card)
+	stroke(button, tokens.gloss, 3, 0.4)
 
-	self.accept.Activated:Connect(function()
-		if self.accept:GetAttribute("Busy") then
+	-- Chunky toy-plastic sheen, same treatment as the pieces.
+	local sheen = Instance.new("UIGradient")
+	sheen.Rotation = 90
+	sheen.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, tokens.hot:Lerp(tokens.gloss, 0.3)),
+		ColorSequenceKeypoint.new(1, tokens.hot),
+	})
+	sheen.Parent = button
+
+	button.Activated:Connect(function()
+		if button:GetAttribute("Busy") then
 			return
 		end
 		self.playSound("Queue")
-		self.accept:SetAttribute("Busy", true)
-		self.accept.Text = "WORKING..."
+		button:SetAttribute("Busy", true)
+		button.Text = "WORKING..."
 		self.onAccept()
 	end)
 
-	self.decline.Activated:Connect(function()
+	return button
+end
+
+-- Quieter than the primary, but a real full-width button. See the header for
+-- why this departs from the reference's text link.
+function ContinuePanel:BuildDecline(card, tokens)
+	local button = Instance.new("TextButton")
+	button.Name = "EndRun"
+	button.AutoButtonColor = false
+	button.BackgroundColor3 = tokens.ink
+	button.BackgroundTransparency = 0.78
+	button.BorderSizePixel = 0
+	button.Font = Enum.Font.GothamBold
+	button.Text = "End Run"
+	button.TextColor3 = tokens.ink
+	button.TextSize = 17
+	button.Size = UDim2.new(1, 0, 0, 46)
+	button.LayoutOrder = 6
+	button.ZIndex = card.ZIndex + 1
+	button.Selectable = true
+	button:SetAttribute("BlocksWorkspaceDrag", true)
+	button.Parent = card
+	corner(button, VisualTokens.Radius.card)
+
+	button.Activated:Connect(function()
 		self.playSound("Blocked")
 		self.onDecline()
 	end)
 
-	return self
+	return button
 end
 
 -- Renders entirely from the server payload. `offer` is the `continueOffer`
 -- table described in the spec's data contract.
 function ContinuePanel:Update(offer)
-	local shouldShow = typeof(offer) == "table" and offer.available == true
-
-	if not shouldShow then
+	if typeof(offer) ~= "table" or offer.available ~= true then
 		self:Hide()
 		return
 	end
 
+	-- Repaint on every show so the card carries the run's flavor rather than a
+	-- palette captured at construction. Resolved at rest: the payload carries no
+	-- energy, and a card shown at the fail state should not claim run intensity.
+	local tokens = VisualTokens.resolve(offer.stage or 1, 0)
+	self:Repaint(tokens)
+
 	local stage = offer.stage or 1
 	local score = offer.score or 0
-	self.summary.Text = `Stage {stage} · {score} points`
-
 	local cap = offer.capThisRun or 1
 	local used = offer.usedThisRun or 0
 	local remaining = math.max(0, cap - used)
 
-	-- The entitlement line is the only part that differs between a free
-	-- prototype, a redeemed token, and a purchase.
 	if offer.source == "token" then
-		self.meta.Text = "Using your saved One More Chance"
+		self.accept.Text = "USE SAVED CHANCE"
 	elseif offer.source == "purchase" and offer.priceText then
-		self.meta.Text = `{offer.priceText} · {remaining} of {cap} this run`
+		self.accept.Text = `ONE MORE CHANCE · {offer.priceText}`
 	else
-		self.meta.Text = `Free · {remaining} of {cap} this run`
+		self.accept.Text = "ONE MORE CHANCE"
 	end
+
+	self.summary.Text = `Stage {stage} · {score} points  ·  {remaining} of {cap} left`
 
 	self:Show()
 end
 
+function ContinuePanel:Repaint(tokens)
+	self.card.BackgroundColor3 = tokens.secondary
+	self.gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, tokens.tertiary),
+		ColorSequenceKeypoint.new(0.5, tokens.secondary),
+		ColorSequenceKeypoint.new(1, tokens.accent),
+	})
+	self.accept.BackgroundColor3 = tokens.hot
+	self.title.TextColor3 = tokens.ink
+	self.summary.TextColor3 = tokens.ink
+end
+
 function ContinuePanel:Show()
 	self.accept:SetAttribute("Busy", nil)
-	self.accept.Text = "ONE MORE CHANCE"
 
 	if self.visible then
 		return
@@ -246,14 +350,14 @@ function ContinuePanel:Show()
 	self.visible = true
 	self.overlay.Visible = true
 
-	-- End Run takes focus, never the accept button. See the header.
+	-- Decline takes focus, never the accept button. See the header.
 	GuiService.SelectedObject = self.decline
 
 	if self.isReducedMotion() then
 		return
 	end
 
-	self.card.Size = UDim2.new(0.92, -48, 0, 0)
+	self.card.Size = UDim2.new(0.9, -48, 0, 0)
 	TweenService:Create(self.card, OPEN_TWEEN, {
 		Size = UDim2.new(1, -48, 0, 0),
 	}):Play()
