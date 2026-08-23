@@ -1474,7 +1474,11 @@ root.Name = "PCPuzzleWorkspace"
 root.AnchorPoint = Vector2.new(0, 0)
 root.Position = UDim2.fromOffset(0, 0)
 root.Size = UDim2.fromScale(1, 1)
-root.BackgroundColor3 = Color3.fromRGB(10, 17, 34)
+-- Construction-time fill only; applyStageVisual repaints this from the
+-- active preset. It still matters: this is what the player sees on the frame
+-- before the first preset lands, and a near-black flash under an indigo room
+-- reads as a hitch.
+root.BackgroundColor3 = ArcadeUI.Color.shell
 root.BackgroundTransparency = 0
 root.BorderSizePixel = 0
 root.Visible = false
@@ -1941,7 +1945,15 @@ local function applyStagePalette()
 	local rimColor = if hasSoloStage then preset.boardRim else ArcadeUI.Color.rimBright
 
 	customization.boardEmptyColor = emptyColor
-	if hasSoloStage then
+
+	-- The chassis repaint used to sit behind `if hasSoloStage`, so only Solo
+	-- ever got the current palette and every other mode kept whatever colors
+	-- were baked in at construction. That was survivable while the two
+	-- palettes were both dark arcade; it is not now. Since `preset` already
+	-- falls back to stage 1 at rest for non-Solo modes, and chrome no longer
+	-- varies with stage or energy, every mode can take the same repaint. Only
+	-- the stage-specific decorations stay gated below.
+	do
 		root.BackgroundColor3 = preset.background
 		workspaceHeader.BackgroundColor3 = preset.panel
 		workspaceContent.BackgroundTransparency = 1
@@ -1962,21 +1974,25 @@ local function applyStagePalette()
 		matchInfoLabel.TextColor3 = preset.panelSubtleText
 		timerLabel.TextColor3 = preset.panelSubtleText
 		stageUi.titleButton.TextColor3 = preset.panelText
-		customizeButton.BackgroundColor3 = preset.leaderboard
+		ArcadeUI.PaintButton(customizeButton, preset.leaderboard)
 		coinChipLabel.BackgroundColor3 = preset.panelMuted
 		coinChipLabel.TextColor3 = preset.panelText
-		returnHubButton.BackgroundColor3 = preset.leaderboard
-		playAgainButton.BackgroundColor3 = preset.stage
-		rotatePieceButton.BackgroundColor3 = preset.leaderboard
-		rerollPieceButton.BackgroundColor3 = preset.combo
+		ArcadeUI.PaintButton(returnHubButton, preset.leaderboard)
+		-- Play Again is the primary action, so it takes the accent rather than
+		-- the soft ink role it used to be filled with.
+		ArcadeUI.PaintButton(playAgainButton, preset.accent)
+		ArcadeUI.PaintButton(rotatePieceButton, preset.leaderboard)
+		ArcadeUI.PaintButton(rerollPieceButton, preset.combo)
+	end
+
+	if hasSoloStage then
 		for index, decor in stageUi.decorations do
 			decor.BackgroundColor3 = index % 2 == 0 and preset.backgroundAccent or preset.wash
 		end
 	end
 
 	if boardFrame then
-		boardFrame.BackgroundColor3 = hasSoloStage and preset.boardFrame
-			or Color3.fromRGB(8, 23, 45)
+		boardFrame.BackgroundColor3 = preset.boardFrame
 		applyStrokeColor(boardFrame, rimColor, 0.04)
 	end
 
@@ -2494,7 +2510,7 @@ boardFrame = Instance.new("Frame")
 boardFrame:SetAttribute("BlocksWorkspaceDrag", true)
 boardFrame.Position = UDim2.fromOffset(24, 104)
 boardFrame.Size = UDim2.fromOffset(304, 304)
-boardFrame.BackgroundColor3 = Color3.fromRGB(8, 23, 45)
+boardFrame.BackgroundColor3 = ArcadeUI.Color.innerBottom
 boardFrame.BackgroundTransparency = 0
 boardFrame.ClipsDescendants = true
 boardFrame.Parent = boardStage
@@ -3789,13 +3805,22 @@ local function setCellGloss(cell, color, state)
 		return
 	end
 
-	cell.BackgroundColor3 = state == "invalid" and Color3.fromRGB(82, 25, 37)
-		or Color3.fromRGB(10, 24, 47)
+	-- What sits behind the block, visible only in the corner radius. It was a
+	-- hardcoded near-black left over from the arcade cabinet, which put a dark
+	-- halo around every placed piece once the well itself got lighter. The
+	-- invalid state keeps its own red backing so a rejected placement still
+	-- reads without relying on the piece color alone.
+	cell.BackgroundColor3 = state == "invalid" and Color3.fromRGB(74, 28, 34)
+		or ArcadeUI.Color.innerBottom
+	-- A 3px inset on every side left a 6px trench between neighbouring filled
+	-- cells, so a completed row read as eight separate tiles. The reference
+	-- shows a filled row as one continuous bar; a 1px inset keeps the tiles
+	-- distinguishable without breaking the bar.
 	ArcadeUI.GlossyBlock(
 		cell,
 		color,
-		UDim2.new(1, -6, 1, -6),
-		UDim2.fromOffset(3, 3),
+		UDim2.new(1, -2, 1, -2),
+		UDim2.fromOffset(1, 1),
 		"GlossyBlock"
 	)
 end
@@ -3814,11 +3839,11 @@ renderBoard = function(forceFull)
 				if value == false then
 					setCellGloss(cell, customization.boardEmptyColor, "empty")
 				elseif value == "garbage" then
-					setCellGloss(
-						cell,
-						hasSoloStage and preset.boardOutline or Config.Colors.Garbage,
-						"filled"
-					)
+					-- Garbage used to borrow the stage's board outline during a
+					-- Solo run, which meant the one cell type the player must
+					-- notice took on whatever tint the stage happened to have.
+					-- It is a fixed red now, in every mode.
+					setCellGloss(cell, Config.Colors.Garbage, "filled")
 				elseif hasSoloStage then
 					setCellGloss(cell, StageVisuals.blockColorForCell(preset, x, y), "filled")
 				elseif typeof(value) == "Color3" then

@@ -12,20 +12,20 @@ local tests = {}
 
 tests.initialStageMappings = function()
 	assertCondition(
-		StageVisuals.presetForStage(1).name == "Bubblegum",
-		"Stage 1 should use the Bubblegum flavor"
+		StageVisuals.presetForStage(1).name == "Indigo",
+		"Stage 1 should use the Indigo flavor"
 	)
 	assertCondition(
-		StageVisuals.presetForStage(2).name == "Spearmint",
-		"Stage 2 should use the Spearmint flavor"
+		StageVisuals.presetForStage(2).name == "Deep Teal",
+		"Stage 2 should use the Deep Teal flavor"
 	)
 	assertCondition(
-		StageVisuals.presetForStage(3).name == "Lemon Drop",
-		"Stage 3 should use the Lemon Drop flavor"
+		StageVisuals.presetForStage(3).name == "Plum",
+		"Stage 3 should use the Plum flavor"
 	)
 	assertCondition(
-		StageVisuals.presetForStage(4).name == "Grape Soda",
-		"Stage 4 should use the Grape Soda flavor"
+		StageVisuals.presetForStage(4).name == "Ember",
+		"Stage 4 should use the Ember flavor"
 	)
 end
 
@@ -33,7 +33,7 @@ tests.beyondInitialPresetsCycle = function()
 	local first = StageVisuals.presetForStage(1)
 	local fifth = StageVisuals.presetForStage(5)
 
-	assertCondition(fifth.name == first.name, "Stage 5 should cycle back to Bubblegum")
+	assertCondition(fifth.name == first.name, "Stage 5 should cycle back to Indigo")
 	assertCondition(fifth.cycle == 1, "Stage 5 should record the first completed preset cycle")
 end
 
@@ -48,16 +48,13 @@ tests.requiredFieldsAreComplete = function()
 end
 
 tests.invalidStageFallsBackSafely = function()
+	assertCondition(StageVisuals.presetForStage(nil).name == "Indigo", "Nil stage should fall back")
 	assertCondition(
-		StageVisuals.presetForStage(nil).name == "Bubblegum",
-		"Nil stage should fall back"
-	)
-	assertCondition(
-		StageVisuals.presetForStage(-20).name == "Bubblegum",
+		StageVisuals.presetForStage(-20).name == "Indigo",
 		"Negative stage should fall back"
 	)
 	assertCondition(
-		StageVisuals.presetForStage(0 / 0).name == "Bubblegum",
+		StageVisuals.presetForStage(0 / 0).name == "Indigo",
 		"NaN stage should fall back"
 	)
 end
@@ -149,7 +146,7 @@ end
 
 tests.presetForRunFallsBackToStageOne = function()
 	local preset = StageVisuals.presetForRun(nil)
-	assertCondition(preset.name == "Bubblegum", "A missing run state should resolve to stage 1")
+	assertCondition(preset.name == "Indigo", "A missing run state should resolve to stage 1")
 	assertCondition(StageVisuals.validatePreset(preset), "The fallback preset must still be valid")
 end
 

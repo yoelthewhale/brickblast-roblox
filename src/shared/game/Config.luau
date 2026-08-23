@@ -298,12 +298,26 @@ Config.PieceSkinUnlocks = {
 	},
 }
 
+-- Board defaults, aligned to the VisualTokens palette rather than the old
+-- near-black arcade one. These are the fallbacks the client uses before a
+-- Solo stage preset arrives (and permanently, in modes that have no stage),
+-- so leaving them on the previous palette meant the board flashed a different
+-- game's colors for the first frame of every run.
+--
+-- Deliberately literal rather than a require of VisualTokens: Config is
+-- loaded by the server as well, and the block colors here are fixed identity
+-- values that no longer move with stage or energy, so there is nothing to
+-- derive.
 Config.Colors = {
-	Empty = Color3.fromRGB(24, 28, 36),
-	Filled = Color3.fromRGB(64, 156, 255),
-	Garbage = Color3.fromRGB(224, 74, 74),
-	PreviewValid = Color3.fromRGB(82, 210, 132),
-	PreviewInvalid = Color3.fromRGB(255, 110, 110),
+	Empty = Color3.fromRGB(37, 45, 82),
+	Filled = Color3.fromRGB(58, 86, 200),
+	Garbage = Color3.fromRGB(198, 64, 58),
+	-- Valid and invalid still have to be told apart at a glance while a piece
+	-- is under the player's thumb, so these stay green and red even though the
+	-- reference has no green. They are desaturated toward the rest of the
+	-- palette so they read as part of the same game.
+	PreviewValid = Color3.fromRGB(108, 196, 124),
+	PreviewInvalid = Color3.fromRGB(226, 92, 86),
 }
 
 Config.BoardSkins = {

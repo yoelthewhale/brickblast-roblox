@@ -1,45 +1,72 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local UITheme = {}
 
--- B2 "Polished Arcade" palette
+-- Derived from VisualTokens rather than hand-picked.
+--
+-- This was the "B2 Polished Arcade" palette: a near-black cabinet with neon
+-- cyan and pink accents, tuned before the game had a visual direction. It
+-- survived the Bubblegum era untouched, which is how the project ended up
+-- running two unrelated palettes at once -- ArcadeUI on tokens, everything
+-- built on UITheme on the old cabinet -- and why panels never quite matched
+-- the board they sat next to.
+--
+-- Every key below is kept, spelling included, because these are read across
+-- the menu, shop, story, cosmetic and developer panels and a missing key is a
+-- runtime nil rather than a compile error. What changed is where the values
+-- come from: the chassis roles now resolve against the same navy identity the
+-- board does, and the accent roles are the reference's own block colors, so
+-- an accent on a panel is literally a color the player already sees on a
+-- piece.
+local VisualTokens = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game"):WaitForChild("VisualTokens")
+)
+
+local identity = VisualTokens.identity()
+local chrome = VisualTokens.chrome()
+local base = VisualTokens.resolve(1, 0)
+
 UITheme.Color = {
-	background = Color3.fromRGB(9, 13, 25),
-	panel = Color3.fromRGB(23, 32, 57),
-	panelRaised = Color3.fromRGB(32, 44, 76),
-	panelSoft = Color3.fromRGB(42, 57, 96),
-	stroke = Color3.fromRGB(94, 138, 189),
-	strokeSoft = Color3.fromRGB(54, 71, 108),
-	primary = Color3.fromRGB(30, 187, 255),
-	primaryDark = Color3.fromRGB(14, 108, 158),
-	cyan = Color3.fromRGB(110, 244, 255),
-	lime = Color3.fromRGB(123, 237, 75),
-	pink = Color3.fromRGB(255, 93, 200),
-	success = Color3.fromRGB(123, 237, 75),
-	danger = Color3.fromRGB(255, 86, 107),
-	warning = Color3.fromRGB(255, 139, 61),
-	reward = Color3.fromRGB(255, 210, 71),
-	text = Color3.fromRGB(255, 255, 255),
-	textMuted = Color3.fromRGB(200, 213, 235),
-	textSoft = Color3.fromRGB(150, 168, 199),
+	background = identity.well,
+	panel = identity.surface,
+	panelRaised = identity.surfaceRaised,
+	panelSoft = base.surfaceTinted,
+	stroke = base.boardRim,
+	strokeSoft = identity.cellEdge,
+	primary = base.primary,
+	primaryDark = base.tertiary,
+	cyan = Color3.fromRGB(84, 192, 232),
+	lime = Color3.fromRGB(123, 209, 108),
+	pink = base.hot,
+	success = Color3.fromRGB(123, 209, 108),
+	danger = Color3.fromRGB(198, 64, 58),
+	warning = Color3.fromRGB(224, 138, 52),
+	reward = Color3.fromRGB(229, 185, 60),
+	text = identity.ink,
+	textMuted = identity.inkSoft,
+	textSoft = chrome.muted,
 }
 
 UITheme.Color.button = UITheme.Color.primary
 UITheme.Color.buttonMuted = UITheme.Color.panelSoft
 UITheme.Color.card = UITheme.Color.panelRaised
-UITheme.Color.cardMuted = Color3.fromRGB(27, 37, 64)
+UITheme.Color.cardMuted = base.surfaceSunken
 UITheme.Color.muted = UITheme.Color.textMuted
 UITheme.Color.soft = UITheme.Color.textSoft
 UITheme.Color.warn = UITheme.Color.warning
 UITheme.Color.error = UITheme.Color.danger
-UITheme.Color.hudPanel = Color3.fromRGB(255, 255, 255)
-UITheme.Color.hudPanelBlue = Color3.fromRGB(224, 248, 255)
-UITheme.Color.hudText = Color3.fromRGB(23, 32, 57)
-UITheme.Color.hudTextMuted = Color3.fromRGB(87, 104, 128)
-UITheme.Color.hubGrass = Color3.fromRGB(123, 237, 75)
-UITheme.Color.hubWater = Color3.fromRGB(30, 187, 255)
-UITheme.Color.hubGold = Color3.fromRGB(255, 210, 71)
-UITheme.Color.hubPurple = Color3.fromRGB(190, 118, 255)
+-- The HUD reads directly on the room in the reference -- no white cards -- so
+-- these are now dark surfaces with light type rather than the inverse pair
+-- they used to be.
+UITheme.Color.hudPanel = identity.surface
+UITheme.Color.hudPanelBlue = identity.surfaceRaised
+UITheme.Color.hudText = identity.ink
+UITheme.Color.hudTextMuted = identity.inkSoft
+UITheme.Color.hubGrass = Color3.fromRGB(123, 209, 108)
+UITheme.Color.hubWater = Color3.fromRGB(84, 192, 232)
+UITheme.Color.hubGold = Color3.fromRGB(229, 185, 60)
+UITheme.Color.hubPurple = Color3.fromRGB(140, 108, 224)
 
 UITheme.Font = {
 	title = Enum.Font.GothamBlack,

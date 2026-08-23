@@ -7,9 +7,15 @@
 -- a dark neon arcade cabinet that matched none of them.
 --
 -- Presets are now derived from VisualTokens, the single source of truth for
--- the Bubblegum Toybox direction (docs/VISUAL_DIRECTION.md, GitHub #98).
--- Stage still changes the look, but it now moves through flavors *inside* one
--- identity, and run intensity moves a separate energy axis.
+-- the Deep Board direction (docs/VISUAL_DIRECTION.md, GitHub #98). Stage still
+-- changes the look, but it now moves through flavors *inside* one identity,
+-- and run intensity moves a separate energy axis.
+--
+-- Note what `blockPalette` is wired to: `tokens.piecePalette`, which is fixed
+-- and does not move with stage or energy. Under the previous direction it did.
+-- If a future change makes piece color stage-derived again, it will silently
+-- break the look this shim exists to serve -- see the identity/flavor rule in
+-- docs/VISUAL_DIRECTION.md before touching it.
 --
 -- The public API here is deliberately unchanged -- presetForStage,
 -- validatePreset, blockColorForIndex, blockColorForCell, transitionForStage,

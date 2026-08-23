@@ -1,27 +1,34 @@
--- Bubblegum Toybox visual tokens: the single source of truth for the game's
--- look. See docs/VISUAL_DIRECTION.md for the approved direction and
--- GitHub #98 for the phased rollout.
+-- Visual tokens: the single source of truth for the game's look. See
+-- docs/VISUAL_DIRECTION.md for the approved direction and GitHub #98 for the
+-- phased rollout.
+--
+-- The direction changed on 2026-08-23 from the light "Bubblegum Toybox" look to
+-- a dark board with saturated beveled blocks, matching a reference Yoel
+-- approved. The two-axis architecture below survived that pivot unchanged --
+-- only the values moved -- which is the whole reason it was built this way.
 --
 -- The model has two independent axes over one fixed identity:
 --
---   IDENTITY  never varies. Cream surfaces, deep-grape ink, glossy chunky
---             forms. This is what makes the game recognizable as BrickBlast
---             at any moment of any run.
+--   IDENTITY  never varies. A deep indigo room, a darker board well, light
+--             ink, and one fixed set of saturated block colors. This is what
+--             makes the game recognizable at any moment of any run.
 --
---   FLAVOR    varies by stage. A hue family *inside* the identity, so stage 2
---             looks like a different candy rather than a different game. This
---             replaces four unrelated themes (teal / pink / brown / red) that
---             shared nothing.
+--   FLAVOR    varies by stage. Tints the *room and the well* -- never the
+--             blocks. The reference shows one fixed multi-colored block set,
+--             so piece color is part of the identity now and progression lives
+--             behind the board rather than on it.
 --
 --   ENERGY    varies by run intensity, 0..1, derived from combo streak, stage
---             depth, and perfect clears. Drives saturation, contrast, rim
---             heat, and wash strength.
+--             depth, and perfect clears. Drives rim heat, backdrop lift, and
+--             wash strength.
 --
 -- ENERGY is the load-bearing idea and the one most easily lost: it is what
 -- keeps the game from collapsing into a single static palette while still
--- having one coherent identity. A calm stage 1 board and a stage 12 board
--- mid-hot-streak must read as the same game at different temperatures, not as
--- two different games. Do not "simplify" this away.
+-- having one coherent identity. The reference is itself a static palette; the
+-- deliberate decision was to match its *look* and keep progression alive
+-- behind the board. A calm stage 1 room and a stage 12 room mid-hot-streak
+-- must read as the same game at different temperatures. Do not "simplify"
+-- this away.
 --
 -- This module is pure: it creates no Instances and reads no game state, so it
 -- runs under the headless Lune suite. Keep it that way.
@@ -31,51 +38,75 @@ local VisualTokens = {}
 -- The fixed half of the identity. Every flavor is built on these, which is
 -- what stops stage changes from reading as a different product.
 local IDENTITY = {
-	-- Deep grape rather than black. Toy plastic has no true black, and ink
-	-- this warm keeps candy colors from looking dirty next to it.
-	ink = Color3.fromRGB(58, 30, 66),
-	inkSoft = Color3.fromRGB(116, 82, 128),
-	-- Surfaces are warm off-white, not grey.
-	cream = Color3.fromRGB(255, 250, 246),
-	creamShade = Color3.fromRGB(240, 228, 238),
+	-- Light ink on a dark room, the inverse of the previous direction. Not pure
+	-- white: a faint blue cast keeps text sitting *in* the scene rather than
+	-- punched through it.
+	ink = Color3.fromRGB(240, 244, 255),
+	inkSoft = Color3.fromRGB(168, 179, 214),
+	-- The room the board sits in.
+	backdrop = Color3.fromRGB(78, 95, 168),
+	-- Panels and cards float slightly above the room.
+	surface = Color3.fromRGB(42, 51, 88),
+	surfaceRaised = Color3.fromRGB(56, 67, 112),
+	-- The board well is markedly darker than the room, which is what makes the
+	-- blocks read as lit objects sitting in a recess.
+	well = Color3.fromRGB(30, 37, 71),
+	cell = Color3.fromRGB(37, 45, 82),
+	cellEdge = Color3.fromRGB(50, 59, 102),
 	gloss = Color3.fromRGB(255, 255, 255),
-	shadow = Color3.fromRGB(126, 80, 138),
+	shadow = Color3.fromRGB(16, 20, 40),
 }
 
--- Four flavors keeps `presetCount()` at 4, so the existing stage-cycle math
--- and every current consumer of StageVisuals behave exactly as before.
+-- The block colors are fixed identity, not flavor. The reference shows orange,
+-- blue, red, gold and cyan coexisting on one board, so tying piece color to
+-- stage would fight the look it is meant to match. Progression moved to the
+-- room and the well instead -- see FLAVORS.
+local BLOCK_PALETTE = {
+	Color3.fromRGB(224, 138, 52),
+	Color3.fromRGB(58, 86, 200),
+	Color3.fromRGB(198, 64, 58),
+	Color3.fromRGB(229, 185, 60),
+	Color3.fromRGB(84, 192, 232),
+}
+
+-- Four flavors keeps `presetCount()` at 4, so the existing stage-cycle math and
+-- every current consumer of StageVisuals behave exactly as before.
+--
+-- These are deliberately close together. They tint the room a player is looking
+-- past, not the pieces they are looking at, so the difference between stages
+-- should register as "the light changed" rather than "the game changed".
 local FLAVORS = {
 	{
-		id = "bubblegum",
-		name = "Bubblegum",
-		primary = Color3.fromRGB(255, 138, 193),
-		secondary = Color3.fromRGB(255, 198, 224),
-		tertiary = Color3.fromRGB(150, 235, 215),
-		hot = Color3.fromRGB(255, 64, 140),
+		id = "indigo",
+		name = "Indigo",
+		primary = Color3.fromRGB(78, 95, 168),
+		secondary = Color3.fromRGB(96, 114, 190),
+		tertiary = Color3.fromRGB(30, 37, 71),
+		hot = Color3.fromRGB(120, 150, 255),
 	},
 	{
-		id = "spearmint",
-		name = "Spearmint",
-		primary = Color3.fromRGB(126, 226, 196),
-		secondary = Color3.fromRGB(192, 244, 226),
-		tertiary = Color3.fromRGB(255, 170, 205),
-		hot = Color3.fromRGB(34, 206, 160),
+		id = "teal",
+		name = "Deep Teal",
+		primary = Color3.fromRGB(52, 110, 148),
+		secondary = Color3.fromRGB(68, 132, 170),
+		tertiary = Color3.fromRGB(22, 45, 66),
+		hot = Color3.fromRGB(86, 200, 224),
 	},
 	{
-		id = "lemonDrop",
-		name = "Lemon Drop",
-		primary = Color3.fromRGB(255, 214, 102),
-		secondary = Color3.fromRGB(255, 238, 182),
-		tertiary = Color3.fromRGB(255, 160, 190),
-		hot = Color3.fromRGB(255, 166, 38),
+		id = "plum",
+		name = "Plum",
+		primary = Color3.fromRGB(104, 72, 158),
+		secondary = Color3.fromRGB(126, 92, 182),
+		tertiary = Color3.fromRGB(40, 26, 66),
+		hot = Color3.fromRGB(176, 122, 255),
 	},
 	{
-		id = "grapeSoda",
-		name = "Grape Soda",
-		primary = Color3.fromRGB(186, 150, 255),
-		secondary = Color3.fromRGB(220, 202, 255),
-		tertiary = Color3.fromRGB(150, 232, 238),
-		hot = Color3.fromRGB(138, 86, 255),
+		id = "ember",
+		name = "Ember",
+		primary = Color3.fromRGB(140, 74, 96),
+		secondary = Color3.fromRGB(166, 92, 112),
+		tertiary = Color3.fromRGB(54, 24, 38),
+		hot = Color3.fromRGB(255, 122, 138),
 	},
 }
 
@@ -92,11 +123,13 @@ local ENERGY = {
 	PerfectFull = 3,
 }
 
--- Non-color tokens. Chunky toy forms want large radii and generous spacing;
--- these are the vocabulary phases 3 and 4 build the board and HUD from.
+-- Non-color tokens. Panels stay chunky, but the board itself does not: the
+-- reference's blocks are hard-edged molded tiles with only the corners taken
+-- off, so cell and piece radii are small enough to keep a filled row reading
+-- as a continuous bar rather than a string of lozenges.
 VisualTokens.Radius = {
-	cell = 10,
-	piece = 9,
+	cell = 8,
+	piece = 6,
 	chip = 14,
 	card = 20,
 	panel = 26,
@@ -176,7 +209,8 @@ end
 
 -- Proper sRGB relative luminance (WCAG 2.x), gamma-linearized. The naive
 -- weighted-average version is wrong by enough to matter when deciding whether
--- candy text clears 4.5:1 on cream.
+-- a text role clears 4.5:1, and it is wrong in the dangerous direction on a
+-- dark chassis: it scores light-on-navy far lower than it really is.
 local function relativeLuminance(color)
 	local function channel(value)
 		if value <= 0.03928 then
@@ -199,10 +233,11 @@ end
 -- Darkens a color, preserving hue and saturation, until it clears `target`
 -- contrast against `background`.
 --
--- This exists because the chrome palette was tuned for a near-black arcade
--- cabinet and now sits on cream. Retuning eight text roles by eye is how a
--- redesign ships an accessibility regression; deriving them keeps candy hues
--- readable automatically, including after someone retunes the flavor anchors.
+-- This exists because the chrome palette has now been retuned twice -- once
+-- from a near-black arcade cabinet to cream, then from cream to navy.
+-- Retuning eight text roles by eye each time is how a redesign ships an
+-- accessibility regression; deriving them keeps every role readable
+-- automatically, including after someone retunes the flavor anchors.
 function VisualTokens.readableOn(color, background, target)
 	local goal = clampNumber(target, 1, 21)
 	if VisualTokens.contrastRatio(color, background) >= goal then
@@ -212,12 +247,29 @@ function VisualTokens.readableOn(color, background, target)
 	local hue, saturation, value = color:ToHSV()
 	local candidate = color
 
-	-- Walk the value down in fixed steps rather than binary-searching: the
-	-- search space is tiny and a deterministic walk keeps results stable
-	-- across runs, which matters because these land in tests.
+	-- Which way to walk depends on the ground. Against a dark background,
+	-- darkening a color makes it *less* readable, so the walk has to go up.
+	-- This mattered the moment the direction flipped from a cream game to a
+	-- navy one: the darken-only version quietly made every text role worse.
+	local towardLight = relativeLuminance(background) < 0.18
+
+	-- Fixed steps rather than a binary search: the space is tiny, and a
+	-- deterministic walk keeps results stable across runs, which matters
+	-- because these land in tests.
+	--
+	-- Both walks preserve hue exactly. Scaling every channel toward black
+	-- leaves hue and saturation untouched; lerping toward white scales the
+	-- channel *differences* uniformly, which also leaves hue untouched while
+	-- shedding saturation. That last part is what makes the light walk able
+	-- to finish: a saturated blue held at full saturation tops out around
+	-- 4.4:1 on the navy chassis no matter how high its value goes, so value
+	-- alone cannot clear 4.5:1 and the walk has to be allowed to pale out.
 	for step = 1, 100 do
-		local nextValue = math.max(0, value * (1 - step / 100))
-		candidate = Color3.fromHSV(hue, saturation, nextValue)
+		if towardLight then
+			candidate = mix(color, IDENTITY.gloss, step / 100)
+		else
+			candidate = Color3.fromHSV(hue, saturation, math.max(0, value * (1 - step / 100)))
+		end
 		if VisualTokens.contrastRatio(candidate, background) >= goal then
 			return candidate
 		end
@@ -227,8 +279,8 @@ function VisualTokens.readableOn(color, background, target)
 end
 
 -- The chassis palette: shaped key-for-key like the old ArcadeUI.Color so all
--- 59 call sites keep working, but derived from the Bubblegum identity instead
--- of the "B2 Polished Arcade" near-black cabinet.
+-- 59 call sites keep working, but derived from the shared identity instead of
+-- the "B2 Polished Arcade" near-black cabinet it started as.
 --
 -- Chrome is deliberately STABLE -- it does not take stage or energy. The
 -- chassis is the identity; progression-driven variation belongs on the board
@@ -239,40 +291,51 @@ local TEXT_CONTRAST_TARGET = 4.5
 
 function VisualTokens.chrome()
 	local signature = FLAVORS[1]
-	local surface = IDENTITY.cream
-	local sunken = IDENTITY.creamShade
-	-- Text roles must clear the target on the darker of the two grounds they
-	-- can land on, so a label is readable on a sunken card as well as a panel.
-	local ground = if relativeLuminance(sunken) < relativeLuminance(surface)
-		then sunken
-		else surface
+	local surface = IDENTITY.surface
+	local sunken = IDENTITY.well
 
+	-- A text role can land on either ground, so it has to clear the target on
+	-- both. Solving against the harder one alone is not enough: which ground
+	-- is harder depends on the direction readableOn walks, and that flipped
+	-- when the chassis went from cream to navy. Alternating passes converge
+	-- because both walks move the same way on a single-polarity chassis.
 	local function readable(color)
-		return VisualTokens.readableOn(color, ground, TEXT_CONTRAST_TARGET)
+		local candidate = color
+		for _ = 1, 4 do
+			candidate = VisualTokens.readableOn(candidate, surface, TEXT_CONTRAST_TARGET)
+			candidate = VisualTokens.readableOn(candidate, sunken, TEXT_CONTRAST_TARGET)
+			if
+				VisualTokens.contrastRatio(candidate, surface) >= TEXT_CONTRAST_TARGET
+				and VisualTokens.contrastRatio(candidate, sunken) >= TEXT_CONTRAST_TARGET
+			then
+				break
+			end
+		end
+		return candidate
 	end
 
 	return {
 		shell = surface,
-		shellTop = mix(surface, IDENTITY.gloss, 0.5),
-		shellBottom = sunken,
+		shellTop = IDENTITY.surfaceRaised,
+		shellBottom = mix(surface, IDENTITY.shadow, 0.35),
 		inner = mix(surface, sunken, 0.55),
-		innerBottom = mix(sunken, IDENTITY.shadow, 0.12),
-		-- Soft grape rather than black: toy plastic has no true black, and a
-		-- black edge on cream reads as a sticker cut-out.
-		edge = mix(sunken, IDENTITY.shadow, 0.45),
+		innerBottom = mix(sunken, IDENTITY.shadow, 0.4),
+		-- On a dark chassis the edge is the darkest thing present, not the
+		-- lightest: panels are cut *out* of the room rather than laid on it.
+		edge = IDENTITY.shadow,
 
-		-- Rims are strokes, not text, so they stay bright and candy.
+		-- Rims are strokes, not text, so they stay saturated.
 		rim = signature.primary,
 		rimBright = mix(signature.primary, IDENTITY.gloss, 0.35),
 
 		text = IDENTITY.ink,
 		muted = readable(IDENTITY.inkSoft),
-		score = readable(Color3.fromRGB(255, 176, 32)),
-		best = readable(Color3.fromRGB(38, 200, 168)),
+		score = readable(Color3.fromRGB(229, 185, 60)),
+		best = readable(Color3.fromRGB(84, 192, 232)),
 		combo = readable(signature.hot),
-		gold = readable(Color3.fromRGB(255, 196, 54)),
-		silver = readable(Color3.fromRGB(176, 186, 204)),
-		bronze = readable(Color3.fromRGB(226, 138, 74)),
+		gold = readable(Color3.fromRGB(229, 185, 60)),
+		silver = readable(Color3.fromRGB(196, 206, 226)),
+		bronze = readable(Color3.fromRGB(224, 138, 52)),
 	}
 end
 
@@ -330,10 +393,10 @@ function VisualTokens.resolve(stage, energy)
 	local rim = mix(primary, hot, heat * 0.75)
 	local accent = mix(flavor.secondary, hot, 0.35 + heat * 0.45)
 
-	-- The board well deepens slightly with energy so bright pieces gain
-	-- contrast exactly when the screen gets busiest. Capped well short of
-	-- ink, because an empty cell must never read as a filled one.
-	local well = mix(IDENTITY.creamShade, IDENTITY.shadow, 0.10 + heat * 0.16)
+	-- The well deepens slightly with energy so the saturated blocks gain
+	-- contrast exactly when the board gets busiest. Capped short of the room
+	-- colour so the recess never swallows an empty cell.
+	local well = mix(IDENTITY.well, IDENTITY.shadow, 0.12 + heat * 0.2)
 
 	return {
 		flavorId = flavor.id,
@@ -348,18 +411,21 @@ function VisualTokens.resolve(stage, energy)
 		gloss = IDENTITY.gloss,
 		shadow = IDENTITY.shadow,
 
-		surface = IDENTITY.cream,
-		surfaceSunken = IDENTITY.creamShade,
-		surfaceTinted = mix(IDENTITY.cream, secondary, 0.35),
+		surface = IDENTITY.surface,
+		surfaceSunken = mix(IDENTITY.surface, IDENTITY.shadow, 0.3),
+		surfaceTinted = mix(IDENTITY.surface, primary, 0.25),
 
-		atmosphere = mix(secondary, primary, 0.25 + heat * 0.35),
-		atmosphereAccent = mix(IDENTITY.cream, secondary, 0.55),
+		-- The room. This is where progression lives now: stage picks the hue,
+		-- energy lifts it slightly so a hot run feels brighter without the
+		-- blocks changing colour underneath the player.
+		atmosphere = mix(primary, secondary, 0.3 + heat * 0.35),
+		atmosphereAccent = mix(primary, IDENTITY.gloss, 0.12 + heat * 0.1),
 		wash = mix(secondary, hot, heat * 0.7),
 
 		boardWell = well,
 		boardRim = rim,
-		boardCell = mix(IDENTITY.cream, secondary, 0.28),
-		boardCellEdge = mix(IDENTITY.creamShade, IDENTITY.shadow, 0.22),
+		boardCell = mix(IDENTITY.cell, primary, 0.18),
+		boardCellEdge = mix(IDENTITY.cellEdge, primary, 0.22),
 
 		primary = primary,
 		secondary = secondary,
@@ -367,13 +433,10 @@ function VisualTokens.resolve(stage, energy)
 		hot = hot,
 		accent = accent,
 
-		piecePalette = {
-			primary,
-			hot,
-			tertiary,
-			energize(flavor.secondary, heat * 0.4),
-			mix(primary, tertiary, 0.5),
-		},
+		-- Fixed, never flavor-derived. See BLOCK_PALETTE: the reference shows
+		-- five colours coexisting on one board, so tying piece colour to stage
+		-- would fight the look this is meant to match.
+		piecePalette = table.clone(BLOCK_PALETTE),
 
 		glossStrength = VisualTokens.Gloss.standard - heat * 0.16,
 	}

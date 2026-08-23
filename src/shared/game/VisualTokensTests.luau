@@ -15,8 +15,20 @@ local function assertNear(actual, expected, tolerance, message)
 	)
 end
 
+-- Gamma-linearized sRGB relative luminance (WCAG 2.x), written out here rather
+-- than borrowed from the module so these guards do not validate VisualTokens
+-- against its own arithmetic. The naive weighted-average version this replaced
+-- was tuned against a light chassis and reported a genuinely readable
+-- near-white on navy as roughly 4:1, which is off by a factor of nearly three.
 local function luminance(color)
-	return 0.2126 * color.R + 0.7152 * color.G + 0.0722 * color.B
+	local function channel(value)
+		if value <= 0.03928 then
+			return value / 12.92
+		end
+		return ((value + 0.055) / 1.055) ^ 2.4
+	end
+
+	return 0.2126 * channel(color.R) + 0.7152 * channel(color.G) + 0.0722 * channel(color.B)
 end
 
 -- WCAG-style contrast ratio. Used here as a regression guard, not as a
@@ -43,7 +55,7 @@ tests.identityIsStableAcrossEveryStageAndEnergy = function()
 				`Ink must not vary (stage {stage}, energy {step / 4})`
 			)
 			assertCondition(
-				tokens.surface == base.cream,
+				tokens.surface == base.surface,
 				`Surface must not vary (stage {stage}, energy {step / 4})`
 			)
 			assertCondition(
@@ -190,14 +202,63 @@ end
 tests.everyStageLooksDifferentAtRest = function()
 	local seen = {}
 	for stage = 1, VisualTokens.flavorCount() do
-		local key = tostring(VisualTokens.resolve(stage, 0).primary)
-		assertCondition(not seen[key], `Stage {stage} produced a duplicate primary color`)
+		local key = tostring(VisualTokens.resolve(stage, 0).atmosphere)
+		assertCondition(not seen[key], `Stage {stage} produced a duplicate room color`)
 		seen[key] = true
 	end
 end
 
-tests.boardWellNeverApproachesInk = function()
+tests.blocksAreIdentityNotFlavor = function()
+	-- Progression moved behind the board when the direction changed. If piece
+	-- colour ever starts tracking stage again, the board stops matching the
+	-- approved reference and this is the guard that catches it.
+	local base = VisualTokens.resolve(1, 0).piecePalette
+	for stage = 1, 12 do
+		for step = 0, 4 do
+			local palette = VisualTokens.resolve(stage, step / 4).piecePalette
+			assertCondition(#palette == #base, `Stage {stage} changed the block palette length`)
+			for index, color in palette do
+				assertCondition(
+					color == base[index],
+					`Block colour {index} varied at stage {stage}, energy {step / 4}`
+				)
+			end
+		end
+	end
+end
+
+tests.roomStillChangesWithStageAndEnergy = function()
+	-- The other half of the same contract: blocks hold still, the room does
+	-- not. Losing this is how the game becomes one static palette.
+	local calm = VisualTokens.resolve(1, 0)
+	local hot = VisualTokens.resolve(1, 1)
+	assertCondition(calm.atmosphere ~= hot.atmosphere, "Energy must move the room")
+
+	local stageOne = VisualTokens.resolve(1, 0).atmosphere
+	local stageTwo = VisualTokens.resolve(2, 0).atmosphere
+	assertCondition(stageOne ~= stageTwo, "Stage must move the room")
+end
+
+tests.boardWellStaysDistinctFromBlocks = function()
 	-- An empty cell must never read as a filled one, however hot the run gets.
+	-- On a dark board that means the well has to stay clear of the block
+	-- colours rather than clear of the ink.
+	for stage = 1, 12 do
+		for step = 0, 4 do
+			local tokens = VisualTokens.resolve(stage, step / 4)
+			for index, block in tokens.piecePalette do
+				assertCondition(
+					VisualTokens.contrastRatio(tokens.boardWell, block) > 1.6,
+					`Well collapsed toward block {index} at stage {stage}, energy {step / 4}`
+				)
+			end
+		end
+	end
+end
+
+tests.boardWellNeverApproachesInk = function()
+	-- Ink is light now, so this guards the opposite direction: the well must
+	-- stay dark enough that light text over the board stays legible.
 	for stage = 1, 12 do
 		for step = 0, 4 do
 			local tokens = VisualTokens.resolve(stage, step / 4)
@@ -275,32 +336,49 @@ tests.contrastRatioMatchesKnownValues = function()
 	)
 end
 
-tests.readableOnDarkensUntilItClearsTheTarget = function()
-	local cream = VisualTokens.identity().cream
-	-- Pale candy yellow on cream is roughly 1.3:1 -- the exact case that made
-	-- the old `score` role unreadable once the chassis went light.
-	local pale = Color3.fromRGB(255, 210, 71)
+tests.readableOnLightensUntilItClearsTheTarget = function()
+	local surface = VisualTokens.identity().surface
+	-- The block blue sitting on the navy chassis is roughly 1.3:1 -- the exact
+	-- case that makes a saturated accent unusable as a text color.
+	local deep = Color3.fromRGB(58, 86, 200)
 	assertCondition(
-		VisualTokens.contrastRatio(pale, cream) < 4.5,
-		"Precondition: pale yellow should start unreadable on cream"
+		VisualTokens.contrastRatio(deep, surface) < 4.5,
+		"Precondition: deep blue should start unreadable on the navy surface"
 	)
 
-	local fixed = VisualTokens.readableOn(pale, cream, 4.5)
+	local fixed = VisualTokens.readableOn(deep, surface, 4.5)
 	assertCondition(
-		VisualTokens.contrastRatio(fixed, cream) >= 4.5,
-		"readableOn should darken until the target is met"
+		VisualTokens.contrastRatio(fixed, surface) >= 4.5,
+		"readableOn should lighten until the target is met"
 	)
 
-	local hue = select(1, pale:ToHSV())
+	local hue = select(1, deep:ToHSV())
 	local fixedHue = select(1, fixed:ToHSV())
 	assertNear(fixedHue, hue, 0.02, "readableOn must preserve hue, not wash the color out")
 end
 
+-- The direction flip from cream to navy inverted which way readableOn has to
+-- walk. Darkening a color on a dark ground makes it worse, so this guards the
+-- branch rather than trusting the one-directional version that shipped before.
+tests.readableOnStillDarkensOnALightGround = function()
+	local light = Color3.fromRGB(248, 244, 236)
+	local pale = Color3.fromRGB(255, 210, 71)
+	local fixed = VisualTokens.readableOn(pale, light, 4.5)
+	assertCondition(
+		VisualTokens.contrastRatio(fixed, light) >= 4.5,
+		"readableOn should darken when the ground is light"
+	)
+
+	local _, _, paleValue = pale:ToHSV()
+	local _, _, fixedValue = fixed:ToHSV()
+	assertCondition(fixedValue < paleValue, "A light ground should push the color darker")
+end
+
 tests.readableOnLeavesAlreadyReadableColorsAlone = function()
-	local cream = VisualTokens.identity().cream
+	local surface = VisualTokens.identity().surface
 	local ink = VisualTokens.identity().ink
 	assertCondition(
-		VisualTokens.readableOn(ink, cream, 4.5) == ink,
+		VisualTokens.readableOn(ink, surface, 4.5) == ink,
 		"A color that already clears the target should be returned untouched"
 	)
 end
@@ -311,7 +389,7 @@ tests.everyChromeTextRoleIsReadableOnBothGrounds = function()
 	local textRoles = { "text", "muted", "score", "best", "combo", "gold", "silver", "bronze" }
 
 	for _, role in textRoles do
-		for groundName, ground in { surface = identity.cream, sunken = identity.creamShade } do
+		for groundName, ground in { surface = identity.surface, sunken = identity.well } do
 			local ratio = VisualTokens.contrastRatio(chrome[role], ground)
 			assertCondition(
 				ratio >= 4.5,
