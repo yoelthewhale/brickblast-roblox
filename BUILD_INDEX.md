@@ -2,21 +2,22 @@
 
 ## CURRENT GAME TO OPEN
 
-`BlockBlastBattle-Day54.rbxl`
+`BlockBlastBattle-Day55.rbxl`
 
 - Source branch: `integrate/day53-combined-experience`
-- Source code commit: `7d91543`
-- Built: `2026-08-24 13:03:03 -04:00`
+- Source code commit: `6f01bc9`
+- Built: `2026-08-24 13:23:34 -04:00`
 - Location: repository root
-- Purpose: combined checkpoint with the approved Deep Board visual direction, the server-authoritative free One More Chance prototype, the Deep Board-painted continue card, simplified Solo hub, Claude's clear-celebration feedback, clear-line glow preview, and the approved connected piece set.
+- Purpose: current combined checkpoint with the approved Deep Board visual direction, server-authoritative free One More Chance prototype, Deep Board-painted continue card, simplified Solo hub, clear-celebration feedback, clear-line glow preview, approved connected piece set, deeper room wash, and HUD cleanup.
 
-Double-click `BlockBlastBattle-Day54.rbxl` when you want to test the newest
+Double-click `BlockBlastBattle-Day55.rbxl` when you want to test the newest
 real BrickBlast game.
 
 Important: Day52 was the first Deep Board master build. Day53 is the first
 local checkpoint that combines Deep Board with the One More Chance feature and
 clear-celebration feedback. Day54 adds Claude's new clear-line glow and
-approved shape-set cleanup on top without overwriting Day53.
+approved shape-set cleanup on top without overwriting Day53. Day55 adds the
+deeper room tuning and HUD cleanup on top without overwriting Day54.
 
 ## Folder Layout
 
@@ -42,7 +43,7 @@ They were not renamed or deleted. They are ignored generated artifacts and are
 kept for comparison/history.
 
 The repository root should contain only the current numbered checkpoint. Recent
-historical checkpoints through Day53 now live in `checkpoints/` and are kept
+historical checkpoints through Day54 now live in `checkpoints/` and are kept
 for comparison/history.
 
 ## Recent Root Checkpoints
@@ -57,7 +58,8 @@ for comparison/history.
 | `BlockBlastBattle-Day51.rbxl` | `feature/one-more-chance-free-prototype` | Reference-style One More Chance hero card. Superseded visually by Day52 until the feature branch is rebased onto Deep Board. |
 | `BlockBlastBattle-Day52.rbxl` | `master` at `15b080c` | First Deep Board master build. Historical comparison build. |
 | `BlockBlastBattle-Day53.rbxl` | `integrate/day53-combined-experience` at `877c0a0` | Combined checkpoint: Deep Board, One More Chance, clear celebration, simple hub, and old UI clutter cleanup. |
-| `BlockBlastBattle-Day54.rbxl` | `integrate/day53-combined-experience` at `7d91543` | Current checkpoint: Day53 plus clear-line glow and the approved connected shape set. |
+| `BlockBlastBattle-Day54.rbxl` | `integrate/day53-combined-experience` at `7d91543` | Day53 plus clear-line glow and the approved connected shape set. |
+| `BlockBlastBattle-Day55.rbxl` | `integrate/day53-combined-experience` at `6f01bc9` | Current checkpoint: Day54 plus deeper room tuning and HUD cleanup. |
 
 Naming convention: real numbered checkpoints use
 `BlockBlastBattle-DayNN.rbxl` with the hyphen. `BrickBlast-Day50-LatestTest.rbxl`
@@ -86,6 +88,6 @@ testing.
 ## Checkpoint Rule
 
 Do not invent Day numbers. The next Day number comes from the highest existing
-real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day54.
+real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day55.
 
-Next real numbered checkpoint: Day55.
+Next real numbered checkpoint: Day56.
