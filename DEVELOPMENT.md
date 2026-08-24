@@ -6,13 +6,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
-- **Latest completed numbered checkpoint: Day53** (`BlockBlastBattle-Day53.rbxl`, 2026-08-24). Built from `integrate/day53-combined-experience` at `877c0a0`; this is the first local checkpoint that combines Deep Board, One More Chance, the simple Solo hub, and clear-celebration feedback.
-- **Current build to open: `BlockBlastBattle-Day53.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
-- **Day49-Day51 are old One More Chance feature-branch checkpoints and Day52 is the Deep Board-only master checkpoint.** Open Day53 for the combined game.
+- **Latest completed numbered checkpoint: Day54** (`BlockBlastBattle-Day54.rbxl`, 2026-08-24). Built from `integrate/day53-combined-experience`; this is the current combined local checkpoint.
+- **Current build to open: `BlockBlastBattle-Day54.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
+- **Day49-Day51 are old One More Chance feature-branch checkpoints, Day52 is the Deep Board-only master checkpoint, and Day53 is the first combined Deep Board/One More Chance/clear-celebration checkpoint.** Open Day54 for the newest combined game.
 - **`BlockBlastBattle-Day44.rbxl` is broken and kept deliberately.** It was built while `GameServer.server.luau` was over Luau's 200-local limit, so the server compiled nothing: no hub, no remotes, players on the bare bootstrap floor. It is retained as the artifact of the #96 incident. Do not open it expecting a working game, and do not delete it to tidy up.
-- **Next numbered checkpoint: Day54.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
+- **Next numbered checkpoint: Day55.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
 - **GitHub `master` is the source of truth for code.** The `.rbxl` files in the repository root are local, generated, gitignored build checkpoints: snapshots for Studio testing, never the authoritative source. A missing or stale `.rbxl` says nothing about the state of the code.
-- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day53.rbxl` stays in the repository root because it is the current game to open.
+- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day54.rbxl` stays in the repository root because it is the current game to open.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
 
@@ -65,6 +65,21 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - Confirm clear-praise bursts feel rewarding without covering the board for too long.
 - Confirm gamepad focus stays on End Run when the One More Chance panel appears.
 - Confirm the simplified hub is acceptable as the current temporary test hub.
+
+## Session Update - 2026-08-24 Day54 Clear Glow and Shape Set
+
+- Cherry-picked Claude's `89318a2` change onto the Day53 integration branch instead of merging his older branch wholesale, preventing stale build docs, removed PNG clutter, and old feature-branch state from returning.
+- Added board-frame clear glows for cells that are about to disappear, using measured cell geometry rather than adding decorative children to the 8x8 grid.
+- Restricted the playable shape set to the approved connected pieces and removed non-list shapes, including diagonal-only pieces and the plus/cross piece.
+- Added `BlocksTests` so every shape is edge-connected and every configured hand-generation shape name exists.
+- Updated the hand-generator assistance test so it searches for a qualifying seed instead of depending on a brittle fixed random seed.
+- Built `BlockBlastBattle-Day54.rbxl` as the new current local checkpoint.
+
+### Remaining Manual Checks
+
+- Studio-test Day54 and confirm the clear-line glow appears before disappearing blocks without obscuring board readability.
+- Confirm the reduced piece set feels right; the plus/cross piece was removed because it was not in the approved list, but it can be restored if Yoel wants it.
+- Confirm no disconnected/diagonal-looking pieces appear in the hand.
 
 ## Session Update - 2026-08-22 Simple Solo Hub Reset
 
