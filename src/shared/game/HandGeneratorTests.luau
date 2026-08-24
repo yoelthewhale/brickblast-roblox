@@ -466,6 +466,158 @@ tests.generateHonoursTheRunDifficulty = function()
 	assertCondition(#hand == Config.InventorySize, "Generation should still return a full hand")
 end
 
+-- THE FAIRNESS INVARIANT.
+--
+-- Yoel's requirement, in his words: "no matter what the user must have a fair
+-- hand." This is the test that states it, and it is deliberately a property
+-- test over many boards, seeds and difficulties rather than a handful of
+-- examples -- because the failure it guards is rare by nature. A hand with no
+-- legal move ends the run through no fault of the player, and it will only
+-- ever happen on a board state nobody thought to write a case for.
+--
+-- The rule: whenever ANY shape in the piece set can be placed somewhere on the
+-- board, the dealt hand must contain at least one placeable piece. It is not
+-- "usually" or "when the rescue budget allows" -- HandGenerator forces a
+-- fitting piece unconditionally, and this holds it to that.
+--
+-- Note what is NOT claimed: that all three pieces fit, or that the hand is
+-- still playable after the first placement. Running yourself out of room is
+-- the game. Being dealt a dead hand is not.
+tests.aFittingHandIsAlwaysDealtWhenOneIsPossible = function()
+	local checked = 0
+
+	for _, difficultyId in Config.Difficulties.Order do
+		for seed = 1, 60 do
+			local randomizer = Random.new(seed * 7919)
+			local board = Grid.create()
+
+			-- Fill a pseudo-random share of the board, growing with the seed, so
+			-- the sweep covers empty, sparse, crowded and nearly-sealed boards
+			-- rather than only the comfortable middle.
+			local fillTarget = math.floor((seed / 60) * Config.BoardSize * Config.BoardSize)
+			for _ = 1, fillTarget do
+				local x = randomizer:NextInteger(1, Config.BoardSize)
+				local y = randomizer:NextInteger(1, Config.BoardSize)
+				board[y][x] = "filled"
+			end
+
+			local anyShapeFits = false
+			for _, shapeDefinition in Blocks.Shapes do
+				local shape = Blocks.createShape(shapeDefinition.id, Random.new(1))
+				for y = 1, Config.BoardSize do
+					for x = 1, Config.BoardSize do
+						if Grid.canPlace(board, shape, x, y) then
+							anyShapeFits = true
+							break
+						end
+					end
+					if anyShapeFits then
+						break
+					end
+				end
+				if anyShapeFits then
+					break
+				end
+			end
+
+			if anyShapeFits then
+				local hand = HandGenerator.generate(board, {
+					randomizer = Random.new(seed),
+					difficultyId = difficultyId,
+					assistance = HandGenerator.newAssistance(difficultyId),
+				})
+				assertCondition(
+					handHasAnyMove(board, hand),
+					`Dealt a dead hand on {difficultyId} at seed {seed} while a placeable `
+						.. "shape existed. A player losing here lost to the dealer, not the board."
+				)
+				checked += 1
+			end
+		end
+	end
+
+	-- Guards the test itself. If the board generation above ever stopped
+	-- producing placeable boards, every assertion would be skipped and this
+	-- would pass while checking nothing.
+	assertCondition(
+		checked > 100,
+		`Only {checked} boards were actually checked; the sweep is not covering enough`
+	)
+end
+
+-- The fairness guarantee must not be something Spicy trades away. Difficulty
+-- may take rescues, raise pressure, and add a shot clock; it may never deal a
+-- hand that cannot be played.
+tests.spicyIsHarderButNeverUnfair = function()
+	local chill = Config.Difficulties.Profiles.chill
+	local spicy = Config.Difficulties.Profiles.spicy
+
+	assertCondition(
+		spicy.pressureScale > chill.pressureScale,
+		"Spicy must apply more pressure than Chill"
+	)
+	assertCondition(
+		spicy.assistanceBonus < chill.assistanceBonus,
+		"Spicy must offer fewer rescues than Chill"
+	)
+
+	-- Every profile keeps at least one rescue. Zero is a different game rather
+	-- than a harder one, which is the reasoning already recorded on
+	-- assistanceBudget; this holds the profiles to it.
+	for _, difficultyId in Config.Difficulties.Order do
+		local start, cap = HandGenerator.assistanceBudget(difficultyId)
+		assertCondition(start >= 1, `{difficultyId} starts with no rescues at all`)
+		assertCondition(cap >= start, `{difficultyId} caps rescues below its own start`)
+	end
+end
+
+tests.chillIsMeaningfullyEasierThanClassic = function()
+	-- Not merely "different numbers" -- the gap has to be visible in the value
+	-- the generator actually consumes, at a stage a real player reaches.
+	for stage = 1, 12 do
+		local chill = HandGenerator.difficultyForStage(stage, "chill")
+		local classic = HandGenerator.difficultyForStage(stage, "classic")
+		local spicy = HandGenerator.difficultyForStage(stage, "spicy")
+		assertCondition(
+			chill.pressure <= classic.pressure,
+			`Chill applied more pressure than Classic at stage {stage}`
+		)
+		assertCondition(
+			classic.pressure <= spicy.pressure,
+			`Classic applied more pressure than Spicy at stage {stage}`
+		)
+	end
+
+	-- By the stage pressure genuinely bites, Chill should be far below Classic
+	-- rather than a rounding difference from it.
+	local chillLate = HandGenerator.difficultyForStage(10, "chill")
+	local classicLate = HandGenerator.difficultyForStage(10, "classic")
+	assertCondition(
+		chillLate.pressure < classicLate.pressure * 0.5,
+		`Chill at stage 10 ({chillLate.pressure}) is not meaningfully below Classic `
+			.. `({classicLate.pressure}); "really easy" has to be visible in the number`
+	)
+end
+
+tests.onlySpicyCarriesAShotClock = function()
+	assertCondition(
+		Config.Difficulties.Profiles.spicy.placementSeconds ~= nil,
+		"Spicy should have a placement timer"
+	)
+	assertCondition(
+		Config.Difficulties.Profiles.chill.placementSeconds == nil,
+		"Chill must never be timed"
+	)
+	assertCondition(
+		Config.Difficulties.Profiles.classic.placementSeconds == nil,
+		"Classic must never be timed"
+	)
+	assertCondition(
+		Config.Difficulties.Profiles.spicy.placementSeconds >= 5,
+		"A shot clock under 5 seconds is a reflex test, not a puzzle"
+	)
+end
+
 function HandGeneratorTests.run()
 	local results = {}
 
