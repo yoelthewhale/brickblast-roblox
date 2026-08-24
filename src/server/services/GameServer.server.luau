@@ -2164,6 +2164,12 @@ local function publicState(player)
 		continueOffer = state.mode == "Solo" and TelemetryReporter.OneMoreChance.publicOffer(state)
 			or nil,
 		difficulty = state.difficulty,
+		-- nil on untimed runs, so the client hides the readout rather than
+		-- rendering a placeholder clock.
+		placementSecondsLeft = GameplayRules.ShotClock.displaySecondsLeft(
+			state.placementDeadline,
+			os.clock()
+		),
 		developer = {
 			enabled = DeveloperTools.isEnabled(),
 			authorized = DeveloperTools.isAuthorizedUserId(player.UserId),
@@ -2344,6 +2350,10 @@ local function giveNewHand(state)
 		state.assistance = generation.assistance
 		state.lastHandGeneration = generation
 		state.recentHands = HandGenerator.rememberHand(state.recentHands, state.hand)
+		-- A fresh hand restarts the shot clock. Untimed profiles get nil here,
+		-- which is what clears any deadline left over from a previous run on a
+		-- reused state table.
+		state.placementDeadline = GameplayRules.ShotClock.deadlineFrom(os.clock(), state.difficulty)
 	else
 		state.hand = Blocks.createHand(state.randomizer, Config.InventorySize, state.pieceSkin)
 	end
@@ -3161,6 +3171,11 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 	end
 
 	pressureOpponents(player, linesCleared, session)
+	-- Every accepted placement buys a fresh clock. Arming it only when a hand
+	-- is dealt would give the player one allowance to spend across all three
+	-- pieces, which is a different and much harsher game than the one the
+	-- difficulty blurb promises.
+	state.placementDeadline = GameplayRules.ShotClock.deadlineFrom(os.clock(), state.difficulty)
 	state.alive = Grid.hasAnyMove(state.board, state.hand)
 	if not state.alive and TelemetryReporter.setOneMoreChancePending(player, state, session) then
 		return
@@ -3695,6 +3710,28 @@ task.spawn(function()
 			if session.endsAt and os.clock() >= session.endsAt then
 				finishBattle(session, getHighestScoringAlivePlayer(session))
 			else
+				-- The Spicy shot clock. Checked here rather than client-side
+				-- for the obvious reason: a timer the client owns is a timer
+				-- the client can pause. The 1s tick is coarse against a 10s
+				-- allowance, and deliberately so -- it can only ever expire
+				-- late, never early, so the error always favours the player.
+				for _, sessionPlayer in session.players do
+					local timedState = playerStates[sessionPlayer]
+					if
+						timedState
+						and timedState.alive
+						and GameplayRules.ShotClock.hasExpired(
+							timedState.placementDeadline,
+							os.clock()
+						)
+					then
+						timedState.alive = false
+						timedState.placementDeadline = nil
+						timedState.message = "Out of time"
+						scheduleReturnIfEliminated(sessionPlayer, timedState)
+					end
+				end
+
 				applySuddenDeathPressure(session)
 				if not session.finishScheduled then
 					broadcast(session)

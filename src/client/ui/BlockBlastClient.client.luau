@@ -4310,18 +4310,26 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		or currentState.mode == "Custom" and "Rotate or reroll pieces before placement"
 		or currentState.mode == "Solo" and `Best score: {currentState.bestScore or 0}`
 		or `Arena {currentState.arenaIndex or "--"} | Match {currentState.sessionId or "--"}`
-	-- Untimed modes send no timeLeft at all now, so the label goes away rather
-	-- than sitting at a placeholder. A dash where a clock should be still
-	-- reads as a clock that failed.
-	timerLabel.Visible = currentState.timeLeft ~= nil
-	timerLabel.Text = currentState.timeLeft
-			and currentState.suddenDeath
-			and `Sudden: {currentState.timeLeft}s`
+	-- Two different clocks share this label, and only one can be running.
+	-- `timeLeft` is the match clock (Battle); `placementSecondsLeft` is the
+	-- Spicy shot clock, which is per-placement and only ever set on Solo. Both
+	-- arrive as nil when absent, so the label disappears rather than sitting at
+	-- a placeholder -- a dash where a clock should be still reads as a clock
+	-- that failed.
+	local shotClockLeft = currentState.placementSecondsLeft
+	timerLabel.Visible = currentState.timeLeft ~= nil or shotClockLeft ~= nil
+	timerLabel.Text = shotClockLeft and `Place in {shotClockLeft}s`
+		or currentState.timeLeft and currentState.suddenDeath and `Sudden: {currentState.timeLeft}s`
 		or currentState.timeLeft and `Time: {currentState.timeLeft}s`
 		or ""
-	timerLabel.TextColor3 = currentState.suddenDeath and Color3.fromRGB(255, 86, 107)
-		or currentState.timeLeft and currentState.timeLeft <= 15 and Color3.fromRGB(255, 210, 71)
-		or Color3.fromRGB(193, 201, 215)
+	-- The shot clock turns urgent well before it turns fatal: at 3 seconds a
+	-- player can still act on the warning, which is the only thing a warning
+	-- is for.
+	timerLabel.TextColor3 = currentState.suddenDeath and Color3.fromRGB(198, 64, 58)
+		or shotClockLeft and shotClockLeft <= 3 and Color3.fromRGB(198, 64, 58)
+		or shotClockLeft and shotClockLeft <= 5 and Color3.fromRGB(224, 138, 52)
+		or currentState.timeLeft and currentState.timeLeft <= 15 and Color3.fromRGB(229, 185, 60)
+		or ArcadeUI.Color.muted
 	playAgainButton.Text = currentState.mode == "Story" and "Replay" or "Play Again"
 	day43Ui.updateContinueOffer(currentState)
 	playAgainButton.Visible = not currentState.alive

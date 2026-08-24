@@ -47,14 +47,27 @@ Config.Difficulties = {
 	Default = "classic",
 	Order = { "chill", "classic", "spicy" },
 	Profiles = {
+		-- The three profiles have to feel like three different games, not three
+		-- settings of one. Retuned on 2026-08-24 to Yoel's brief: Chill really
+		-- easy, Classic obviously a step up but not punishing, Spicy as hard as
+		-- the game gets.
+		--
+		-- `placementSeconds` is the shot clock: run out before placing a piece
+		-- and the run ends. nil means untimed, which is the honest default --
+		-- see GameServer's endsAt handling, where a 0 was previously standing in
+		-- for "no timer" and rendering as a frozen clock.
 		chill = {
 			id = "chill",
 			name = "Chill",
-			blurb = "Extra rescues and a slower squeeze.",
-			detail = "Pressure holds off two stages longer.",
-			assistanceBonus = 2,
-			pressureScale = 0.6,
-			pressureStartOffset = 2,
+			blurb = "Take your time. The game helps.",
+			detail = "Double rescues, and the squeeze barely arrives.",
+			-- Nearly the whole assistance system stays available all run, and
+			-- pressure is scaled to a quarter so even a long Chill run never
+			-- reaches the restrictive-piece bias that makes late Classic bite.
+			assistanceBonus = 3,
+			pressureScale = 0.25,
+			pressureStartOffset = 4,
+			placementSeconds = nil,
 		},
 		classic = {
 			id = "classic",
@@ -64,15 +77,21 @@ Config.Difficulties = {
 			assistanceBonus = 0,
 			pressureScale = 1,
 			pressureStartOffset = 0,
+			placementSeconds = nil,
 		},
 		spicy = {
 			id = "spicy",
 			name = "Spicy",
-			blurb = "Fewer rescues, pressure arrives early.",
-			detail = "For chasing a high score.",
-			assistanceBonus = -1,
-			pressureScale = 1.35,
-			pressureStartOffset = -1,
+			blurb = "A shot clock, and no help coming.",
+			detail = "Place within 10 seconds or the run ends.",
+			-- One rescue rather than none. A run with zero rescues is a
+			-- different game rather than a harder one -- the same reasoning
+			-- already recorded on assistanceBudget -- and the shot clock is
+			-- where Spicy's real difficulty now lives.
+			assistanceBonus = -2,
+			pressureScale = 1.6,
+			pressureStartOffset = -2,
+			placementSeconds = 10,
 		},
 	},
 }

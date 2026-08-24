@@ -1,6 +1,21 @@
 local Config = require(script.Parent.Config)
+local ShotClock = require(script.Parent.ShotClock)
 
 local GameplayRules = {}
+
+-- Re-exported, not reimplemented. The shot clock decides when a Spicy run
+-- ends, which makes it a gameplay rule and puts it here by rights -- but it
+-- keeps its own module and its own tests because it is a self-contained
+-- decision with real edge cases (nil versus zero, the exact-deadline
+-- boundary).
+--
+-- The re-export exists for a second, concrete reason: GameServer is at its
+-- top-level-local budget and `scripts/check-local-registers.luau` refuses a
+-- new `local ShotClock = require(...)` there. Reaching it through a module the
+-- server already requires costs no register at all. Access it as
+-- `GameplayRules.ShotClock` from the server; require ShotClock directly
+-- anywhere that has budget to spare.
+GameplayRules.ShotClock = ShotClock
 
 function GameplayRules.comboBonusForStreak(comboStreak)
 	return math.max(0, comboStreak - 1) * Config.ComboBonusPoints
