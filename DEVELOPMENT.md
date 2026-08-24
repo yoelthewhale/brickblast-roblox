@@ -16,6 +16,51 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
 
+## Session Update - 2026-08-22 One More Chance Prototype
+
+- Added a server-authoritative free Solo continue prototype using Claude's One More Chance spec as the product direction.
+- Captures a pre-placement Solo snapshot before each valid move so a failed run can rewind one move.
+- Holds a Solo run in a pending offer state when the server detects no legal moves and the one-per-run free continue is available.
+- Added a client-rendered offer panel that reads only the server's `continueOffer` contract and sends `ContinueRun` or `EndRun` requests through the existing Queue remote.
+- Integrated Claude's reviewed Bubblegum continue panel module with `VisualTokens`, phone-safe stacked buttons, and End Run as the default gamepad/keyboard focus.
+- Refreshes the hand server-side after the rewind using the existing assistance-aware hand generator, so the new hand has a fair chance to fit.
+- Only consumes the continue after the refreshed run is confirmed playable, avoiding a paid-token-style "spent and got nothing" failure mode.
+- Keeps the Solo puzzle workspace visible when the player ends the run, so the results panel no longer floats over the hub after an automatic return.
+- Added low-volume telemetry counters for shown, accepted, declined, unavailable, and fulfilled continue offers.
+- Added shared tests covering hidden-before-pending, board/stat rewind, and one-use cap behavior.
+- Built `BlockBlastBattle-Day50.rbxl` for Studio inspection.
+
+## Session Update - 2026-08-23 One More Chance Reference Card
+
+- Merged Claude's approved-reference One More Chance card redesign from PR #130.
+- Reworked the offer into a bright flavor-token gradient hero card with a sunken preview panel, a chunky primary action, and a quieter full-width End Run decline.
+- Preserved the ethical purchase-path behavior: no countdown timer, End Run keeps default keyboard/gamepad focus, and the decline remains an obvious tappable action rather than a small hidden text link.
+- Kept the card fully server-payload driven; the client still reads `source`, `priceText`, `usedThisRun`, `capThisRun`, `stage`, and `score` without deciding entitlement.
+- Fixed the primary button sheen so it repaints with each stage flavor instead of keeping the construction-time palette.
+- Built `BlockBlastBattle-Day51.rbxl` for Studio inspection.
+
+### Remaining Manual Checks
+
+- Studio-test a Solo run that reaches no legal moves and confirm the One More Chance panel appears.
+- Verify One More Chance rewinds one move, refreshes the hand, and allows continued placement.
+- Verify End Run finalizes normally and returns the player safely.
+- Verify no duplicate panel behavior after Play Again, Return Hub, reset, or reopening Solo.
+- Later Robux work still needs Creator Dashboard product IDs, `ProcessReceipt`, persisted token fallback, idempotent receipt ledger, and Claude's final Bubblegum presentation.
+
+## Session Update - 2026-08-22 Simple Solo Hub Reset
+
+- Replaced the active runtime hub generation path with an intentionally simple solo test hub.
+- Removed the current toybox/fantasy hub from the active build path without deleting its legacy helper code yet.
+- The new hub contains one grass platform, one stone plaza, a visible `HubSpawn`, a dominant `SoloPlayPad`, simple score/guide boards, low safety rails, small color markers, and the existing void recovery platform.
+- Preserved the expected `BlockBlastHub`, `HubSpawn`, and `SoloPlayPad` contracts so spawn safety and the Solo prompt flow continue to work.
+- Battle and Story world prompts are not generated while those modes remain disabled in `ExperienceConfig`.
+
+## Session Update - 2026-08-22 Claude HUD Fix Sync
+
+- Fetched Claude's merged `origin/master` work at `2c9022b`.
+- Merged the left-nav HUD slab fix into the simple-hub branch without conflicts.
+- Built `BlockBlastBattle-Day48.rbxl` so the current local file includes both the simplified map and the corrected left-side HUD container behavior.
+
 ## Session Update - 2026-08-22 VS Code / Repository Organization Pass
 
 - Preserved source, configs, current docs, production Bubblegum assets, scripts, tools, and `BlockBlastBattle-Day46.rbxl`.
@@ -37,6 +82,15 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - Updated `BUILD_INDEX.md` to list Day47-Day52 and to clarify that Day49-Day51 were One More Chance feature-branch checkpoints, while Day52 is the current Deep Board master build.
 - Completed the root `.rbxl` cleanup: Day43-Day51 live in `checkpoints/`, the accidental `BrickBlast-Day50-LatestTest.rbxl` alias lives in `test-builds/`, and the root now contains only the current `BlockBlastBattle-Day52.rbxl`.
 - Asset read: coin, XP, best-score, trophy, stage, medals, reward crates, shadow, and tintable particle/confetti assets remain plausible or actively referenced; `CandyFlourishCorner` and `LollipopMark` survive only as registry/package entries and should not be used for Deep Board unless the direction changes again.
+
+## Session Update - 2026-08-22 Rejected UI Asset Cleanup
+
+- Removed the rejected early HUD icon pack.
+- Removed the rejected blocky BedWars-style icon pack.
+- Removed old UI mockup/previews, including the design approval mockups and upload preview sheets.
+- Removed the stale generator scripts that recreated those rejected packs and mockups.
+- Preserved `assets/ui/bubblegum-production/` unchanged as the current production asset package.
+- Updated archived asset-upload documentation so future sessions do not try to upload removed/rejected PNGs.
 
 ## Session Update - 2026-08-22 Local Build Cleanup
 
@@ -1480,9 +1534,9 @@ Open `BlockBlastBattle-Day28.rbxl`, press Play, and capture desktop/mobile scree
 ### Completed
 
 - Generated a blocky competitive / BedWars-inspired icon language draft that was later rejected.
-- Generated a separate chosen icon pack under `assets/ui/icons-blocky-bedwars`.
-- Added `assets/ui/mockups/blocky-bedwars-icon-pack-preview.png` as a preview sheet.
-- Added `scripts/generate-blocky-ui-icons.ps1` so the chosen pack can be regenerated.
+- Generated a separate chosen icon pack. The old files were removed during the 2026-08-22 rejected UI asset cleanup.
+- Added a preview sheet. The old preview was removed during the 2026-08-22 rejected UI asset cleanup.
+- Added a generator script. The stale generator was removed during the 2026-08-22 rejected UI asset cleanup so the rejected pack is not recreated accidentally.
 - The later Day28 correction marks this pack as rejected-only and not approved for upload.
 
 ### Current State
@@ -1498,20 +1552,20 @@ Approve the Day28 native UI direction from Play-mode screenshots before producin
 
 ### Completed
 
-- Generated a free project-owned HUD icon pack for Play, Shop, Quests, Settings, Coins, Wins, and Story Stars.
-- Added `assets/ui/icons/*.png` source upload files and `assets/ui/mockups/hud-icon-upload-pack-preview.png`.
-- Added `scripts/generate-ui-icons.ps1` so the icon pack can be regenerated without paid assets.
-- Added `docs/UI_ICON_UPLOAD_MANIFEST.md` mapping every PNG to its `UIAssets.luau` key.
+- Generated a free project-owned HUD icon pack for Play, Shop, Quests, Settings, Coins, Wins, and Story Stars. This pack was later rejected and removed during the 2026-08-22 rejected UI asset cleanup.
+- Added old source upload files and a preview sheet. Those rejected files were removed during the 2026-08-22 rejected UI asset cleanup.
+- Added a generator script. The stale generator was removed during the 2026-08-22 rejected UI asset cleanup so the rejected pack is not recreated accidentally.
+- Added archived upload documentation. It now records that the pack was rejected and removed.
 - Rebuilt `BlockBlastBattle-Day26.rbxl`.
 
 ### Current State
 
-- The PNG files are ready to upload, but the Roblox UI cannot display them until Roblox image asset IDs are pasted into `UIAssets.luau`.
-- Day26 still safely falls back to text badges if the IDs are blank.
+- The rejected PNG files were removed. The current production art path is `assets/ui/bubblegum-production/` through `BubblegumAssets.luau`.
+- Day26 still safely falls back to text badges in historical builds if the old IDs are blank.
 
 ### Next Priority
 
-Upload the seven PNGs in `assets/ui/icons`, paste the returned IDs into `UIAssets.luau`, then rebuild the next Day file so the in-game HUD uses real images.
+Use the approved Bubblegum production asset package instead of the removed rejected icon pack.
 
 ## Day25 Free UI Asset Pipeline - 2026-08-02
 

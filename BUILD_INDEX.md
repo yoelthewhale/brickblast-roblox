@@ -17,12 +17,15 @@ Chance prototype and card experiments. Day52 is newer and is the first Deep
 Board build, but it does **not** include that unmerged One More Chance feature
 branch yet.
 
+Day53 is being prepared as the combined checkpoint: Deep Board, One More
+Chance, and clear-celebration feedback together.
+
 ## Folder Layout
 
 | Location | Purpose |
 | --- | --- |
 | `src/` | Active Roblox source code. |
-| `assets/ui/bubblegum-production/` | Current production Bubblegum UI art package. |
+| `assets/ui/bubblegum-production/` | Legacy production UI art package; only hue-neutral/reused assets should survive the Deep Board pivot. |
 | `docs/` | Current documentation, with older material under `docs/archive/`. |
 | `scripts/` | Project automation scripts. |
 | `tools/` | Local tool binaries used by validation/build tasks. |
@@ -54,7 +57,7 @@ for comparison/history.
 | `BlockBlastBattle-Day49.rbxl` | `feature/one-more-chance-free-prototype` | Free One More Chance Solo prototype. |
 | `BlockBlastBattle-Day50.rbxl` | `feature/one-more-chance-free-prototype` | Day49 plus reviewed responsive One More Chance panel and Solo end-flow fix. |
 | `BlockBlastBattle-Day51.rbxl` | `feature/one-more-chance-free-prototype` | Reference-style One More Chance hero card. Superseded visually by Day52 until the feature branch is rebased onto Deep Board. |
-| `BlockBlastBattle-Day52.rbxl` | `master` at `15b080c` | First Deep Board master build. Current build to open. |
+| `BlockBlastBattle-Day52.rbxl` | `master` at `15b080c` | First Deep Board master build. Current build to open until Day53 is validated. |
 
 Naming convention: real numbered checkpoints use
 `BlockBlastBattle-DayNN.rbxl` with the hyphen. `BrickBlast-Day50-LatestTest.rbxl`

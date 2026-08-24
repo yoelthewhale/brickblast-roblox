@@ -3193,6 +3193,37 @@ styleButton(resizeHandle, "secondary")
 UITheme.stroke(resizeHandle, Color3.fromRGB(47, 199, 255), 3, 0.06)
 markInteractive(resizeHandle)
 
+-- The offer panel lives in its own ModuleScript with its own register budget.
+-- It is required inline and stored on day43Ui rather than as a top-level local,
+-- because this chunk sits two registers from Luau's 200 limit (see #96).
+function day43Ui.ensureContinueOfferPanel()
+	if not day43Ui.continueOfferPanel then
+		day43Ui.continueOfferPanel = require(script.Parent.ContinuePanel).new(root, {
+			playSound = playSound,
+			isReducedMotion = function()
+				return reducedMotion
+			end,
+			onAccept = function()
+				day43Ui.fireQueueRequest("ContinueRun")
+			end,
+			onDecline = function()
+				day43Ui.fireQueueRequest("EndRun")
+			end,
+		})
+	end
+
+	return day43Ui.continueOfferPanel
+end
+
+function day43Ui.updateContinueOffer(state)
+	local offer = state ~= nil
+			and state.mode == "Solo"
+			and state.alive == false
+			and state.continueOffer
+		or nil
+	day43Ui.ensureContinueOfferPanel():Update(offer)
+end
+
 local function clampNumber(value, minimum, maximum)
 	return math.max(minimum, math.min(maximum, value))
 end
@@ -4189,6 +4220,8 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 			workspaceInteraction.stop()
 		end
 		root.Visible = false
+		day43Ui.updateContinueOffer(nil)
+		resultPanelController:Hide()
 		if stageUi.card then
 			stageUi.card.Visible = false
 		end
@@ -4261,7 +4294,13 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		or currentState.timeLeft and currentState.timeLeft <= 15 and Color3.fromRGB(255, 210, 71)
 		or Color3.fromRGB(193, 201, 215)
 	playAgainButton.Text = currentState.mode == "Story" and "Replay" or "Play Again"
-	playAgainButton.Visible = not currentState.alive and currentState.mode ~= "Custom"
+	day43Ui.updateContinueOffer(currentState)
+	playAgainButton.Visible = not currentState.alive
+		and currentState.mode ~= "Custom"
+		and not (
+			typeof(currentState.continueOffer) == "table"
+			and currentState.continueOffer.available == true
+		)
 	rotatePieceButton.Visible = currentState.mode == "Custom" and currentState.alive
 	rerollPieceButton.Visible = currentState.mode == "Custom" and currentState.alive
 
@@ -4624,6 +4663,18 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 			pulseHandSlot(effect.slot)
 		end
 		showBanner(effect.message or "Piece updated", Color3.fromRGB(255, 93, 200))
+	elseif effect.kind == "ContinueOffer" then
+		playSound("Blocked")
+		showBanner(
+			effect.detail or effect.message or "One More Chance is ready",
+			Color3.fromRGB(255, 210, 71)
+		)
+	elseif effect.kind == "OneMoreChance" then
+		playSound("Result")
+		showBanner(
+			effect.detail or effect.message or "Fresh hand ready",
+			Color3.fromRGB(123, 237, 75)
+		)
 	elseif effect.kind == "SuddenDeath" then
 		playSound("Blocked")
 		showBanner(effect.detail or effect.message or "Sudden death!", Color3.fromRGB(255, 86, 107))

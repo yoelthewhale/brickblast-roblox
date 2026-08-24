@@ -64,6 +64,11 @@ TelemetryReporter.counters = {
 	customLabHandRerolls = 0,
 	rejectedHandRequests = 0,
 	throttledHandRequests = 0,
+	continueOfferShown = 0,
+	continueOfferAccepted = 0,
+	continueOfferDeclined = 0,
+	continueOfferUnavailable = 0,
+	continuePrototypeFulfilled = 0,
 }
 
 -- Failure tallies surfaced in the diagnostics snapshot.

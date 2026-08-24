@@ -35,6 +35,7 @@ local StageProgression = require(GameShared.StageProgression)
 local UIControlRules = require(GameShared.UIControlRules)
 local HubBuilder = require(script.Parent.Parent.world.HubBuilder)
 local TelemetryReporter = require(script.Parent.TelemetryReporter)
+TelemetryReporter.OneMoreChance = require(GameShared.OneMoreChance)
 
 local remotes = Instance.new("Folder")
 remotes.Name = "BlockBlastRemotes"
@@ -2160,6 +2161,8 @@ local function publicState(player)
 		storyMission = state.storyMission,
 		storyComplete = state.mode == "Story" and isStoryMissionComplete(state) or false,
 		stage = state.mode == "Solo" and StageProgression.publicState(state.stage) or nil,
+		continueOffer = state.mode == "Solo" and TelemetryReporter.OneMoreChance.publicOffer(state)
+			or nil,
 		difficulty = state.difficulty,
 		developer = {
 			enabled = DeveloperTools.isEnabled(),
@@ -2341,6 +2344,66 @@ local function giveNewHand(state)
 	end
 end
 
+TelemetryReporter.setOneMoreChancePending = function(player, state, session)
+	if state.mode ~= "Solo" then
+		return false
+	end
+
+	local available = TelemetryReporter.OneMoreChance.beginOffer(state)
+	if available then
+		analytics.continueOfferShown += 1
+		effectsEvent:FireClient(player, {
+			kind = "ContinueOffer",
+			message = "No moves left",
+			detail = "One More Chance is ready.",
+		})
+		broadcast(session)
+	end
+	return available
+end
+
+TelemetryReporter.useOneMoreChance = function(player)
+	local state = playerStates[player]
+	local session = playerSessions[player]
+	if not state or not session or state.mode ~= "Solo" then
+		analytics.continueOfferUnavailable += 1
+		return
+	end
+
+	if not TelemetryReporter.OneMoreChance.restore(state) then
+		analytics.continueOfferUnavailable += 1
+		return
+	end
+
+	giveNewHand(state)
+	state.alive = Grid.hasAnyMove(state.board, state.hand)
+	if not TelemetryReporter.OneMoreChance.confirmPlayableUse(state) then
+		TelemetryReporter.OneMoreChance.reopenOffer(state)
+		analytics.continueOfferUnavailable += 1
+		broadcast(session)
+		return
+	end
+
+	analytics.continueOfferAccepted += 1
+	analytics.continuePrototypeFulfilled += 1
+	updateLeaderstats(player, state.score, true)
+	effectsEvent:FireClient(player, {
+		kind = "OneMoreChance",
+		message = "One More Chance!",
+		detail = "Rewound one move and refreshed your hand.",
+	})
+	broadcast(session)
+end
+
+TelemetryReporter.declineOneMoreChance = function(player)
+	local state = playerStates[player]
+	if state and state.continuePending then
+		TelemetryReporter.OneMoreChance.decline(state)
+		analytics.continueOfferDeclined += 1
+	end
+	leaveBattle(player)
+end
+
 local function restoreSoloAssistance(state, stageResult)
 	if state.mode ~= "Solo" then
 		return
@@ -2493,6 +2556,9 @@ local function createPlayerState(player, mode, storyChapter, difficultyId)
 		message = nil,
 	}
 
+	if mode == "Solo" then
+		TelemetryReporter.OneMoreChance.initializeRun(state)
+	end
 	giveNewHand(state)
 	playerStates[player] = state
 	updateLeaderstats(player, 0, true)
@@ -2933,6 +2999,9 @@ scheduleReturnIfEliminated = function(player, state)
 	if state.alive or state.returnScheduled then
 		return
 	end
+	if state.continuePending then
+		return
+	end
 
 	local session = playerSessions[player]
 	if session and session.startedWith >= BATTLE_MIN_PLAYERS then
@@ -2942,9 +3011,23 @@ scheduleReturnIfEliminated = function(player, state)
 		return
 	end
 
+	if session and session.mode == "Solo" then
+		state.returnScheduled = true
+		state.finishedAt = state.finishedAt or os.clock()
+		grantBattleRewards(player, state, false)
+		if not state.resultShown then
+			fireResult(player, state, false)
+		end
+		if not state.developerTestRun then
+			saveProfile(player)
+		end
+		broadcast(session)
+		return
+	end
+
 	state.returnScheduled = true
 	task.delay(OUT_OF_MOVES_RETURN_SECONDS, function()
-		if playerStates[player] == state and not state.alive then
+		if playerStates[player] == state and not state.alive and not state.continuePending then
 			leaveBattle(player)
 		end
 	end)
@@ -2978,6 +3061,9 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 		return
 	end
 
+	if state.mode == "Solo" then
+		TelemetryReporter.OneMoreChance.captureSnapshot(state)
+	end
 	local placed, cellsPlaced = Grid.place(state.board, shape, x, y)
 	if not placed then
 		analytics.invalidPlacements += 1
@@ -3071,6 +3157,9 @@ placeEvent.OnServerEvent:Connect(function(player, slot, x, y)
 
 	pressureOpponents(player, linesCleared, session)
 	state.alive = Grid.hasAnyMove(state.board, state.hand)
+	if not state.alive and TelemetryReporter.setOneMoreChancePending(player, state, session) then
+		return
+	end
 	scheduleReturnIfEliminated(player, state)
 	broadcast(session)
 	if resolveBattleIfFinished then
@@ -3180,6 +3269,10 @@ queueEvent.OnServerEvent:Connect(function(player, mode, requestedChapter, reques
 		leaveBattleQueue(player)
 	elseif mode == "LeaveBattle" then
 		leaveBattle(player)
+	elseif mode == "ContinueRun" then
+		TelemetryReporter.useOneMoreChance(player)
+	elseif mode == "EndRun" then
+		TelemetryReporter.declineOneMoreChance(player)
 	elseif mode == "PlayAgain" then
 		playAgainBattle(player)
 	elseif mode == "Story" then
