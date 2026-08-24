@@ -4563,6 +4563,16 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		end
 		if effect.linesCleared and effect.linesCleared > 0 then
 			playSound("Clear")
+			-- The celebration burst over the board. Tiering lives in
+			-- ClearPraise; this call only asks for it. The banners below stay
+			-- because they carry the *numbers* (bonus values, line counts) that
+			-- the burst deliberately does not -- the burst says how good, the
+			-- banner says how much.
+			ArcadeUI.CelebrateClear({
+				boardFrame = boardFrame,
+				reducedMotion = reducedMotion,
+				TweenService = TweenService,
+			}, effect)
 			if effect.comboStreak and effect.comboStreak > 1 then
 				playSound("Combo")
 				ArcadeUI.PulseCombo({

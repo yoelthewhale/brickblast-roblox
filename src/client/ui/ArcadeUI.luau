@@ -3,6 +3,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VisualTokens = require(
 	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game"):WaitForChild("VisualTokens")
 )
+local ClearPraise = require(
+	ReplicatedStorage:WaitForChild("Shared"):WaitForChild("game"):WaitForChild("ClearPraise")
+)
 local BubblegumAssets = require(script.Parent.BubblegumAssets)
 
 local ArcadeUI = {}
@@ -498,8 +501,15 @@ function ArcadeUI.ScorePopup(context, amount)
 	label.Size = UDim2.fromOffset(160, 32)
 	label.Font = Enum.Font.GothamBlack
 	label.Text = `+{amount}`
-	label.TextColor3 = Color3.fromRGB(123, 237, 75)
-	label.TextStrokeColor3 = VisualTokens.identity().ink
+	-- Gold rather than the old neon green: score is the number the player is
+	-- actually chasing, so it takes the palette's reward colour.
+	--
+	-- The stroke was `ink` -- near-white -- which is the same halo bug fixed in
+	-- the board label during the Deep Board repaint and missed here, because
+	-- this one is a literal rather than a shared helper. A near-white outline
+	-- behind near-white-adjacent text on a dark board smears it.
+	label.TextColor3 = ArcadeUI.Color.score
+	label.TextStrokeColor3 = VisualTokens.identity().shadow
 	label.TextStrokeTransparency = 0.2
 	label.TextSize = 24
 	label.ZIndex = 20
@@ -522,6 +532,163 @@ function ArcadeUI.ScorePopup(context, amount)
 	task.delay(0.7, function()
 		label:Destroy()
 	end)
+end
+
+-- The celebration a clear earns, rendered over the board.
+--
+-- What this replaces: a thin text banner in the old neon palette reading
+-- "Cleared 2 line(s)!" off in the corner. The information was there; the
+-- *reward* was not. The approved reference answers a good clear with a burst
+-- across the board, and the size of that burst is how a player learns which
+-- clears are worth chasing.
+--
+-- The tiering decision is not made here -- see ClearPraise, where it is pure
+-- and tested. This function only draws what it is handed, which is why adding
+-- a tier needs no change below except a style entry.
+local PRAISE_STYLE = {
+	quiet = { size = 26, rise = 22, hold = 0.45, rainbow = false },
+	good = { size = 34, rise = 28, hold = 0.55, rainbow = false },
+	great = { size = 44, rise = 34, hold = 0.7, rainbow = false },
+	-- Only the top tier gets per-letter colour. Spending it lower down would
+	-- make the rarest clear in the game look like every other clear.
+	amazing = { size = 54, rise = 40, hold = 0.9, rainbow = true },
+}
+
+function ArcadeUI.PraiseBurst(context, praise)
+	local parent = context.boardFrame
+	if not parent or typeof(praise) ~= "table" then
+		return nil
+	end
+
+	local style = PRAISE_STYLE[praise.tier] or PRAISE_STYLE.good
+	local tokens = VisualTokens.resolve(1, 0)
+	local identity = VisualTokens.identity()
+
+	-- Clears can land faster than a burst finishes -- that is exactly what a
+	-- combo streak is -- and without this the second burst draws on top of the
+	-- first, leaving two words overlapping mid-board. The newest clear is the
+	-- one worth reading, so the previous burst is retired rather than queued.
+	for _, existing in parent:GetChildren() do
+		if existing.Name == "PraiseBurst" then
+			existing:Destroy()
+		end
+	end
+
+	local holder = Instance.new("Frame")
+	holder.Name = "PraiseBurst"
+	holder.BackgroundTransparency = 1
+	holder.AnchorPoint = Vector2.new(0.5, 0.5)
+	holder.Position = UDim2.fromScale(0.5, 0.42)
+	holder.Size = UDim2.new(1, -16, 0, style.size + 14)
+	holder.ZIndex = 40
+	holder.Active = false
+	holder.Parent = parent
+
+	local scale = Instance.new("UIScale")
+	scale.Scale = if context.reducedMotion then 1 else 0.55
+	scale.Parent = holder
+
+	local letters = {}
+	local function styleLetter(label, color)
+		label.BackgroundTransparency = 1
+		label.Font = Enum.Font.GothamBlack
+		label.TextSize = style.size
+		label.TextColor3 = color
+		-- Praise sits on top of a busy board, so it is outlined rather than
+		-- trusted to contrast. Shadow rather than black: a hard black outline
+		-- was the arcade-cabinet look and reads as grime on this chassis.
+		label.TextStrokeColor3 = identity.shadow
+		label.TextStrokeTransparency = 0.15
+		label.ZIndex = 41
+		label.Active = false
+		table.insert(letters, label)
+	end
+
+	if style.rainbow then
+		-- Per-letter colour drawn from the block palette, so the celebration is
+		-- made of the same colours the player just cleared.
+		local layout = Instance.new("UIListLayout")
+		layout.FillDirection = Enum.FillDirection.Horizontal
+		layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		layout.VerticalAlignment = Enum.VerticalAlignment.Center
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Parent = holder
+
+		local palette = tokens.piecePalette
+		for index = 1, #praise.text do
+			local label = Instance.new("TextLabel")
+			label.Name = `Letter{index}`
+			label.LayoutOrder = index
+			label.AutomaticSize = Enum.AutomaticSize.X
+			label.Size = UDim2.fromOffset(0, style.size + 8)
+			label.Text = string.sub(praise.text, index, index)
+			styleLetter(label, palette[((index - 1) % #palette) + 1])
+			label.Parent = holder
+		end
+	else
+		local label = Instance.new("TextLabel")
+		label.Name = "PraiseText"
+		label.Size = UDim2.fromScale(1, 1)
+		label.Text = praise.text
+		styleLetter(label, if praise.tier == "great" then tokens.hot else identity.ink)
+		label.Parent = holder
+	end
+
+	-- Reduced motion means instant, never absent: the player is still told how
+	-- good the clear was, just without the travel.
+	if context.reducedMotion then
+		task.delay(style.hold, function()
+			holder:Destroy()
+		end)
+		return holder
+	end
+
+	context.TweenService
+		:Create(scale, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Scale = 1,
+		})
+		:Play()
+
+	context.TweenService
+		:Create(
+			holder,
+			TweenInfo.new(style.hold, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{ Position = holder.Position - UDim2.fromOffset(0, style.rise) }
+		)
+		:Play()
+
+	task.delay(style.hold * 0.45, function()
+		if not holder.Parent then
+			return
+		end
+		for _, label in letters do
+			context.TweenService
+				:Create(
+					label,
+					TweenInfo.new(style.hold * 0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+					{ TextTransparency = 1, TextStrokeTransparency = 1 }
+				)
+				:Play()
+		end
+	end)
+
+	task.delay(style.hold + 0.25, function()
+		holder:Destroy()
+	end)
+
+	return holder
+end
+
+-- Convenience wrapper so the client's effect handler stays one call. Returns
+-- nil when the clear earned no burst.
+function ArcadeUI.CelebrateClear(context, effect)
+	local praise = ClearPraise.forEffect(effect)
+	if not praise then
+		return nil
+	end
+
+	ArcadeUI.PraiseBurst(context, praise)
+	return praise
 end
 
 function ArcadeUI.PulseCombo(context)
