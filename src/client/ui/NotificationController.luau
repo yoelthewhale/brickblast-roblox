@@ -8,12 +8,14 @@ NotificationController.__index = NotificationController
 local MAX_NOTIFICATIONS = 4
 local DEFAULT_DURATION = 3.2
 
+-- Accent stripe per notification kind, taken from the block palette rather
+-- than the old neon set, so a toast is built from colours already on screen.
 local TYPE_COLORS = {
-	info = Color3.fromRGB(30, 187, 255),
-	success = Color3.fromRGB(123, 237, 75),
-	warning = Color3.fromRGB(255, 196, 87),
-	error = Color3.fromRGB(255, 86, 107),
-	reward = Color3.fromRGB(255, 224, 128),
+	info = Color3.fromRGB(84, 192, 232),
+	success = Color3.fromRGB(108, 196, 124),
+	warning = Color3.fromRGB(224, 138, 52),
+	error = Color3.fromRGB(198, 64, 58),
+	reward = Color3.fromRGB(229, 185, 60),
 }
 
 local function connect(self, signal, callback)
@@ -95,16 +97,21 @@ function NotificationController:Show(message, kind, options)
 		end
 	end
 
+	-- This was a white card with near-black text: correct when the chassis was
+	-- cream, and a bright foreign rectangle once the game went dark. "That spot
+	-- is blocked" is the most frequently seen toast in the game, so it was also
+	-- the most visible thing still wearing the old palette. It is a raised
+	-- surface from the shared theme now, and the type is light.
 	local card = Instance.new("Frame")
 	card.Name = "Notification"
 	card.Size = UDim2.new(1, 0, 0, 54)
-	card.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	card.BackgroundTransparency = 0.08
+	card.BackgroundColor3 = UITheme.Color.panelRaised
+	card.BackgroundTransparency = 0.04
 	card.BorderSizePixel = 0
 	card.ZIndex = UITheme.Z.toast
 	card.Parent = self.container
 	UITheme.card(card, {
-		color = Color3.fromRGB(255, 255, 255),
+		color = UITheme.Color.panelRaised,
 		strokeColor = TYPE_COLORS[kind] or TYPE_COLORS.info,
 		strokeTransparency = 0.12,
 	})
@@ -125,7 +132,7 @@ function NotificationController:Show(message, kind, options)
 	label.Size = UDim2.new(1, -30, 1, -14)
 	label.Font = UITheme.Font.heading
 	label.Text = message
-	label.TextColor3 = Color3.fromRGB(35, 45, 55)
+	label.TextColor3 = UITheme.Color.text
 	label.TextSize = 15
 	label.TextWrapped = true
 	label.TextXAlignment = Enum.TextXAlignment.Left

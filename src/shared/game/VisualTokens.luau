@@ -415,12 +415,24 @@ function VisualTokens.resolve(stage, energy)
 		surfaceSunken = mix(IDENTITY.surface, IDENTITY.shadow, 0.3),
 		surfaceTinted = mix(IDENTITY.surface, primary, 0.25),
 
-		-- The room. This is where progression lives now: stage picks the hue,
-		-- energy lifts it slightly so a hot run feels brighter without the
-		-- blocks changing colour underneath the player.
-		atmosphere = mix(primary, secondary, 0.3 + heat * 0.35),
-		atmosphereAccent = mix(primary, IDENTITY.gloss, 0.12 + heat * 0.1),
-		wash = mix(secondary, hot, heat * 0.7),
+		-- The room. This is where progression lives, and it has to stay *deep*.
+		--
+		-- The first version mixed primary into secondary at ~0.3, which handed
+		-- back the flavor at near-full saturation: stage 3 (Plum) rendered as
+		-- a bright violet that washed out the board it surrounded and looked
+		-- nothing like the game's own logo. The logo is the target here -- a
+		-- near-black navy ground with saturated blocks on top -- so the room is
+		-- now built the other way round: start from the well and admit only a
+		-- fifth of the flavor.
+		--
+		-- Progression is not weakened by this, it is made legible. Four rooms
+		-- separated by hue at the same low luminance read as four rooms; four
+		-- rooms separated by brightness read as the game getting louder until
+		-- the blocks stop being the brightest thing on screen. Energy still
+		-- lifts the room, just within the deep range.
+		atmosphere = mix(IDENTITY.well, primary, 0.22 + heat * 0.18),
+		atmosphereAccent = mix(IDENTITY.well, primary, 0.34 + heat * 0.2),
+		wash = mix(IDENTITY.well, hot, 0.3 + heat * 0.35),
 
 		boardWell = well,
 		boardRim = rim,

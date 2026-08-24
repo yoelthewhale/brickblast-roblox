@@ -2179,7 +2179,12 @@ local function publicState(player)
 		equippedCosmetics = publicEquippedCosmetics(player),
 		sessionId = session and session.id or nil,
 		arenaIndex = session and session.arena and session.arena.index or nil,
-		timeLeft = session and math.ceil(sessionSecondsLeft(session)) or nil,
+		-- `endsAt` is nil in every untimed mode, and sessionSecondsLeft returns
+		-- 0 for those rather than nil. 0 is truthy in Luau, so sending it made
+		-- the client render a permanently frozen "Time: 0s" through a whole
+		-- Solo run -- a clock that looks broken rather than absent. Gate on
+		-- endsAt so untimed modes send no timer at all.
+		timeLeft = session and session.endsAt and math.ceil(sessionSecondsLeft(session)) or nil,
 		suddenDeath = isSuddenDeathActive(session),
 	}
 end
