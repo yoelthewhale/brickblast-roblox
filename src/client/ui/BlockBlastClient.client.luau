@@ -4311,6 +4311,9 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	ArcadeUI.PlayBoardDiff({
 		boardSize = Config.BoardSize,
 		cells = cells,
+		-- The clear bloom hangs off the frame rather than the grid, because the
+		-- grid is held to exactly 64 cell buttons and the cells clip.
+		boardFrame = boardFrame,
 		cellScales = cellScales,
 		getCurrentState = function()
 			return currentState

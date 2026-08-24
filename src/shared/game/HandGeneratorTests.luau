@@ -121,15 +121,37 @@ tests.assistanceIsSpentWhenItForcesAFittingPiece = function()
 	-- With a single candidate to choose from, the winning hand can genuinely
 	-- lack any playable piece, and only then does the generator step in and
 	-- replace a slot. That is assistance doing real work, so it is charged.
+	--
+	-- The seed is searched for rather than hardcoded. This test used to pin
+	-- Random.new(3454), which worked only because that seed happened to deal a
+	-- hand with no fitting piece against the shape list of the day. Trimming
+	-- the piece set to the approved shapes changed what that seed deals, and
+	-- the test failed while the behaviour it guards was entirely intact.
+	-- Searching keeps the assertion pointed at the behaviour instead of at a
+	-- coincidence, and fails loudly below if the scenario has become
+	-- unreachable rather than passing vacuously.
 	local board = filledBoard()
 	board[Config.BoardSize][Config.BoardSize] = false
 
-	local hand, diagnostics = HandGenerator.generate(board, {
-		randomizer = Random.new(3454),
-		candidateLimit = 1,
-		assistance = HandGenerator.newAssistance(),
-	})
+	local hand, diagnostics
+	for seed = 1, 500 do
+		local candidateHand, candidateDiagnostics = HandGenerator.generate(board, {
+			randomizer = Random.new(seed),
+			candidateLimit = 1,
+			assistance = HandGenerator.newAssistance(),
+		})
+		if candidateDiagnostics.assistanceConsumed == true then
+			hand, diagnostics = candidateHand, candidateDiagnostics
+			break
+		end
+	end
 
+	assertCondition(
+		diagnostics ~= nil,
+		"No seed in 500 produced a hand needing rescue on a one-cell board. Either "
+			.. "assistance stopped engaging, or the piece set changed so much that "
+			.. "an unplayable hand is no longer reachable -- both are worth knowing."
+	)
 	assertCondition(
 		diagnostics.assistanceConsumed == true,
 		"Forcing a fitting piece should spend assistance"
