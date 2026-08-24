@@ -96,7 +96,6 @@ Config.HandGeneration = {
 		line2 = true,
 	},
 	RestrictiveShapeIds = {
-		plus = true,
 		corner = true,
 		square2 = true,
 		line3 = true,

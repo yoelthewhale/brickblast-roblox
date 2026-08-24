@@ -365,6 +365,66 @@ function ArcadeUI.PlayCellPop(context, x, y)
 	context.TweenService:Create(scale, context.quickTween, { Scale = 1 }):Play()
 end
 
+-- The bloom that surrounds a line as it clears.
+--
+-- Parented to the board *frame*, never to the grid container or the cell:
+-- AGENTS.md holds the grid to exactly 64 direct cell buttons with no
+-- decorative children, and the cells themselves clip their descendants, so a
+-- glow parented to either would be either an invariant violation or invisible.
+-- Positioning therefore comes from cell geometry measured against the frame.
+--
+-- One bloom per clearing cell rather than one per line. Overlapping blooms
+-- along a row read as a single continuous halo -- which is what the reference
+-- shows -- and it needs no orientation logic, so rows and columns behave
+-- identically for free.
+local BLOOM_SPREAD = 2.05
+
+local function spawnClearBloom(context, cell)
+	local frame = context.boardFrame
+	if not frame or not cell then
+		return nil
+	end
+
+	local cellSize = cell.AbsoluteSize
+	if cellSize.X <= 0 or cellSize.Y <= 0 then
+		return nil
+	end
+
+	local offset = cell.AbsolutePosition - frame.AbsolutePosition
+	local bloom = ArcadeUI.DecorativeImage(frame, "ShadowSoft", {
+		name = "ClearBloom",
+		anchorPoint = Vector2.new(0.5, 0.5),
+		position = UDim2.fromOffset(offset.X + cellSize.X / 2, offset.Y + cellSize.Y / 2),
+		size = UDim2.fromOffset(cellSize.X * BLOOM_SPREAD, cellSize.Y * BLOOM_SPREAD),
+		transparency = 0.25,
+		zIndex = 28,
+		imageColor = VisualTokens.identity().gloss,
+		allowSemanticTint = true,
+	})
+
+	-- DecorativeImage returns nil when the asset is unavailable. The clear
+	-- still reads through the cell flash below, so a missing glow degrades
+	-- rather than erroring.
+	if not bloom then
+		return nil
+	end
+
+	context.TweenService
+		:Create(bloom, TweenInfo.new(0.34, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			ImageTransparency = 1,
+			Size = UDim2.fromOffset(
+				cellSize.X * BLOOM_SPREAD * 1.35,
+				cellSize.Y * BLOOM_SPREAD * 1.35
+			),
+		})
+		:Play()
+	task.delay(0.36, function()
+		bloom:Destroy()
+	end)
+
+	return bloom
+end
+
 function ArcadeUI.PlayClearFlash(context, x, y)
 	if context.reducedMotion then
 		return
@@ -376,8 +436,10 @@ function ArcadeUI.PlayClearFlash(context, x, y)
 		return
 	end
 
+	spawnClearBloom(context, cell)
+
 	local originalColor = cell.BackgroundColor3
-	cell.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	cell.BackgroundColor3 = VisualTokens.identity().gloss
 	scale.Scale = 1.18
 	context.TweenService
 		:Create(scale, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {

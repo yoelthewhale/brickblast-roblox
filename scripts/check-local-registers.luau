@@ -71,9 +71,7 @@ for _, entry in BUDGETS do
 				headroom
 			)
 		)
-		print(
-			"        Attach the value to an existing table, or move the concern into a"
-		)
+		print("        Attach the value to an existing table, or move the concern into a")
 		print("        ModuleScript. Do not raise the budget.")
 	else
 		print(
