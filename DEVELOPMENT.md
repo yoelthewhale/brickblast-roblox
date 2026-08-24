@@ -6,13 +6,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
-- **Latest completed numbered checkpoint: Day52** (`BlockBlastBattle-Day52.rbxl`, 2026-08-23). Built from `master` at `15b080c`, the first local checkpoint with the approved Deep Board visual direction from PR #132.
-- **Current build to open: `BlockBlastBattle-Day52.rbxl`**. This is the one obvious current local checkpoint for Studio testing the newest `master`.
-- **Day49-Day51 are feature-branch checkpoints, not current master.** They contain the One More Chance prototype/card work from `feature/one-more-chance-free-prototype`, but they predate Deep Board and should not be opened to inspect the current visual direction.
+- **Latest completed numbered checkpoint: Day53** (`BlockBlastBattle-Day53.rbxl`, 2026-08-24). Built from `integrate/day53-combined-experience` at `877c0a0`; this is the first local checkpoint that combines Deep Board, One More Chance, the simple Solo hub, and clear-celebration feedback.
+- **Current build to open: `BlockBlastBattle-Day53.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
+- **Day49-Day51 are old One More Chance feature-branch checkpoints and Day52 is the Deep Board-only master checkpoint.** Open Day53 for the combined game.
 - **`BlockBlastBattle-Day44.rbxl` is broken and kept deliberately.** It was built while `GameServer.server.luau` was over Luau's 200-local limit, so the server compiled nothing: no hub, no remotes, players on the bare bootstrap floor. It is retained as the artifact of the #96 incident. Do not open it expecting a working game, and do not delete it to tidy up.
-- **Next numbered checkpoint: Day53.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
+- **Next numbered checkpoint: Day54.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
 - **GitHub `master` is the source of truth for code.** The `.rbxl` files in the repository root are local, generated, gitignored build checkpoints: snapshots for Studio testing, never the authoritative source. A missing or stale `.rbxl` says nothing about the state of the code.
-- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day52.rbxl` stays in the repository root because it is the current game to open.
+- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day53.rbxl` stays in the repository root because it is the current game to open.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
 
@@ -46,6 +46,25 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - Verify End Run finalizes normally and returns the player safely.
 - Verify no duplicate panel behavior after Play Again, Return Hub, reset, or reopening Solo.
 - Later Robux work still needs Creator Dashboard product IDs, `ProcessReceipt`, persisted token fallback, idempotent receipt ledger, and Claude's final Bubblegum presentation.
+
+## Session Update - 2026-08-24 Day53 Combined Checkpoint
+
+- Created `integrate/day53-combined-experience` from the cleaned master checkpoint.
+- Merged Claude's `feat/clear-celebration` branch, adding tested clear-praise tier logic and board-centered praise bursts.
+- Merged the One More Chance free Solo prototype branch, including server-authoritative rewind, fair hand refresh, one-use cap, telemetry, client offer flow, and the simplified Solo hub.
+- Repainted the One More Chance panel away from the old bright Bubblegum card and onto Deep Board tokens: dark board-well surfaces, stage-aware room accents, dim overlay, readable text, and an obvious full-width End Run action.
+- Preserved the rejected UI asset cleanup and kept `assets/ui/bubblegum-production/` intact for any surviving hue-neutral production assets.
+- Built `BlockBlastBattle-Day53.rbxl` as the one current local checkpoint to open.
+- Moved `BlockBlastBattle-Day52.rbxl` into `checkpoints/` so the repository root contains only the current Day53 build.
+- Validation completed: Stylua, Selene with cached Roblox API dump, Lune tests, local register guard, Rojo build, and `git diff --check`.
+
+### Remaining Manual Checks
+
+- Studio-test Day53's full Solo flow: start run, place pieces, run out of moves, use One More Chance, continue placing, then end the run.
+- Confirm the Deep Board continue panel feels like the same direction as the board and not like the retired Bubblegum card.
+- Confirm clear-praise bursts feel rewarding without covering the board for too long.
+- Confirm gamepad focus stays on End Run when the One More Chance panel appears.
+- Confirm the simplified hub is acceptable as the current temporary test hub.
 
 ## Session Update - 2026-08-22 Simple Solo Hub Reset
 
