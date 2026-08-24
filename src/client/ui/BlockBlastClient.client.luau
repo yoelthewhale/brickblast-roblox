@@ -431,7 +431,10 @@ end)
 
 loadingScreen = Instance.new("Frame")
 loadingScreen.Size = UDim2.fromScale(1, 1)
-loadingScreen.BackgroundColor3 = Color3.fromRGB(8, 11, 18)
+-- Matches the ReplicatedFirst boot screen so the handoff between the two is
+-- invisible. Both mirror VisualTokens identity by hand; see the note in
+-- src/client/boot/BootLoadingScreen.client.luau for why neither can require it.
+loadingScreen.BackgroundColor3 = Color3.fromRGB(255, 183, 216)
 loadingScreen.BorderSizePixel = 0
 loadingScreen.ZIndex = 50
 loadingScreen.Parent = gui
@@ -442,8 +445,8 @@ loadingTitle.BackgroundTransparency = 1
 loadingTitle.Position = UDim2.fromScale(0.5, 0.44)
 loadingTitle.Size = UDim2.fromOffset(520, 54)
 loadingTitle.Font = Enum.Font.GothamBlack
-loadingTitle.Text = "BrickBlast"
-loadingTitle.TextColor3 = Color3.fromRGB(245, 247, 251)
+loadingTitle.Text = "BRICKBLAST"
+loadingTitle.TextColor3 = Color3.fromRGB(58, 30, 66)
 loadingTitle.TextSize = 34
 loadingTitle.TextWrapped = true
 loadingTitle.ZIndex = 51
@@ -456,7 +459,7 @@ loadingStatus.Position = UDim2.fromScale(0.5, 0.5)
 loadingStatus.Size = UDim2.fromOffset(420, 28)
 loadingStatus.Font = Enum.Font.GothamBold
 loadingStatus.Text = "Preparing your board..."
-loadingStatus.TextColor3 = Color3.fromRGB(153, 163, 179)
+loadingStatus.TextColor3 = Color3.fromRGB(116, 82, 128)
 loadingStatus.TextSize = 17
 loadingStatus.ZIndex = 51
 loadingStatus.Parent = loadingScreen
@@ -465,7 +468,7 @@ local loadingAccent = Instance.new("Frame")
 loadingAccent.AnchorPoint = Vector2.new(0.5, 0.5)
 loadingAccent.Position = UDim2.fromScale(0.5, 0.56)
 loadingAccent.Size = UDim2.fromOffset(220, 4)
-loadingAccent.BackgroundColor3 = Color3.fromRGB(30, 187, 255)
+loadingAccent.BackgroundColor3 = Color3.fromRGB(255, 64, 140)
 loadingAccent.BorderSizePixel = 0
 loadingAccent.ZIndex = 51
 loadingAccent.Parent = loadingScreen
