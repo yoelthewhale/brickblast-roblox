@@ -2,15 +2,15 @@
 
 ## CURRENT GAME TO OPEN
 
-`BlockBlastBattle-Day59.rbxl`
+`BlockBlastBattle-Day60.rbxl`
 
 - Source branch: `integrate/day53-combined-experience`
-- Source code commit: `cf97695`
-- Built: `2026-08-26 15:27:53 -04:00`
+- Source code commit: `f70fa2a`
+- Built: `2026-08-26 15:46:40 -04:00`
 - Location: repository root
-- Purpose: current combined checkpoint with Day58's solid piece-color identity fix plus the new line-clear drag preview. Pieces stay one solid Deep Board palette color, and valid drag previews now show which rows or columns would clear before placement using client-only overlay geometry and pure Grid prediction helpers.
+- Purpose: current combined checkpoint with Day59 plus Claude's boot loading screen and gem block style work. It keeps the chosen Day58 solid color fix, line-clear drag preview, clear celebration feedback, trimmed shape set, difficulty tuning, and simple hub while adding the boot spinner and selectable block styles.
 
-Double-click `BlockBlastBattle-Day59.rbxl` when you want to test the newest
+Double-click `BlockBlastBattle-Day60.rbxl` when you want to test the newest
 real BrickBlast game.
 
 Important: Day52 was the first Deep Board master build. Day53 is the first
@@ -22,7 +22,8 @@ adds the difficulty tuning and Spicy shot clock on top without overwriting
 Day55. Day57 fixes the missing-UI risk found while testing Day56. Day58 fixes
 the block-color striping bug so each piece stays one solid color. Day59 adds
 the line-clear drag preview on top of Day58 without replacing the chosen color
-fix.
+fix. Day60 combines the remaining Claude boot/loading and gem-block style work
+on top of the organized Day59 base.
 
 ## Folder Layout
 
@@ -48,7 +49,7 @@ They were not renamed or deleted. They are ignored generated artifacts and are
 kept for comparison/history.
 
 The repository root should contain only the current numbered checkpoint. Recent
-historical checkpoints through Day58 now live in `checkpoints/` and are kept
+historical checkpoints through Day59 now live in `checkpoints/` and are kept
 for comparison/history.
 
 ## Recent Root Checkpoints
@@ -68,7 +69,8 @@ for comparison/history.
 | `BlockBlastBattle-Day56.rbxl` | `integrate/day53-combined-experience` at `0e5ce37` | Day55 plus stronger difficulty separation, fair-hand tests, and Spicy shot clock. Superseded by Day57 after Yoel found the UI could disappear. |
 | `BlockBlastBattle-Day57.rbxl` | `integrate/day53-combined-experience` at `9886bc7` | Day56 plus the UI startup/F8 inspection rescue. Historical comparison build after Day58. |
 | `BlockBlastBattle-Day58.rbxl` | `integrate/day53-combined-experience` at `f4a615a` | Historical checkpoint: Day57 plus solid Deep Board piece colors across generation, tray previews, ghost previews, and placed board cells. |
-| `BlockBlastBattle-Day59.rbxl` | `integrate/day53-combined-experience` at `cf97695` | Current checkpoint: Day58 plus line-clear drag preview for rows/columns that would disappear after a valid placement. |
+| `BlockBlastBattle-Day59.rbxl` | `integrate/day53-combined-experience` at `cf97695` | Historical checkpoint: Day58 plus line-clear drag preview for rows/columns that would disappear after a valid placement. |
+| `BlockBlastBattle-Day60.rbxl` | `integrate/day53-combined-experience` at `f70fa2a` | Current checkpoint: Day59 plus Claude's boot loading screen and selectable gem/block style work. |
 
 Naming convention: real numbered checkpoints use
 `BlockBlastBattle-DayNN.rbxl` with the hyphen. `BrickBlast-Day50-LatestTest.rbxl`
@@ -97,6 +99,6 @@ testing.
 ## Checkpoint Rule
 
 Do not invent Day numbers. The next Day number comes from the highest existing
-real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day59.
+real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day60.
 
-Next real numbered checkpoint: Day60.
+Next real numbered checkpoint: Day61.

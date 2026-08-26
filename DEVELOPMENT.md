@@ -6,13 +6,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
-- **Latest completed numbered checkpoint: Day59** (`BlockBlastBattle-Day59.rbxl`, 2026-08-26). Built from `integrate/day53-combined-experience`; this is the current combined local checkpoint.
-- **Current build to open: `BlockBlastBattle-Day59.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
-- **Day49-Day51 are old One More Chance feature-branch checkpoints, Day52 is the Deep Board-only master checkpoint, Day53 is the first combined Deep Board/One More Chance/clear-celebration checkpoint, Day54 adds clear-line glow plus the trimmed shape set, Day55 adds deeper room/HUD cleanup, Day56 adds difficulty/shot-clock work, Day57 fixes the missing-UI risk, Day58 fixes solid piece colors, and Day59 adds line-clear drag preview.** Open Day59 for the newest combined game.
+- **Latest completed numbered checkpoint: Day60** (`BlockBlastBattle-Day60.rbxl`, 2026-08-26). Built from `integrate/day53-combined-experience`; this is the current combined local checkpoint.
+- **Current build to open: `BlockBlastBattle-Day60.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
+- **Day49-Day51 are old One More Chance feature-branch checkpoints, Day52 is the Deep Board-only master checkpoint, Day53 is the first combined Deep Board/One More Chance/clear-celebration checkpoint, Day54 adds clear-line glow plus the trimmed shape set, Day55 adds deeper room/HUD cleanup, Day56 adds difficulty/shot-clock work, Day57 fixes the missing-UI risk, Day58 fixes solid piece colors, Day59 adds line-clear drag preview, and Day60 adds the remaining Claude boot/loading plus gem-style block work.** Open Day60 for the newest combined game.
 - **`BlockBlastBattle-Day44.rbxl` is broken and kept deliberately.** It was built while `GameServer.server.luau` was over Luau's 200-local limit, so the server compiled nothing: no hub, no remotes, players on the bare bootstrap floor. It is retained as the artifact of the #96 incident. Do not open it expecting a working game, and do not delete it to tidy up.
-- **Next numbered checkpoint: Day60.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
+- **Next numbered checkpoint: Day61.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
 - **GitHub `master` is the source of truth for code.** The `.rbxl` files in the repository root are local, generated, gitignored build checkpoints: snapshots for Studio testing, never the authoritative source. A missing or stale `.rbxl` says nothing about the state of the code.
-- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day59.rbxl` stays in the repository root because it is the current game to open.
+- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day60.rbxl` stays in the repository root because it is the current game to open.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
 
@@ -205,6 +205,33 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - Move the piece away, over an invalid spot, or off the board; the highlight should disappear.
 - Drop the piece and confirm the real clear still works with no stuck glow.
 - Resize or move the PC workspace if relevant and confirm the highlight still aligns with the board.
+
+## Session Update - 2026-08-26 Day60 Combined Claude and Codex Checkpoint
+
+- Kept Day59 as the organized base: Codex's solid piece-color fix, line-clear drag preview, One More Chance, clear celebration feedback, difficulty tuning, simple hub, and checkpoint organization all remain intact.
+- Fetched the latest Claude branches and confirmed the remaining unmerged feature slices were the boot loading screen and gem/block style work.
+- Cherry-picked Claude's boot loading screen so the client now has a dedicated startup surface with a spinning piece before the main UI is ready.
+- Cherry-picked Claude's faceted gem block rendering and follow-up block-style support, keeping both block styles instead of forcing one permanent replacement.
+- Preserved the Day58 color identity behavior: generated pieces still use the fixed Deep Board palette and placed cells keep the piece's stored color.
+- Preserved the Day59 drag-preview behavior: predicted line-clear highlights still use the pure Grid helpers and do not mutate the board.
+- Built `BlockBlastBattle-Day60.rbxl` as the new current local checkpoint and moved Day59 into `checkpoints/`.
+
+### Validation
+
+- Stylua passed.
+- Lune tests passed: `19/19` modules, `240` tests.
+- Local register guard passed: `GameServer.server.luau` at `191 / 191`, `BlockBlastClient.client.luau` at `198 / 198`.
+- Rojo build passed for `BlockBlastBattle-Day60.rbxl`.
+- Selene could not run because Windows Application Control blocked `tools/selene.exe`.
+
+### Remaining Manual Checks
+
+- Open `BlockBlastBattle-Day60.rbxl` in Studio and press Play.
+- Confirm the boot loading screen appears briefly and gives way to the normal UI.
+- Start Solo and confirm the board, tray, ghost preview, and placed cells still keep solid piece colors.
+- Drag line-clearing placements and confirm the predicted clear highlight still appears and clears cleanly after release.
+- Use the developer block-style option if available and compare the classic and gem block styles.
+- Confirm Spicy shot clock, One More Chance, clear celebration text, and result flow still behave like Day59.
 
 ## Session Update - 2026-08-22 Simple Solo Hub Reset
 
