@@ -3913,10 +3913,10 @@ renderBoard = function(forceFull)
 					-- notice took on whatever tint the stage happened to have.
 					-- It is a fixed red now, in every mode.
 					setCellGloss(cell, Config.Colors.Garbage, "filled")
-				elseif hasSoloStage then
-					setCellGloss(cell, StageVisuals.blockColorForCell(preset, x, y), "filled")
 				elseif typeof(value) == "Color3" then
 					setCellGloss(cell, value, "filled")
+				elseif hasSoloStage then
+					setCellGloss(cell, StageVisuals.blockColorForIndex(preset, 1), "filled")
 				else
 					setCellGloss(cell, Config.Colors.Filled, "filled")
 				end
@@ -3991,9 +3991,12 @@ renderGhostPreview = function()
 			ghostCell.Parent = boardGhostLayer
 			ArcadeUI.BoardCell(ghostCell)
 
-			local color = canPlace
-					and (hasSoloStage and StageVisuals.blockColorForCell(preset, x, y) or shape.color)
-				or Config.Colors.PreviewInvalid
+			local color = canPlace and shape.color or Config.Colors.PreviewInvalid
+			if canPlace and typeof(color) ~= "Color3" and hasSoloStage then
+				color = StageVisuals.blockColorForIndex(preset, 1)
+			elseif canPlace and typeof(color) ~= "Color3" then
+				color = Config.Colors.Filled
+			end
 			setCellGloss(ghostCell, color, canPlace and "preview" or "invalid")
 
 			local stroke = ghostCell:FindFirstChildOfClass("UIStroke")

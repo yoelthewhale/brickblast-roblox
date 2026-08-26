@@ -1,5 +1,7 @@
 local Blocks = require(script.Parent.Blocks)
 local Config = require(script.Parent.Config)
+local Grid = require(script.Parent.Grid)
+local VisualTokens = require(script.Parent.VisualTokens)
 
 local BlocksTests = {}
 
@@ -10,6 +12,12 @@ local function assertCondition(condition, message)
 end
 
 local tests = {}
+
+local function colorKey(color)
+	return `{math.floor(color.R * 255 + 0.5)}:{math.floor(color.G * 255 + 0.5)}:{math.floor(
+		color.B * 255 + 0.5
+	)}`
+end
 
 -- The invariant that actually matters, and the reason the diagonal shapes were
 -- removed rather than merely renamed.
@@ -144,6 +152,61 @@ tests.theApprovedFamiliesAreAllPresent = function()
 	for _, shapeId in required do
 		assertCondition(known[shapeId] == true, `The approved piece set is missing "{shapeId}"`)
 	end
+end
+
+tests.placedPiecesKeepOneSolidColor = function()
+	local shape = Blocks.createShape("tShape", Random.new(1234), "Rainbow")
+	assertCondition(shape ~= nil, "Expected tShape to be created")
+	assertCondition(typeof(shape.color) == "Color3", "Generated shape should own one Color3 color")
+
+	local board = Grid.create()
+	local placed = Grid.place(board, shape, 3, 3)
+	assertCondition(placed == true, "Expected generated shape to place on an empty board")
+
+	for _, cell in shape.cells do
+		local x = 3 + cell.X
+		local y = 3 + cell.Y
+		assertCondition(
+			board[y][x] == shape.color,
+			`Placed cell {x},{y} should keep the piece color instead of deriving a board-position color`
+		)
+	end
+end
+
+tests.dealtPiecesUseIdentityPalette = function()
+	local paletteKeys = {}
+	for _, color in VisualTokens.blockPalette() do
+		paletteKeys[colorKey(color)] = true
+	end
+
+	for _, skin in Blocks.PieceSkins do
+		for seed = 1, 20 do
+			local shape = Blocks.createShape("line4", Random.new(seed), skin)
+			assertCondition(shape ~= nil, "Expected line4 to be created")
+			assertCondition(
+				paletteKeys[colorKey(shape.color)] == true,
+				`Piece skin {skin} generated a color outside the fixed Deep Board block palette`
+			)
+		end
+	end
+end
+
+tests.randomDealsUseThePaletteRange = function()
+	local seen = {}
+	for seed = 1, 300 do
+		local shape = Blocks.createShape("single", Random.new(seed), "Rainbow")
+		seen[colorKey(shape.color)] = true
+	end
+
+	local seenCount = 0
+	for _ in seen do
+		seenCount += 1
+	end
+
+	assertCondition(
+		seenCount >= 4,
+		"Piece generation should use the palette range, not collapse to one color"
+	)
 end
 
 function BlocksTests.run()

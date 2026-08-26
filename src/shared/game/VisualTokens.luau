@@ -343,6 +343,10 @@ function VisualTokens.identity()
 	return table.clone(IDENTITY)
 end
 
+function VisualTokens.blockPalette()
+	return table.clone(BLOCK_PALETTE)
+end
+
 function VisualTokens.flavorCount()
 	return #FLAVORS
 end

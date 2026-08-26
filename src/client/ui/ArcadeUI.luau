@@ -257,12 +257,18 @@ function ArcadeUI.RenderShapePreview(preview, shape, options)
 	local offsetX = math.floor((previewSize - width * tileSize) / 2)
 	local offsetY = math.floor((previewSize - height * tileSize) / 2)
 
-	for index, cell in shape.cells do
+	local pieceColor = shape.color
+	if options and options.blockColor then
+		pieceColor = options.blockColor
+	elseif typeof(pieceColor) ~= "Color3" and options and options.blockColors then
+		local colorIndex = if typeof(shape.colorIndex) == "number" then shape.colorIndex else 1
+		pieceColor = options.blockColors[((colorIndex - 1) % #options.blockColors) + 1]
+	end
+
+	for _, cell in shape.cells do
 		local blockColor = shape.color
-		if options and options.blockColor then
-			blockColor = options.blockColor
-		elseif options and options.blockColors then
-			blockColor = options.blockColors[((index - 1) % #options.blockColors) + 1]
+		if typeof(pieceColor) == "Color3" then
+			blockColor = pieceColor
 		end
 
 		ArcadeUI.GlossyBlock(
