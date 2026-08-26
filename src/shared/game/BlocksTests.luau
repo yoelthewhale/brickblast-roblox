@@ -209,6 +209,45 @@ tests.randomDealsUseThePaletteRange = function()
 	)
 end
 
+-- Both block styles must survive a round trip through a saved profile. A
+-- cosmetic id that resolves to nil would render no block at all, which is a
+-- blank board rather than an ugly one.
+tests.blockStylesResolveSafely = function()
+	assertCondition(#Config.BlockStyles >= 2, "There should be at least two block styles")
+
+	local ids = {}
+	for _, style in Config.BlockStyles do
+		assertCondition(typeof(style.id) == "string" and #style.id > 0, "A style has no id")
+		assertCondition(typeof(style.name) == "string" and #style.name > 0, "A style has no name")
+		assertCondition(ids[style.id] == nil, `Duplicate block style id: {style.id}`)
+		ids[style.id] = true
+		assertCondition(
+			Config.sanitizeBlockStyle(style.id) == style.id,
+			`A real style id should survive sanitizing: {style.id}`
+		)
+	end
+
+	assertCondition(ids[Config.BlockStyleDefault] == true, "The default style must be a real style")
+
+	for _, bad in { nil, "", "nonsense", 5, true, {} } do
+		assertCondition(
+			ids[Config.sanitizeBlockStyle(bad)] == true,
+			"Garbage input must resolve to a real style, never nil"
+		)
+	end
+end
+
+-- Both styles are kept because Yoel wanted both, not because one supersedes
+-- the other. This fails if a future change quietly drops one.
+tests.bothClassicAndGemAreAvailable = function()
+	local found = {}
+	for _, style in Config.BlockStyles do
+		found[style.id] = true
+	end
+	assertCondition(found.gem == true, "The gem style must stay available")
+	assertCondition(found.classic == true, "The classic bevel must stay available")
+end
+
 function BlocksTests.run()
 	local results = {}
 

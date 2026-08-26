@@ -196,6 +196,8 @@ function DeveloperPanel.new(options)
 	self.showMessage = options.showMessage
 	self.isReducedMotion = options.isReducedMotion
 	self.getVisibleBoardCellCount = options.getVisibleBoardCellCount
+	-- Client-only handlers, keyed by the name used in the button table above.
+	self.localActions = options.localActions or {}
 	self.currentState = nil
 
 	self.button = Instance.new("TextButton")
@@ -349,6 +351,14 @@ function DeveloperPanel.new(options)
 			},
 		},
 		{
+			title = "Visuals",
+			detail = "Client-only. Switches how blocks are drawn so both styles "
+				.. "can be compared on the same board.",
+			buttons = {
+				{ "Block Style", "blockStyle", "diagnostic" },
+			},
+		},
+		{
 			title = "Diagnostics",
 			detail = "Refreshes server diagnostics and visible board-cell verification.",
 			buttons = {
@@ -361,8 +371,20 @@ function DeveloperPanel.new(options)
 		local section = makeSection(scroll, sectionInfo.title, sectionInfo.detail)
 		section.LayoutOrder = sectionIndex
 		for buttonIndex, entry in sectionInfo.buttons do
+			-- A table entry is a server command; a string entry names a
+			-- client-local action. Visual toggles must not round-trip to the
+			-- server: there is nothing authoritative about which way a block is
+			-- drawn, and Invoke would fail closed if the remote were missing.
+			local command = entry[2]
 			local button = makeButton(section, entry[1], function()
-				self:Invoke(entry[2])
+				if typeof(command) == "string" then
+					local handler = self.localActions and self.localActions[command]
+					if handler then
+						handler()
+					end
+				else
+					self:Invoke(command)
+				end
 			end, entry[3], commandButtonName(entry[1]))
 			button.LayoutOrder = buttonIndex + 2
 		end

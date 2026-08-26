@@ -193,6 +193,58 @@ function ArcadeUI.SetBlockDetail(reduced)
 	return ArcadeUI.BlockDetail
 end
 
+-- Which block style the player is running. Two real styles, not one replacing
+-- the other:
+--
+--   "classic"  the flat three-tone bevel -- lit top face, body, shaded bottom.
+--              A moulded plastic tile.
+--   "gem"      the faceted jewel -- rim, diagonal gradient, four facets, table
+--              face, glint. A cut stone.
+--
+-- Style is a separate axis from detail. Detail thins the gem for low-tier
+-- devices; style is the player's choice and is never overridden by hardware.
+ArcadeUI.BlockStyle = "gem"
+
+function ArcadeUI.SetBlockStyle(styleId)
+	ArcadeUI.BlockStyle = if styleId == "classic" then "classic" else "gem"
+	return ArcadeUI.BlockStyle
+end
+
+-- The flat bevel. Kept as a first-class style rather than deleted when the gem
+-- landed: what sells a moulded tile is a hard three-tone bevel, and all three
+-- tones are derived from the block colour so any palette entry bevels
+-- correctly with no extra tuning. The faces carry no corner radius of their
+-- own and are clipped by the block's -- rounding their inner edge turns the
+-- bevel back into a highlight bar.
+local function paintClassicBlock(block, color, identity)
+	local lit = color:Lerp(identity.gloss, 0.34)
+	local shade = color:Lerp(identity.shadow, 0.42)
+
+	local topFace = Instance.new("Frame")
+	topFace.Name = "BevelTop"
+	topFace.BackgroundColor3 = lit
+	topFace.BorderSizePixel = 0
+	topFace.Position = UDim2.fromScale(0, 0)
+	topFace.Size = UDim2.new(1, 0, 0.24, 0)
+	topFace.Active = false
+	topFace.ZIndex = block.ZIndex
+	topFace.Parent = block
+
+	local bottomFace = Instance.new("Frame")
+	bottomFace.Name = "BevelBottom"
+	bottomFace.BackgroundColor3 = shade
+	bottomFace.BorderSizePixel = 0
+	bottomFace.Position = UDim2.fromScale(0, 0.78)
+	bottomFace.Size = UDim2.new(1, 0, 0.22, 0)
+	bottomFace.Active = false
+	bottomFace.ZIndex = block.ZIndex
+	bottomFace.Parent = block
+
+	-- A slight vertical fall across the body ties the two faces together so
+	-- the bevel reads as one lit solid rather than three stacked stripes.
+	gradient(block, color:Lerp(identity.gloss, 0.08), color:Lerp(identity.shadow, 0.1), 90)
+end
+
 function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	parent.ClipsDescendants = true
 
@@ -219,9 +271,13 @@ function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	shadow.Parent = parent
 	corner(shadow, VisualTokens.Radius.piece)
 
+	local classic = ArcadeUI.BlockStyle == "classic"
+
 	local block = Instance.new("Frame")
 	block.Name = name or "GlossyBlock"
-	block.BackgroundColor3 = rim
+	-- Classic sits on the piece colour directly; the gem sits on its rim,
+	-- which the stone is then inset within.
+	block.BackgroundColor3 = if classic then color else rim
 	block.BorderSizePixel = 0
 	block.Position = position
 	block.Size = size
@@ -230,6 +286,11 @@ function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	block.Parent = parent
 	corner(block, VisualTokens.Radius.piece)
 	stroke(block, outline, 2, 0)
+
+	if classic then
+		paintClassicBlock(block, color, identity)
+		return block
+	end
 
 	-- The stone, inset so the rim shows as a frame on all four sides. Scale
 	-- rather than pixels: a fixed inset would swallow the stone on a phone and

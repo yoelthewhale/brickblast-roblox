@@ -61,6 +61,7 @@ local soundEnabled = true
 local soundVolume = 0.65
 local soundController = SoundController.new()
 local customization = {
+	blockStyle = Config.BlockStyleDefault,
 	boardEmptyColor = Config.Colors.Empty,
 	panelColor = Color3.fromRGB(14, 18, 27),
 	accentColor = Color3.fromRGB(30, 187, 255),
@@ -1240,6 +1241,9 @@ hudController = HUDController.new(gui, {
 		inventory = function()
 			day43Ui.closeMajorPanels("cosmetics")
 			cosmeticPanelController:Show()
+		end,
+		blockStyle = function()
+			day43Ui.cycleBlockStyle()
 		end,
 		shop = function()
 			day43Ui.closeMajorPanels("shop")
@@ -2563,6 +2567,39 @@ ArcadeUI.Panel(boardFrame, {
 })
 -- Assigned onto day43Ui (not a new top-level local) because this script is a
 -- single top-level chunk already close to Luau's 200-local register limit.
+-- Cycles Gem <-> Classic.
+--
+-- Lives on day43Ui rather than inside a panel's callback table because two
+-- unrelated surfaces need it -- the cosmetic menu and the developer panel --
+-- and a second copy is how the two would drift.
+--
+-- Purely client-side. Which style a block is drawn in is a look, not a rule,
+-- so it never touches the server; the server would have nothing to validate.
+day43Ui.cycleBlockStyle = function()
+	local current = Config.sanitizeBlockStyle(customization.blockStyle)
+	local nextIndex = 1
+	for index, style in Config.BlockStyles do
+		if style.id == current then
+			nextIndex = (index % #Config.BlockStyles) + 1
+			break
+		end
+	end
+
+	local nextStyle = Config.BlockStyles[nextIndex]
+	customization.blockStyle = nextStyle.id
+	ArcadeUI.SetBlockStyle(nextStyle.id)
+
+	-- Every existing block has to be rebuilt, not repainted: the style changes
+	-- their structure, so a colour pass would leave the old geometry behind.
+	if currentState then
+		renderBoard(true)
+		renderHand()
+	end
+	playSound("Button")
+	showBanner(`Blocks: {nextStyle.name}`, customization.accentColor)
+	return nextStyle.id
+end
+
 day43Ui.attemptPlacement = function(slot, boardX, boardY)
 	local UIControlRules = require(GameShared.UIControlRules)
 	if not currentState or not slot then
@@ -2883,6 +2920,11 @@ developerPanelController = DeveloperPanel.new({
 	showMessage = showBanner,
 	isReducedMotion = isUiReducedMotion,
 	getVisibleBoardCellCount = visibleBoardCellCount,
+	localActions = {
+		blockStyle = function()
+			day43Ui.cycleBlockStyle()
+		end,
+	},
 })
 
 stageUi.side = Instance.new("Frame")
