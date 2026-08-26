@@ -15,3 +15,6 @@ ServerPackages/
 # Local AI-assistant working directory (agent worktrees, local settings).
 # Never belongs in the repository.
 .claude/
+
+# Stray local image that doesn't belong in the repo.
+Ai image pink.png
