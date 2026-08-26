@@ -450,6 +450,49 @@ tests.chromeRolesStayDistinguishable = function()
 	assertCondition(chrome.silver ~= chrome.bronze, "silver and bronze must stay distinct")
 end
 
+-- The gem palette Yoel specified. Pinned by value, because these were given
+-- as explicit hex codes rather than inferred from a screenshot -- a later
+-- "tidy up the palette" that drifts them is a change to an approved decision,
+-- and should have to update this test to say so.
+tests.theGemPaletteMatchesTheApprovedHexValues = function()
+	local expected = {
+		Color3.fromRGB(255, 75, 75),
+		Color3.fromRGB(255, 164, 58),
+		Color3.fromRGB(255, 213, 74),
+		Color3.fromRGB(76, 217, 100),
+		Color3.fromRGB(77, 210, 255),
+		Color3.fromRGB(77, 124, 255),
+		Color3.fromRGB(184, 92, 255),
+	}
+	local palette = VisualTokens.blockPalette()
+
+	assertCondition(
+		#palette == #expected,
+		`The gem palette should hold {#expected} colours, got {#palette}`
+	)
+	for index, color in expected do
+		assertCondition(
+			palette[index] == color,
+			`Gem colour {index} drifted from the approved value`
+		)
+	end
+end
+
+-- Every gem has to survive being drawn against the dark well. A colour that
+-- disappears into the board is not a gameplay-legible piece, whatever it
+-- looks like in isolation.
+tests.everyGemReadsAgainstTheBoard = function()
+	local tokens = VisualTokens.resolve(1, 0)
+	for index, color in VisualTokens.blockPalette() do
+		local ratio = VisualTokens.contrastRatio(color, tokens.boardWell)
+		assertCondition(
+			ratio > 2.5,
+			`Gem colour {index} sits at only {ratio}:1 against the board well and would `
+				.. "read as an empty cell"
+		)
+	end
+end
+
 function VisualTokensTests.run()
 	local names = {}
 	for name, body in tests do

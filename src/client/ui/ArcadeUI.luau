@@ -155,23 +155,58 @@ function ArcadeUI.StatCard(frame)
 	return frame
 end
 
+-- A faceted gem, drawn rather than textured.
+--
+-- Why there is no image asset here. A PNG was the obvious route and is the
+-- wrong one for this: it needs a Roblox upload step this project cannot
+-- automate, it needs one file per colour (seven, re-cut every time the
+-- palette moves), and a tinted single-file gem loses the relationship between
+-- its facets the moment the tint is anything but grey. Drawn geometry is
+-- resolution-independent by construction, recolours exactly, and costs
+-- nothing to add an eighth colour to.
+--
+-- The trade is honest: this cannot reproduce internal refraction or a
+-- photoreal cut. What it does reproduce is the part that actually reads at
+-- 40 pixels -- a bright top-left facet, a mid body, a dark bottom-right
+-- facet, corner facets that catch the light, and a rim around the whole
+-- thing.
+--
+-- Structure, outermost in:
+--   shadow      contact shadow beneath the tile
+--   rim         the gold/stone frame from the reference
+--   body        the stone itself, carrying the diagonal gradient
+--   facets      four triangles-by-proxy: lit top and left, shaded bottom and right
+--   table       the flat centre face, brightest, slightly inset
+--   glint       the small hard highlight on the top-left of the table
+-- Detail level for gem rendering. A full gem is roughly a dozen Instances and
+-- the board draws 64 of them, so on a low-tier phone the facets and the glint
+-- are dropped -- about half the objects, while the body gradient and the
+-- table keep it reading as a cut stone rather than a flat square.
+--
+-- A module flag rather than an argument threaded through every call site:
+-- GlossyBlock is called from the board, the tray and the ghost, and the
+-- device tier is a property of the session, not of any one block.
+ArcadeUI.BlockDetail = "full"
+
+function ArcadeUI.SetBlockDetail(reduced)
+	ArcadeUI.BlockDetail = if reduced then "reduced" else "full"
+	return ArcadeUI.BlockDetail
+end
+
 function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	parent.ClipsDescendants = true
 
-	-- Pieces are the most-looked-at object in the game, so their shading is
-	-- worth being fussy about. This used to be a candy: big radius, a floating
-	-- highlight bar, and an embossed "+" glyph. The approved reference is not
-	-- candy -- it is a molded plastic tile, and what sells that is a hard
-	-- three-tone bevel rather than a gloss.
-	--
-	-- Three faces, all derived from the piece's own hue so every color in the
-	-- palette bevels consistently: a lit top face, the body, and a shaded
-	-- bottom face. Deriving them rather than shipping three palettes means a
-	-- new block color needs no extra tuning to look molded.
+	local detailed = ArcadeUI.BlockDetail ~= "reduced"
 	local identity = VisualTokens.identity()
-	local lit = color:Lerp(identity.gloss, 0.34)
-	local shade = color:Lerp(identity.shadow, 0.42)
-	local outline = color:Lerp(identity.shadow, 0.62)
+	local lit = color:Lerp(identity.gloss, 0.52)
+	local litSoft = color:Lerp(identity.gloss, 0.26)
+	local shade = color:Lerp(identity.shadow, 0.38)
+	local shadeDeep = color:Lerp(identity.shadow, 0.56)
+	local outline = color:Lerp(identity.shadow, 0.68)
+	-- The rim reads as gold on every stone in the reference, but a literal
+	-- gold would fight a red gem, so it is the piece's own hue pushed warm and
+	-- dark -- close enough to read as a setting, never as a mismatched frame.
+	local rim = color:Lerp(Color3.fromRGB(120, 92, 44), 0.55)
 
 	local shadow = Instance.new("Frame")
 	shadow.Name = `{name or "Block"}Shadow`
@@ -186,7 +221,7 @@ function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 
 	local block = Instance.new("Frame")
 	block.Name = name or "GlossyBlock"
-	block.BackgroundColor3 = color
+	block.BackgroundColor3 = rim
 	block.BorderSizePixel = 0
 	block.Position = position
 	block.Size = size
@@ -194,37 +229,102 @@ function ArcadeUI.GlossyBlock(parent, color, size, position, name)
 	block.ClipsDescendants = true
 	block.Parent = parent
 	corner(block, VisualTokens.Radius.piece)
-	-- One outline, in a deepened version of the piece's own hue rather than
-	-- black, so tiles read as separate objects against each other and against
-	-- the dark well without any of them picking up a grey rim.
 	stroke(block, outline, 2, 0)
 
-	-- The faces are clipped by the block's own corner radius, so they need no
-	-- radius of their own; giving them one would round the inner edge and turn
-	-- the bevel back into a highlight bar.
-	local topFace = Instance.new("Frame")
-	topFace.Name = "BevelTop"
-	topFace.BackgroundColor3 = lit
-	topFace.BorderSizePixel = 0
-	topFace.Position = UDim2.fromScale(0, 0)
-	topFace.Size = UDim2.new(1, 0, 0.24, 0)
-	topFace.Active = false
-	topFace.ZIndex = block.ZIndex
-	topFace.Parent = block
+	-- The stone, inset so the rim shows as a frame on all four sides. Scale
+	-- rather than pixels: a fixed inset would swallow the stone on a phone and
+	-- vanish on a desktop board.
+	local body = Instance.new("Frame")
+	body.Name = "GemBody"
+	body.BackgroundColor3 = color
+	body.BorderSizePixel = 0
+	body.AnchorPoint = Vector2.new(0.5, 0.5)
+	body.Position = UDim2.fromScale(0.5, 0.5)
+	body.Size = UDim2.fromScale(0.86, 0.86)
+	body.Active = false
+	body.ClipsDescendants = true
+	body.ZIndex = block.ZIndex + 1
+	body.Parent = block
+	corner(body, math.max(2, VisualTokens.Radius.piece - 2))
+	-- Light arrives top-left, so the body gradient runs on the diagonal rather
+	-- than straight down. This is most of what separates a gem from a button.
+	gradient(body, litSoft, shadeDeep, 135)
 
-	local bottomFace = Instance.new("Frame")
-	bottomFace.Name = "BevelBottom"
-	bottomFace.BackgroundColor3 = shade
-	bottomFace.BorderSizePixel = 0
-	bottomFace.Position = UDim2.fromScale(0, 0.78)
-	bottomFace.Size = UDim2.new(1, 0, 0.22, 0)
-	bottomFace.Active = false
-	bottomFace.ZIndex = block.ZIndex
-	bottomFace.Parent = block
+	-- The four bevelled facets. Frames rather than real triangles: Roblox GUI
+	-- has no polygon primitive, and four tapered bands read as a cut stone at
+	-- the size these are actually drawn.
+	local facets = {
+		{
+			name = "FacetTop",
+			color = lit,
+			pos = UDim2.fromScale(0, 0),
+			size = UDim2.new(1, 0, 0.18, 0),
+		},
+		{
+			name = "FacetLeft",
+			color = lit,
+			pos = UDim2.fromScale(0, 0),
+			size = UDim2.new(0.18, 0, 1, 0),
+		},
+		{
+			name = "FacetBottom",
+			color = shadeDeep,
+			pos = UDim2.new(0, 0, 0.82, 0),
+			size = UDim2.new(1, 0, 0.18, 0),
+		},
+		{
+			name = "FacetRight",
+			color = shade,
+			pos = UDim2.new(0.82, 0, 0, 0),
+			size = UDim2.new(0.18, 0, 1, 0),
+		},
+	}
+	for _, facet in if detailed then facets else {} do
+		local face = Instance.new("Frame")
+		face.Name = facet.name
+		face.BackgroundColor3 = facet.color
+		face.BackgroundTransparency = 0.18
+		face.BorderSizePixel = 0
+		face.Position = facet.pos
+		face.Size = facet.size
+		face.Active = false
+		face.ZIndex = body.ZIndex + 1
+		face.Parent = body
+	end
 
-	-- A very slight vertical fall across the body ties the two faces together
-	-- so the bevel reads as one lit solid rather than three stacked stripes.
-	gradient(block, color:Lerp(identity.gloss, 0.08), color:Lerp(identity.shadow, 0.1), 90)
+	-- The table: the flat top face of the cut, brightest and centred. Without
+	-- it the four facets meet in the middle and the stone reads as a picture
+	-- frame rather than a solid.
+	local tableFace = Instance.new("Frame")
+	tableFace.Name = "GemTable"
+	tableFace.BackgroundColor3 = color:Lerp(identity.gloss, 0.12)
+	tableFace.BorderSizePixel = 0
+	tableFace.AnchorPoint = Vector2.new(0.5, 0.5)
+	tableFace.Position = UDim2.fromScale(0.5, 0.5)
+	tableFace.Size = UDim2.fromScale(0.58, 0.58)
+	tableFace.Active = false
+	tableFace.ZIndex = body.ZIndex + 2
+	tableFace.Parent = body
+	corner(tableFace, 3)
+	gradient(tableFace, lit, color, 135)
+
+	if not detailed then
+		return block
+	end
+
+	-- The glint. Small, hard-edged and off-centre; a large soft one reads as
+	-- plastic gloss, which is the look this replaced.
+	local glint = Instance.new("Frame")
+	glint.Name = "GemGlint"
+	glint.BackgroundColor3 = identity.gloss
+	glint.BackgroundTransparency = 0.34
+	glint.BorderSizePixel = 0
+	glint.Position = UDim2.fromScale(0.16, 0.16)
+	glint.Size = UDim2.fromScale(0.2, 0.2)
+	glint.Active = false
+	glint.ZIndex = tableFace.ZIndex + 1
+	glint.Parent = body
+	corner(glint, 2)
 
 	return block
 end
