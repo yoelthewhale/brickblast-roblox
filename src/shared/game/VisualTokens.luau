@@ -61,12 +61,26 @@ local IDENTITY = {
 -- blue, red, gold and cyan coexisting on one board, so tying piece color to
 -- stage would fight the look it is meant to match. Progression moved to the
 -- room and the well instead -- see FLAVORS.
+-- The gem palette, from the hex values Yoel specified on 2026-08-26.
+--
+-- This replaces the five muted colours read off the earlier dark reference.
+-- Those were my inference from a screenshot; these were given explicitly, so
+-- they win. Two consequences worth being aware of rather than surprised by:
+-- the set grew from five to seven, and every entry is considerably brighter
+-- and more saturated, which is what the jewel look needs to read against the
+-- dark well.
+--
+-- Still identity, not flavor: fixed at every stage and energy level, guarded
+-- by VisualTokensTests.blocksAreIdentityNotFlavor. Growing the set does not
+-- change that rule.
 local BLOCK_PALETTE = {
-	Color3.fromRGB(224, 138, 52),
-	Color3.fromRGB(58, 86, 200),
-	Color3.fromRGB(198, 64, 58),
-	Color3.fromRGB(229, 185, 60),
-	Color3.fromRGB(84, 192, 232),
+	Color3.fromRGB(255, 75, 75), -- red
+	Color3.fromRGB(255, 164, 58), -- orange
+	Color3.fromRGB(255, 213, 74), -- yellow
+	Color3.fromRGB(76, 217, 100), -- green
+	Color3.fromRGB(77, 210, 255), -- cyan
+	Color3.fromRGB(77, 124, 255), -- blue
+	Color3.fromRGB(184, 92, 255), -- purple
 }
 
 -- Four flavors keeps `presetCount()` at 4, so the existing stage-cycle math and

@@ -362,6 +362,11 @@ local function applyWorldVisualQuality()
 		screenSize = camera and camera.ViewportSize or nil,
 	}, reducedMotion)
 
+	-- Gem blocks are the most-drawn object in the game -- 64 on the board
+	-- alone -- so the same tier that thins world particles also drops their
+	-- facets. Set before any board render so the first frame is already right.
+	ArcadeUI.SetBlockDetail(lowEffects)
+
 	local hub = Workspace:FindFirstChild("BlockBlastHub")
 	if hub then
 		for _, descendant in hub:GetDescendants() do
