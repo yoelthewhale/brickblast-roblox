@@ -2596,6 +2596,41 @@ boardGhostLayer.Size = UDim2.fromScale(1, 1)
 boardGhostLayer.ZIndex = 2
 boardGhostLayer.Parent = boardFrame
 
+-- The line-clear preview layer.
+--
+-- A sibling of the grid, never a child of it: AGENTS.md holds
+-- BoardGridContainer to exactly 64 direct cell buttons with no decorative
+-- children, and the cells clip their descendants so a glow parented to one
+-- could not spill across a line anyway.
+--
+-- Above the ghost rather than below. The highlighted lines include the cells
+-- the dragged piece is about to occupy, so if the ghost drew over the
+-- highlight the line would glow everywhere except the part the player is
+-- actually placing -- which is the one part the effect exists to connect.
+-- Hung off day43Ui rather than declared as top-level locals, layer included:
+-- this file sits at 198 of Luau's 200-register ceiling, and
+-- scripts/check-local-registers.luau refuses even one more. It refused this
+-- one, correctly, on the first attempt.
+day43Ui.clearPreview = {
+	layer = Instance.new("Frame"),
+	-- Pooled tiles, keyed "x:y". Reused rather than destroyed and rebuilt --
+	-- a drag crosses dozens of cells a second and each one can highlight up to
+	-- fifteen cells.
+	tiles = {},
+	-- Signature of the last rendered set. Recalculating is cheap; rebuilding
+	-- Instances is not, so an unchanged set is skipped entirely.
+	signature = nil,
+}
+
+day43Ui.clearPreview.layer.Name = "BoardClearPreviewLayer"
+day43Ui.clearPreview.layer.BackgroundTransparency = 1
+day43Ui.clearPreview.layer.BorderSizePixel = 0
+day43Ui.clearPreview.layer.ClipsDescendants = true
+day43Ui.clearPreview.layer.Position = UDim2.fromScale(0, 0)
+day43Ui.clearPreview.layer.Size = UDim2.fromScale(1, 1)
+day43Ui.clearPreview.layer.ZIndex = 3
+day43Ui.clearPreview.layer.Parent = boardFrame
+
 local boardPadding = Instance.new("UIPadding")
 boardPadding.PaddingTop = UDim.new(0, 16)
 boardPadding.PaddingBottom = UDim.new(0, 16)
@@ -3929,6 +3964,142 @@ end
 
 local ghostCells = {}
 
+-- Renders the "these lines are about to clear" highlight.
+--
+-- Takes the coordinate set from Grid.clearPreviewCells, or nil for "nothing
+-- would clear". Everything about which cells light up is decided by shared
+-- gameplay rules; this function only draws the answer.
+--
+-- Three things it deliberately does NOT do: touch currentState, create a
+-- modified board, or fire anything. It reads a set and sets colours.
+day43Ui.renderClearPreview = function(cells)
+	local preview = day43Ui.clearPreview
+
+	-- Skip identical work. A drag crosses several cells a second and the
+	-- highlighted set usually does not change between two hovers over the same
+	-- line, so rebuilding on every hover would churn Instances for no visible
+	-- difference. The signature is order-independent because it is built by
+	-- walking the board in a fixed order, not by walking the set.
+	-- The cell size is part of the signature, not just the coordinates. Without
+	-- it a resize during a drag would leave every tile at its old pixel
+	-- position: the set is unchanged, so the skip below would fire and the
+	-- highlight would sit offset from the board until the player moved.
+	local signature = tostring(WINDOW_LAYOUT.boardCell)
+	if cells then
+		local parts = {}
+		for y = 1, Config.BoardSize do
+			local row = cells[y]
+			if row then
+				for x = 1, Config.BoardSize do
+					if row[x] then
+						table.insert(parts, `{x}:{y}`)
+					end
+				end
+			end
+		end
+		signature ..= "|" .. table.concat(parts, ",")
+	end
+
+	if signature == preview.signature then
+		return
+	end
+	preview.signature = signature
+
+	-- Hide rather than destroy: the pool is reused across the whole run.
+	for _, tile in preview.tiles do
+		tile.Visible = false
+	end
+
+	if not cells then
+		return
+	end
+
+	local innerPadding = WINDOW_LAYOUT.boardPadding
+	local cellGap = WINDOW_LAYOUT.boardGap
+	local cellPixels = WINDOW_LAYOUT.boardCell
+	local glow = ArcadeUI.Color.gold
+
+	for y = 1, Config.BoardSize do
+		local row = cells[y]
+		if row then
+			for x = 1, Config.BoardSize do
+				if row[x] then
+					local key = `{x}:{y}`
+					local tile = preview.tiles[key]
+					if not tile then
+						tile = Instance.new("Frame")
+						tile.Name = `ClearPreview_{key}`
+						tile.Active = false
+						tile.BorderSizePixel = 0
+						tile.ZIndex = 4
+						tile.Parent = preview.layer
+
+						-- Four edge bars, created once and shown selectively
+						-- below. A UIStroke would have been less code but
+						-- outlines every tile on all four sides, which turns a
+						-- cleared line into a row of separate boxes instead of
+						-- one lit region.
+						for _, edge in { "Top", "Bottom", "Left", "Right" } do
+							local bar = Instance.new("Frame")
+							bar.Name = edge
+							bar.BorderSizePixel = 0
+							bar.Active = false
+							bar.ZIndex = 5
+							bar.Parent = tile
+						end
+
+						preview.tiles[key] = tile
+					end
+
+					tile.Position = UDim2.fromOffset(
+						innerPadding + (x - 1) * (cellPixels + cellGap),
+						innerPadding + (y - 1) * (cellPixels + cellGap)
+					)
+					tile.Size = UDim2.fromOffset(cellPixels, cellPixels)
+					tile.BackgroundColor3 = glow
+					-- Translucent on purpose. The blocks underneath have to stay
+					-- recognisable -- the player is reading which colours are
+					-- about to go, not just that something is.
+					tile.BackgroundTransparency = 0.58
+					tile.Visible = true
+
+					-- The perimeter. An edge is drawn only where the neighbour
+					-- is NOT also highlighted, so adjacent tiles merge into one
+					-- glowing region and only its outer boundary is bright.
+					local thickness = math.max(2, math.floor(cellPixels * 0.14))
+					local neighbours = {
+						Top = not (cells[y - 1] and cells[y - 1][x]),
+						Bottom = not (cells[y + 1] and cells[y + 1][x]),
+						Left = not row[x - 1],
+						Right = not row[x + 1],
+					}
+					for edge, exposed in neighbours do
+						local bar = tile:FindFirstChild(edge)
+						if bar then
+							bar.Visible = exposed
+							bar.BackgroundColor3 = ArcadeUI.Color.text
+							bar.BackgroundTransparency = 0.25
+							if edge == "Top" then
+								bar.Position = UDim2.fromOffset(0, 0)
+								bar.Size = UDim2.new(1, 0, 0, thickness)
+							elseif edge == "Bottom" then
+								bar.Position = UDim2.new(0, 0, 1, -thickness)
+								bar.Size = UDim2.new(1, 0, 0, thickness)
+							elseif edge == "Left" then
+								bar.Position = UDim2.fromOffset(0, 0)
+								bar.Size = UDim2.new(0, thickness, 1, 0)
+							else
+								bar.Position = UDim2.new(1, -thickness, 0, 0)
+								bar.Size = UDim2.new(0, thickness, 1, 0)
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
 renderGhostPreview = function()
 	for _, ghostCell in ghostCells do
 		ghostCell:Destroy()
@@ -3937,12 +4108,22 @@ renderGhostPreview = function()
 
 	local shape = getSelectedShape()
 	if not shape or not hoverX or not hoverY or not currentState or not currentState.alive then
+		-- Every path that stops a drag already calls this function -- releasing,
+		-- cancelling, moving off the board, the run ending, the board resetting.
+		-- Driving the clear preview from here rather than from its own set of
+		-- hooks is what makes "there should never be stuck glowing cells" true
+		-- by construction instead of by remembering to add a hook each time.
+		day43Ui.renderClearPreview(nil)
 		return
 	end
 
-	local preset, hasSoloStage = activeStageVisual()
 	local canPlace = Grid.canPlace(currentState.board, shape, hoverX, hoverY)
 	statusLabel.Text = canPlace and `Place {shape.id}` or "That spot is blocked"
+
+	-- What would clear if the player let go here. Grid.clearPreviewCells
+	-- returns nil for an illegal placement, so an invalid hover cannot leave a
+	-- stale highlight behind, and the real board is only ever read.
+	day43Ui.renderClearPreview(Grid.clearPreviewCells(currentState.board, shape, hoverX, hoverY))
 
 	local innerPadding = WINDOW_LAYOUT.boardPadding
 	local cellGap = WINDOW_LAYOUT.boardGap

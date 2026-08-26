@@ -125,6 +125,7 @@ local TEST_MODULES = {
 	"ClearPraiseTests",
 	"BlocksTests",
 	"ShotClockTests",
+	"GridTests",
 }
 
 local GAME_DIR = "../src/shared/game"
