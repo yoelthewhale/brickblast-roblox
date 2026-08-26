@@ -20,9 +20,9 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
 - Preserved source, configs, current docs, production Bubblegum assets, scripts, tools, and `BlockBlastBattle-Day46.rbxl`.
 - Moved safe historical `.rbxl` checkpoints out of the repository root into `checkpoints/` so the VS Code root is no longer dominated by old place files.
-- Left `BlockBlastBattle-Day43.rbxl`, `BlockBlastBattle-Day44.rbxl`, `BlockBlastBattle-Day44-1.rbxl`, and `BlockBlastBattle-Day45.rbxl` in root because Windows denied access while a background `RobloxStudioBeta` process was present. VS Code now hides those obsolete root leftovers.
+- Later completed the leftover move: `BlockBlastBattle-Day43.rbxl`, `BlockBlastBattle-Day44.rbxl`, `BlockBlastBattle-Day44-1.rbxl`, and `BlockBlastBattle-Day45.rbxl` now live in `checkpoints/`.
 - Kept `BlockBlastBattle-Day46.rbxl` in root as the obvious current game.
-- Confirmed `BrickBlast-Day50-LatestTest.rbxl` was an accidental local alias, not a legitimate checkpoint, and hid it in VS Code Explorer. Windows denied moving it.
+- Confirmed `BrickBlast-Day50-LatestTest.rbxl` was an accidental local alias, not a legitimate checkpoint, and later moved it to `test-builds/`.
 - Moved generated inspection `.rbxlx` files into `generated/inspection-builds/`.
 - Moved Rojo logs into `logs/`.
 - Kept all registered `.claude/worktrees/` entries. They have no unique commits relative to master, but one contains uncommitted changes and the others may still be useful Claude infrastructure. VS Code now hides `.claude/` instead of deleting it.
@@ -35,6 +35,7 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - Confirmed real numbered build naming remains `BlockBlastBattle-DayNN.rbxl` with the hyphen. `BrickBlast-Day50-LatestTest.rbxl` remains a temporary alias, not a checkpoint convention.
 - Built `BlockBlastBattle-Day52.rbxl` from `master` at `15b080c`.
 - Updated `BUILD_INDEX.md` to list Day47-Day52 and to clarify that Day49-Day51 were One More Chance feature-branch checkpoints, while Day52 is the current Deep Board master build.
+- Completed the root `.rbxl` cleanup: Day43-Day51 live in `checkpoints/`, the accidental `BrickBlast-Day50-LatestTest.rbxl` alias lives in `test-builds/`, and the root now contains only the current `BlockBlastBattle-Day52.rbxl`.
 - Asset read: coin, XP, best-score, trophy, stage, medals, reward crates, shadow, and tintable particle/confetti assets remain plausible or actively referenced; `CandyFlourishCorner` and `LollipopMark` survive only as registry/package entries and should not be used for Deep Board unless the direction changes again.
 
 ## Session Update - 2026-08-22 Local Build Cleanup
@@ -43,7 +44,7 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - Confirmed Day50 was not a legitimate checkpoint. It was a temporary local alias created for quick testing and is superseded by Day46.
 - Built `BlockBlastBattle-Day46.rbxl` from current `origin/master`.
 - Moved proven temporary feature/test `.rbxl` artifacts into `test-builds/` without deleting historical Day checkpoints.
-- Left `BrickBlast-Day50-LatestTest.rbxl` in the main folder because Windows denied the move while cleaning up. It is documented as obsolete in `BUILD_INDEX.md`.
+- Later moved `BrickBlast-Day50-LatestTest.rbxl` into `test-builds/`; it remains an obsolete temporary alias, not a checkpoint.
 - Updated `BUILD_INDEX.md` so the first visible instruction is to open `BlockBlastBattle-Day46.rbxl`.
 
 ## Session Update - 2026-08-21 Bubblegum Production Asset Integration Prep

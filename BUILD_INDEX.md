@@ -40,23 +40,9 @@ Most old `BlockBlastBattle*.rbxl` snapshots were moved from the root into:
 They were not renamed or deleted. They are ignored generated artifacts and are
 kept for comparison/history.
 
-Some recent historical files remain in the root because Windows denied access
-while a background `RobloxStudioBeta` process was present:
-
-- `BlockBlastBattle-Day43.rbxl`
-- `BlockBlastBattle-Day44.rbxl`
-- `BlockBlastBattle-Day44-1.rbxl`
-- `BlockBlastBattle-Day45.rbxl`
-- `BlockBlastBattle-Day46.rbxl`
-- `BlockBlastBattle-Day47.rbxl`
-- `BlockBlastBattle-Day48.rbxl`
-- `BlockBlastBattle-Day49.rbxl`
-- `BlockBlastBattle-Day50.rbxl`
-- `BlockBlastBattle-Day51.rbxl`
-
-Those files are obsolete for day-to-day testing and are hidden in VS Code
-Explorer. Keep them unless we deliberately close the locking process and move
-them later.
+The repository root should contain only the current numbered checkpoint. Recent
+historical checkpoints through Day51 now live in `checkpoints/` and are kept
+for comparison/history.
 
 ## Recent Root Checkpoints
 
@@ -90,9 +76,9 @@ Examples:
 - `BrickBlast-LatestTest.rbxl`
 - `BrickBlast-StudioTest.rbxl`
 
-`BrickBlast-Day50-LatestTest.rbxl` remains in the root only because Windows
-denied access while cleaning up. Day50 was an accidental local alias, not a real
-checkpoint. It is hidden in VS Code Explorer and should be ignored.
+`BrickBlast-Day50-LatestTest.rbxl` was an accidental local alias, not a real
+checkpoint. It now lives in `test-builds/` and should be ignored for normal
+testing.
 
 ## Checkpoint Rule
 
