@@ -6,13 +6,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
-- **Latest completed numbered checkpoint: Day58** (`BlockBlastBattle-Day58.rbxl`, 2026-08-26). Built from `integrate/day53-combined-experience`; this is the current combined local checkpoint.
-- **Current build to open: `BlockBlastBattle-Day58.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
-- **Day49-Day51 are old One More Chance feature-branch checkpoints, Day52 is the Deep Board-only master checkpoint, Day53 is the first combined Deep Board/One More Chance/clear-celebration checkpoint, Day54 adds clear-line glow plus the trimmed shape set, Day55 adds deeper room/HUD cleanup, Day56 adds difficulty/shot-clock work, and Day57 fixes the missing-UI risk.** Open Day58 for the newest combined game.
+- **Latest completed numbered checkpoint: Day59** (`BlockBlastBattle-Day59.rbxl`, 2026-08-26). Built from `integrate/day53-combined-experience`; this is the current combined local checkpoint.
+- **Current build to open: `BlockBlastBattle-Day59.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
+- **Day49-Day51 are old One More Chance feature-branch checkpoints, Day52 is the Deep Board-only master checkpoint, Day53 is the first combined Deep Board/One More Chance/clear-celebration checkpoint, Day54 adds clear-line glow plus the trimmed shape set, Day55 adds deeper room/HUD cleanup, Day56 adds difficulty/shot-clock work, Day57 fixes the missing-UI risk, Day58 fixes solid piece colors, and Day59 adds line-clear drag preview.** Open Day59 for the newest combined game.
 - **`BlockBlastBattle-Day44.rbxl` is broken and kept deliberately.** It was built while `GameServer.server.luau` was over Luau's 200-local limit, so the server compiled nothing: no hub, no remotes, players on the bare bootstrap floor. It is retained as the artifact of the #96 incident. Do not open it expecting a working game, and do not delete it to tidy up.
-- **Next numbered checkpoint: Day59.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
+- **Next numbered checkpoint: Day60.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
 - **GitHub `master` is the source of truth for code.** The `.rbxl` files in the repository root are local, generated, gitignored build checkpoints: snapshots for Studio testing, never the authoritative source. A missing or stale `.rbxl` says nothing about the state of the code.
-- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day58.rbxl` stays in the repository root because it is the current game to open.
+- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day59.rbxl` stays in the repository root because it is the current game to open.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
 
@@ -176,6 +176,35 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - Drag a piece around the board and confirm the ghost preview stays the same color while moving.
 - Place a multi-cell piece and confirm all placed cells keep that piece's color.
 - Confirm stage/room tint still changes the background and board atmosphere without recoloring the blocks by board position.
+
+## Session Update - 2026-08-26 Day59 Line-Clear Drag Preview
+
+- Kept the Day58 solid color identity fix as the base and added only the requested line-clear placement preview on top.
+- Extracted pure Grid helpers: `Grid.completedLines`, `Grid.linesCompletedByPlacement`, and `Grid.clearPreviewCells`.
+- The preview simulates the hovered piece with an occupancy test and never clones, writes, scores, clears, or mutates the real board.
+- Added `LineClearPreviewLayer` as a board-frame sibling overlay instead of a child of the 8x8 grid, preserving the board's 64-cell invariant.
+- Preview tiles are pooled, unchanged signatures skip rerender work, and the normal drag ghost stays above the line-clear overlay.
+- The preview draws a soft gold fill for clearing cells and only draws bright perimeter edges where a neighboring highlighted cell is absent.
+- Added `GridTests` and registered them in `scripts/run-tests.luau`.
+- Built `BlockBlastBattle-Day59.rbxl` as the new current local checkpoint and moved Day58 into `checkpoints/`.
+
+### Validation
+
+- Stylua passed.
+- Lune tests passed: `19/19` modules, `236` tests.
+- Local register guard passed: `GameServer.server.luau` at `191 / 191`, `BlockBlastClient.client.luau` at `198 / 198`.
+- Rojo build passed for `BlockBlastBattle-Day59.rbxl`.
+- `git diff --check` passed.
+- Selene could not run because Windows Application Control blocked `tools/selene.exe`.
+
+### Remaining Manual Checks
+
+- Open `BlockBlastBattle-Day59.rbxl` in Studio and press Play.
+- Start Solo and drag a piece over a valid spot that clears nothing; only the normal ghost should show.
+- Drag a piece over a valid row or column clear; the cells that will disappear should highlight before release.
+- Move the piece away, over an invalid spot, or off the board; the highlight should disappear.
+- Drop the piece and confirm the real clear still works with no stuck glow.
+- Resize or move the PC workspace if relevant and confirm the highlight still aligns with the board.
 
 ## Session Update - 2026-08-22 Simple Solo Hub Reset
 
