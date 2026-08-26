@@ -5,7 +5,7 @@
 `BlockBlastBattle-Day57.rbxl`
 
 - Source branch: `integrate/day53-combined-experience`
-- Source code commit: `41b564d`
+- Source code commit: `9886bc7`
 - Built: `2026-08-26 11:28:39 -04:00`
 - Location: repository root
 - Purpose: current combined checkpoint with Day56's difficulty/shot-clock work plus a UI startup rescue that prevents the Studio F8 inspection hotkey from disabling the entire BrickBlast ScreenGui and creates server remotes before larger server module requires.
@@ -63,7 +63,7 @@ for comparison/history.
 | `BlockBlastBattle-Day54.rbxl` | `integrate/day53-combined-experience` at `7d91543` | Day53 plus clear-line glow and the approved connected shape set. |
 | `BlockBlastBattle-Day55.rbxl` | `integrate/day53-combined-experience` at `6f01bc9` | Day54 plus deeper room tuning and HUD cleanup. |
 | `BlockBlastBattle-Day56.rbxl` | `integrate/day53-combined-experience` at `0e5ce37` | Day55 plus stronger difficulty separation, fair-hand tests, and Spicy shot clock. Superseded by Day57 after Yoel found the UI could disappear. |
-| `BlockBlastBattle-Day57.rbxl` | `integrate/day53-combined-experience` at `41b564d` | Current checkpoint: Day56 plus the UI startup/F8 inspection rescue. |
+| `BlockBlastBattle-Day57.rbxl` | `integrate/day53-combined-experience` at `9886bc7` | Current checkpoint: Day56 plus the UI startup/F8 inspection rescue. |
 
 Naming convention: real numbered checkpoints use
 `BlockBlastBattle-DayNN.rbxl` with the hyphen. `BrickBlast-Day50-LatestTest.rbxl`
