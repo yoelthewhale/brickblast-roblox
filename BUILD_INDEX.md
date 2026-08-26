@@ -2,15 +2,15 @@
 
 ## CURRENT GAME TO OPEN
 
-`BlockBlastBattle-Day56.rbxl`
+`BlockBlastBattle-Day57.rbxl`
 
 - Source branch: `integrate/day53-combined-experience`
-- Source code commit: `0e5ce37`
-- Built: `2026-08-26 11:14:24 -04:00`
+- Source code commit: `41b564d`
+- Built: `2026-08-26 11:28:39 -04:00`
 - Location: repository root
-- Purpose: current combined checkpoint with the approved Deep Board visual direction, server-authoritative free One More Chance prototype, Deep Board-painted continue card, simplified Solo hub, clear-celebration feedback, clear-line glow preview, approved connected piece set, deeper room wash, HUD cleanup, stronger difficulty separation, fair-hand property tests, and the server-authoritative Spicy shot clock.
+- Purpose: current combined checkpoint with Day56's difficulty/shot-clock work plus a UI startup rescue that prevents the Studio F8 inspection hotkey from disabling the entire BrickBlast ScreenGui and creates server remotes before larger server module requires.
 
-Double-click `BlockBlastBattle-Day56.rbxl` when you want to test the newest
+Double-click `BlockBlastBattle-Day57.rbxl` when you want to test the newest
 real BrickBlast game.
 
 Important: Day52 was the first Deep Board master build. Day53 is the first
@@ -19,7 +19,7 @@ clear-celebration feedback. Day54 adds Claude's new clear-line glow and
 approved shape-set cleanup on top without overwriting Day53. Day55 adds the
 deeper room tuning and HUD cleanup on top without overwriting Day54. Day56
 adds the difficulty tuning and Spicy shot clock on top without overwriting
-Day55.
+Day55. Day57 fixes the missing-UI risk found while testing Day56.
 
 ## Folder Layout
 
@@ -45,7 +45,7 @@ They were not renamed or deleted. They are ignored generated artifacts and are
 kept for comparison/history.
 
 The repository root should contain only the current numbered checkpoint. Recent
-historical checkpoints through Day55 now live in `checkpoints/` and are kept
+historical checkpoints through Day56 now live in `checkpoints/` and are kept
 for comparison/history.
 
 ## Recent Root Checkpoints
@@ -62,7 +62,8 @@ for comparison/history.
 | `BlockBlastBattle-Day53.rbxl` | `integrate/day53-combined-experience` at `877c0a0` | Combined checkpoint: Deep Board, One More Chance, clear celebration, simple hub, and old UI clutter cleanup. |
 | `BlockBlastBattle-Day54.rbxl` | `integrate/day53-combined-experience` at `7d91543` | Day53 plus clear-line glow and the approved connected shape set. |
 | `BlockBlastBattle-Day55.rbxl` | `integrate/day53-combined-experience` at `6f01bc9` | Day54 plus deeper room tuning and HUD cleanup. |
-| `BlockBlastBattle-Day56.rbxl` | `integrate/day53-combined-experience` at `0e5ce37` | Current checkpoint: Day55 plus stronger difficulty separation, fair-hand tests, and Spicy shot clock. |
+| `BlockBlastBattle-Day56.rbxl` | `integrate/day53-combined-experience` at `0e5ce37` | Day55 plus stronger difficulty separation, fair-hand tests, and Spicy shot clock. Superseded by Day57 after Yoel found the UI could disappear. |
+| `BlockBlastBattle-Day57.rbxl` | `integrate/day53-combined-experience` at `41b564d` | Current checkpoint: Day56 plus the UI startup/F8 inspection rescue. |
 
 Naming convention: real numbered checkpoints use
 `BlockBlastBattle-DayNN.rbxl` with the hyphen. `BrickBlast-Day50-LatestTest.rbxl`
@@ -91,6 +92,6 @@ testing.
 ## Checkpoint Rule
 
 Do not invent Day numbers. The next Day number comes from the highest existing
-real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day56.
+real `BlockBlastBattle-Day*.rbxl` checkpoint, which is currently Day57.
 
-Next real numbered checkpoint: Day57.
+Next real numbered checkpoint: Day58.

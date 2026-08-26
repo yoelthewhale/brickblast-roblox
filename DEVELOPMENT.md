@@ -6,13 +6,13 @@ This file tracks production-readiness work, priorities, known issues, and techni
 
 Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 
-- **Latest completed numbered checkpoint: Day56** (`BlockBlastBattle-Day56.rbxl`, 2026-08-26). Built from `integrate/day53-combined-experience`; this is the current combined local checkpoint.
-- **Current build to open: `BlockBlastBattle-Day56.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
-- **Day49-Day51 are old One More Chance feature-branch checkpoints, Day52 is the Deep Board-only master checkpoint, Day53 is the first combined Deep Board/One More Chance/clear-celebration checkpoint, Day54 adds clear-line glow plus the trimmed shape set, and Day55 adds deeper room/HUD cleanup.** Open Day56 for the newest combined game.
+- **Latest completed numbered checkpoint: Day57** (`BlockBlastBattle-Day57.rbxl`, 2026-08-26). Built from `integrate/day53-combined-experience`; this is the current combined local checkpoint.
+- **Current build to open: `BlockBlastBattle-Day57.rbxl`**. This is the one obvious current local checkpoint for Studio testing.
+- **Day49-Day51 are old One More Chance feature-branch checkpoints, Day52 is the Deep Board-only master checkpoint, Day53 is the first combined Deep Board/One More Chance/clear-celebration checkpoint, Day54 adds clear-line glow plus the trimmed shape set, Day55 adds deeper room/HUD cleanup, and Day56 adds difficulty/shot-clock work.** Open Day57 for the newest combined game.
 - **`BlockBlastBattle-Day44.rbxl` is broken and kept deliberately.** It was built while `GameServer.server.luau` was over Luau's 200-local limit, so the server compiled nothing: no hub, no remotes, players on the bare bootstrap floor. It is retained as the artifact of the #96 incident. Do not open it expecting a working game, and do not delete it to tidy up.
-- **Next numbered checkpoint: Day57.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
+- **Next numbered checkpoint: Day58.** Reserve it for meaningful development progress. Do not burn a Day number on documentation, GitHub, or backlog cleanup.
 - **GitHub `master` is the source of truth for code.** The `.rbxl` files in the repository root are local, generated, gitignored build checkpoints: snapshots for Studio testing, never the authoritative source. A missing or stale `.rbxl` says nothing about the state of the code.
-- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day56.rbxl` stays in the repository root because it is the current game to open.
+- **Historical local checkpoints now live in `checkpoints/` when they are not the current checkpoint.** `BlockBlastBattle-Day57.rbxl` stays in the repository root because it is the current game to open.
 - **Sessions between Day43 and Day44 are not numbered.** The 2026-08-17 session (logged near the bottom of this file), the two autonomous sessions on 2026-08-18, and the 2026-08-19 session all sit in that gap. Their work is traceable through issues, branches, PRs, and CI rather than through a Day number.
 - **Autonomous sessions must not invent Day numbers.** Chat labels such as "Day 35" or "Day 36" refer to a working day, not to this file's checkpoint sequence, and the two have drifted apart. Derive the next number from the highest existing `BlockBlastBattle-Day*.rbxl`, or log the session by date instead.
 
@@ -124,6 +124,31 @@ Read this before writing a new DayNN heading or building a numbered `.rbxl`.
 - Confirm Spicy shows a 10-second placement clock, changes warning color near expiry, resets after each placement, and ends the run if ignored.
 - Confirm Chill still feels forgiving and still deals fair hands.
 - Confirm Classic does not feel too punishing.
+
+## Session Update - 2026-08-26 Day57 UI Startup Rescue
+
+- Responded to Yoel's Day56 Studio report that the custom BrickBlast UI was gone.
+- Confirmed the Day56 build existed in the repository root and moved it to `checkpoints/` after building a corrected Day57.
+- Made `GameServer.server.luau` create the full `BlockBlastRemotes` folder before larger shared/server module requires, reducing the chance that a server startup error leaves the client waiting forever before UI startup.
+- Changed the Studio-only F8 inspection hotkey so it no longer disables the entire `BlockBlastBattleGui`; it now toggles hub chrome inspection state through the existing `day43Ui` table without hiding the whole ScreenGui.
+- Kept the change narrowly scoped: no map, difficulty, scoring, One More Chance, shape, DataStore, purchase, or progression changes.
+- Built `BlockBlastBattle-Day57.rbxl` as the new current local checkpoint and moved Day56 into `checkpoints/`.
+
+### Validation
+
+- Stylua passed.
+- Lune tests passed: `18/18` modules, `223` tests.
+- Local register guard passed: `GameServer.server.luau` at `191 / 191`, `BlockBlastClient.client.luau` at `198 / 198`.
+- Rojo build passed for `BlockBlastBattle-Day57.rbxl`.
+- `git diff --check` passed.
+- Selene could not run because Windows Application Control blocked `tools/selene.exe`.
+
+### Remaining Manual Checks
+
+- Open `BlockBlastBattle-Day57.rbxl` in Studio and press Play.
+- Confirm the hub HUD appears at spawn: title, left nav, top resource chips, and right Play/Shop/Inventory/Settings buttons.
+- Press F8 in Studio and confirm it only toggles inspection chrome behavior, then press F8 again and confirm the UI can be recovered.
+- Start Solo and confirm the puzzle workspace appears normally.
 
 ## Session Update - 2026-08-22 Simple Solo Hub Reset
 

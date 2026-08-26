@@ -152,6 +152,7 @@ local day43Ui = {
 		generation = 0,
 		warningKey = "InitialServerSyncTimeout",
 	},
+	studioInspectionHudHidden = false,
 	-- Cached rather than required per call: the input handlers that use it
 	-- run on every pointer move.
 	uiControlRules = require(GameShared.UIControlRules),
@@ -200,7 +201,7 @@ local function suppressExternalPuzzleHud(isPuzzleVisible)
 		return
 	end
 
-	hudController:SetGameplayFocus(isPuzzleVisible)
+	hudController:SetGameplayFocus(isPuzzleVisible or day43Ui.studioInspectionHudHidden)
 	if hudController.topBar then
 		hudController.topBar.Visible = false
 	end
@@ -214,7 +215,19 @@ local function suppressExternalPuzzleHud(isPuzzleVisible)
 	do
 		local item = screenGui and screenGui:FindFirstChild(name)
 		if item and item:IsA("GuiObject") then
-			item.Visible = not isPuzzleVisible
+			item.Visible = not isPuzzleVisible and not day43Ui.studioInspectionHudHidden
+		end
+	end
+end
+
+day43Ui.setStudioInspectionHudHidden = function(hidden)
+	day43Ui.studioInspectionHudHidden = hidden == true
+	if currentState then
+		suppressExternalPuzzleHud(true)
+	elseif hudController then
+		hudController:SetGameplayFocus(day43Ui.studioInspectionHudHidden)
+		if hudController.topBar then
+			hudController.topBar.Visible = false
 		end
 	end
 end
@@ -414,7 +427,7 @@ if RunService:IsStudio() then
 			return
 		end
 		if input.KeyCode == Enum.KeyCode.F8 then
-			gui.Enabled = not gui.Enabled
+			day43Ui.setStudioInspectionHudHidden(not day43Ui.studioInspectionHudHidden)
 		end
 	end)
 end

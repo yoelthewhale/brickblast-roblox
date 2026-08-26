@@ -20,23 +20,6 @@ emergencySpawn.CanQuery = true
 emergencySpawn.Transparency = 0.35
 emergencySpawn.Parent = workspace
 
-local Shared = ReplicatedStorage:WaitForChild("Shared")
-local GameShared = Shared:WaitForChild("game")
-local Achievements = require(GameShared.Achievements)
-local Blocks = require(GameShared.Blocks)
-local Config = require(GameShared.Config)
-local DeveloperTools = require(GameShared.DeveloperTools)
-local ExperienceConfig = require(GameShared.ExperienceConfig)
-local GameplayRules = require(GameShared.GameplayRules)
-local Grid = require(GameShared.Grid)
-local HandGenerator = require(GameShared.HandGenerator)
-local ProfilePersistence = require(GameShared.ProfilePersistence)
-local StageProgression = require(GameShared.StageProgression)
-local UIControlRules = require(GameShared.UIControlRules)
-local HubBuilder = require(script.Parent.Parent.world.HubBuilder)
-local TelemetryReporter = require(script.Parent.TelemetryReporter)
-TelemetryReporter.OneMoreChance = require(GameShared.OneMoreChance)
-
 local remotes = Instance.new("Folder")
 remotes.Name = "BlockBlastRemotes"
 remotes.Parent = ReplicatedStorage
@@ -84,6 +67,23 @@ achievementsEvent.Parent = remotes
 local devCommandFunction = Instance.new("RemoteFunction")
 devCommandFunction.Name = "DevCommand"
 devCommandFunction.Parent = remotes
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local GameShared = Shared:WaitForChild("game")
+local Achievements = require(GameShared.Achievements)
+local Blocks = require(GameShared.Blocks)
+local Config = require(GameShared.Config)
+local DeveloperTools = require(GameShared.DeveloperTools)
+local ExperienceConfig = require(GameShared.ExperienceConfig)
+local GameplayRules = require(GameShared.GameplayRules)
+local Grid = require(GameShared.Grid)
+local HandGenerator = require(GameShared.HandGenerator)
+local ProfilePersistence = require(GameShared.ProfilePersistence)
+local StageProgression = require(GameShared.StageProgression)
+local UIControlRules = require(GameShared.UIControlRules)
+local HubBuilder = require(script.Parent.Parent.world.HubBuilder)
+local TelemetryReporter = require(script.Parent.TelemetryReporter)
+TelemetryReporter.OneMoreChance = require(GameShared.OneMoreChance)
 
 local function makeFallbackPart(parent, name, size, position, color, material)
 	local part = Instance.new("Part")
