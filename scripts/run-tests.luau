@@ -112,6 +112,7 @@ local TEST_MODULES = {
 	"CosmeticProgressionTests",
 	"DeveloperToolsTests",
 	"GameplayRulesTests",
+	"GridTests",
 	"HandGeneratorTests",
 	"OneMoreChanceTests",
 	"ProfilePersistenceTests",

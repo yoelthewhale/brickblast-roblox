@@ -2599,6 +2599,20 @@ boardGridContainer.BorderSizePixel = 0
 boardGridContainer.ClipsDescendants = true
 boardGridContainer.Parent = boardFrame
 
+day43Ui.clearPreview = {
+	layer = Instance.new("Frame"),
+	pool = {},
+	signature = "",
+}
+day43Ui.clearPreview.layer.Name = "LineClearPreviewLayer"
+day43Ui.clearPreview.layer.BackgroundTransparency = 1
+day43Ui.clearPreview.layer.BorderSizePixel = 0
+day43Ui.clearPreview.layer.ClipsDescendants = true
+day43Ui.clearPreview.layer.Position = UDim2.fromScale(0, 0)
+day43Ui.clearPreview.layer.Size = UDim2.fromScale(1, 1)
+day43Ui.clearPreview.layer.ZIndex = 2
+day43Ui.clearPreview.layer.Parent = boardFrame
+
 boardGhostLayer = Instance.new("Frame")
 boardGhostLayer.Name = "BoardGhostLayer"
 boardGhostLayer.BackgroundTransparency = 1
@@ -2606,8 +2620,107 @@ boardGhostLayer.BorderSizePixel = 0
 boardGhostLayer.ClipsDescendants = true
 boardGhostLayer.Position = UDim2.fromScale(0, 0)
 boardGhostLayer.Size = UDim2.fromScale(1, 1)
-boardGhostLayer.ZIndex = 2
+boardGhostLayer.ZIndex = 4
 boardGhostLayer.Parent = boardFrame
+
+function day43Ui.clearPreview.contains(cellsToClear, x, y)
+	return cellsToClear ~= nil and cellsToClear[y] ~= nil and cellsToClear[y][x] == true
+end
+
+function day43Ui.clearPreview.edge(cellFrame, edgeName, color)
+	local edge = cellFrame:FindFirstChild(edgeName)
+	if not edge then
+		edge = Instance.new("Frame")
+		edge.Name = edgeName
+		edge.BorderSizePixel = 0
+		edge.Active = false
+		edge.ZIndex = cellFrame.ZIndex + 1
+		edge.Parent = cellFrame
+	end
+	edge.BackgroundColor3 = color
+	edge.BackgroundTransparency = 0.02
+	return edge
+end
+
+function day43Ui.clearPreview.render(cellsToClear)
+	local clearPreview = day43Ui.clearPreview
+	local signatureParts = {
+		`layout:{WINDOW_LAYOUT.boardPadding}:{WINDOW_LAYOUT.boardGap}:{WINDOW_LAYOUT.boardCell}`,
+	}
+	for y = 1, Config.BoardSize do
+		for x = 1, Config.BoardSize do
+			if clearPreview.contains(cellsToClear, x, y) then
+				table.insert(signatureParts, `{x}:{y}`)
+			end
+		end
+	end
+
+	local signature = table.concat(signatureParts, "|")
+	if signature == clearPreview.signature then
+		return
+	end
+	clearPreview.signature = signature
+
+	local used = 0
+	local innerPadding = WINDOW_LAYOUT.boardPadding
+	local cellGap = WINDOW_LAYOUT.boardGap
+	local cellPixels = WINDOW_LAYOUT.boardCell
+	local step = cellPixels + cellGap
+	local fillColor = Color3.fromRGB(255, 224, 93)
+	local edgeColor = Color3.fromRGB(255, 250, 202)
+
+	for y = 1, Config.BoardSize do
+		for x = 1, Config.BoardSize do
+			if not clearPreview.contains(cellsToClear, x, y) then
+				continue
+			end
+
+			used += 1
+			local previewCell = clearPreview.pool[used]
+			if not previewCell then
+				previewCell = Instance.new("Frame")
+				previewCell.Name = "LineClearPreviewCell"
+				previewCell.BorderSizePixel = 0
+				previewCell.Active = false
+				previewCell.ZIndex = clearPreview.layer.ZIndex + 1
+				previewCell.Parent = clearPreview.layer
+				UITheme.corner(previewCell, 8)
+				clearPreview.pool[used] = previewCell
+			end
+
+			previewCell.Visible = true
+			previewCell.BackgroundColor3 = fillColor
+			previewCell.BackgroundTransparency = 0.72
+			previewCell.Position =
+				UDim2.fromOffset(innerPadding + (x - 1) * step, innerPadding + (y - 1) * step)
+			previewCell.Size = UDim2.fromOffset(cellPixels, cellPixels)
+
+			local top = clearPreview.edge(previewCell, "TopEdge", edgeColor)
+			top.Visible = not clearPreview.contains(cellsToClear, x, y - 1)
+			top.Position = UDim2.fromOffset(0, 0)
+			top.Size = UDim2.new(1, 0, 0, 4)
+
+			local bottom = clearPreview.edge(previewCell, "BottomEdge", edgeColor)
+			bottom.Visible = not clearPreview.contains(cellsToClear, x, y + 1)
+			bottom.Position = UDim2.new(0, 0, 1, -4)
+			bottom.Size = UDim2.new(1, 0, 0, 4)
+
+			local left = clearPreview.edge(previewCell, "LeftEdge", edgeColor)
+			left.Visible = not clearPreview.contains(cellsToClear, x - 1, y)
+			left.Position = UDim2.fromOffset(0, 0)
+			left.Size = UDim2.new(0, 4, 1, 0)
+
+			local right = clearPreview.edge(previewCell, "RightEdge", edgeColor)
+			right.Visible = not clearPreview.contains(cellsToClear, x + 1, y)
+			right.Position = UDim2.new(1, -4, 0, 0)
+			right.Size = UDim2.new(0, 4, 1, 0)
+		end
+	end
+
+	for index = used + 1, #clearPreview.pool do
+		clearPreview.pool[index].Visible = false
+	end
+end
 
 local boardPadding = Instance.new("UIPadding")
 boardPadding.PaddingTop = UDim.new(0, 16)
@@ -2883,6 +2996,9 @@ function day43Ui.drag.finish(screenX, screenY)
 		if isOverBoard then
 			day43Ui.attemptPlacement(day43Ui.drag.state.slot, boardX, boardY)
 		end
+		hoverX = nil
+		hoverY = nil
+		renderGhostPreview()
 		local trayPreview = handPreviews[day43Ui.drag.state.slot]
 		if trayPreview then
 			trayPreview.Visible = true
@@ -3965,11 +4081,17 @@ renderGhostPreview = function()
 
 	local shape = getSelectedShape()
 	if not shape or not hoverX or not hoverY or not currentState or not currentState.alive then
+		day43Ui.clearPreview.render(nil)
 		return
 	end
 
 	local preset, hasSoloStage = activeStageVisual()
 	local canPlace = Grid.canPlace(currentState.board, shape, hoverX, hoverY)
+	local clearPreviewCells = nil
+	if canPlace then
+		clearPreviewCells = Grid.clearPreviewCells(currentState.board, shape, hoverX, hoverY)
+	end
+	day43Ui.clearPreview.render(clearPreviewCells)
 	statusLabel.Text = canPlace and `Place {shape.id}` or "That spot is blocked"
 
 	local innerPadding = WINDOW_LAYOUT.boardPadding

@@ -59,14 +59,14 @@ function Grid.place(board, shape, originX, originY)
 	return true, #shape.cells
 end
 
-function Grid.clearLines(board)
+local function findCompletedLines(board, isOccupied)
 	local rows = {}
 	local columns = {}
 
 	for y = 1, Config.BoardSize do
 		local filled = true
 		for x = 1, Config.BoardSize do
-			if board[y][x] == false then
+			if not isOccupied(board, x, y) then
 				filled = false
 				break
 			end
@@ -79,7 +79,7 @@ function Grid.clearLines(board)
 	for x = 1, Config.BoardSize do
 		local filled = true
 		for y = 1, Config.BoardSize do
-			if board[y][x] == false then
+			if not isOccupied(board, x, y) then
 				filled = false
 				break
 			end
@@ -88,6 +88,66 @@ function Grid.clearLines(board)
 			table.insert(columns, x)
 		end
 	end
+
+	return rows, columns
+end
+
+local function boardOccupancy(board, x, y)
+	return board[y][x] ~= false
+end
+
+local function placedCellLookup(shape, originX, originY)
+	local cells = {}
+	for _, cell in shape.cells do
+		local x = originX + cell.X
+		local y = originY + cell.Y
+		cells[y] = cells[y] or {}
+		cells[y][x] = true
+	end
+	return cells
+end
+
+function Grid.completedLines(board)
+	return findCompletedLines(board, boardOccupancy)
+end
+
+function Grid.linesCompletedByPlacement(board, shape, originX, originY)
+	if not Grid.canPlace(board, shape, originX, originY) then
+		return nil
+	end
+
+	local placedCells = placedCellLookup(shape, originX, originY)
+	return findCompletedLines(board, function(sourceBoard, x, y)
+		return sourceBoard[y][x] ~= false or (placedCells[y] and placedCells[y][x] == true)
+	end)
+end
+
+function Grid.clearPreviewCells(board, shape, originX, originY)
+	local rows, columns = Grid.linesCompletedByPlacement(board, shape, originX, originY)
+	if not rows then
+		return nil
+	end
+
+	local cells = {}
+	for _, y in rows do
+		cells[y] = cells[y] or {}
+		for x = 1, Config.BoardSize do
+			cells[y][x] = true
+		end
+	end
+
+	for _, x in columns do
+		for y = 1, Config.BoardSize do
+			cells[y] = cells[y] or {}
+			cells[y][x] = true
+		end
+	end
+
+	return cells, rows, columns
+end
+
+function Grid.clearLines(board)
+	local rows, columns = Grid.completedLines(board)
 
 	for _, y in rows do
 		for x = 1, Config.BoardSize do
