@@ -366,6 +366,49 @@ Config.BoardSkins = {
 	},
 }
 
+-- Block styles. Two ways the pieces themselves can be drawn, shaped like the
+-- board-skin tables above so the cosmetic plumbing that already exists works
+-- for them unchanged.
+--
+-- Both are real styles, not an old one and a replacement. Classic is the
+-- moulded plastic tile; Gem is the faceted jewel. Yoel wanted both available
+-- rather than one superseding the other.
+Config.BlockStyles = {
+	{
+		id = "gem",
+		name = "Gem",
+		blurb = "Faceted jewels with a bright cut.",
+	},
+	{
+		id = "classic",
+		name = "Classic",
+		blurb = "Solid moulded tiles with a hard bevel.",
+	},
+}
+
+Config.BlockStyleDefault = "gem"
+
+-- Resolves any input to a real style id. Cosmetic choices round-trip through
+-- saved profiles and the network, so an unknown or absent value has to land on
+-- the default rather than on nil -- a nil style would render no block at all.
+function Config.sanitizeBlockStyle(styleId)
+	for _, style in Config.BlockStyles do
+		if style.id == styleId then
+			return style.id
+		end
+	end
+	return Config.BlockStyleDefault
+end
+
+Config.BlockStyleUnlocks = {
+	Gem = {
+		label = "Free",
+	},
+	Classic = {
+		label = "Free",
+	},
+}
+
 Config.BoardSkinUnlocks = {
 	Auto = {
 		label = "Free",
