@@ -2844,7 +2844,7 @@ function day43Ui.drag.createIcon(shape)
 	icon.Active = false
 	icon.Parent = root
 	ArcadeUI.RenderShapePreview(icon, shape, {
-		blockColors = hasSoloStage and preset.blockPalette or nil,
+		blockColor = shape.color,
 	})
 
 	return icon
@@ -3869,9 +3869,25 @@ renderBoard = function(forceFull)
 					-- notice took on whatever tint the stage happened to have.
 					-- It is a fixed red now, in every mode.
 					setCellGloss(cell, Config.Colors.Garbage, "filled")
-				elseif hasSoloStage then
-					setCellGloss(cell, StageVisuals.blockColorForCell(preset, x, y), "filled")
 				elseif typeof(value) == "Color3" then
+					-- The colour the piece was dealt, which Grid.place already
+					-- stores per cell. This branch used to sit *below* a
+					-- `hasSoloStage` branch that recomputed the colour from the
+					-- cell's x/y instead, so in Solo -- the only mode anyone
+					-- plays -- the real piece colour was discarded at render
+					-- time and every block took a colour based on where it
+					-- landed.
+					--
+					-- That looked like scattered noise until the palette was
+					-- fixed at five colours, at which point the position seed
+					-- (`x * 3 + y * 5`) collapsed: `5y` is a multiple of five,
+					-- so it vanishes under the modulo and the colour depended
+					-- on x alone. The board rendered as vertical stripes, one
+					-- colour per column.
+					--
+					-- A block keeps the colour of the piece it came from. That
+					-- is the whole rule, and it is what makes the board read
+					-- like the reference instead of like a gradient.
 					setCellGloss(cell, value, "filled")
 				else
 					setCellGloss(cell, Config.Colors.Filled, "filled")
@@ -3947,15 +3963,17 @@ renderGhostPreview = function()
 			ghostCell.Parent = boardGhostLayer
 			ArcadeUI.BoardCell(ghostCell)
 
-			local color = canPlace
-					and (hasSoloStage and StageVisuals.blockColorForCell(preset, x, y) or shape.color)
-				or Config.Colors.PreviewInvalid
+			-- The ghost previews the piece, so it shows the piece's own colour.
+			-- It used to derive a colour from the target cell in Solo, meaning
+			-- the preview showed one colour and the block it became showed
+			-- another -- and the ghost changed colour as you dragged across the
+			-- board.
+			local color = canPlace and shape.color or Config.Colors.PreviewInvalid
 			setCellGloss(ghostCell, color, canPlace and "preview" or "invalid")
 
 			local stroke = ghostCell:FindFirstChildOfClass("UIStroke")
 			if stroke then
-				stroke.Color = canPlace and Color3.fromRGB(255, 255, 255)
-					or Color3.fromRGB(255, 86, 107)
+				stroke.Color = canPlace and ArcadeUI.Color.text or Config.Colors.PreviewInvalid
 				stroke.Transparency = 0.12
 			end
 
@@ -4022,7 +4040,12 @@ renderHand = function()
 			label.Visible = false
 		end
 		ArcadeUI.RenderShapePreview(handPreviews[slot], shape, {
-			blockColors = hasSoloStage and preset.blockPalette or nil,
+			-- One colour for the whole piece, not the palette cycled per cell.
+			-- Passing `blockColors` made RenderShapePreview walk the palette by
+			-- cell index, so a single three-cell piece rendered orange, blue
+			-- and red -- three colours on one solid object, which is not a
+			-- thing the reference or the game's own logo ever shows.
+			blockColor = shape.color,
 		})
 		button.BackgroundColor3 = selectedSlot == slot
 				and (hasSoloStage and preset.panelMuted or Color3.fromRGB(18, 71, 126))

@@ -1,5 +1,6 @@
 local Blocks = require(script.Parent.Blocks)
 local Config = require(script.Parent.Config)
+local VisualTokens = require(script.Parent.VisualTokens)
 
 local BlocksTests = {}
 
@@ -144,6 +145,63 @@ tests.theApprovedFamiliesAreAllPresent = function()
 	for _, shapeId in required do
 		assertCondition(known[shapeId] == true, `The approved piece set is missing "{shapeId}"`)
 	end
+end
+
+-- A piece is dealt ONE colour, and it comes from the identity palette.
+--
+-- Both halves of this were broken and neither was visible to any test.
+-- `randomPieceColor` generated a random hue across the whole wheel, so pieces
+-- could arrive lime or magenta -- colours that exist nowhere else in the game.
+-- It went unnoticed because the Solo renderer discarded the piece's colour and
+-- computed one from the cell's x/y instead, so the real value never reached
+-- the screen in the only mode anyone plays.
+tests.everyPieceIsDealtOneColourFromThePalette = function()
+	local palette = VisualTokens.blockPalette()
+
+	local function isPaletteColour(color)
+		for _, entry in palette do
+			if entry == color then
+				return true
+			end
+		end
+		return false
+	end
+
+	for seed = 1, 120 do
+		local randomizer = Random.new(seed)
+		local shape = Blocks.createShape(Blocks.Shapes[1].id, randomizer)
+		assertCondition(
+			typeof(shape.color) == "Color3",
+			`Piece at seed {seed} was dealt no colour at all`
+		)
+		assertCondition(
+			isPaletteColour(shape.color),
+			`Piece at seed {seed} was dealt a colour outside the identity palette. `
+				.. "Pieces must be one of the five block colours, not an arbitrary hue."
+		)
+	end
+end
+
+-- Over enough deals the palette should actually get used, not collapse onto
+-- one entry. A generator that always returned palette[1] would satisfy the
+-- test above while making every piece on the board the same colour.
+tests.pieceColoursActuallyVary = function()
+	local seen = {}
+	local distinct = 0
+	for seed = 1, 300 do
+		local shape = Blocks.createShape(Blocks.Shapes[1].id, Random.new(seed))
+		local key = tostring(shape.color)
+		if not seen[key] then
+			seen[key] = true
+			distinct += 1
+		end
+	end
+
+	assertCondition(
+		distinct >= 4,
+		`Only {distinct} distinct piece colours appeared across 300 deals; the palette `
+			.. "is collapsing rather than being used"
+	)
 end
 
 function BlocksTests.run()

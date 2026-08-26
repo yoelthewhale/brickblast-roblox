@@ -1,3 +1,5 @@
+local VisualTokens = require(script.Parent.VisualTokens)
+
 local Blocks = {}
 
 Blocks.PieceSkins = {
@@ -157,12 +159,21 @@ Blocks.Shapes = {
 	},
 }
 
-local function randomRainbowColor(randomizer)
-	local hue = randomizer:NextNumber(0, 1)
-	local saturation = randomizer:NextNumber(0.72, 0.96)
-	local value = randomizer:NextNumber(0.88, 1)
-
-	return Color3.fromHSV(hue, saturation, value)
+-- The default piece colour: one of the five identity blocks, chosen whole.
+--
+-- This used to be a random hue across the entire wheel, which is why pieces
+-- could arrive lime, magenta or brown -- colours that appear nowhere else in
+-- the game. Nobody noticed because the Solo renderer was overriding piece
+-- colour with a position-derived one before it ever reached the screen, so the
+-- real value was thrown away in the only mode anyone plays.
+--
+-- Picking from the palette rather than generating a hue is also what makes a
+-- board readable: five recurring colours let a player see a matching run at a
+-- glance, where a continuous rainbow gives every piece a shade slightly unlike
+-- every other.
+local function randomPaletteColor(randomizer)
+	local palette = VisualTokens.blockPalette()
+	return palette[randomizer:NextInteger(1, #palette)]
 end
 
 local function randomPieceColor(randomizer, pieceSkin)
@@ -178,7 +189,7 @@ local function randomPieceColor(randomizer, pieceSkin)
 		)
 	end
 
-	return randomRainbowColor(randomizer)
+	return randomPaletteColor(randomizer)
 end
 
 local function normalizeCells(cells)

@@ -339,6 +339,15 @@ function VisualTokens.chrome()
 	}
 end
 
+-- The fixed block palette, for callers that need the colours without resolving
+-- a whole token set. Blocks.createShape needs exactly this and nothing else:
+-- a piece has to be dealt one of these five, and it must not depend on stage
+-- or energy, because a piece keeps its colour for as long as it sits on the
+-- board -- long after the stage that dealt it has passed.
+function VisualTokens.blockPalette()
+	return table.clone(BLOCK_PALETTE)
+end
+
 function VisualTokens.identity()
 	return table.clone(IDENTITY)
 end
