@@ -26,10 +26,27 @@ end
 local RandomPolyfill = {}
 RandomPolyfill.__index = RandomPolyfill
 
+-- Warm-up matters here, and its absence was actively misleading.
+--
+-- This is a Lehmer/minstd generator: state = state * 16807 mod 2^31-1. Fed a
+-- small seed it produces a small first state, so the first fraction is near
+-- zero and the first NextInteger(min, max) returns `min` -- for *every* seed
+-- a test is likely to pick. That was measured, not theorised: the first
+-- NextInteger(1, 30) came back 1 for all of seeds 1..20 and 3000..3019.
+--
+-- Any seeded test whose first draw mattered was therefore testing the
+-- polyfill rather than the game, and would pass or fail on unrelated changes
+-- to list ordering. Discarding a few iterations moves the state into the
+-- generator's useful range before any test sees it.
+local RANDOM_WARMUP_ITERATIONS = 8
+
 function RandomPolyfill.new(seed: number?)
 	local self = setmetatable({}, RandomPolyfill)
 	local state = (seed or 0) % 2147483647
 	self._state = state <= 0 and state + 2147483646 or state
+	for _ = 1, RANDOM_WARMUP_ITERATIONS do
+		self:_nextRaw()
+	end
 	return self
 end
 
@@ -105,6 +122,9 @@ local TEST_MODULES = {
 	"VisualTokensTests",
 	"UIControlRulesTests",
 	"VisualQualityTests",
+	"ClearPraiseTests",
+	"BlocksTests",
+	"ShotClockTests",
 }
 
 local GAME_DIR = "../src/shared/game"

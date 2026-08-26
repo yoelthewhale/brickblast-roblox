@@ -7,6 +7,19 @@ Blocks.PieceSkins = {
 	"Ice",
 }
 
+-- The piece set. Locked to the shapes Yoel approved on 2026-08-24 against the
+-- reference game: the seven classic tetrominoes plus the smaller singles,
+-- dominoes, triominoes, corners, extended-T variants and rectangles.
+--
+-- What was removed and why it must not come back: six diagonal shapes whose
+-- cells touched only at the corners, and a five-cell plus. Neither exists in
+-- the reference. The diagonals were the worse problem -- a piece whose cells
+-- do not share edges reads as several separate pieces on the board, and the
+-- game is about filling rows with solids.
+--
+-- `BlocksTests.everyShapeIsEdgeConnected` enforces this structurally rather
+-- than by name, so a future shape cannot reintroduce the defect under a
+-- different id.
 Blocks.Shapes = {
 	{
 		id = "single",
@@ -35,16 +48,6 @@ Blocks.Shapes = {
 	{
 		id = "corner",
 		cells = { Vector2.new(0, 0), Vector2.new(0, 1), Vector2.new(1, 1) },
-	},
-	{
-		id = "plus",
-		cells = {
-			Vector2.new(1, 0),
-			Vector2.new(0, 1),
-			Vector2.new(1, 1),
-			Vector2.new(2, 1),
-			Vector2.new(1, 2),
-		},
 	},
 	{
 		id = "line4",
@@ -151,40 +154,6 @@ Blocks.Shapes = {
 	{
 		id = "corner4",
 		cells = { Vector2.new(0, 0), Vector2.new(1, 0), Vector2.new(0, 1) },
-	},
-	{
-		id = "diagonal2",
-		cells = { Vector2.new(0, 0), Vector2.new(1, 1) },
-	},
-	{
-		id = "diagonal2Alt",
-		cells = { Vector2.new(1, 0), Vector2.new(0, 1) },
-	},
-	{
-		id = "diagonal3",
-		cells = { Vector2.new(0, 0), Vector2.new(1, 1), Vector2.new(2, 2) },
-	},
-	{
-		id = "diagonal3Alt",
-		cells = { Vector2.new(2, 0), Vector2.new(1, 1), Vector2.new(0, 2) },
-	},
-	{
-		id = "diagonal4",
-		cells = {
-			Vector2.new(0, 0),
-			Vector2.new(1, 1),
-			Vector2.new(2, 2),
-			Vector2.new(3, 3),
-		},
-	},
-	{
-		id = "diagonal4Alt",
-		cells = {
-			Vector2.new(3, 0),
-			Vector2.new(2, 1),
-			Vector2.new(1, 2),
-			Vector2.new(0, 3),
-		},
 	},
 }
 

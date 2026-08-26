@@ -92,6 +92,27 @@ Parts that stay stable so the identity holds: the block palette, overall form
 language (hard-edged, beveled, recessed), typography, layout structure, and the
 meaning of colors that carry information rather than mood.
 
+## Celebration: how loud the game gets, and when
+
+Approved from reference screenshots on 2026-08-23. A clear is answered with a
+burst across the board -- **NICE / GREAT / FANTASTIC / UNBELIEVABLE /
+PERFECT** -- sized to how hard the clear was.
+
+The rule that keeps this working: **the ceiling has to stay rare.** If an
+ordinary clear can reach the loudest treatment, every clear looks like the
+best clear and the whole system stops carrying information. Only a four-line
+clear, a five-deep combo, or a perfect clear reaches the top tier, and only
+that tier gets per-letter colour drawn from the block palette.
+
+The decision lives in `src/shared/game/ClearPraise.luau`, not in the UI, and
+is tested -- including a guard that ordinary clears cannot reach the top tier.
+Rendering lives in `ArcadeUI.PraiseBurst`. Adding a tier should mean a new
+entry in each, and nothing else.
+
+Burst and banner say different things and both are needed: **the burst says
+how good, the banner says how much** (bonus values, line counts). Do not
+collapse one into the other.
+
 ## Where the progression system lives today
 
 - `src/shared/game/StageVisuals.luau` — the **live** system that drives

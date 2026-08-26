@@ -1513,7 +1513,11 @@ for decorIndex = 1, 6 do
 	local decor = Instance.new("Frame")
 	decor.Name = `StageBackdropAccent{decorIndex}`
 	decor.Active = false
-	decor.BackgroundTransparency = 0.72
+	-- Six floating rounded rectangles behind the board. At 0.72 they were
+	-- clearly visible slabs on the old bright room and read as UI panels that
+	-- had come loose. The room is deep now and they only need to break up the
+	-- flat ground, so they sit near the threshold of visible.
+	decor.BackgroundTransparency = 0.93
 	decor.BorderSizePixel = 0
 	decor.ZIndex = 1
 	decor.Parent = root
@@ -2210,9 +2214,15 @@ stageUi.titleButton.TextXAlignment = Enum.TextXAlignment.Left
 stageUi.titleButton.Parent = workspaceHeader
 UITheme.text(stageUi.titleButton, "title")
 
+-- The drag-handle affordance for the moveable workspace window. Solo already
+-- hides the resize handle and the reset-layout button; these were the leftover
+-- third piece, and with the other two gone they read as five meaningless dots
+-- parked next to the stage bar.
+stageUi.gripDots = {}
 for dotIndex = 1, 5 do
 	local gripDot = Instance.new("Frame")
 	gripDot.Name = `TitleGripDot{dotIndex}`
+	stageUi.gripDots[dotIndex] = gripDot
 	gripDot.BackgroundColor3 = Color3.fromRGB(67, 123, 194)
 	gripDot.BorderSizePixel = 0
 	gripDot.Position = UDim2.new(0.5, -34 + (dotIndex - 1) * 17, 0, 32)
@@ -2359,11 +2369,22 @@ coinStatLabel.TextStrokeTransparency = 0.08
 coinStatLabel.Parent = leftColumn
 ArcadeUI.StatCard(coinStatLabel)
 ArcadeUI.Text(coinStatLabel, "gold")
+-- Coins are meta-progression, not run state: the number cannot change from a
+-- placement, so a full-height card next to SCORE and COMBO spent the most
+-- valuable column in the layout on a value that reads 0 for a whole run. The
+-- header chip still shows it, next to the controls that spend it.
+--
+-- Hidden rather than deleted: the label is passed into RenderProgression and
+-- the contrast pass from five call sites, and it is still the thing that gets
+-- updated -- just not shown during a run.
+coinStatLabel.Visible = false
 
 rankStatLabel = Instance.new("TextLabel")
 rankStatLabel.BackgroundTransparency = 0.04
 rankStatLabel.BackgroundColor3 = Color3.fromRGB(11, 27, 51)
-rankStatLabel.Position = UDim2.fromOffset(22, 482)
+-- Takes the coin card's old slot so the column reads SCORE / COMBO / TROPHY
+-- with no hole where the hidden card used to be.
+rankStatLabel.Position = UDim2.fromOffset(22, 356)
 rankStatLabel.Size = UDim2.fromOffset(210, 76)
 rankStatLabel.Font = Enum.Font.GothamBlack
 rankStatLabel.Text = statRichText("TROPHY", "RANK --", "#FFD247")
@@ -3511,17 +3532,27 @@ applyWindowLayout = function()
 		stageUi.card.Position = UDim2.fromOffset(math.floor(layout.contentWidth * 0.43), 9)
 		stageUi.card.Size = UDim2.fromOffset(132, 40)
 	end
-	timerLabel.Visible = true
+	-- Solo has no clock. renderState hides this whenever the server sends no
+	-- timeLeft, which is now every untimed mode; the geometry below only
+	-- matters for the modes that do have one.
 	timerLabel.AnchorPoint = Vector2.new(0, 0)
 	timerLabel.Position = UDim2.fromOffset(math.floor(layout.contentWidth * 0.34), 17)
 	timerLabel.Size = UDim2.fromOffset(92, 26)
 	timerLabel.TextSize = 13
 	timerLabel.TextXAlignment = Enum.TextXAlignment.Center
-	matchInfoLabel.Visible = true
+
+	-- In Solo this read "Best score: 2265" while the score card two inches to
+	-- the left already read "BEST 2265". The header is the most crowded strip
+	-- on the screen and this was the one thing on it that was pure duplication.
+	matchInfoLabel.Visible = currentState == nil or currentState.mode ~= "Solo"
 	matchInfoLabel.AnchorPoint = Vector2.new(1, 0)
 	matchInfoLabel.Position = UDim2.new(1, -500, 0, 17)
 	matchInfoLabel.Size = UDim2.fromOffset(162, 26)
 	matchInfoLabel.TextSize = 11
+
+	for _, gripDot in stageUi.gripDots do
+		gripDot.Visible = false
+	end
 
 	if customizeButton then
 		customizeButton.Position = UDim2.new(1, -318, 0, 12)
@@ -3577,18 +3608,12 @@ applyWindowLayout = function()
 	comboBadgeLabel.TextTransparency = 0
 	comboBadgeLabel.BackgroundTransparency = 0.02
 	comboBadgeLabel.TextStrokeTransparency = 0.05
-	coinStatLabel.Position =
+	-- The coin card is hidden during a run (see its construction), so TROPHY
+	-- takes the third slot and the column closes up instead of leaving a hole.
+	-- These offsets are recomputed on every layout pass and would otherwise
+	-- silently undo the construction-time positions.
+	rankStatLabel.Position =
 		UDim2.fromOffset(0, scoreHeight + layout.statGap + statHeight + layout.statGap)
-	coinStatLabel.Size = UDim2.fromOffset(layout.leftWidth, statHeight)
-	coinStatLabel.TextSize = clampNumber(math.floor(layout.leftWidth * 0.11), 20, 28)
-	coinStatLabel.TextColor3 = Color3.fromRGB(255, 236, 160)
-	coinStatLabel.TextTransparency = 0
-	coinStatLabel.BackgroundTransparency = 0.02
-	coinStatLabel.TextStrokeTransparency = 0.08
-	rankStatLabel.Position = UDim2.fromOffset(
-		0,
-		scoreHeight + layout.statGap + statHeight + layout.statGap + statHeight + layout.statGap
-	)
 	rankStatLabel.Size = UDim2.fromOffset(layout.leftWidth, statHeight)
 	rankStatLabel.TextSize = clampNumber(math.floor(layout.leftWidth * 0.095), 18, 24)
 	rankStatLabel.TextColor3 = ArcadeUI.Color.gold
@@ -4252,14 +4277,26 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 		or currentState.mode == "Custom" and "Rotate or reroll pieces before placement"
 		or currentState.mode == "Solo" and `Best score: {currentState.bestScore or 0}`
 		or `Arena {currentState.arenaIndex or "--"} | Match {currentState.sessionId or "--"}`
-	timerLabel.Text = currentState.timeLeft
-			and currentState.suddenDeath
-			and `Sudden: {currentState.timeLeft}s`
+	-- Two different clocks share this label, and only one can be running.
+	-- `timeLeft` is the match clock (Battle); `placementSecondsLeft` is the
+	-- Spicy shot clock, which is per-placement and only ever set on Solo. Both
+	-- arrive as nil when absent, so the label disappears rather than sitting at
+	-- a placeholder -- a dash where a clock should be still reads as a clock
+	-- that failed.
+	local shotClockLeft = currentState.placementSecondsLeft
+	timerLabel.Visible = currentState.timeLeft ~= nil or shotClockLeft ~= nil
+	timerLabel.Text = shotClockLeft and `Place in {shotClockLeft}s`
+		or currentState.timeLeft and currentState.suddenDeath and `Sudden: {currentState.timeLeft}s`
 		or currentState.timeLeft and `Time: {currentState.timeLeft}s`
-		or "Time: --"
-	timerLabel.TextColor3 = currentState.suddenDeath and Color3.fromRGB(255, 86, 107)
-		or currentState.timeLeft and currentState.timeLeft <= 15 and Color3.fromRGB(255, 210, 71)
-		or Color3.fromRGB(193, 201, 215)
+		or ""
+	-- The shot clock turns urgent well before it turns fatal: at 3 seconds a
+	-- player can still act on the warning, which is the only thing a warning
+	-- is for.
+	timerLabel.TextColor3 = currentState.suddenDeath and Color3.fromRGB(198, 64, 58)
+		or shotClockLeft and shotClockLeft <= 3 and Color3.fromRGB(198, 64, 58)
+		or shotClockLeft and shotClockLeft <= 5 and Color3.fromRGB(224, 138, 52)
+		or currentState.timeLeft and currentState.timeLeft <= 15 and Color3.fromRGB(229, 185, 60)
+		or ArcadeUI.Color.muted
 	playAgainButton.Text = currentState.mode == "Story" and "Replay" or "Play Again"
 	playAgainButton.Visible = not currentState.alive and currentState.mode ~= "Custom"
 	rotatePieceButton.Visible = currentState.mode == "Custom" and currentState.alive
@@ -4272,6 +4309,9 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 	ArcadeUI.PlayBoardDiff({
 		boardSize = Config.BoardSize,
 		cells = cells,
+		-- The clear bloom hangs off the frame rather than the grid, because the
+		-- grid is held to exactly 64 cell buttons and the cells clip.
+		boardFrame = boardFrame,
 		cellScales = cellScales,
 		getCurrentState = function()
 			return currentState
@@ -4563,6 +4603,16 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		end
 		if effect.linesCleared and effect.linesCleared > 0 then
 			playSound("Clear")
+			-- The celebration burst over the board. Tiering lives in
+			-- ClearPraise; this call only asks for it. The banners below stay
+			-- because they carry the *numbers* (bonus values, line counts) that
+			-- the burst deliberately does not -- the burst says how good, the
+			-- banner says how much.
+			ArcadeUI.CelebrateClear({
+				boardFrame = boardFrame,
+				reducedMotion = reducedMotion,
+				TweenService = TweenService,
+			}, effect)
 			if effect.comboStreak and effect.comboStreak > 1 then
 				playSound("Combo")
 				ArcadeUI.PulseCombo({
