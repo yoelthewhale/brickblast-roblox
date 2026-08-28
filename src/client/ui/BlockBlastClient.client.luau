@@ -53,12 +53,6 @@ local handPreviews = {}
 local previousBoard = nil
 local lastRenderedBoard = nil
 local boardGhostLayer = nil
-local reducedMotion = false
-local uiScale = 1
-local pieceSkinIndex = 1
-local boardSkinIndex = 1
-local soundEnabled = true
-local soundVolume = 0.65
 local soundController = SoundController.new()
 local customization = {
 	blockStyle = Config.BlockStyleDefault,
@@ -117,7 +111,6 @@ local developerPanelController = nil
 local loadingDismissed = false
 local tutorialPanel = nil
 local hubManuallyClosed = true
-local tutorialComplete = true
 local tutorialManuallyOpened = false
 local cosmeticPreviewSnapshot = nil
 local root = nil
@@ -137,6 +130,16 @@ local WINDOW_LAYOUT = SoloLayout.calculate(Vector2.new(1280, 720), 36, 0, 1)
 local QUICK_TWEEN = TweenInfo.new(0.16, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 local SOFT_TWEEN = TweenInfo.new(0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local day43Ui = {
+	settings = {
+		reducedMotion = false,
+		uiScale = 1,
+		pieceSkinIndex = 1,
+		boardSkinIndex = 1,
+		soundEnabled = true,
+		soundVolume = 0.65,
+		tutorialComplete = true,
+		themeIndex = 1,
+	},
 	-- Canonical value lives in UIControlRules; duplicating the number here is
 	-- what let the client and the shared rule drift apart.
 	serverActionCooldownSeconds = require(GameShared.UIControlRules).ServerActionCooldownSeconds,
@@ -160,7 +163,7 @@ local day43Ui = {
 }
 
 local function isUiReducedMotion()
-	return reducedMotion
+	return day43Ui.settings.reducedMotion
 end
 
 local function styleButton(button, variant)
@@ -341,7 +344,6 @@ local themePresets = {
 		accent = Color3.fromRGB(123, 237, 75),
 	},
 }
-local themeIndex = 1
 
 local function isFiniteNumber(value)
 	return typeof(value) == "number"
@@ -361,7 +363,7 @@ local function applyWorldVisualQuality()
 		touchEnabled = UserInputService.TouchEnabled,
 		keyboardEnabled = UserInputService.KeyboardEnabled,
 		screenSize = camera and camera.ViewportSize or nil,
-	}, reducedMotion)
+	}, day43Ui.settings.reducedMotion)
 
 	-- Gem blocks are the most-drawn object in the game -- 64 on the board
 	-- alone -- so the same tier that thins world particles also drops their
@@ -498,7 +500,7 @@ local function dismissLoading()
 	end
 
 	loadingDismissed = true
-	if reducedMotion then
+	if day43Ui.settings.reducedMotion then
 		loadingScreen.Visible = false
 		return
 	end
@@ -541,7 +543,7 @@ bannerScale.Parent = banner
 
 notificationController = NotificationController.new(gui, {
 	isReducedMotion = function()
-		return reducedMotion
+		return day43Ui.settings.reducedMotion
 	end,
 })
 
@@ -590,7 +592,7 @@ local function applyUiScale()
 		automaticScale = 0.96
 	end
 
-	local nextScale = automaticScale * uiScale
+	local nextScale = automaticScale * day43Ui.settings.uiScale
 	local topLeftInset, bottomRightInset = GuiService:GetGuiInset()
 	WINDOW_LAYOUT = SoloLayout.calculate(screenSize, topLeftInset.Y, bottomRightInset.Y, nextScale)
 	if rootScale then
@@ -615,20 +617,21 @@ end
 
 local function settingsPayload()
 	return {
-		themeIndex = themeIndex,
-		reducedMotion = reducedMotion,
-		uiScale = uiScale,
-		tutorialComplete = tutorialComplete,
-		pieceSkin = Blocks.PieceSkins[pieceSkinIndex] or "Rainbow",
-		boardSkin = Config.BoardSkins[boardSkinIndex] and Config.BoardSkins[boardSkinIndex].name
+		themeIndex = day43Ui.settings.themeIndex,
+		reducedMotion = day43Ui.settings.reducedMotion,
+		uiScale = day43Ui.settings.uiScale,
+		tutorialComplete = day43Ui.settings.tutorialComplete,
+		pieceSkin = Blocks.PieceSkins[day43Ui.settings.pieceSkinIndex] or "Rainbow",
+		boardSkin = Config.BoardSkins[day43Ui.settings.boardSkinIndex]
+				and Config.BoardSkins[day43Ui.settings.boardSkinIndex].name
 			or "Auto",
-		soundEnabled = soundEnabled,
-		soundVolume = soundVolume,
+		soundEnabled = day43Ui.settings.soundEnabled,
+		soundVolume = day43Ui.settings.soundVolume,
 	}
 end
 
 local function applySoundSettings()
-	soundController:SetSettings(soundEnabled, soundVolume)
+	soundController:SetSettings(day43Ui.settings.soundEnabled, day43Ui.settings.soundVolume)
 end
 
 local function playSound(cueName)
@@ -667,7 +670,7 @@ function day43Ui.openModeSelect()
 		day43Ui.modeSelect = require(script.Parent.ModeSelectPanel).new(gui, {
 			playSound = playSound,
 			isReducedMotion = function()
-				return reducedMotion
+				return day43Ui.settings.reducedMotion
 			end,
 			onConfirm = function(mode, difficulty)
 				day43Ui.fireQueueRequest(mode, nil, difficulty)
@@ -743,11 +746,11 @@ local function shopCosmeticItems()
 			category = "Cosmetics",
 			description = unlocked and "Owned progression piece style."
 				or `Unlock through play: {lockedText(requirement)}`,
-			state = Blocks.PieceSkins[pieceSkinIndex] == skinName and "Equipped"
+			state = Blocks.PieceSkins[day43Ui.settings.pieceSkinIndex] == skinName and "Equipped"
 				or unlocked and "Owned"
 				or "Locked",
 			owned = unlocked,
-			equipped = Blocks.PieceSkins[pieceSkinIndex] == skinName,
+			equipped = Blocks.PieceSkins[day43Ui.settings.pieceSkinIndex] == skinName,
 			available = unlocked,
 			lockedText = lockedText(requirement),
 		})
@@ -763,11 +766,11 @@ local function shopCosmeticItems()
 			category = "Cosmetics",
 			description = unlocked and "Owned progression board style."
 				or `Unlock through play: {lockedText(requirement)}`,
-			state = Config.BoardSkins[boardSkinIndex] == skin and "Equipped"
+			state = Config.BoardSkins[day43Ui.settings.boardSkinIndex] == skin and "Equipped"
 				or unlocked and "Owned"
 				or "Locked",
 			owned = unlocked,
-			equipped = Config.BoardSkins[boardSkinIndex] == skin,
+			equipped = Config.BoardSkins[day43Ui.settings.boardSkinIndex] == skin,
 			available = unlocked,
 			lockedText = lockedText(requirement),
 		})
@@ -809,10 +812,10 @@ local function previewColorsForPieceSkin(skinName)
 end
 
 local function updateCosmeticPreviews()
-	local skinName = Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"
+	local skinName = Blocks.PieceSkins[day43Ui.settings.pieceSkinIndex] or "Rainbow"
 	local colors = previewColorsForPieceSkin(skinName)
 
-	local boardSkin = Config.BoardSkins[boardSkinIndex]
+	local boardSkin = Config.BoardSkins[day43Ui.settings.boardSkinIndex]
 	local emptyColor = boardSkin and boardSkin.empty or customization.boardEmptyColor
 	local borderColor = boardSkin and boardSkin.border or customization.accentColor
 	if homePanelController then
@@ -825,14 +828,14 @@ end
 
 local function updateSettingsButtonText()
 	if homePanelController then
-		local boardSkin = Config.BoardSkins[boardSkinIndex]
+		local boardSkin = Config.BoardSkins[day43Ui.settings.boardSkinIndex]
 		homePanelController:UpdateSettings({
-			reducedMotion = reducedMotion,
-			uiScale = uiScale,
-			pieceSkin = Blocks.PieceSkins[pieceSkinIndex] or "Rainbow",
+			reducedMotion = day43Ui.settings.reducedMotion,
+			uiScale = day43Ui.settings.uiScale,
+			pieceSkin = Blocks.PieceSkins[day43Ui.settings.pieceSkinIndex] or "Rainbow",
 			boardSkin = boardSkin and boardSkin.name or "Auto",
-			soundEnabled = soundEnabled,
-			soundVolume = soundVolume,
+			soundEnabled = day43Ui.settings.soundEnabled,
+			soundVolume = day43Ui.settings.soundVolume,
 		})
 	end
 
@@ -881,7 +884,7 @@ local function showBanner(message, color)
 	banner.Position = UDim2.fromScale(0.5, -0.08)
 	banner.Visible = true
 
-	if reducedMotion then
+	if day43Ui.settings.reducedMotion then
 		banner.Position = UDim2.fromScale(0.5, 0.035)
 		banner.TextTransparency = 0
 		banner.BackgroundTransparency = 0.08
@@ -960,8 +963,8 @@ local function restoreCosmeticPreview()
 		return
 	end
 
-	pieceSkinIndex = cosmeticPreviewSnapshot.pieceSkinIndex
-	boardSkinIndex = cosmeticPreviewSnapshot.boardSkinIndex
+	day43Ui.settings.pieceSkinIndex = cosmeticPreviewSnapshot.pieceSkinIndex
+	day43Ui.settings.boardSkinIndex = cosmeticPreviewSnapshot.boardSkinIndex
 	cosmeticPreviewSnapshot = nil
 	updateSettingsButtonText()
 	if applyBoardSkin then
@@ -998,15 +1001,15 @@ local function previewShopCosmetic(item)
 
 	if not cosmeticPreviewSnapshot then
 		cosmeticPreviewSnapshot = {
-			pieceSkinIndex = pieceSkinIndex,
-			boardSkinIndex = boardSkinIndex,
+			pieceSkinIndex = day43Ui.settings.pieceSkinIndex,
+			boardSkinIndex = day43Ui.settings.boardSkinIndex,
 		}
 	end
 
 	if typeof(item.preview.pieceSkin) == "string" then
 		for index, skinName in Blocks.PieceSkins do
 			if skinName == item.preview.pieceSkin then
-				pieceSkinIndex = index
+				day43Ui.settings.pieceSkinIndex = index
 				break
 			end
 		end
@@ -1015,7 +1018,7 @@ local function previewShopCosmetic(item)
 	if typeof(item.preview.boardSkin) == "string" then
 		for index, skin in Config.BoardSkins do
 			if skin.name == item.preview.boardSkin then
-				boardSkinIndex = index
+				day43Ui.settings.boardSkinIndex = index
 				break
 			end
 		end
@@ -1034,7 +1037,7 @@ end
 resultPanelController = ResultPanel.new(gui, queueEvent, {
 	playSound = playSound,
 	isReducedMotion = function()
-		return reducedMotion
+		return day43Ui.settings.reducedMotion
 	end,
 	hasCurrentRun = function()
 		return currentState ~= nil
@@ -1046,23 +1049,23 @@ cosmeticPanelController = CosmeticPanel.new(gui, Blocks, Config, {
 	showMessage = showBanner,
 	getProgress = localCosmeticProgress,
 	getPieceSkin = function()
-		return Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"
+		return Blocks.PieceSkins[day43Ui.settings.pieceSkinIndex] or "Rainbow"
 	end,
 	getBoardSkin = function()
-		local boardSkin = Config.BoardSkins[boardSkinIndex]
+		local boardSkin = Config.BoardSkins[day43Ui.settings.boardSkinIndex]
 		return boardSkin and boardSkin.name or "Auto"
 	end,
 	selectPieceSkin = function(index)
-		pieceSkinIndex = index
+		day43Ui.settings.pieceSkinIndex = index
 		updateSettingsButtonText()
 		saveSettings()
 		showBanner(
-			`Pieces: {Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"}`,
+			`Pieces: {Blocks.PieceSkins[day43Ui.settings.pieceSkinIndex] or "Rainbow"}`,
 			customization.accentColor
 		)
 	end,
 	selectBoardSkin = function(index)
-		boardSkinIndex = index
+		day43Ui.settings.boardSkinIndex = index
 		updateSettingsButtonText()
 		if applyBoardSkin then
 			applyBoardSkin()
@@ -1071,7 +1074,7 @@ cosmeticPanelController = CosmeticPanel.new(gui, Blocks, Config, {
 			renderBoard(true)
 		end
 		saveSettings()
-		local boardSkin = Config.BoardSkins[boardSkinIndex]
+		local boardSkin = Config.BoardSkins[day43Ui.settings.boardSkinIndex]
 		showBanner(`Board: {boardSkin and boardSkin.name or "Auto"}`, customization.accentColor)
 	end,
 })
@@ -1111,7 +1114,7 @@ hudController = HUDController.new(gui, {
 		end
 	end,
 	isReducedMotion = function()
-		return reducedMotion
+		return day43Ui.settings.reducedMotion
 	end,
 	callbacks = {
 		play = function()
@@ -1438,9 +1441,9 @@ hudController = HUDController.new(gui, {
 
 				makeSettingButton(
 					1,
-					reducedMotion and "Motion: Reduced" or "Motion: Full",
+					day43Ui.settings.reducedMotion and "Motion: Reduced" or "Motion: Full",
 					function()
-						reducedMotion = not reducedMotion
+						day43Ui.settings.reducedMotion = not day43Ui.settings.reducedMotion
 						updateSettingsButtonText()
 						playSound("Button")
 						saveSettings()
@@ -1449,17 +1452,19 @@ hudController = HUDController.new(gui, {
 				)
 				makeSettingButton(
 					2,
-					soundEnabled and `Sound: {math.floor(soundVolume * 100)}%` or "Sound: Off",
+					day43Ui.settings.soundEnabled
+							and `Sound: {math.floor(day43Ui.settings.soundVolume * 100)}%`
+						or "Sound: Off",
 					function()
-						if soundVolume > 0.36 then
-							soundVolume = 0.35
-							soundEnabled = true
-						elseif soundVolume > 0 then
-							soundVolume = 0
-							soundEnabled = false
+						if day43Ui.settings.soundVolume > 0.36 then
+							day43Ui.settings.soundVolume = 0.35
+							day43Ui.settings.soundEnabled = true
+						elseif day43Ui.settings.soundVolume > 0 then
+							day43Ui.settings.soundVolume = 0
+							day43Ui.settings.soundEnabled = false
 						else
-							soundVolume = 0.65
-							soundEnabled = true
+							day43Ui.settings.soundVolume = 0.65
+							day43Ui.settings.soundEnabled = true
 						end
 						updateSettingsButtonText()
 						applySoundSettings()
@@ -1470,16 +1475,16 @@ hudController = HUDController.new(gui, {
 				)
 				makeSettingButton(
 					3,
-					uiScale == 1 and "UI Size: Auto"
-						or uiScale > 1 and "UI Size: Large"
+					day43Ui.settings.uiScale == 1 and "UI Size: Auto"
+						or day43Ui.settings.uiScale > 1 and "UI Size: Large"
 						or "UI Size: Compact",
 					function()
-						if uiScale == 1 then
-							uiScale = 1.12
-						elseif uiScale > 1 then
-							uiScale = 0.92
+						if day43Ui.settings.uiScale == 1 then
+							day43Ui.settings.uiScale = 1.12
+						elseif day43Ui.settings.uiScale > 1 then
+							day43Ui.settings.uiScale = 0.92
 						else
-							uiScale = 1
+							day43Ui.settings.uiScale = 1
 						end
 						updateSettingsButtonText()
 						applyUiScale()
@@ -1667,22 +1672,22 @@ homePanelController = HomePanel.new(gui, {
 			storyPanelController:Show()
 		end,
 		motion = function()
-			reducedMotion = not reducedMotion
+			day43Ui.settings.reducedMotion = not day43Ui.settings.reducedMotion
 			updateSettingsButtonText()
 			playSound("Button")
 			saveSettings()
 			showBanner(
-				reducedMotion and "Motion: Reduced" or "Motion: Full",
+				day43Ui.settings.reducedMotion and "Motion: Reduced" or "Motion: Full",
 				customization.accentColor
 			)
 		end,
 		uiSize = function()
-			if uiScale == 1 then
-				uiScale = 1.12
-			elseif uiScale > 1 then
-				uiScale = 0.92
+			if day43Ui.settings.uiScale == 1 then
+				day43Ui.settings.uiScale = 1.12
+			elseif day43Ui.settings.uiScale > 1 then
+				day43Ui.settings.uiScale = 0.92
 			else
-				uiScale = 1
+				day43Ui.settings.uiScale = 1
 			end
 			updateSettingsButtonText()
 			applyUiScale()
@@ -1691,33 +1696,39 @@ homePanelController = HomePanel.new(gui, {
 			saveSettings()
 		end,
 		pieceSkin = function()
-			local nextIndex =
-				nextUnlockedIndex(pieceSkinIndex, #Blocks.PieceSkins, isPieceSkinUnlocked)
-			if nextIndex == pieceSkinIndex then
+			local nextIndex = nextUnlockedIndex(
+				day43Ui.settings.pieceSkinIndex,
+				#Blocks.PieceSkins,
+				isPieceSkinUnlocked
+			)
+			if nextIndex == day43Ui.settings.pieceSkinIndex then
 				showBanner(nextLockedCosmeticText(), Color3.fromRGB(255, 139, 61))
 				playSound("Blocked")
 				return
 			end
 
-			pieceSkinIndex = nextIndex
+			day43Ui.settings.pieceSkinIndex = nextIndex
 			updateSettingsButtonText()
 			playSound("Button")
 			saveSettings()
 			showBanner(
-				`Pieces: {Blocks.PieceSkins[pieceSkinIndex] or "Rainbow"}`,
+				`Pieces: {Blocks.PieceSkins[day43Ui.settings.pieceSkinIndex] or "Rainbow"}`,
 				customization.accentColor
 			)
 		end,
 		boardSkin = function()
-			local nextIndex =
-				nextUnlockedIndex(boardSkinIndex, #Config.BoardSkins, isBoardSkinUnlocked)
-			if nextIndex == boardSkinIndex then
+			local nextIndex = nextUnlockedIndex(
+				day43Ui.settings.boardSkinIndex,
+				#Config.BoardSkins,
+				isBoardSkinUnlocked
+			)
+			if nextIndex == day43Ui.settings.boardSkinIndex then
 				showBanner(nextLockedCosmeticText(), Color3.fromRGB(255, 139, 61))
 				playSound("Blocked")
 				return
 			end
 
-			boardSkinIndex = nextIndex
+			day43Ui.settings.boardSkinIndex = nextIndex
 			updateSettingsButtonText()
 			applyBoardSkin()
 			if currentState then
@@ -1725,7 +1736,7 @@ homePanelController = HomePanel.new(gui, {
 			end
 			playSound("Button")
 			saveSettings()
-			local boardSkin = Config.BoardSkins[boardSkinIndex]
+			local boardSkin = Config.BoardSkins[day43Ui.settings.boardSkinIndex]
 			showBanner(`Board: {boardSkin and boardSkin.name or "Auto"}`, customization.accentColor)
 		end,
 		shop = function()
@@ -1733,15 +1744,15 @@ homePanelController = HomePanel.new(gui, {
 			shopPanelController:Show()
 		end,
 		sound = function()
-			if soundVolume > 0.36 then
-				soundVolume = 0.35
-				soundEnabled = true
-			elseif soundVolume > 0 then
-				soundVolume = 0
-				soundEnabled = false
+			if day43Ui.settings.soundVolume > 0.36 then
+				day43Ui.settings.soundVolume = 0.35
+				day43Ui.settings.soundEnabled = true
+			elseif day43Ui.settings.soundVolume > 0 then
+				day43Ui.settings.soundVolume = 0
+				day43Ui.settings.soundEnabled = false
 			else
-				soundVolume = 0.65
-				soundEnabled = true
+				day43Ui.settings.soundVolume = 0.65
+				day43Ui.settings.soundEnabled = true
 			end
 
 			updateSettingsButtonText()
@@ -1824,7 +1835,7 @@ tutorialStoryButton.Parent = tutorialPanel
 styleButton(tutorialStoryButton, "secondary")
 
 tutorialButton.Activated:Connect(function()
-	tutorialComplete = true
+	day43Ui.settings.tutorialComplete = true
 	tutorialManuallyOpened = false
 	updateTutorialVisibility()
 	playSound("Button")
@@ -1832,7 +1843,7 @@ tutorialButton.Activated:Connect(function()
 end)
 
 tutorialStoryButton.Activated:Connect(function()
-	tutorialComplete = true
+	day43Ui.settings.tutorialComplete = true
 	tutorialManuallyOpened = false
 	updateTutorialVisibility()
 	playSound("Button")
@@ -1965,8 +1976,8 @@ local function applyStagePalette()
 	local preset = if hasSoloStage
 		then StageVisuals.presetForRun(currentState)
 		else StageVisuals.presetForStage(1)
-	local boardSkin = Config.BoardSkins[boardSkinIndex] or Config.BoardSkins[1]
-	local theme = themePresets[themeIndex]
+	local boardSkin = Config.BoardSkins[day43Ui.settings.boardSkinIndex] or Config.BoardSkins[1]
+	local theme = themePresets[day43Ui.settings.themeIndex]
 	local emptyColor = if hasSoloStage then preset.boardEmpty else boardSkin.empty or theme.board
 	local outlineColor = if hasSoloStage
 		then preset.boardOutline
@@ -2072,14 +2083,14 @@ end
 
 local function playStageTransition(stage)
 	local preset = StageVisuals.presetForStage(stage, StageVisuals.energyForRun(currentState))
-	local transition = StageVisuals.transitionForStage(stage, reducedMotion)
+	local transition = StageVisuals.transitionForStage(stage, day43Ui.settings.reducedMotion)
 	stageUi.noticeToken = (stageUi.noticeToken or 0) + 1
 	local token = stageUi.noticeToken
 
 	if stageUi.wash then
 		stageUi.wash.BackgroundColor3 = transition.wash
-		stageUi.wash.BackgroundTransparency = reducedMotion and 0.78 or 0.45
-		if not reducedMotion then
+		stageUi.wash.BackgroundTransparency = day43Ui.settings.reducedMotion and 0.78 or 0.45
+		if not day43Ui.settings.reducedMotion then
 			TweenService:Create(stageUi.wash, TweenInfo.new(transition.duration), {
 				BackgroundTransparency = 1,
 			}):Play()
@@ -2097,7 +2108,7 @@ local function playStageTransition(stage)
 		stageUi.notice.TextColor3 = preset.notice
 		stageUi.notice.Visible = true
 		stageUi.notice.TextTransparency = 0
-		if not reducedMotion then
+		if not day43Ui.settings.reducedMotion then
 			stageUi.notice.Size = UDim2.fromOffset(340, 96)
 			stageUi.notice.Position = UDim2.new(0.5, -170, 0, WINDOW_LAYOUT.top + 78)
 			TweenService:Create(stageUi.notice, TweenInfo.new(transition.duration), {
@@ -2148,7 +2159,7 @@ local function pulseStageUpDisplay()
 		return
 	end
 
-	if reducedMotion then
+	if day43Ui.settings.reducedMotion then
 		stageUi.card.BackgroundTransparency = 0
 		task.delay(0.35, function()
 			if stageUi.card then
@@ -2170,8 +2181,8 @@ local function pulseStageUpDisplay()
 end
 
 applyBoardSkin = function()
-	local theme = themePresets[themeIndex]
-	local boardSkin = Config.BoardSkins[boardSkinIndex] or Config.BoardSkins[1]
+	local theme = themePresets[day43Ui.settings.themeIndex]
+	local boardSkin = Config.BoardSkins[day43Ui.settings.boardSkinIndex] or Config.BoardSkins[1]
 	local emptyColor = boardSkin.empty or theme.board
 	local borderColor = boardSkin.border or Color3.fromRGB(45, 55, 72)
 
@@ -2196,7 +2207,7 @@ applyBoardSkin = function()
 end
 
 local function applyTheme()
-	local theme = themePresets[themeIndex]
+	local theme = themePresets[day43Ui.settings.themeIndex]
 	customization.panelColor = theme.panel
 	customization.accentColor = theme.accent
 	if not (currentState and currentState.mode == "Solo") then
@@ -2211,9 +2222,9 @@ local function applyTheme()
 end
 
 customizeButton.Activated:Connect(function()
-	themeIndex += 1
-	if themeIndex > #themePresets then
-		themeIndex = 1
+	day43Ui.settings.themeIndex += 1
+	if day43Ui.settings.themeIndex > #themePresets then
+		day43Ui.settings.themeIndex = 1
 	end
 	applyTheme()
 	playSound("Button")
@@ -3401,7 +3412,7 @@ function day43Ui.ensureContinueOfferPanel()
 		day43Ui.continueOfferPanel = require(script.Parent.ContinuePanel).new(root, {
 			playSound = playSound,
 			isReducedMotion = function()
-				return reducedMotion
+				return day43Ui.settings.reducedMotion
 			end,
 			onAccept = function()
 				day43Ui.fireQueueRequest("ContinueRun")
@@ -4185,7 +4196,7 @@ end
 
 pulseHandSlot = function(slot)
 	local button = handButtons[slot]
-	if not button or reducedMotion then
+	if not button or day43Ui.settings.reducedMotion then
 		return
 	end
 
@@ -4201,7 +4212,7 @@ pulseHandSlot = function(slot)
 end
 
 day43Ui.playTrayEntrance = function(button, slot)
-	if reducedMotion then
+	if day43Ui.settings.reducedMotion then
 		return
 	end
 
@@ -4544,7 +4555,7 @@ stateEvent.OnClientEvent:Connect(function(nextState, leaderboard)
 			return currentState
 		end,
 		boardEmptyColor = customization.boardEmptyColor,
-		reducedMotion = reducedMotion,
+		reducedMotion = day43Ui.settings.reducedMotion,
 		TweenService = TweenService,
 		quickTween = QUICK_TWEEN,
 	}, oldBoard, currentState.board)
@@ -4805,7 +4816,7 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		playSound("Blocked")
 		ArcadeUI.ShakeWindow({
 			root = root,
-			reducedMotion = reducedMotion,
+			reducedMotion = day43Ui.settings.reducedMotion,
 			TweenService = TweenService,
 		})
 		showBanner(effect.message or "That spot is blocked", Color3.fromRGB(255, 86, 107))
@@ -4815,7 +4826,7 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 			for _, cell in effect.shape.cells do
 				ArcadeUI.PlayCellPop({
 					cellScales = cellScales,
-					reducedMotion = reducedMotion,
+					reducedMotion = day43Ui.settings.reducedMotion,
 					TweenService = TweenService,
 					quickTween = QUICK_TWEEN,
 				}, effect.originX + cell.X, effect.originY + cell.Y)
@@ -4824,7 +4835,7 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 		if effect.scoreDelta and effect.scoreDelta > 0 then
 			ArcadeUI.ScorePopup({
 				parent = stageUi.scoreCard,
-				reducedMotion = reducedMotion,
+				reducedMotion = day43Ui.settings.reducedMotion,
 				TweenService = TweenService,
 			}, effect.scoreDelta)
 		end
@@ -4837,14 +4848,14 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 			-- banner says how much.
 			ArcadeUI.CelebrateClear({
 				boardFrame = boardFrame,
-				reducedMotion = reducedMotion,
+				reducedMotion = day43Ui.settings.reducedMotion,
 				TweenService = TweenService,
 			}, effect)
 			if effect.comboStreak and effect.comboStreak > 1 then
 				playSound("Combo")
 				ArcadeUI.PulseCombo({
 					comboBadge = comboBadgeLabel,
-					reducedMotion = reducedMotion,
+					reducedMotion = day43Ui.settings.reducedMotion,
 					TweenService = TweenService,
 					quickTween = QUICK_TWEEN,
 				})
@@ -4853,7 +4864,7 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 				playSound("PerfectClear")
 				ArcadeUI.PerfectClearFlash({
 					boardFrame = boardFrame,
-					reducedMotion = reducedMotion,
+					reducedMotion = day43Ui.settings.reducedMotion,
 					TweenService = TweenService,
 				})
 				showBanner(`Perfect clear! +{effect.comboBonus or 0}`, Color3.fromRGB(255, 210, 71))
@@ -4916,7 +4927,7 @@ effectsEvent.OnClientEvent:Connect(function(effect)
 			if stageUi.title then
 				stageUi.title.Text = `STAGE UP {effect.currentStage}`
 				local flashedStage = effect.currentStage
-				task.delay(reducedMotion and 1.2 or 2, function()
+				task.delay(day43Ui.settings.reducedMotion and 1.2 or 2, function()
 					if stageUi.title and stageUi.lastStage == flashedStage then
 						stageUi.title.Text = `STAGE {flashedStage}`
 					end
@@ -4965,26 +4976,26 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 	cosmeticPreviewSnapshot = nil
 
 	if isFiniteNumber(settings.themeIndex) then
-		themeIndex = math.clamp(math.floor(settings.themeIndex), 1, #themePresets)
+		day43Ui.settings.themeIndex = math.clamp(math.floor(settings.themeIndex), 1, #themePresets)
 	end
 
 	if typeof(settings.reducedMotion) == "boolean" then
-		reducedMotion = settings.reducedMotion
+		day43Ui.settings.reducedMotion = settings.reducedMotion
 		applyWorldVisualQuality()
 	end
 
 	if isFiniteNumber(settings.uiScale) then
-		uiScale = math.clamp(settings.uiScale, 0.92, 1.12)
+		day43Ui.settings.uiScale = math.clamp(settings.uiScale, 0.92, 1.12)
 	end
 
 	if typeof(settings.tutorialComplete) == "boolean" then
-		tutorialComplete = settings.tutorialComplete
+		day43Ui.settings.tutorialComplete = settings.tutorialComplete
 	end
 
 	if typeof(settings.pieceSkin) == "string" then
 		for index, skin in Blocks.PieceSkins do
 			if skin == settings.pieceSkin then
-				pieceSkinIndex = index
+				day43Ui.settings.pieceSkinIndex = index
 				break
 			end
 		end
@@ -4993,18 +5004,18 @@ settingsEvent.OnClientEvent:Connect(function(settings)
 	if typeof(settings.boardSkin) == "string" then
 		for index, skin in Config.BoardSkins do
 			if skin.name == settings.boardSkin then
-				boardSkinIndex = index
+				day43Ui.settings.boardSkinIndex = index
 				break
 			end
 		end
 	end
 
 	if typeof(settings.soundEnabled) == "boolean" then
-		soundEnabled = settings.soundEnabled
+		day43Ui.settings.soundEnabled = settings.soundEnabled
 	end
 
 	if isFiniteNumber(settings.soundVolume) then
-		soundVolume = math.clamp(settings.soundVolume, 0, 1)
+		day43Ui.settings.soundVolume = math.clamp(settings.soundVolume, 0, 1)
 	end
 
 	applySoundSettings()
