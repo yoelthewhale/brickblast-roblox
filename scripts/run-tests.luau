@@ -126,6 +126,7 @@ local TEST_MODULES = {
 	"VisualQualityTests",
 	"ClearPraiseTests",
 	"BlocksTests",
+	"ConfigTests",
 	"ShotClockTests",
 }
 

@@ -34,6 +34,29 @@ local function assertBoardEquals(left, right, message)
 	end
 end
 
+local function assertShapeFootprint(board, generatedShape, originX, originY, message)
+	for _, cell in generatedShape.cells do
+		local x = originX + cell.X
+		local y = originY + cell.Y
+		assertCondition(board[y][x] == generatedShape.color, `{message}: missing cell {x},{y}`)
+	end
+end
+
+local function assertAllOtherCellsEmpty(board, generatedShape, originX, originY, message)
+	local expected = {}
+	for _, cell in generatedShape.cells do
+		expected[`{originX + cell.X}:{originY + cell.Y}`] = true
+	end
+
+	for y = 1, Config.BoardSize do
+		for x = 1, Config.BoardSize do
+			if not expected[`{x}:{y}`] then
+				assertCondition(board[y][x] == false, `{message}: unexpected filled cell {x},{y}`)
+			end
+		end
+	end
+end
+
 local function fillRowExcept(board, y, openX)
 	for x = 1, Config.BoardSize do
 		board[y][x] = if x == openX then false else "filled"
@@ -267,6 +290,120 @@ tests.previewSweepMatchesActualPlacementAndClear = function()
 		clearing > 20,
 		`Only {clearing} clearing placements were compared; sweep must exercise real clears`
 	)
+end
+
+tests.placementOriginMapsToTheExactShapeFootprint = function()
+	local cases = {
+		{ id = "single", x = 8, y = 8 },
+		{ id = "line4", x = 2, y = 6 },
+		{ id = "vertical4", x = 7, y = 3 },
+		{ id = "tShape", x = 3, y = 4 },
+		{ id = "sShape", x = 1, y = 5 },
+		{ id = "zShape", x = 4, y = 2 },
+		{ id = "jShape", x = 6, y = 3 },
+		{ id = "lShape", x = 2, y = 4 },
+		{ id = "rect2x3", x = 5, y = 7 },
+		{ id = "rect3x2", x = 7, y = 5 },
+	}
+
+	for _, case in cases do
+		local generatedShape = shape(case.id)
+		local board = Grid.create()
+		local before = Grid.clone(board)
+
+		assertCondition(
+			Grid.canPlace(board, generatedShape, case.x, case.y),
+			`{case.id} should be placeable at its selected origin`
+		)
+		local placed, cellCount = Grid.place(board, generatedShape, case.x, case.y)
+
+		assertCondition(placed == true, `{case.id} should place at its selected origin`)
+		assertCondition(
+			cellCount == #generatedShape.cells,
+			`{case.id} reported the wrong cell count`
+		)
+		assertShapeFootprint(board, generatedShape, case.x, case.y, case.id)
+		assertAllOtherCellsEmpty(board, generatedShape, case.x, case.y, case.id)
+		assertCondition(
+			countCells(Grid.clearPreviewCells(before, generatedShape, case.x, case.y)) == 0,
+			`{case.id} should not invent a line clear on an empty board`
+		)
+	end
+end
+
+tests.offBoardPlacementRejectsEveryEdgeWithoutMutating = function()
+	local cases = {
+		{ id = "line4", x = Config.BoardSize - 2, y = 1, reason = "right edge" },
+		{ id = "vertical4", x = 1, y = Config.BoardSize - 2, reason = "bottom edge" },
+		{ id = "tShape", x = 0, y = 1, reason = "left edge" },
+		{ id = "corner", x = 1, y = 0, reason = "top edge" },
+		{ id = "rect2x3", x = Config.BoardSize - 1, y = Config.BoardSize, reason = "corner" },
+	}
+
+	for _, case in cases do
+		local board = Grid.create()
+		board[4][4] = "sentinel"
+		local before = Grid.clone(board)
+		local generatedShape = shape(case.id)
+
+		assertCondition(
+			not Grid.canPlace(board, generatedShape, case.x, case.y),
+			`{case.id} should reject an off-board {case.reason} origin`
+		)
+		local placed, cellCount = Grid.place(board, generatedShape, case.x, case.y)
+		assertCondition(placed == false, `{case.id} should not place off-board`)
+		assertCondition(cellCount == 0, `{case.id} should report zero cells when rejected`)
+		assertCondition(
+			Grid.clearPreviewCells(board, generatedShape, case.x, case.y) == nil,
+			`{case.id} should not preview an off-board placement`
+		)
+		assertBoardEquals(board, before, `{case.id} off-board rejection must not mutate`)
+	end
+end
+
+tests.previewTargetMatchesTheActualPlacementTarget = function()
+	local board = Grid.create()
+	fillRowExcept(board, 6, 4)
+	fillRowExcept(board, 7, 4)
+	local generatedShape = shape("vertical2")
+	local previewCells, rows, columns = Grid.clearPreviewCells(board, generatedShape, 4, 6)
+
+	assertCondition(#rows == 2, "The hovered origin should predict both target rows")
+	assertCondition(#columns == 0, "The hovered origin should not predict columns")
+
+	local copy = Grid.clone(board)
+	local placed = Grid.place(copy, generatedShape, 4, 6)
+	assertCondition(placed == true, "The preview origin should be the actual placement origin")
+	assertShapeFootprint(copy, generatedShape, 4, 6, "preview target")
+
+	local cleared = Grid.clearLines(copy)
+	assertCondition(cleared == #rows + #columns, "Actual clear count should match preview")
+	assertCondition(
+		countCells(previewCells) == Config.BoardSize * 2,
+		"Preview should cover both rows"
+	)
+end
+
+tests.rotatedShapeFootprintsNormalizeBeforePlacement = function()
+	local original = shape("lShape")
+	local rotated = Blocks.rotateShape(original)
+	assertCondition(rotated ~= nil, "Rotating a valid shape should produce a shape")
+	assertCondition(rotated.color == original.color, "Rotation must preserve the piece color")
+
+	local minX, minY = math.huge, math.huge
+	for _, cell in rotated.cells do
+		minX = math.min(minX, cell.X)
+		minY = math.min(minY, cell.Y)
+	end
+	assertCondition(minX == 0 and minY == 0, "Rotated shapes should normalize to a top-left origin")
+
+	local board = Grid.create()
+	local placed = Grid.place(board, rotated, 4, 4)
+	assertCondition(
+		placed == true,
+		"A normalized rotated shape should place from its selected origin"
+	)
+	assertShapeFootprint(board, rotated, 4, 4, "rotated shape")
 end
 
 function GridTests.run()

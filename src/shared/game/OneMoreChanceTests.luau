@@ -96,6 +96,68 @@ tests.capPreventsSecondFreeContinue = function()
 	assertCondition(OneMoreChance.restore(state) == false, "Second restore should be rejected")
 end
 
+tests.initializeRunClearsEveryContinueFlagFromThePreviousRun = function()
+	local state = makeState()
+	state.continueUses = 1
+	state.continueCap = 99
+	state.continuePending = true
+	state.continueSnapshot = { board = Grid.create() }
+	state.usedContinue = true
+
+	OneMoreChance.initializeRun(state)
+
+	assertCondition(state.continueUses == 0, "New run should reset continue uses")
+	assertCondition(state.continueCap == OneMoreChance.CapPerRun, "New run should reset the cap")
+	assertCondition(state.continuePending == false, "New run should not inherit a pending offer")
+	assertCondition(state.continueSnapshot == nil, "New run should drop the old snapshot")
+	assertCondition(state.usedContinue == false, "New run should clear the used-continue marker")
+end
+
+tests.declineEndsThePendingOfferWithoutConsumingAContinue = function()
+	local state = makeState()
+	OneMoreChance.initializeRun(state)
+	OneMoreChance.captureSnapshot(state)
+
+	assertCondition(OneMoreChance.beginOffer(state) == true, "Offer should begin from a snapshot")
+	OneMoreChance.decline(state)
+
+	local offer = OneMoreChance.publicOffer(state)
+	assertCondition(offer.available == false, "Declined offer should not remain available")
+	assertCondition(offer.source == "none", "Declined offer should expose no entitlement source")
+	assertCondition(state.continueUses == 0, "Declining should not consume a continue")
+	assertCondition(state.usedContinue == false, "Declining should not mark the run as continued")
+	assertCondition(state.continueSnapshot ~= nil, "Declining should not destroy audit history")
+end
+
+tests.unplayableRestoreCanReopenWithoutSpendingTheRunCap = function()
+	local state = makeState()
+	OneMoreChance.initializeRun(state)
+
+	for y = 1, Config.BoardSize do
+		for x = 1, Config.BoardSize do
+			state.board[y][x] = "filled"
+		end
+	end
+	state.hand = {
+		Blocks.createShape("single", Random.new(44), "Rainbow"),
+		nil,
+		nil,
+	}
+	OneMoreChance.captureSnapshot(state)
+	assertCondition(OneMoreChance.beginOffer(state) == true, "Snapshot should still open the offer")
+	assertCondition(OneMoreChance.restore(state) == true, "Restore itself should rewind state")
+
+	assertCondition(
+		OneMoreChance.confirmPlayableUse(state) == false,
+		"An unplayable restore should not consume the continue"
+	)
+	assertCondition(state.continueUses == 0, "Failed confirmation should preserve the run cap")
+	assertCondition(state.usedContinue == false, "Failed confirmation should not mark continuation")
+	assertCondition(OneMoreChance.reopenOffer(state) == true, "The offer can be reopened for retry")
+	assertCondition(state.continuePending == true, "Retry should restore pending state")
+	assertCondition(state.alive == false, "Retry waits at the run-end state")
+end
+
 function tests.run()
 	local names = {}
 	for name, test in tests do
