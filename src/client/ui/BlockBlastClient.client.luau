@@ -4031,6 +4031,35 @@ UserInputService.GamepadConnected:Connect(function()
 	day43Ui.setGameplayGamepadFocus(false)
 end)
 
+-- Keyboard/gamepad focus drove placement straight off the selected cell's own
+-- attributes, bypassing hoverX/hoverY entirely -- the same variables the
+-- pointer pipeline uses to decide what renderGhostPreview draws. That let
+-- Enter place against a cell the ghost never showed, or showed stale. This
+-- feeds GuiService.SelectedObject into the exact same hoverX/hoverY +
+-- renderGhostPreview the mouse/touch path already uses, rather than adding a
+-- second preview renderer. day43Ui.gamepadHoverActive (not a new top-level
+-- local -- see the register ratchet) remembers whether the *current* hover
+-- came from focus, so leaving the board for the tray clears the ghost without
+-- also clobbering a mouse hover that took over in the meantime.
+GuiService:GetPropertyChangedSignal("SelectedObject"):Connect(function()
+	local selected = GuiService.SelectedObject
+	if selected and selected:GetAttribute("IsBoardCell") == true then
+		day43Ui.gamepadHoverActive = true
+		hoverX = selected:GetAttribute("BoardX")
+		hoverY = selected:GetAttribute("BoardY")
+		if currentState then
+			renderGhostPreview()
+		end
+	elseif day43Ui.gamepadHoverActive then
+		day43Ui.gamepadHoverActive = false
+		hoverX = nil
+		hoverY = nil
+		if currentState then
+			renderGhostPreview()
+		end
+	end
+end)
+
 workspaceInteraction = {
 	stop = function() end,
 }
