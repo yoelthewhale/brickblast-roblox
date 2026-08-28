@@ -201,6 +201,74 @@ tests.previewMatchesActualPlacementAndClear = function()
 	assertCondition(linesCleared == 2, "Actual clear should match the predicted row plus column")
 end
 
+tests.previewSweepMatchesActualPlacementAndClear = function()
+	local checked = 0
+	local clearing = 0
+
+	for seed = 1, 90 do
+		local randomizer = Random.new(seed * 31)
+		local board = Grid.create()
+
+		for _ = 1, randomizer:NextInteger(1, 2) do
+			fillRowExcept(
+				board,
+				randomizer:NextInteger(1, Config.BoardSize),
+				randomizer:NextInteger(1, Config.BoardSize)
+			)
+		end
+		for _ = 1, randomizer:NextInteger(0, 2) do
+			fillColumnExcept(
+				board,
+				randomizer:NextInteger(1, Config.BoardSize),
+				randomizer:NextInteger(1, Config.BoardSize)
+			)
+		end
+		for _ = 1, randomizer:NextInteger(0, 14) do
+			board[randomizer:NextInteger(1, Config.BoardSize)][randomizer:NextInteger(
+				1,
+				Config.BoardSize
+			)] =
+				"filled"
+		end
+
+		local shapeIndex = randomizer:NextInteger(1, #Blocks.Shapes)
+		local generatedShape = Blocks.createShape(Blocks.Shapes[shapeIndex].id, randomizer)
+		assertCondition(generatedShape ~= nil, "Expected generated test shape")
+
+		for y = 1, Config.BoardSize do
+			for x = 1, Config.BoardSize do
+				if Grid.canPlace(board, generatedShape, x, y) then
+					local _, rows, columns = Grid.clearPreviewCells(board, generatedShape, x, y)
+					local predicted = #rows + #columns
+
+					local copy = Grid.clone(board)
+					local placed = Grid.place(copy, generatedShape, x, y)
+					assertCondition(placed == true, "A canPlace-approved placement should place")
+					local actual = Grid.clearLines(copy)
+
+					assertCondition(
+						predicted == actual,
+						`Preview predicted {predicted} lines at {x},{y}, but placement cleared {actual}`
+					)
+					checked += 1
+					if actual > 0 then
+						clearing += 1
+					end
+				end
+			end
+		end
+	end
+
+	assertCondition(
+		checked > 500,
+		`Only {checked} placements were compared; sweep coverage is too thin`
+	)
+	assertCondition(
+		clearing > 20,
+		`Only {clearing} clearing placements were compared; sweep must exercise real clears`
+	)
+end
+
 function GridTests.run()
 	local results = {}
 
