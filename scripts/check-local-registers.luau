@@ -25,7 +25,7 @@ local LUAU_TOP_LEVEL_LOCAL_LIMIT = 200
 
 local BUDGETS: { { path: string, budget: number } } = {
 	{ path = "src/server/services/GameServer.server.luau", budget = 191 },
-	{ path = "src/client/ui/BlockBlastClient.client.luau", budget = 198 },
+	{ path = "src/client/ui/BlockBlastClient.client.luau", budget = 190 },
 }
 
 -- Counts declared names, not lines: `local a, b = 1, 2` costs two registers.
